@@ -1,0 +1,27 @@
+{
+    "name": "vscode-bazel",
+    "displayName": "vscode-bazel",
+    "description": "Bazel BUILD integration",
+    "version": "0.0.1",
+    "publisher": "BazelBuild",
+    "engines": {
+        "vscode": "^1.27.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "starlark",
+            "aliases": ["Starlark", "starlark", "Bazel"],
+            "extensions": [".bzl", ".BUILD"],
+            "filenames": ["BUILD", "BUILD.bazel", "WORKSPACE"],
+            "configuration": "./syntaxes/starlark.configuration.json"
+        }],
+        "grammars": [{
+            "language": "starlark",
+            "scopeName": "source.starlark",
+            "path": "./syntaxes/starlark.tmLanguage.json"
+        }]
+    }
+}
