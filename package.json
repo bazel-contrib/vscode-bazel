@@ -16,6 +16,16 @@
     ],
     "main": "./out/src/extension/extension",
     "contributes": {
+        "commands": [
+            {
+                "command": "bazel.buildTarget",
+                "title": "Build Target"
+            },
+            {
+                "command": "bazel.testTarget",
+                "title": "Test Target"
+            }
+        ],
         "configuration": {
             "type": "object",
             "title": "Bazel",
@@ -54,6 +64,25 @@
                 "configuration": "./syntaxes/starlark.configuration.json"
             }
         ],
+        "menus": {
+            "view/item/context": [
+                {
+                    "command": "bazel.buildTarget",
+                    "when": "view == bazelWorkspace && viewItem == rule",
+                    "group": "build"
+                },
+                {
+                    "command": "bazel.buildTarget",
+                    "when": "view == bazelWorkspace && viewItem == testRule",
+                    "group": "build"
+                },
+                {
+                    "command": "bazel.testTarget",
+                    "when": "view == bazelWorkspace && viewItem == testRule",
+                    "group": "build"
+                }
+            ]
+        },
         "views": {
             "explorer": [
                 {

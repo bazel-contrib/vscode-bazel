@@ -13,7 +13,9 @@
 // limitations under the License.
 
 import * as vscode from 'vscode';
+import { BazelCommandAdapter, BazelCommandArgs } from '../bazel/commands';
 import { BazelQuery, QueriedRule } from '../bazel/query';
+import * as path from 'path';
 
 /** An interface implemented by items in the Bazel tree provider. */
 interface BazelTreeItem {
@@ -43,6 +45,11 @@ interface BazelTreeItem {
 
   /** Returns the command that should be executed when the item is selected. */
   getCommand(): vscode.Command | undefined;
+
+  /**
+   * Returns an identifying string that is used to filter which commands are available for the item.
+   */
+  getContextValue(): string | undefined;
 }
 
 /** A tree item representing a workspace folder. */
@@ -74,6 +81,10 @@ class BazelWorkspaceFolderTreeItem implements BazelTreeItem {
 
   getCommand(): vscode.Command | undefined {
     return undefined;
+  }
+
+  getContextValue(): string {
+    return "workspaceFolder";
   }
 
   /**
@@ -211,10 +222,14 @@ class BazelPackageTreeItem implements BazelTreeItem {
   getCommand(): vscode.Command | undefined {
     return undefined;
   }
+
+  getContextValue(): string {
+    return "package";
+  }
 }
 
 /** A tree item representing a build target. */
-class BazelTargetTreeItem implements BazelTreeItem {
+class BazelTargetTreeItem implements BazelCommandAdapter, BazelTreeItem {
   /**
    * Initializes a new tree item with the given query result representing a build target.
    * 
@@ -231,7 +246,8 @@ class BazelTargetTreeItem implements BazelTreeItem {
   getLabel(): string {
     const fullPath = this.queriedRule.name;
     const colonIndex = fullPath.lastIndexOf(":");
-    return fullPath.substr(colonIndex);
+    const targetName = fullPath.substr(colonIndex);
+    return `${targetName}  (${this.queriedRule.ruleClass})`;
   }
 
   getIcon(): vscode.ThemeIcon | undefined {
@@ -250,6 +266,18 @@ class BazelTargetTreeItem implements BazelTreeItem {
       title: "Jump to Build Target",
       arguments: [vscode.Uri.file(location.path), { selection: location.range }],
     };
+  }
+
+  getContextValue(): string {
+    if (this.queriedRule.ruleClass.endsWith("_test")) {
+      return "testRule";
+    }
+    return "rule";
+  }
+
+  getBazelCommandArgs(): BazelCommandArgs {
+    const workingDirectory = path.dirname(this.queriedRule.location.path)
+    return { "workingDirectory": workingDirectory, "options": [`${this.queriedRule.name}`] };
   }
 }
 
@@ -295,6 +323,7 @@ export class BazelWorkspaceTreeProvider implements vscode.TreeDataProvider<Bazel
       : vscode.TreeItemCollapsibleState.None;
 
     let treeItem = new vscode.TreeItem(label, collapsibleState);
+    treeItem.contextValue = element.getContextValue();
     treeItem.iconPath = element.getIcon();
     treeItem.tooltip = element.getTooltip();
     treeItem.command = element.getCommand();

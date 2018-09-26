@@ -15,6 +15,25 @@
 import * as child_process from "child_process";
 import * as vscode from "vscode";
 
+/**
+ * Arbitrary types should implement this interface to provide the arguments to the Bazel build or
+ * test command to execute when the user selects a particular target in the UI (explorer tree view,
+ * quick pick, document link, etc.).
+ */
+export interface BazelCommandAdapter {
+  /** Returns the arguments that should be passed to the Bazel command. */
+  getBazelCommandArgs(): BazelCommandArgs;
+}
+
+/** Encapsulates the arguments to a Bazel command invoked through the UI. */
+export interface BazelCommandArgs {
+  /** The working directory in which Bazel should be launched. */
+  workingDirectory: string;
+
+  /** The list of targets and command line flags that should be passed to Bazel. */
+  options: string[];
+}
+
 /** Common functionality used to execute Bazel commands. */
 export abstract class BazelCommand {
   /**
@@ -115,4 +134,39 @@ export abstract class BazelChildProcessCommand extends BazelCommand {
   }
 }
 
-// TODO(allevato): Add support for commands that run in a terminal.
+/** The singleton terminal managed by {@link provideBazelTerminal}. */
+let bazelGlobalTerminal: vscode.Terminal = null
+
+/** Returns the singleton terminal used to execute Bazel commands, creating it if needed. */
+function getBazelGlobalTerminal(): vscode.Terminal {
+  if (bazelGlobalTerminal === null) {
+    bazelGlobalTerminal = vscode.window.createTerminal("Bazel");
+  }
+  return bazelGlobalTerminal;
+}
+
+/** Commands that are executed in a terminal panel. */
+export abstract class BazelTerminalCommand extends BazelCommand {
+  /**
+   * Executes the command, sending its output to the Bazel terminal panel.
+   *
+   * @param additionalOptions Additional command line options that apply only to this particular
+   *     invocation of the command.
+   */
+  public run(additionalOptions: string[] = []) {
+    const terminal = getBazelGlobalTerminal();
+    terminal.sendText("clear");
+    terminal.show(true);
+    terminal.sendText(`cd ${this.workingDirectory} && ${this.commandLine(additionalOptions)}`);
+  }
+}
+
+/** Executes a Bazel build command and displays its output in the terminal. */
+export class BazelBuild extends BazelTerminalCommand {
+  protected bazelCommand(): string { return "build"; }
+}
+
+/** Executes a Bazel test command and displays its output in the terminal. */
+export class BazelTest extends BazelTerminalCommand {
+  protected bazelCommand(): string { return "test"; }
+}

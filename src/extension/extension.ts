@@ -14,6 +14,7 @@
 
 import * as vscode from 'vscode';
 import { BazelWorkspaceTreeProvider } from '../workspace-tree/workspace-tree';
+import { BazelBuild, BazelCommandAdapter, BazelTest } from '../bazel/commands';
 
 /**
  * Called when the extension is activated; that is, when its first command is executed.
@@ -22,9 +23,38 @@ import { BazelWorkspaceTreeProvider } from '../workspace-tree/workspace-tree';
  */
 export function activate(context: vscode.ExtensionContext) {
   let workspaceTreeProvider = new BazelWorkspaceTreeProvider(context);
+
   context.subscriptions.push(
-    vscode.window.registerTreeDataProvider('bazelWorkspace', workspaceTreeProvider));
+    vscode.window.registerTreeDataProvider("bazelWorkspace", workspaceTreeProvider),
+    // Commands
+    vscode.commands.registerCommand("bazel.buildTarget", bazelBuildTarget),
+    vscode.commands.registerCommand("bazel.testTarget", bazelTestTarget),
+  );
 }
 
 /** Called when the extension is deactivated. */
 export function deactivate() { }
+
+/**
+ * Builds a Bazel target and streams output to the terminal.
+ * 
+ * @param adapter An object that implements {@link BazelCommandAdapter} from which the command's
+ *     arguments will be determined.
+ */
+function bazelBuildTarget(adapter: BazelCommandAdapter) {
+  const args = adapter.getBazelCommandArgs();
+  const command = new BazelBuild(args.workingDirectory, args.options);
+  command.run();
+}
+
+/**
+ * Tests a Bazel target and streams output to the terminal.
+ *
+ * @param adapter An object that implements {@link BazelCommandAdapter} from which the command's
+ *     arguments will be determined.
+ */
+function bazelTestTarget(adapter: BazelCommandAdapter) {
+  const args = adapter.getBazelCommandArgs();
+  const command = new BazelTest(args.workingDirectory, args.options);
+  command.run();
+}
