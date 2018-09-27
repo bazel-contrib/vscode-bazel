@@ -53,7 +53,7 @@ export abstract class BazelCommand {
 
   /** The command line string used to execute the query. */
   protected commandLine(additionalOptions: string[] = []) {
-    var result = `${this.bazelExecutable} ${this.bazelCommand()}`;
+    var result = `${getDefaultBazelExecutablePath()} ${this.bazelCommand()}`;
     if (this.options.length > 0) {
       result += " ";
       result += this.options.join(" ");
@@ -63,22 +63,6 @@ export abstract class BazelCommand {
       result += additionalOptions.join(" ");
     }
     return result;
-  }
-
-  /**
-   * The Bazel executable that should be invoked to execute the command.
-   *
-   * This can be either an absolute path or a command name that will be found on the system path.
-   */
-  private get bazelExecutable() {
-    // Try to retrieve the executable from VS Code's settings. If it's not set, just use "bazel" as
-    // the default and get it from the system PATH.
-    const bazelConfig = vscode.workspace.getConfiguration("bazel");
-    let bazelExecutable = <string>bazelConfig.executable;
-    if (bazelExecutable.length == 0) {
-      return "bazel";
-    }
-    return bazelExecutable;
   }
 }
 
@@ -169,4 +153,21 @@ export class BazelBuild extends BazelTerminalCommand {
 /** Executes a Bazel test command and displays its output in the terminal. */
 export class BazelTest extends BazelTerminalCommand {
   protected bazelCommand(): string { return "test"; }
+}
+
+/**
+ * Gets the path to the Bazel executable specified by the workspace configuratio, if present.
+ *
+ * @returns The path to the Bazel executable specified in the workspace configuration, or just
+ *     "bazel" if not present (in which case the system path will be searched).
+ */
+export function getDefaultBazelExecutablePath(): string {
+  // Try to retrieve the executable from VS Code's settings. If it's not set, just use "bazel" as
+  // the default and get it from the system PATH.
+  const bazelConfig = vscode.workspace.getConfiguration("bazel");
+  let bazelExecutable = <string>bazelConfig.executable;
+  if (bazelExecutable.length == 0) {
+    return "bazel";
+  }
+  return bazelExecutable;
 }

@@ -14,7 +14,9 @@
 
 import * as vscode from 'vscode';
 import { BazelWorkspaceTreeProvider } from '../workspace-tree/workspace-tree';
-import { BazelBuild, BazelCommandAdapter, BazelTest } from '../bazel/commands';
+import {
+  BazelBuild, BazelCommandAdapter, BazelTest, getDefaultBazelExecutablePath
+} from '../bazel/commands';
 
 /**
  * Called when the extension is activated; that is, when its first command is executed.
@@ -28,6 +30,8 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window.registerTreeDataProvider("bazelWorkspace", workspaceTreeProvider),
     // Commands
     vscode.commands.registerCommand("bazel.buildTarget", bazelBuildTarget),
+    vscode.commands.registerCommand("bazel.buildTargetWithDebugging",
+                                    bazelBuildTargetWithDebugging),
     vscode.commands.registerCommand("bazel.testTarget", bazelTestTarget),
   );
 }
@@ -45,6 +49,28 @@ function bazelBuildTarget(adapter: BazelCommandAdapter) {
   const args = adapter.getBazelCommandArgs();
   const command = new BazelBuild(args.workingDirectory, args.options);
   command.run();
+}
+
+/**
+ * Builds a Bazel target and attaches the Starlark debugger.
+ *
+ * @param adapter An object that implements {@link BazelCommandAdapter} from which the command's
+ *     arguments will be determined.
+ */
+function bazelBuildTargetWithDebugging(adapter: BazelCommandAdapter) {
+  const args = adapter.getBazelCommandArgs();
+  vscode.debug.startDebugging(
+    undefined,
+    {
+      name: "On-demand Bazel Build Debug",
+      request: "launch",
+      type: "bazel-launch-build",
+      args: args.options,
+      bazelCommand: "build",
+      bazelExecutablePath: getDefaultBazelExecutablePath(),
+      cwd: args.workingDirectory
+    }
+  );
 }
 
 /**
