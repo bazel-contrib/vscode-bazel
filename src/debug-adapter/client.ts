@@ -13,10 +13,38 @@
 // limitations under the License.
 
 import * as child_process from "child_process";
-import { DebugSession, InitializedEvent, OutputEvent, TerminatedEvent } from "vscode-debugadapter";
+import * as fs from "fs";
+import * as path from "path";
+import {
+  Breakpoint,
+  ContinuedEvent,
+  DebugSession,
+  InitializedEvent,
+  OutputEvent,
+  Source,
+  StackFrame,
+  StoppedEvent,
+  TerminatedEvent,
+  Thread
+} from "vscode-debugadapter";
 import { DebugProtocol } from "vscode-debugprotocol";
 import { BazelDebugConnection } from "./connection";
 import { skylark_debugging } from "./debug_protocol";
+import { Handles } from "./handles";
+
+/**
+ * Returns a {@code number} equivalent to the given {@code number} or {@code Long}.
+ *
+ * @param value If a {@code number}, the value itself is returned; if it is a {@code Long}, its
+ *     equivalent is returned.
+ * @returns A {@code number} equivalent to the given {@code number} or {@code Long}.
+ */
+function number64(value: (number | Long)): number {
+  if (value instanceof Number) {
+    return <number>value;
+  }
+  return (<Long>value).toNumber();
+}
 
 /** Arguments that the Bazel debug adapter supports for "attach" requests. */
 interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
@@ -50,7 +78,17 @@ class BazelDebugSession extends DebugSession {
   private bazelConnection: BazelDebugConnection;
 
   /** Keeps track of whether a Bazel child process is currently running. */
-  private isBazelRunning: boolean
+  private isBazelRunning: boolean;
+
+  private bazelInfo = new Map<string, string>();
+
+  private sourceBreakpoints = new Map<string, DebugProtocol.Breakpoint[]>();
+
+  private pausedThreads = new Map<number, skylark_debugging.IPausedThread>();
+
+  private frameHandles = new Handles<skylark_debugging.IFrame>();
+
+  private frameThreadIds = new Map<number, number>();
 
   /** Initializes a new Bazel debug session. */
   public constructor() {
@@ -78,24 +116,26 @@ class BazelDebugSession extends DebugSession {
     response: DebugProtocol.ConfigurationDoneResponse,
     args: DebugProtocol.ConfigurationDoneArguments
   ) {
-    // TODO(allevato): Send requests to Bazel to set up breakpoints.
     await this.bazelConnection.sendRequest({
       startDebugging: skylark_debugging.StartDebuggingRequest.create()
     });
+
     this.sendResponse(response);
   }
 
-  protected launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
+  protected async launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
     const port = args.port || 7300;
     const verbose = args.verbose || false;
 
     const bazelExecutable = this.bazelExecutable(args);
+    this.bazelInfo = await this.getBazelInfo(bazelExecutable, args.cwd);
+
     const bazelArgs = [
       args.bazelCommand,
       "--color=yes",
       "--experimental_skylark_debug",
       `--experimental_skylark_debug_server_port=${port}`,
-      `--experimental_skylark_debug_verbose_logging=${verbose}`
+      `--experimental_skylark_debug_verbose_logging=${verbose}`,
     ].concat(args.args)
 
     this.launchBazel(bazelExecutable, args.cwd, bazelArgs);
@@ -126,7 +166,43 @@ class BazelDebugSession extends DebugSession {
     response: DebugProtocol.SetBreakpointsResponse,
     args: DebugProtocol.SetBreakpointsArguments
   ) {
-    // TODO(allevato): Implement this.
+    const breakpoints = new Array<Breakpoint>();
+
+    for (const line of args.lines || []) {
+      // TODO(allevato): It would be nice to verify breakpoints (i.e., that they've been placed on
+      // valid lines of code), but that's tricky with the information we have here. Perhaps with a
+      // language server, we could match it up with the AST.
+      const bp = <DebugProtocol.Breakpoint>new Breakpoint(true, line);
+      breakpoints.push(bp);
+    }
+
+    // VS Code passes us the absolute path to the file, but Bazel's debugger will match against
+    // paths beneath the output_base. It appears that even .bzl files in the same workspace as the
+    // one containing the target being built will be found in the "external" subtree.
+    const workspaceName = path.basename(this.bazelInfo.get("execution_root"));
+    const relativeSourcePath = path.relative(this.bazelInfo.get("workspace"), args.source.path);
+    const sourcePathInExternal = path.join(
+      this.bazelInfo.get("output_base"), "external", workspaceName, relativeSourcePath);
+    this.sourceBreakpoints.set(sourcePathInExternal, breakpoints);
+
+    // Convert to Bazel breakpoints.
+    const bazelBreakpoints = new Array<skylark_debugging.Breakpoint>();
+    for (const [path, breakpoints] of this.sourceBreakpoints) {
+      for (const bp of breakpoints) {
+        bazelBreakpoints.push(skylark_debugging.Breakpoint.create({
+          location: skylark_debugging.Location.create({
+            path: path,
+            lineNumber: bp.line
+          })
+        }));
+      }
+    }
+
+    this.bazelConnection.sendRequest({
+      setBreakpoints: skylark_debugging.SetBreakpointsRequest.create({
+        breakpoint: bazelBreakpoints
+      })
+    });
     this.sendResponse(response);
   }
 
@@ -140,16 +216,45 @@ class BazelDebugSession extends DebugSession {
 
   // Thread, stack frame, and variable requests
 
-  protected threadsRequest(response: DebugProtocol.ThreadsResponse) {
-    // TODO(allevato): Implement this.
+  protected async threadsRequest(response: DebugProtocol.ThreadsResponse) {
+    response.body = {
+      threads: Array.from(this.pausedThreads.values()).map((bazelThread) => {
+        return new Thread(number64(bazelThread.id), bazelThread.name);
+      })
+    };
     this.sendResponse(response);
   }
 
-  protected stackTraceRequest(
+  protected async stackTraceRequest(
     response: DebugProtocol.StackTraceResponse,
     args: DebugProtocol.StackTraceArguments
   ) {
-    // TODO(allevato): Implement this.
+    const event = await this.bazelConnection.sendRequest({
+      listFrames: skylark_debugging.ListFramesRequest.create({
+        threadId: args.threadId
+      })
+    });
+
+    const bazelFrames = event.listFrames.frame;
+    const vsFrames = new Array<StackFrame>();
+    for (const bazelFrame of bazelFrames) {
+      const frameHandle = this.frameHandles.create(bazelFrame);
+      this.frameThreadIds.set(frameHandle, args.threadId);
+
+      const location = bazelFrame.location;
+      const vsFrame = new StackFrame(frameHandle, bazelFrame.functionName || "<global scope>");
+      if (location) {
+        // Resolve the real path to the file, which will make sure that when the user interacts with
+        // the stack frame, VS Code loads the file from it's actual path instead of from a location
+        // inside Bazel's output base.
+        const sourcePath = fs.realpathSync(location.path);
+        vsFrame.source = new Source(path.basename(sourcePath), sourcePath);
+        vsFrame.line = location.lineNumber;
+      }
+      vsFrames.push(vsFrame);
+    }
+
+    response.body = { stackFrames: vsFrames, totalFrames: vsFrames.length };
     this.sendResponse(response);
   }
 
@@ -183,8 +288,14 @@ class BazelDebugSession extends DebugSession {
     response: DebugProtocol.ContinueResponse,
     args: DebugProtocol.ContinueArguments
   ) {
-    // TODO(allevato): Implement this.
+    response.body = { allThreadsContinued: false };
     this.sendResponse(response);
+
+    this.bazelConnection.sendRequest({
+      continueExecution: skylark_debugging.ContinueExecutionRequest.create({
+        threadId: args.threadId
+      })
+    });
   }
 
   protected nextRequest(
@@ -217,7 +328,27 @@ class BazelDebugSession extends DebugSession {
    * @param event The event that was received from the server.
    */
   private handleBazelEvent(event: skylark_debugging.DebugEvent) {
-    // TODO(allevato): Implement this.
+    switch (event.payload) {
+      case "threadPaused":
+        this.handleThreadPaused(event.threadPaused);
+        break;
+      case "threadContinued":
+        this.handleThreadContinued(event.threadContinued);
+        break;
+      default:
+        break;
+    }
+  }
+
+  private handleThreadPaused(event: skylark_debugging.IThreadPausedEvent) {
+    this.pausedThreads.set(number64(event.thread.id), event.thread);
+    this.sendEvent(new StoppedEvent(
+      "a breakpoint", number64(event.thread.id)));
+  }
+
+  private handleThreadContinued(event: skylark_debugging.IThreadContinuedEvent) {
+    this.sendEvent(new ContinuedEvent(number64(event.threadId)));
+    this.pausedThreads.delete(number64(event.threadId));
   }
 
   /** Returns the path to the Bazel executable from launch arguments, or a reasonable default. */
@@ -227,6 +358,38 @@ class BazelDebugSession extends DebugSession {
       return "bazel";
     }
     return bazelExecutable;
+  }
+
+  /**
+   * Invokes {@code bazel info} and returns the information in a map.
+   *
+   * @param bazelExecutable The name/path of the Bazel executable.
+   * @param cwd The working directory in which Bazel should be launched.
+   */
+  private getBazelInfo(bazelExecutable: string, cwd: string): Promise<Map<string, string>> {
+    return new Promise((resolve, reject) => {
+      const execOptions = {
+        cwd: cwd,
+        maxBuffer: 500 * 1024
+      };
+      child_process.exec(
+        [bazelExecutable, "info"].join(" "),
+        execOptions,
+        (error: Error, stdout: string, stderr: string) => {
+          if (error) {
+            reject(error);
+          } else {
+            const keyValues = new Map<string, string>();
+            const lines = stdout.trim().split("\n");
+            for (const line of lines) {
+              const [key, value] = line.split(":", 2);
+              keyValues.set(key.trim(), value.trim());
+            }
+            resolve(keyValues);
+          }
+        }
+      );
+    });
   }
 
   /**
