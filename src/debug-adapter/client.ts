@@ -289,20 +289,15 @@ class BazelDebugSession extends DebugSession {
     args: DebugProtocol.ContinueArguments
   ) {
     response.body = { allThreadsContinued: false };
+    this.sendControlFlowRequest(args.threadId, skylark_debugging.Stepping.NONE);
     this.sendResponse(response);
-
-    this.bazelConnection.sendRequest({
-      continueExecution: skylark_debugging.ContinueExecutionRequest.create({
-        threadId: args.threadId
-      })
-    });
   }
 
   protected nextRequest(
     response: DebugProtocol.NextResponse,
     args: DebugProtocol.NextArguments
   ) {
-    // TODO(allevato): Implement this.
+    this.sendControlFlowRequest(args.threadId, skylark_debugging.Stepping.OVER);
     this.sendResponse(response);
   }
 
@@ -310,7 +305,7 @@ class BazelDebugSession extends DebugSession {
     response: DebugProtocol.StepInResponse,
     args: DebugProtocol.StepInArguments
   ) {
-    // TODO(allevato): Implement this.
+    this.sendControlFlowRequest(args.threadId, skylark_debugging.Stepping.INTO);
     this.sendResponse(response);
   }
 
@@ -318,8 +313,23 @@ class BazelDebugSession extends DebugSession {
     response: DebugProtocol.StepOutResponse,
     args: DebugProtocol.StepOutArguments
   ) {
-    // TODO(allevato): Implement this.
+    this.sendControlFlowRequest(args.threadId, skylark_debugging.Stepping.OUT);
     this.sendResponse(response);
+  }
+
+  /**
+   * Sends a request to Bazel to continue the execution of the given thread, with stepping behavior.
+   *
+   * @param threadId The identifier of the thread to continue.
+   * @param stepping The stepping behavior of the request (OVER, INTO, OUT, or NONE).
+   */
+  private sendControlFlowRequest(threadId: number, stepping: skylark_debugging.Stepping) {
+    this.bazelConnection.sendRequest({
+      continueExecution: skylark_debugging.ContinueExecutionRequest.create({
+        threadId: threadId,
+        stepping: stepping
+      })
+    });
   }
 
   /**
