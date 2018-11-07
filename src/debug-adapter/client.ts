@@ -21,11 +21,13 @@ import {
   DebugSession,
   InitializedEvent,
   OutputEvent,
+  Scope,
   Source,
   StackFrame,
   StoppedEvent,
   TerminatedEvent,
-  Thread
+  Thread,
+  Variable
 } from "vscode-debugadapter";
 import { DebugProtocol } from "vscode-debugprotocol";
 import { BazelDebugConnection } from "./connection";
@@ -80,15 +82,33 @@ class BazelDebugSession extends DebugSession {
   /** Keeps track of whether a Bazel child process is currently running. */
   private isBazelRunning: boolean;
 
+  /** Caches the result of invoking {@code bazel info} when debugging begins. */
   private bazelInfo = new Map<string, string>();
 
+  /** Currently set breakpoints, keyed by source path. */
   private sourceBreakpoints = new Map<string, DebugProtocol.Breakpoint[]>();
 
+  /** Information about paused threads, keyed by thread number. */
   private pausedThreads = new Map<number, skylark_debugging.IPausedThread>();
 
+  /** An auto-indexed mapping of stack frames. */
   private frameHandles = new Handles<skylark_debugging.IFrame>();
 
+  /**
+   * An auto-indexed mapping of variables references, which may be either scopes (whose values are
+   * directly members of the scope) or values with child values (which need to be requested by
+   * contacting the debug server).
+   */
+  private variableHandles = new Handles<skylark_debugging.IScope | skylark_debugging.IValue>();
+
+  /** A mapping from frame reference numbers to thread IDs. */
   private frameThreadIds = new Map<number, number>();
+
+  /** A mapping from scope reference numbers to thread IDs. */
+  private scopeThreadIds = new Map<number, number>();
+
+  /** A mapping from value reference numbers to thread IDs. */
+  private valueThreadIds = new Map<number, number>();
 
   /** Initializes a new Bazel debug session. */
   public constructor() {
@@ -123,7 +143,10 @@ class BazelDebugSession extends DebugSession {
     this.sendResponse(response);
   }
 
-  protected async launchRequest(response: DebugProtocol.LaunchResponse, args: LaunchRequestArguments) {
+  protected async launchRequest(
+    response: DebugProtocol.LaunchResponse,
+    args: LaunchRequestArguments
+  ) {
     const port = args.port || 7300;
     const verbose = args.verbose || false;
 
@@ -262,15 +285,69 @@ class BazelDebugSession extends DebugSession {
     response: DebugProtocol.ScopesResponse,
     args: DebugProtocol.ScopesArguments
   ) {
-    // TODO(allevato): Implement this.
+    const frameThreadId = this.frameThreadIds.get(args.frameId);
+    const bazelFrame = this.frameHandles.get(args.frameId);
+
+    const vsScopes = new Array<Scope>();
+    for (const bazelScope of bazelFrame.scope) {
+      const scopeHandle = this.variableHandles.create(bazelScope);
+      const vsScope = new Scope(bazelScope.name, scopeHandle);
+      vsScopes.push(vsScope);
+
+      // Associate the thread ID from the frame with the scope so that it can be passed through to
+      // child values as well.
+      this.scopeThreadIds.set(scopeHandle, frameThreadId);
+    }
+
+    response.body = { scopes: vsScopes };
     this.sendResponse(response);
   }
 
-  protected variablesRequest(
+  protected async variablesRequest(
     response: DebugProtocol.VariablesResponse,
     args: DebugProtocol.VariablesArguments
   ) {
-    // TODO(allevato): Implement this.
+    let bazelValues: skylark_debugging.IValue[];
+    let threadId: number;
+
+    const reference = args.variablesReference;
+    const scopeOrParentValue = this.variableHandles.get(reference);
+    if (scopeOrParentValue instanceof skylark_debugging.Scope) {
+      // If the reference is to a scope, then we ask for the thread ID associated with the scope so
+      // that we can associate it later with the top-level values in the scope.
+      threadId = this.scopeThreadIds.get(reference);
+      bazelValues = (<skylark_debugging.IScope>scopeOrParentValue).binding;
+    } else if (scopeOrParentValue instanceof skylark_debugging.Value) {
+      // If the reference is to a value, we need to send a request to Bazel to get its child values.
+      threadId = this.valueThreadIds.get(reference);
+      bazelValues = (await this.bazelConnection.sendRequest({
+        getChildren: skylark_debugging.GetChildrenRequest.create({
+          threadId: threadId,
+          valueId: (<skylark_debugging.IValue>scopeOrParentValue).id
+        })
+      })).getChildren.children;
+    } else {
+      bazelValues = [];
+      threadId = 0;
+    }
+
+    const variables = new Array<Variable>();
+    for (const value of bazelValues) {
+      let valueHandle: number;
+      if (value.hasChildren && value.id) {
+        // Record the value in a handle so that its children can be queried when the user expands it
+        // in the UI. We also record the thread ID for the value since we need it when we make that
+        // request later.
+        valueHandle = this.variableHandles.create(value);
+        this.valueThreadIds.set(valueHandle, threadId);
+      } else {
+        valueHandle = 0;
+      }
+      const variable = new Variable(value.label, value.description, valueHandle);
+      variables.push(variable);
+    }
+
+    response.body = { variables: variables };
     this.sendResponse(response);
   }
 
