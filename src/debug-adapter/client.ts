@@ -401,6 +401,13 @@ class BazelDebugSession extends DebugSession {
    * @param stepping The stepping behavior of the request (OVER, INTO, OUT, or NONE).
    */
   private sendControlFlowRequest(threadId: number, stepping: skylark_debugging.Stepping) {
+    // Clear out all the cached state when the user resumes a thread.
+    this.frameHandles.clear();
+    this.variableHandles.clear();
+    this.frameThreadIds.clear();
+    this.scopeThreadIds.clear();
+    this.valueThreadIds.clear();
+
     this.bazelConnection.sendRequest({
       continueExecution: skylark_debugging.ContinueExecutionRequest.create({
         threadId: threadId,
