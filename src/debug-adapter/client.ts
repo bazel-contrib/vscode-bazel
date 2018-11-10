@@ -351,11 +351,34 @@ class BazelDebugSession extends DebugSession {
     this.sendResponse(response);
   }
 
-  protected evaluateRequest(
+  protected async evaluateRequest(
     response: DebugProtocol.EvaluateResponse,
     args: DebugProtocol.EvaluateArguments
   ) {
-    // TODO(allevato): Implement this.
+    const threadId = this.frameThreadIds.get(args.frameId);
+
+    const value = (await this.bazelConnection.sendRequest({
+      evaluate: skylark_debugging.EvaluateRequest.create({
+        statement: args.expression,
+        threadId: threadId
+      })
+    })).evaluate.result;
+
+    let valueHandle: number;
+    if (value.hasChildren && value.id) {
+        // Record the value in a handle so that its children can be queried when the user expands it
+        // in the UI. We also record the thread ID for the value since we need it when we make that
+        // request later.
+        valueHandle = this.variableHandles.create(value);
+      this.valueThreadIds.set(valueHandle, threadId);
+    } else {
+      valueHandle = 0;
+    }
+
+    response.body = {
+      result: value.description,
+      variablesReference: valueHandle
+    };
     this.sendResponse(response);
   }
 
