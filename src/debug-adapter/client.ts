@@ -127,7 +127,6 @@ class BazelDebugSession extends DebugSession {
   ) {
     response.body = response.body || {};
     response.body.supportsConfigurationDoneRequest = true;
-    response.body.supportsFunctionBreakpoints = true;
     response.body.supportsEvaluateForHovers = true;
     this.sendResponse(response);
   }
@@ -226,14 +225,6 @@ class BazelDebugSession extends DebugSession {
         breakpoint: bazelBreakpoints
       })
     });
-    this.sendResponse(response);
-  }
-
-  protected setFunctionBreakPointsRequest(
-    response: DebugProtocol.SetFunctionBreakpointsResponse,
-    args: DebugProtocol.SetFunctionBreakpointsArguments
-  ) {
-    // TODO(allevato): Implement this.
     this.sendResponse(response);
   }
 
