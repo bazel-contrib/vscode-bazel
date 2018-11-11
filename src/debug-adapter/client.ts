@@ -16,7 +16,6 @@ import * as child_process from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 import {
-  Breakpoint,
   ContinuedEvent,
   DebugSession,
   InitializedEvent,
@@ -78,6 +77,9 @@ interface LaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
 class BazelDebugSession extends DebugSession {
   /** Manages communication with the Bazel debugging server. */
   private bazelConnection: BazelDebugConnection;
+
+  /** The spawned Bazel process. */
+  private bazelProcess: child_process.ChildProcess;
 
   /** Keeps track of whether a Bazel child process is currently running. */
   private isBazelRunning: boolean;
@@ -165,7 +167,6 @@ class BazelDebugSession extends DebugSession {
 
     this.bazelConnection = new BazelDebugConnection("localhost", port, this.debugLog);
     this.bazelConnection.on("connect", () => {
-      // TODO: Implement some UI feedback here.
       this.sendResponse(response);
       this.sendEvent(new InitializedEvent());
     });
@@ -179,7 +180,11 @@ class BazelDebugSession extends DebugSession {
     response: DebugProtocol.DisconnectResponse,
     args: DebugProtocol.DisconnectArguments
   ) {
-    // TODO(allevato): Implement this.
+    // Kill the spawned Bazel process on disconnect. The Bazel server will stay up, but this should
+    // terminate processing of the invoked command.
+    this.bazelProcess.kill("SIGKILL");
+    this.bazelProcess = null;
+    this.isBazelRunning = false;
     this.sendResponse(response);
   }
 
@@ -502,7 +507,7 @@ class BazelDebugSession extends DebugSession {
   private launchBazel(bazelExecutable: string, cwd: string, args: string[]) {
     const options = { cwd: cwd };
 
-    const bazelProcess = child_process.spawn(bazelExecutable, args, options)
+    this.bazelProcess = child_process.spawn(bazelExecutable, args, options)
       .on("error", (error) => {
         this.onBazelTerminated(error);
       }).on("exit", (code, signal) => {
@@ -512,10 +517,10 @@ class BazelDebugSession extends DebugSession {
 
     // We intentionally render stderr from Bazel as stdout in VS Code so that normal build log text
     // shows up as white instead of red. ANSI color codes are applied as expected in either case.
-    bazelProcess.stdout.on("data", (data: string) => {
+    this.bazelProcess.stdout.on("data", (data: string) => {
       this.onBazelOutput(data);
     });
-    bazelProcess.stderr.on("data", (data: string) => {
+    this.bazelProcess.stderr.on("data", (data: string) => {
       this.onBazelOutput(data);
     });
   }
