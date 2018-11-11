@@ -139,6 +139,11 @@
                     "group": "build"
                 },
                 {
+                    "command": "bazel.buildTargetWithDebugging",
+                    "when": "view == bazelWorkspace && viewItem == testRule",
+                    "group": "build"
+                },
+                {
                     "command": "bazel.testTarget",
                     "when": "view == bazelWorkspace && viewItem == testRule",
                     "group": "build"
