@@ -86,7 +86,7 @@ class BazelDebugSession extends DebugSession {
   private bazelInfo = new Map<string, string>();
 
   /** Currently set breakpoints, keyed by source path. */
-  private sourceBreakpoints = new Map<string, DebugProtocol.Breakpoint[]>();
+  private sourceBreakpoints = new Map<string, DebugProtocol.SourceBreakpoint[]>();
 
   /** Information about paused threads, keyed by thread number. */
   private pausedThreads = new Map<number, skylark_debugging.IPausedThread>();
@@ -127,6 +127,7 @@ class BazelDebugSession extends DebugSession {
   ) {
     response.body = response.body || {};
     response.body.supportsConfigurationDoneRequest = true;
+    response.body.supportsConditionalBreakpoints = true;
     response.body.supportsEvaluateForHovers = true;
     this.sendResponse(response);
   }
@@ -188,16 +189,6 @@ class BazelDebugSession extends DebugSession {
     response: DebugProtocol.SetBreakpointsResponse,
     args: DebugProtocol.SetBreakpointsArguments
   ) {
-    const breakpoints = new Array<Breakpoint>();
-
-    for (const line of args.lines || []) {
-      // TODO(allevato): It would be nice to verify breakpoints (i.e., that they've been placed on
-      // valid lines of code), but that's tricky with the information we have here. Perhaps with a
-      // language server, we could match it up with the AST.
-      const bp = <DebugProtocol.Breakpoint>new Breakpoint(true, line);
-      breakpoints.push(bp);
-    }
-
     // VS Code passes us the absolute path to the file, but Bazel's debugger will match against
     // paths beneath the output_base. It appears that even .bzl files in the same workspace as the
     // one containing the target being built will be found in the "external" subtree.
@@ -205,7 +196,7 @@ class BazelDebugSession extends DebugSession {
     const relativeSourcePath = path.relative(this.bazelInfo.get("workspace"), args.source.path);
     const sourcePathInExternal = path.join(
       this.bazelInfo.get("output_base"), "external", workspaceName, relativeSourcePath);
-    this.sourceBreakpoints.set(sourcePathInExternal, breakpoints);
+    this.sourceBreakpoints.set(sourcePathInExternal, args.breakpoints);
 
     // Convert to Bazel breakpoints.
     const bazelBreakpoints = new Array<skylark_debugging.Breakpoint>();
@@ -215,7 +206,8 @@ class BazelDebugSession extends DebugSession {
           location: skylark_debugging.Location.create({
             path: path,
             lineNumber: bp.line
-          })
+          }),
+          expression: bp.condition
         }));
       }
     }
