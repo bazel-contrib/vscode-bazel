@@ -4,6 +4,12 @@
     "description": "Bazel BUILD integration",
     "version": "0.0.1",
     "publisher": "BazelBuild",
+    "license": "Apache-2.0",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/bazelbuild/vscode-bazel.git"
+    },
+    "icon": "media/bazel-logo.png",
     "engines": {
         "vscode": "^1.27.0"
     },
