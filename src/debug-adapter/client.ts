@@ -475,6 +475,9 @@ class BazelDebugSession extends DebugSession {
     return new Promise((resolve, reject) => {
       const execOptions = {
         cwd: cwd,
+        // The maximum amount of data allowed on stdout. 500KB should be plenty of `bazel info`, but
+        // if this becomes problematic we can switch to the event-based `child_process` APIs
+        // instead.
         maxBuffer: 500 * 1024
       };
       child_process.exec(
