@@ -256,7 +256,7 @@ class BazelTargetTreeItem implements BazelCommandAdapter, BazelTreeItem {
   }
 
   getTooltip(): string {
-    return `//${this.queriedRule.name}`;
+    return `${this.queriedRule.name}`;
   }
 
   getCommand(): vscode.Command | undefined {
