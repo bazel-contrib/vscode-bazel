@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as path from 'path';
 import * as vscode from 'vscode';
+import { getBazelRuleIcon } from './icons';
 import { BazelCommandAdapter, BazelCommandArgs } from '../bazel/commands';
 import { BazelQuery, QueriedRule } from '../bazel/query';
-import * as path from 'path';
 
 /** An interface implemented by items in the Bazel tree provider. */
 interface BazelTreeItem {
@@ -38,7 +39,7 @@ interface BazelTreeItem {
   getLabel(): string;
 
   /** Returns the icon that should be shown next to the tree item. */
-  getIcon(): vscode.ThemeIcon | undefined;
+  getIcon(): vscode.ThemeIcon | string | undefined;
 
   /** Returns the tooltip that should be displayed when the user hovers over the tree item. */
   getTooltip(): string | undefined;
@@ -71,7 +72,7 @@ class BazelWorkspaceFolderTreeItem implements BazelTreeItem {
     return this.workspaceFolder.name;
   }
 
-  getIcon(): vscode.ThemeIcon | undefined {
+  getIcon(): vscode.ThemeIcon {
     return vscode.ThemeIcon.Folder;
   }
 
@@ -213,7 +214,7 @@ class BazelPackageTreeItem implements BazelTreeItem {
     return this.packagePath.substring(this.parentPackagePath.length + 1);
   }
 
-  getIcon(): vscode.ThemeIcon | undefined {
+  getIcon(): vscode.ThemeIcon {
     return vscode.ThemeIcon.Folder;
   }
 
@@ -252,9 +253,8 @@ class BazelTargetTreeItem implements BazelCommandAdapter, BazelTreeItem {
     return `${targetName}  (${this.queriedRule.ruleClass})`;
   }
 
-  getIcon(): vscode.ThemeIcon | undefined {
-    // TODO(allevato): Use different icons based on the rule class.
-    return vscode.ThemeIcon.File;
+  getIcon(): vscode.ThemeIcon | string {
+    return getBazelRuleIcon(this.queriedRule);
   }
 
   getTooltip(): string {
