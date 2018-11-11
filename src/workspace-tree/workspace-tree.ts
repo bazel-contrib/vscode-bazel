@@ -134,7 +134,9 @@ class BazelWorkspaceFolderTreeItem implements BazelTreeItem {
       const packagePath = packagePaths[groupStart];
 
       let groupEnd = groupStart + 1;
-      while (groupEnd < endIndex && packagePaths[groupEnd].startsWith(packagePath)) {
+      // Make sure to check for a slash after the prefix so that we don't erroneously collapse
+      // something like "foo" and "foobar".
+      while (groupEnd < endIndex && packagePaths[groupEnd].startsWith(packagePath + "/")) {
         groupEnd++;
       }
 
