@@ -285,12 +285,24 @@ class BazelTargetTreeItem implements BazelCommandAdapter, BazelTreeItem {
 
 /** Provides a tree of Bazel build packages and targets for the VS Code explorer interface. */
 export class BazelWorkspaceTreeProvider implements vscode.TreeDataProvider<BazelTreeItem> {
+  /** Fired when BUILD files change in the workspace. */
+  private onDidChangeTreeDataEmitter = new vscode.EventEmitter<BazelTreeItem | undefined>();
+
+  onDidChangeTreeData: vscode.Event<BazelTreeItem | undefined> =
+    this.onDidChangeTreeDataEmitter.event;
+
   /**
    * Initializes a new tree provider with the given extension context.
    * 
    * @param context The VS Code extension context.
    */
-  constructor(private context: vscode.ExtensionContext) { }
+  constructor(private context: vscode.ExtensionContext) {
+    const buildWatcher = vscode.workspace.createFileSystemWatcher(
+      "**/{BUILD,BUILD.bazel}", false, false, false);
+    buildWatcher.onDidChange(this.onBuildFilesChanged, this, context.subscriptions);
+    buildWatcher.onDidCreate(this.onBuildFilesChanged, this, context.subscriptions);
+    buildWatcher.onDidDelete(this.onBuildFilesChanged, this, context.subscriptions);
+  }
 
   getChildren(element?: BazelTreeItem): Thenable<BazelTreeItem[]> {
     // If we're given an element, we're not asking for the top-level elements, so just delegate to
@@ -304,13 +316,13 @@ export class BazelWorkspaceTreeProvider implements vscode.TreeDataProvider<Bazel
       // workspace folder; just show its packages at the top level.
       if (vscode.workspace.workspaceFolders.length == 1) {
         const folderItem = new BazelWorkspaceFolderTreeItem(vscode.workspace.workspaceFolders[0]);
-        return folderItem.getChildren()
+        return folderItem.getChildren();
       }
 
       // If the user has multiple workspace folders open, then show them as individual top level
       // items.
       return Promise.resolve(vscode.workspace.workspaceFolders.map((folder) => {
-        return new BazelWorkspaceFolderTreeItem(folder)
+        return new BazelWorkspaceFolderTreeItem(folder);
       }));
     }
 
@@ -330,5 +342,16 @@ export class BazelWorkspaceTreeProvider implements vscode.TreeDataProvider<Bazel
     treeItem.tooltip = element.getTooltip();
     treeItem.command = element.getCommand();
     return treeItem;
+  }
+
+  /**
+   * Called to update the tree when a BUILD file is created, deleted, or changed.
+   *
+   * @param uri The file system URI of the file that changed.
+   */
+  private onBuildFilesChanged(uri: vscode.Uri) {
+    // TODO(allevato): Look into firing the event only for tree items that are affected by the
+    // change.
+    this.onDidChangeTreeDataEmitter.fire();
   }
 }
