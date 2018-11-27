@@ -17,10 +17,11 @@ import { BazelWorkspaceTreeProvider } from '../workspace-tree/workspace-tree';
 import {
   BazelBuild, BazelCommandAdapter, BazelTest, getDefaultBazelExecutablePath
 } from '../bazel/commands';
+import { BazelBuildCodeLensProvider } from '../codelens/provider';
 
 /**
  * Called when the extension is activated; that is, when its first command is executed.
- * 
+ *
  * @param context The extension context.
  */
 export function activate(context: vscode.ExtensionContext) {
@@ -31,8 +32,16 @@ export function activate(context: vscode.ExtensionContext) {
     // Commands
     vscode.commands.registerCommand("bazel.buildTarget", bazelBuildTarget),
     vscode.commands.registerCommand("bazel.buildTargetWithDebugging",
-                                    bazelBuildTargetWithDebugging),
+      bazelBuildTargetWithDebugging),
     vscode.commands.registerCommand("bazel.testTarget", bazelTestTarget),
+    // CodeLens provider for BUILD files
+    vscode.languages.registerCodeLensProvider(
+      [
+        { pattern: '**/BUILD' },
+        { pattern: '**/BUILD.bazel' }
+      ],
+      new BazelBuildCodeLensProvider()
+    ),
   );
 }
 
@@ -41,7 +50,7 @@ export function deactivate() { }
 
 /**
  * Builds a Bazel target and streams output to the terminal.
- * 
+ *
  * @param adapter An object that implements {@link BazelCommandAdapter} from which the command's
  *     arguments will be determined.
  */
