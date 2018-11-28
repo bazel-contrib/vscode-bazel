@@ -2,7 +2,7 @@
     "name": "vscode-bazel",
     "displayName": "vscode-bazel",
     "description": "Bazel BUILD integration",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "publisher": "BazelBuild",
     "license": "Apache-2.0",
     "repository": {
@@ -173,14 +173,14 @@
     },
     "devDependencies": {
         "@types/node": "^6.0.40",
-        "@types/xml2js": "^0.4.3",
-        "protobufjs": "^6.8.0",
         "typescript": "^3.0.0",
-        "vscode": "^1.0.0",
-        "xml2js": "^0.4.19"
+        "vscode": "^1.0.0"
     },
     "dependencies": {
+        "@types/xml2js": "^0.4.3",
         "vscode-debugadapter": "^1.27.0",
-        "vscode-debugprotocol": "^1.27.0"
+        "vscode-debugprotocol": "^1.27.0",
+        "protobufjs": "^6.8.0",
+        "xml2js": "^0.4.19"
     }
 }
