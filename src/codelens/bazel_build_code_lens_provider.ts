@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
-import { BazelQuery, QueryResult } from "../bazel";
+
+import { BazelQuery, getBazelWorkspaceFolder, QueryResult } from "../bazel";
 import { CodeLensCommandAdapter } from "./code_lens_command_adapter";
 
 /** Provids CodeLenses for targets in Bazel BUILD files. */
@@ -35,7 +35,7 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
     if (workspace === undefined) {
       vscode.window.showWarningMessage(
         "Bazel BUILD CodeLens unavailable as currently opened file is not in " +
-          "a Bazel workspace",
+        "a Bazel workspace",
       );
       return [];
     }
@@ -99,35 +99,4 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
 
     return result;
   }
-}
-
-/**
- * Search for the path to the directory that has the Bazel WORKSPACE file for
- * the given file.
- *
- * If multiple directories along the path to the file has files called
- * "WORKSPACE", the lowest path is returned.
- *
- * @param fsPath The path to a file in a Bazel workspace.
- * @returns The path to the directory with the Bazel WORKSPACE file if found,
- *     others undefined.
- */
-function getBazelWorkspaceFolder(fsPath: string): string | undefined {
-  let dirname: string;
-  do {
-    dirname = path.dirname(fsPath);
-
-    const workspace = path.join(dirname, "WORKSPACE");
-    try {
-      fs.accessSync(workspace, fs.constants.F_OK);
-      // WORKSPACE file is accessible. We have found the Bazel workspace
-      // directory.
-      return dirname;
-    } catch (err) {
-      // Intentionally do nothing; just try the next parent directory.
-    }
-    fsPath = dirname;
-  } while (dirname !== "");
-
-  return undefined;
 }
