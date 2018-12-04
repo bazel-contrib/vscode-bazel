@@ -8,6 +8,8 @@
     "[typescript]": {
         "editor.tabSize": 2,
         "editor.detectIndentation": false,
-        "editor.rulers": [100]
-    }
+        "editor.rulers": [80]
+    },
+    "prettier.tslintIntegration": true,
+    "editor.formatOnSave": true,
 }
