@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { BazelQuery, QueryResult } from "../bazel/query"
 import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
+
+import { BazelQuery, QueryResult } from "../bazel/query"
 import { BazelTest, BazelBuild, BazelCommandAdapter, BazelCommandArgs } from "../bazel/commands";
 
 /**
@@ -52,23 +53,23 @@ class CodeLensCommandAdapter implements BazelCommandAdapter {
  * @param fsPath Path to a file in a Bazel workspace
  */
 function getBazelWorkspaceFolder(fsPath: string): string | undefined {
-  var b, d: string
+  var basename, dirname: string
   do {
     // The last element in the path
-    b = path.basename(fsPath);
+    basename = path.basename(fsPath);
     // The directory containing "b"
-    d = path.dirname(fsPath);
+    dirname = path.dirname(fsPath);
 
     // Potential WORKSPACE path
-    let w = path.join(d, "WORKSPACE");
+    let workspace = path.join(dirname, "WORKSPACE");
     try {
-      fs.accessSync(w, fs.constants.F_OK);
+      fs.accessSync(workspace, fs.constants.F_OK);
       // WORKSPACE file is accessible. We have found the Bazel workspace directory
-      return d;
+      return dirname;
     } catch (err) {
     }
-    fsPath = d;
-  } while (d !== "");
+    fsPath = dirname;
+  } while (dirname !== "");
 
   return undefined;
 }
@@ -85,27 +86,26 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
   addCodeLens(bazelWorkspaceDirectory: string, queryResult: QueryResult): vscode.CodeLens[] {
     let result = [];
 
-    for (let i = 0; i < queryResult.rules.length; i++) {
-      let r = queryResult.rules[i];
+    for (const rule of queryResult.rules) {
       // Source location in the BUILD file for this target
-      let loc = r.location;
+      let loc = rule.location;
       // Fully qualified name of the target
-      let target = r.name;
-      let rc = r.ruleClass;
+      let target = rule.name;
+      let rc = rule.ruleClass;
       var cmd: vscode.Command;
       if (rc.endsWith("_test")) {
         cmd = {
-          title: "Test " + target,
+          title: `Test ${target}`,
           command: "bazel.testTarget",
           arguments: [new CodeLensCommandAdapter(bazelWorkspaceDirectory, [target])],
-          tooltip: "Build " + target
+          tooltip: `Build ${target}`
         }
       } else {
         cmd = {
-          title: "Build " + target,
+          title: `Build ${target}`,
           command: "bazel.buildTarget",
           arguments: [new CodeLensCommandAdapter(bazelWorkspaceDirectory, [target])],
-          tooltip: "Build " + target
+          tooltip: `Build ${target}`
         }
       }
       result.push(new vscode.CodeLens(loc.range, cmd));
@@ -121,14 +121,14 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
    */
   async provideCodeLenses(document: vscode.TextDocument,
     token: vscode.CancellationToken): Promise<vscode.CodeLens[]> {
-    let w = getBazelWorkspaceFolder(document.uri.fsPath);
-    if (w === undefined) {
+    let workspace = getBazelWorkspaceFolder(document.uri.fsPath);
+    if (workspace === undefined) {
       vscode.window.showWarningMessage(
         "Bazel BUILD CodeLens unavailable as currently opened file is not in a Bazel workspace");
       return [];
     }
     // Path to the BUILD file relative to the workspace
-    let relPathToDoc = path.relative(w, document.uri.fsPath);
+    let relPathToDoc = path.relative(workspace, document.uri.fsPath);
     // Strip away the name of the BUILD file from the relative path
     let relDirWithDoc = path.dirname(relPathToDoc);
     // Strip away the "." if the BUILD file was in the same directory as the workspace
@@ -136,9 +136,9 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
       relDirWithDoc = "";
     }
     // Turn the relative path into a package label
-    let pkg = "//" + relDirWithDoc;
-    let queryResult = await new BazelQuery(w,
-      "'kind(rule, " + pkg + ":all)'", []).runAndParse();
-    return this.addCodeLens(w, queryResult);
+    let pkg = `//${relDirWithDoc}`;
+    let queryResult = await new BazelQuery(workspace,
+      `'kind(rule, ${pkg}:all)'`, []).runAndParse();
+    return this.addCodeLens(workspace, queryResult);
   }
 }
