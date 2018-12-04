@@ -6,6 +6,8 @@ This repository provides support for Bazel in Visual Studio.
 
 * **Bazel Build Targets** tree displays the build packages/targets in your
   workspace
+* **CodeLens** links in BUILD files to directly launch a build or test by simply
+  clicking on the targets
 * Debug Starlark code in your `.bzl` files during a build (set breakpoints, step
   through code, inspect variables, etc.)
 
