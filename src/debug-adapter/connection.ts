@@ -19,34 +19,47 @@ import * as protobuf from "protobufjs";
 import { skylark_debugging } from "./debug_protocol";
 
 /**
- * Manages the connection between the debug adapter and the debugging server running in Bazel.
+ * Manages the connection between the debug adapter and the debugging server
+ * running in Bazel.
  *
- * This class acts as a Node event emitter for asynchronous events from the server, and provides a
- * Promise-based API for handling responses from requests.
+ * This class acts as a Node event emitter for asynchronous events from the
+ * server, and provides a Promise-based API for handling responses from
+ * requests.
  */
 export class BazelDebugConnection extends EventEmitter {
   /** The socket used to connect to the debugging server in Bazel. */
   private socket: net.Socket;
 
-  /** A buffer that stores data read from the socket until a complete message is available. */
+  /**
+   * A buffer that stores data read from the socket until a complete message is
+   * available.
+   */
   private buffer: Buffer;
 
   /** Reads protobuf messages from the buffer. */
   private reader: protobuf.Reader;
 
-  /** A monotonically increasing sequence number used to uniquely identify requests. */
+  /**
+   * A monotonically increasing sequence number used to uniquely identify
+   * requests.
+   */
   private sequenceNumber = 1;
 
   /**
-   * Keeps track of promises for responses that have not yet been received from the server.
+   * Keeps track of promises for responses that have not yet been received from
+   * the server.
    *
-   * When the debug adapter sends a request to Bazel, a promise for the response is created and the
-   * resolve function for that promise is stored in this map, keyed by the sequence number of the
-   * request. Then, when the response with the matching sequence number is received from the server,
-   * we can look up the resolver, call it, and continue execution of the client code waiting on the
-   * promise.
+   * When the debug adapter sends a request to Bazel, a promise for the response
+   * is created and the resolve function for that promise is stored in this map,
+   * keyed by the sequence number of the request. Then, when the response with
+   * the matching sequence number is received from the server, we can look up
+   * the resolver, call it, and continue execution of the client code waiting on
+   * the promise.
    */
-  private pendingResolvers = new Map<String, (event: skylark_debugging.IDebugEvent) => void>();
+  private pendingResolvers = new Map<
+    string,
+    (event: skylark_debugging.IDebugEvent) => void
+  >();
 
   /**
    * Initializes a new debug connection and connects to the server.
@@ -57,7 +70,7 @@ export class BazelDebugConnection extends EventEmitter {
   public constructor(
     host: string,
     port: number,
-    private logger: (message: string, ...objects: any[]) => void
+    private logger: (message: string, ...objects: any[]) => void,
   ) {
     super();
 
@@ -66,18 +79,19 @@ export class BazelDebugConnection extends EventEmitter {
   }
 
   /**
-   * Sends a request to the Bazel debug server and returns a promise for its response.
+   * Sends a request to the Bazel debug server and returns a promise for its
+   * response.
    *
-   * @param options The options for the request. The sequence number will be populated by this
-   *     method.
+   * @param options The options for the request. The sequence number will be
+   *     populated by this method.
    * @returns A {@code Promise} for the response to the request.
    */
   public sendRequest(
-    options: skylark_debugging.IDebugRequest
+    options: skylark_debugging.IDebugRequest,
   ): Promise<skylark_debugging.IDebugEvent> {
     options.sequenceNumber = this.sequenceNumber++;
 
-    const promise = new Promise<skylark_debugging.IDebugEvent>(resolve => {
+    const promise = new Promise<skylark_debugging.IDebugEvent>((resolve) => {
       this.pendingResolvers.set(options.sequenceNumber.toString(), resolve);
     });
 
@@ -93,9 +107,10 @@ export class BazelDebugConnection extends EventEmitter {
   /**
    * Makes an attempt to connect to the Bazel debug server.
    *
-   * If the connection is not successful (for example, if Bazel is still starting up and has not
-   * opened the socket yet), this function will wait one second and make another attempt, up to a
-   * total of five attempts. If the fifth attempt is unsuccessful, an error will be thrown.
+   * If the connection is not successful (for example, if Bazel is still
+   * starting up and has not opened the socket yet), this function will wait one
+   * second and make another attempt, up to a total of five attempts. If the
+   * fifth attempt is unsuccessful, an error will be thrown.
    *
    * @param host The host name to connect to.
    * @param port The port number to connect to.
@@ -105,47 +120,59 @@ export class BazelDebugConnection extends EventEmitter {
     const socket = new net.Socket()
       .on("connect", () => {
         this.socket = socket;
-        socket.on("data", chunk => { this.consumeChunk(chunk) });
+        socket.on("data", (chunk) => {
+          this.consumeChunk(chunk);
+        });
         this.emit("connect");
       })
       .on("error", (error) => {
         if (attempt <= 5) {
-          setTimeout(() => { this.tryToConnect(host, port, attempt + 1) }, 1000);
+          setTimeout(() => {
+            this.tryToConnect(host, port, attempt + 1);
+          }, 1000);
         } else {
-          this.logger("Could not connect to Bazel debug server after 5 seconds");
+          this.logger(
+            "Could not connect to Bazel debug server after 5 seconds",
+          );
           // TODO(allevato): Improve the error case.
           throw error;
         }
       });
-    socket.connect(port, host);
+    socket.connect(
+      port,
+      host,
+    );
   }
 
   /**
-   * Consumes a chunk of data from the socket and decodes an event/response out of the data received
-   * so far, if possible.
+   * Consumes a chunk of data from the socket and decodes an event/response out
+   * of the data received so far, if possible.
    *
-   * If there is not enough data in the buffer for a full event, this method tracks the chunk and
-   * then the connection waits for more data to try to decode again.
+   * If there is not enough data in the buffer for a full event, this method
+   * tracks the chunk and then the connection waits for more data to try to
+   * decode again.
    *
    * @param chunk A chunk of bytes from the socket.
    */
   private consumeChunk(chunk: Buffer) {
-    var event: skylark_debugging.DebugEvent = null;
+    let event: skylark_debugging.DebugEvent = null;
     this.append(chunk);
 
     while (true) {
       try {
         event = skylark_debugging.DebugEvent.decodeDelimited(this.reader);
       } catch (err) {
-        // This occurs if there is a partial message in the buffer; stop reading and wait for more
-        // data.
+        // This occurs if there is a partial message in the buffer; stop reading
+        // and wait for more data.
         return;
       }
 
       this.collapse();
 
-      if (event.sequenceNumber != 0) {
-        const handler = this.pendingResolvers.get(event.sequenceNumber.toString());
+      if (event.sequenceNumber !== 0) {
+        const handler = this.pendingResolvers.get(
+          event.sequenceNumber.toString(),
+        );
         if (handler) {
           this.pendingResolvers.delete(event.sequenceNumber.toString());
           handler(event);
@@ -161,8 +188,9 @@ export class BazelDebugConnection extends EventEmitter {
     if (!this.buffer) {
       this.buffer = chunk;
     } else {
-      // The reader's position indicates where it last stopped trying to read data from the buffer.
-      // In the event of an unsuccessful read, this tells us how much data is in the buffer.
+      // The reader's position indicates where it last stopped trying to read
+      // data from the buffer. In the event of an unsuccessful read, this tells
+      // us how much data is in the buffer.
       const pos = this.reader.pos;
       const newBuffer = Buffer.alloc(pos + chunk.byteLength);
       this.buffer.copy(newBuffer, 0);
