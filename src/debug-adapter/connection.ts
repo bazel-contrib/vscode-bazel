@@ -15,8 +15,7 @@
 import { EventEmitter } from "events";
 import * as net from "net";
 import * as protobuf from "protobufjs";
-
-import { skylark_debugging } from "./debug_protocol";
+import { skylark_debugging } from "../protos";
 
 /**
  * Manages the connection between the debug adapter and the debugging server

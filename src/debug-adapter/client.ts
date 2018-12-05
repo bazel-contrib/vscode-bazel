@@ -29,8 +29,8 @@ import {
   Variable,
 } from "vscode-debugadapter";
 import { DebugProtocol } from "vscode-debugprotocol";
+import { skylark_debugging } from "../protos";
 import { BazelDebugConnection } from "./connection";
-import { skylark_debugging } from "./debug_protocol";
 import { Handles } from "./handles";
 
 /**
