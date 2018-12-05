@@ -19,24 +19,21 @@ set -eu
 # Move into the top-level directory of the project.
 cd "$(dirname "${BASH_SOURCE[0]}")/.." > /dev/null
 
-if [[ ! -f ./src/debug-adapter/debug_protocol.proto ]] ; then
-  echo "*** ERROR: src/proto/debug_protocol.proto not found."
-  echo "Please run scripts/update_protos.sh to download it from Bazel."
-  exit 1
-fi
-
 readonly TSC=./node_modules/.bin/tsc
 readonly PBJS=./node_modules/protobufjs/bin/pbjs
 readonly PBTS=./node_modules/protobufjs/bin/pbts
 
-# Generate Javascript code for the debug protos.
-$PBJS -t static-module \
-    -o ./src/debug-adapter/debug_protocol.js \
-    ./src/debug-adapter/debug_protocol.proto
-
-# Generate Typescript definitions for the generated Javascript.
-$PBTS -o ./src/debug-adapter/debug_protocol.d.ts \
-    ./src/debug-adapter/debug_protocol.js
+# Only regenerate the .js and .t.ds file if the protos have changed (i.e.,
+# it's a fresh checkout or update_protos.sh has been executed again and
+# deleted the old generated files). This shaves several seconds off the
+# extension's build time.
+if [[ ! -f src/protos/protos.js ]] ; then
+  sed -e "s#^#src/protos/#" src/protos/protos_list.txt | \
+      xargs $PBJS -t static-module -o src/protos/protos.js
+fi
+if [[ ! -f src/protos/protos.d.ts ]] ; then
+  $PBTS -o src/protos/protos.d.ts src/protos/protos.js
+fi
 
 # Compile the rest of the project.
 $TSC "$@" -p ./

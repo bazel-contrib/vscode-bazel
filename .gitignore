@@ -4,5 +4,5 @@ node_modules
 
 # Ignore the generated .d.ts and .js files for protos that end up in the src/
 # tree.
-src/debug-adapter/debug_protocol.d.ts
-src/debug-adapter/debug_protocol.js
+src/protos/protos.d.ts
+src/protos/protos.js
