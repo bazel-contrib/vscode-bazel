@@ -12,48 +12,49 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as path from 'path';
-import * as vscode from 'vscode';
-import { QueriedRule } from '../bazel/query';
+import * as path from "path";
+import * as vscode from "vscode";
+import { QueriedRule } from "../bazel";
 
 /**
  * Icons to use for specific rule classes.
  *
- * This mapping is checked before the general suffix checks for binary/library/test rules, so it can
- * be used to override specific rules, or rules that don't have the standard suffixes. For example,
- * Apple application/extension/framework targets are shown with folder-like icons because those
- * bundles are conceptually folders.
+ * This mapping is checked before the general suffix checks for
+ * binary/library/test rules, so it can be used to override specific rules, or
+ * rules that don't have the standard suffixes. For example, Apple
+ * application/extension/framework targets are shown with folder-like icons
+ * because those bundles are conceptually folders.
  */
 const SPECIFIC_RULE_CLASS_ICONS = {
-  "android_binary": "android_binary",
-  "apple_bundle_import": "resource_bundle",
-  "apple_resource_bundle": "resource_bundle",
-  "config_setting": "config_setting",
-  "filegroup": "filegroup",
-  "genrule": "genrule",
-  "ios_application": "apple_application",
-  "ios_extension": "apple_executable_bundle",
-  "ios_framework": "apple_framework",
-  "macos_application": "apple_application",
-  "macos_bundle": "apple_executable_bundle",
-  "macos_extension": "apple_executable_bundle",
-  "objc_bundle": "resource_bundle",
-  "objc_bundle_library": "resource_bundle",
-  "objc_framework": "apple_framework",
-  "objc_import": "library",
-  "proto_library": "proto",
-  "swift_c_module": "library",
-  "swift_import": "library",
-  "test_suite": "test_suite",
-  "tvos_application": "apple_application",
-  "tvos_extension": "apple_executable_bundle",
-  "watchos_application": "apple_application",
-  "watchos_extension": "apple_executable_bundle",
+  android_binary: "android_binary",
+  apple_bundle_import: "resource_bundle",
+  apple_resource_bundle: "resource_bundle",
+  config_setting: "config_setting",
+  filegroup: "filegroup",
+  genrule: "genrule",
+  ios_application: "apple_application",
+  ios_extension: "apple_executable_bundle",
+  ios_framework: "apple_framework",
+  macos_application: "apple_application",
+  macos_bundle: "apple_executable_bundle",
+  macos_extension: "apple_executable_bundle",
+  objc_bundle: "resource_bundle",
+  objc_bundle_library: "resource_bundle",
+  objc_framework: "apple_framework",
+  objc_import: "library",
+  proto_library: "proto",
+  swift_c_module: "library",
+  swift_import: "library",
+  test_suite: "test_suite",
+  tvos_application: "apple_application",
+  tvos_extension: "apple_executable_bundle",
+  watchos_application: "apple_application",
+  watchos_extension: "apple_executable_bundle",
 };
 
 /**
- * Returns a string or {@code vscode.ThemeIcon} representing the icon to display for the given build
- * target.
+ * Returns a string or {@code vscode.ThemeIcon} representing the icon to display
+ * for the given build target.
  *
  * @param rule The {@code QueriedRule} representing the build target.
  */
