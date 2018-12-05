@@ -1,14 +1,14 @@
 # Bazel plugin for Visual Studio Code
 
-This repository provides support for Bazel in Visual Studio.
+This extension provides support for Bazel in Visual Studio.
 
 ## Features
 
-* **Bazel Build Targets** tree displays the build packages/targets in your
+- **Bazel Build Targets** tree displays the build packages/targets in your
   workspace
-* **CodeLens** links in BUILD files to directly launch a build or test by simply
+- **CodeLens** links in BUILD files to directly launch a build or test by simply
   clicking on the targets
-* Debug Starlark code in your `.bzl` files during a build (set breakpoints, step
+- Debug Starlark code in your `.bzl` files during a build (set breakpoints, step
   through code, inspect variables, etc.)
 
 ## Configuring the Extension
@@ -33,3 +33,9 @@ of the Debug Console.
 Clicking the "Stop" button in the debugger will kill the Bazel process being
 debugger, allowing you to halt the current build. The Bazel server, however,
 will continue running.
+
+## Contributing
+
+If you would like to contribute to the Bazel Visual Studio extension, please
+refer to the [contribution guidelines](CONTRIBUTING.md) for information about
+our patch acceptance process and setting up your development environment.
