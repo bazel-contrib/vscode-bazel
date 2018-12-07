@@ -19,14 +19,14 @@ import {
   BazelTest,
   getDefaultBazelExecutablePath,
   IBazelCommandAdapter,
-  queryQuickPickTargets
+  queryQuickPickTargets,
 } from "../bazel";
 import { BazelBuildCodeLensProvider } from "../codelens";
 import { BazelWorkspaceTreeProvider } from "../workspace-tree";
 
 /**
- * Called when the extension is activated; that is, when its first command is executed.
- *
+ * Called when the extension is activated; that is, when its first command is
+ * executed.
  * @param context The extension context.
  */
 export function activate(context: vscode.ExtensionContext) {
@@ -60,17 +60,19 @@ export function deactivate() {
 /**
  * Builds a Bazel target and streams output to the terminal.
  *
-* @param adapter An object that implements {@link BazelCommandAdapter} from
-*     which the command's arguments will be determined.
-*/
+ * @param adapter An object that implements {@link BazelCommandAdapter} from
+ *     which the command's arguments will be determined.
+ */
 function bazelBuildTarget(adapter: IBazelCommandAdapter | undefined) {
   if (adapter === undefined) {
     // If the command adapter was unspecified, it means this command is being
     // invoked via the command palatte. Provide quickpick build targets for
     // the user to choose from.
-    return vscode.window.showQuickPick(queryQuickPickTargets(
-      "\"kind('.* rule', ...)\""),
-      { 'canPickMany': false }).then((item: BazelTargetQuickPick) => {
+    return vscode.window
+      .showQuickPick(queryQuickPickTargets("\"kind('.* rule', ...)\""), {
+        canPickMany: false,
+      })
+      .then((item: BazelTargetQuickPick) => {
         bazelBuildTarget(item);
       });
   }
@@ -86,14 +88,18 @@ function bazelBuildTarget(adapter: IBazelCommandAdapter | undefined) {
  *     which the command's arguments will be determined.
  */
 
-function bazelBuildTargetWithDebugging(adapter: IBazelCommandAdapter | undefined) {
+function bazelBuildTargetWithDebugging(
+  adapter: IBazelCommandAdapter | undefined,
+) {
   if (adapter === undefined) {
     // If the command adapter was unspecified, it means this command is being
     // invoked via the command palatte. Provide quickpick build targets for
     // the user to choose from.
-    return vscode.window.showQuickPick(queryQuickPickTargets(
-      "\"kind('.* rule', ...)\""),
-      { 'canPickMany': false }).then((item: BazelTargetQuickPick) => {
+    return vscode.window
+      .showQuickPick(queryQuickPickTargets("\"kind('.* rule', ...)\""), {
+        canPickMany: false,
+      })
+      .then((item: BazelTargetQuickPick) => {
         bazelBuildTargetWithDebugging(item);
       });
   }
@@ -120,9 +126,11 @@ function bazelTestTarget(adapter: IBazelCommandAdapter | undefined) {
     // If the command adapter was unspecified, it means this command is being
     // invoked via the command palatte. Provide quickpick test targets for
     // the user to choose from.
-    return vscode.window.showQuickPick(queryQuickPickTargets(
-      "\"kind('.*_test rule', ...)\""),
-      { 'canPickMany': false }).then((item: BazelTargetQuickPick) => {
+    return vscode.window
+      .showQuickPick(queryQuickPickTargets("\"kind('.*_test rule', ...)\""), {
+        canPickMany: false,
+      })
+      .then((item: BazelTargetQuickPick) => {
         bazelTestTarget(item);
       });
   }
