@@ -14,7 +14,6 @@
 
 import * as path from "path";
 import * as vscode from "vscode";
-
 import { BazelQuery, getBazelWorkspaceFolder, QueryResult } from "../bazel";
 import { CodeLensCommandAdapter } from "./code_lens_command_adapter";
 
@@ -35,7 +34,7 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
     if (workspace === undefined) {
       vscode.window.showWarningMessage(
         "Bazel BUILD CodeLens unavailable as currently opened file is not in " +
-        "a Bazel workspace",
+          "a Bazel workspace",
       );
       return [];
     }

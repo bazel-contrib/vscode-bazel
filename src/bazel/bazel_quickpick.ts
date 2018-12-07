@@ -23,20 +23,20 @@ import * as vscode from "vscode";
  * IBazelCommandAdapter interface so that it can be given directly to any of the
  * registered bazel commands.
  */
-export class BazelTargetQuickPick implements IBazelCommandAdapter,
-  vscode.QuickPickItem {
-  // The fully qualified bazel target label
-  private readonly myLabel: string;
-  // Path to the bazel workspace folder
+export class BazelTargetQuickPick
+  implements IBazelCommandAdapter, vscode.QuickPickItem {
+  // The fully qualified bazel target label.
+  private readonly targetLabel: string;
+  // Path to the bazel workspace folder.
   private readonly workspace: string;
 
   /**
-   * Initializes a new Bazel QuickPick target
-   * @param label The fully qualified bazel target label
-   * @param workspace Path to the bazel workspace folder
+   * Initializes a new Bazel QuickPick target.
+   * @param label The fully qualified bazel target label.
+   * @param workspace Path to the bazel workspace folder.
    */
   constructor(label: string, workspace: string) {
-    this.myLabel = label;
+    this.targetLabel = label;
     this.workspace = workspace;
   }
 
@@ -44,16 +44,8 @@ export class BazelTargetQuickPick implements IBazelCommandAdapter,
     return true;
   }
 
-  get description(): string {
-    return "The " + this.myLabel + " target";
-  }
-
-  get detail(): string {
-    return this.description;
-  }
-
   get label(): string {
-    return this.myLabel;
+    return this.targetLabel;
   }
 
   get picked(): boolean {
@@ -62,7 +54,7 @@ export class BazelTargetQuickPick implements IBazelCommandAdapter,
 
   public getBazelCommandArgs(): IBazelCommandArgs {
     return {
-      options: [this.myLabel],
+      options: [this.targetLabel],
       workingDirectory: this.workspace,
     };
   }
@@ -71,11 +63,13 @@ export class BazelTargetQuickPick implements IBazelCommandAdapter,
 /**
  * Runs the given bazel query command in the given bazel workspace and returns
  * the resulting array of BazelTargetQuickPick as a promise.
- * @param workspace The bazel workspace to run the bazel command from
- * @param query The bazel query string to run
+ * @param workspace The bazel workspace to run the bazel command from.
+ * @param query The bazel query string to run.
  */
-async function queryWorkspaceQuickPickTargets(workspace: string, query: string):
-  Promise<BazelTargetQuickPick[]> {
+async function queryWorkspaceQuickPickTargets(
+  workspace: string,
+  query: string,
+): Promise<BazelTargetQuickPick[]> {
   const queryResult = await new BazelQuery(workspace, query, []).runAndParse();
   const result: BazelTargetQuickPick[] = [];
   for (const rule of queryResult.rules) {
@@ -89,12 +83,13 @@ async function queryWorkspaceQuickPickTargets(workspace: string, query: string):
  * workspace and returns the resulting array of BazelTargetQuickPick as a
  * promise. The workspace is determined by trying to determine the bazel
  * workspace the currently active text editor is in.
- * @param query The bazel query string to run
+ * @param query The bazel query string to run.
  */
-export async function queryQuickPickTargets(query: string):
-  Promise<BazelTargetQuickPick[]> {
+export async function queryQuickPickTargets(
+  query: string,
+): Promise<BazelTargetQuickPick[]> {
   // Use the active text editor's file to determine the directory of the Bazel
-  // workspace
+  // workspace.
   if (vscode.window.activeTextEditor === undefined) {
     vscode.window.showErrorMessage(
       "Unable to determine Bazel workspace. Open a file in the Bazel workspace",
@@ -102,12 +97,12 @@ export async function queryQuickPickTargets(query: string):
     return [];
   }
   const filePath = vscode.window.activeTextEditor.document.uri.fsPath;
-  const w = getBazelWorkspaceFolder(filePath);
+  const workspace = getBazelWorkspaceFolder(filePath);
 
-  if (w === undefined) {
+  if (workspace === undefined) {
     vscode.window.showErrorMessage(filePath + " is not in a Bazel workspace");
     return [];
   }
 
-  return queryWorkspaceQuickPickTargets(w, query);
+  return queryWorkspaceQuickPickTargets(workspace, query);
 }
