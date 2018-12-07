@@ -52,7 +52,7 @@ export abstract class BazelChildProcessCommand extends BazelCommand {
     return new Promise((resolve, reject) => {
       const execOptions = {
         cwd: this.workingDirectory,
-        maxBuffer: 500 * 1024,
+        maxBuffer: Number.MAX_SAFE_INTEGER,
       };
       child_process.exec(
         this.commandLine(additionalOptions),
