@@ -23,3 +23,5 @@ export * from "./queried_source_file";
 export * from "./query_location";
 export * from "./query_result";
 export * from "./query_result_item";
+export * from "./bazel_quickpick";
+export * from "./bazel_utils";
