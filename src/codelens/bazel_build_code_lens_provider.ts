@@ -19,6 +19,34 @@ import { CodeLensCommandAdapter } from "./code_lens_command_adapter";
 
 /** Provids CodeLenses for targets in Bazel BUILD files. */
 export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
+  public onDidChangeCodeLenses: vscode.Event<void>;
+
+  /** Fired when BUILD files change in the workspace. */
+  private onDidChangeCodeLensesEmitter = new vscode.EventEmitter<void>();
+
+  /**
+   * Initializes a new CodeLens provider with the given extension context.
+   *
+   * @param context The VS Code extension context.
+   */
+  constructor(private context: vscode.ExtensionContext) {
+    this.onDidChangeCodeLenses = this.onDidChangeCodeLensesEmitter.event;
+
+    const buildWatcher = vscode.workspace.createFileSystemWatcher(
+      "**/{BUILD,BUILD.bazel}",
+      true, // ignoreCreateEvents
+      false,
+      true, // ignoreDeleteEvents
+    );
+    buildWatcher.onDidChange(
+      (uri) => {
+        this.onDidChangeCodeLensesEmitter.fire();
+      },
+      this,
+      context.subscriptions,
+    );
+  }
+
   /**
    * Provides promisified CodeLen(s) for the given document.
    *
@@ -30,6 +58,13 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
     document: vscode.TextDocument,
     token: vscode.CancellationToken,
   ): Promise<vscode.CodeLens[]> {
+    if (document.isDirty) {
+      // Don't show code lenses for dirty BUILD files; we can't reliably
+      // determine what the build targets in it are until it is saved and we can
+      // invoke `bazel query` with the updated file.
+      return [];
+    }
+
     const workspace = getBazelWorkspaceFolder(document.uri.fsPath);
     if (workspace === undefined) {
       vscode.window.showWarningMessage(
@@ -54,7 +89,8 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
       `'kind(rule, ${pkg}:all)'`,
       [],
     ).runAndParse();
-    return this.addCodeLens(workspace, queryResult);
+
+    return this.computeCodeLenses(workspace, queryResult);
   }
 
   /**
@@ -64,7 +100,7 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
    * @param bazelWorkspaceDirectory The Bazel workspace directory.
    * @param queryResult The result of the bazel query.
    */
-  private addCodeLens(
+  private computeCodeLenses(
     bazelWorkspaceDirectory: string,
     queryResult: QueryResult,
   ): vscode.CodeLens[] {

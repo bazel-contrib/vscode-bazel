@@ -31,6 +31,7 @@ import { BazelWorkspaceTreeProvider } from "../workspace-tree";
  */
 export function activate(context: vscode.ExtensionContext) {
   const workspaceTreeProvider = new BazelWorkspaceTreeProvider(context);
+  const codeLensProvider = new BazelBuildCodeLensProvider(context);
 
   context.subscriptions.push(
     vscode.window.registerTreeDataProvider(
@@ -47,7 +48,7 @@ export function activate(context: vscode.ExtensionContext) {
     // CodeLens provider for BUILD files
     vscode.languages.registerCodeLensProvider(
       [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
-      new BazelBuildCodeLensProvider(),
+      codeLensProvider,
     ),
   );
 }
