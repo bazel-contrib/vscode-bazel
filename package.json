@@ -29,14 +29,17 @@
         ],
         "commands": [
             {
+                "category": "Bazel",
                 "command": "bazel.buildTarget",
                 "title": "Build Target"
             },
             {
+                "category": "Bazel",
                 "command": "bazel.buildTargetWithDebugging",
                 "title": "Build Target with Debugging"
             },
             {
+                "category": "Bazel",
                 "command": "bazel.testTarget",
                 "title": "Test Target"
             }
