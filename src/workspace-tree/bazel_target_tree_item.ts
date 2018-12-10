@@ -66,7 +66,8 @@ export class BazelTargetTreeItem
   }
 
   public getContextValue(): string {
-    if (this.queriedRule.ruleClass.endsWith("_test")) {
+    const rc = this.queriedRule.ruleClass;
+    if (rc.endsWith("_test") || rc === "test_suite") {
       return "testRule";
     }
     return "rule";
