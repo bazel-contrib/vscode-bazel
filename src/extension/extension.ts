@@ -13,25 +13,32 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
+import * as which from "which";
 import {
   BazelBuild,
-  BazelTargetQuickPick,
   BazelTest,
   getDefaultBazelExecutablePath,
   IBazelCommandAdapter,
   queryQuickPickTargets,
 } from "../bazel";
+import {
+  BuildifierDiagnosticsManager,
+  BuildifierFormatProvider,
+  getDefaultBuildifierExecutablePath,
+} from "../buildifier";
 import { BazelBuildCodeLensProvider } from "../codelens";
 import { BazelWorkspaceTreeProvider } from "../workspace-tree";
 
 /**
  * Called when the extension is activated; that is, when its first command is
  * executed.
+ *
  * @param context The extension context.
  */
 export function activate(context: vscode.ExtensionContext) {
   const workspaceTreeProvider = new BazelWorkspaceTreeProvider(context);
   const codeLensProvider = new BazelBuildCodeLensProvider(context);
+  const buildifierDiagnostics = new BuildifierDiagnosticsManager();
 
   context.subscriptions.push(
     vscode.window.registerTreeDataProvider(
@@ -50,7 +57,24 @@ export function activate(context: vscode.ExtensionContext) {
       [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
       codeLensProvider,
     ),
+    // Buildifier formatting support
+    vscode.languages.registerDocumentFormattingEditProvider(
+      [
+        { pattern: "**/BUILD" },
+        { pattern: "**/BUILD.bazel" },
+        { pattern: "**/WORKSPACE" },
+        { pattern: "**/WORKSPACE.bazel" },
+        { pattern: "**/*.bzl" },
+        { pattern: "**/*.sky" },
+      ],
+      new BuildifierFormatProvider(),
+    ),
+    buildifierDiagnostics,
   );
+
+  // Notify the user if buildifier is not available on their path (or where
+  // their settings expect it).
+  checkBuildifierIsAvailable();
 }
 
 /** Called when the extension is deactivated. */
@@ -153,4 +177,36 @@ async function bazelTestTarget(adapter: IBazelCommandAdapter | undefined) {
   const args = adapter.getBazelCommandArgs();
   const command = new BazelTest(args.workingDirectory, args.options);
   command.run();
+}
+
+/** The URL to load for buildifier's releases. */
+const BUILDTOOLS_RELEASES_URL =
+  "https://github.com/bazelbuild/buildtools/releases";
+
+/**
+ * Checks whether buildifier is available (either at the system PATH or a
+ * user-specified path, depending on the value in Settings).
+ *
+ * If not available, a warning message will be presented to the user with a
+ * Download button that they can use to go to the GitHub releases page.
+ */
+function checkBuildifierIsAvailable() {
+  const buildifierExecutable = getDefaultBuildifierExecutablePath();
+  which(buildifierExecutable, async (err, _) => {
+    if (err) {
+      const item = await vscode.window.showWarningMessage(
+        "Buildifier was not found; linting and formatting of Bazel files " +
+          "will not be available. Please download it from " +
+          `${BUILDTOOLS_RELEASES_URL} and install it ` +
+          "on your system PATH or set its location in Settings.",
+        { title: "Download" },
+      );
+      if (item && item.title === "Download") {
+        vscode.commands.executeCommand(
+          "vscode.open",
+          vscode.Uri.parse(BUILDTOOLS_RELEASES_URL),
+        );
+      }
+    }
+  });
 }

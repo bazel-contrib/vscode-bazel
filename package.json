@@ -52,6 +52,16 @@
                     "type": "string",
                     "default": "",
                     "description": "The name of the Bazel executable. This may be an absolute path, or a simple name that will be searched for on the system path. If empty, \"bazel\" on the system path will be used."
+                },
+                "bazel.buildifierExecutable": {
+                    "type": "string",
+                    "default": "",
+                    "markdownDescription": "The name of the Buildifier executable. This may be an absolute path, or a simple name that will be searched for on the system path. If empty, \"buildifier\" on the system path will be used.\n\nBuildifier can be downloaded from https://github.com/bazelbuild/buildtools/releases."
+                },
+                "bazel.buildifierFixOnFormat": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether to automatically apply lint fixes from buildifier when formatting a Bazel file."
                 }
             }
         },
@@ -119,13 +129,16 @@
                     "Bazel"
                 ],
                 "extensions": [
+                    ".BUILD",
+                    ".WORKSPACE",
                     ".bzl",
-                    ".BUILD"
+                    ".sky"
                 ],
                 "filenames": [
                     "BUILD",
                     "BUILD.bazel",
-                    "WORKSPACE"
+                    "WORKSPACE",
+                    "WORKSPACE.bazel"
                 ],
                 "configuration": "./syntaxes/starlark.configuration.json"
             }
@@ -186,6 +199,7 @@
         "vscode-debugadapter": "^1.27.0",
         "vscode-debugprotocol": "^1.27.0",
         "protobufjs": "^6.8.0",
+        "which": "^1.3.1",
         "xml2js": "^0.4.19"
     }
 }
