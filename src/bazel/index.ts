@@ -13,15 +13,10 @@
 // limitations under the License.
 
 export * from "./bazel_build";
-export * from "./bazel_child_process_command";
 export * from "./bazel_command";
 export * from "./bazel_query";
+export * from "./bazel_quickpick";
 export * from "./bazel_terminal_command";
 export * from "./bazel_test";
-export * from "./queried_rule";
-export * from "./queried_source_file";
-export * from "./query_location";
-export * from "./query_result";
-export * from "./query_result_item";
-export * from "./bazel_quickpick";
 export * from "./bazel_utils";
+export * from "./query_location";

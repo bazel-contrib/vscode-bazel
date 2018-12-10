@@ -14,7 +14,7 @@
 
 import * as path from "path";
 import * as vscode from "vscode";
-import { QueriedRule } from "../bazel";
+import { blaze_query } from "../protos";
 
 /**
  * Icons to use for specific rule classes.
@@ -58,8 +58,10 @@ const SPECIFIC_RULE_CLASS_ICONS = {
  *
  * @param rule The {@code QueriedRule} representing the build target.
  */
-export function getBazelRuleIcon(rule: QueriedRule): string | vscode.ThemeIcon {
-  const ruleClass = rule.ruleClass;
+export function getBazelRuleIcon(
+  target: blaze_query.Target,
+): string | vscode.ThemeIcon {
+  const ruleClass = target.rule.ruleClass;
   let iconName = SPECIFIC_RULE_CLASS_ICONS[ruleClass];
   if (!iconName) {
     if (ruleClass.endsWith("_binary")) {
