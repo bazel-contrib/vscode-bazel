@@ -14,7 +14,8 @@
 
 import * as path from "path";
 import * as vscode from "vscode";
-import { BazelQuery, getBazelWorkspaceFolder, QueryResult } from "../bazel";
+import { BazelQuery, getBazelWorkspaceFolder, QueryLocation } from "../bazel";
+import { blaze_query } from "../protos";
 import { CodeLensCommandAdapter } from "./code_lens_command_adapter";
 
 /** Provids CodeLenses for targets in Bazel BUILD files. */
@@ -88,7 +89,7 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
       workspace,
       `'kind(rule, ${pkg}:all)'`,
       [],
-    ).runAndParse();
+    ).queryTargets();
 
     return this.computeCodeLenses(workspace, queryResult);
   }
@@ -102,18 +103,19 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
    */
   private computeCodeLenses(
     bazelWorkspaceDirectory: string,
-    queryResult: QueryResult,
+    queryResult: blaze_query.QueryResult,
   ): vscode.CodeLens[] {
     const result = [];
 
-    for (const rule of queryResult.rules) {
-      const loc = rule.location;
-      const target = rule.name;
+    for (const target of queryResult.target) {
+      const location = new QueryLocation(target.rule.location);
+      const targetName = target.rule.name;
+      const ruleClass = target.rule.ruleClass;
       let cmd: vscode.Command;
-      if (rule.ruleClass.endsWith("_test") || rule.ruleClass === "test_suite") {
+      if (ruleClass.endsWith("_test") || ruleClass === "test_suite") {
         cmd = {
           arguments: [
-            new CodeLensCommandAdapter(bazelWorkspaceDirectory, [target]),
+            new CodeLensCommandAdapter(bazelWorkspaceDirectory, [targetName]),
           ],
           command: "bazel.testTarget",
           title: `Test ${target}`,
@@ -122,14 +124,14 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
       } else {
         cmd = {
           arguments: [
-            new CodeLensCommandAdapter(bazelWorkspaceDirectory, [target]),
+            new CodeLensCommandAdapter(bazelWorkspaceDirectory, [targetName]),
           ],
           command: "bazel.buildTarget",
           title: `Build ${target}`,
           tooltip: `Build ${target}`,
         };
       }
-      result.push(new vscode.CodeLens(loc.range, cmd));
+      result.push(new vscode.CodeLens(location.range, cmd));
     }
 
     return result;

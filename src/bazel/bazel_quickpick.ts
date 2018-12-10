@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as vscode from "vscode";
 import { IBazelCommandAdapter, IBazelCommandArgs } from "./bazel_command";
 import { BazelQuery } from "./bazel_query";
 import { getBazelWorkspaceFolder } from "./bazel_utils";
-
-import * as vscode from "vscode";
 
 /**
  * Represents a Bazel target in a QuickPick items window. Implements the
@@ -70,10 +69,10 @@ async function queryWorkspaceQuickPickTargets(
   workspace: string,
   query: string,
 ): Promise<BazelTargetQuickPick[]> {
-  const queryResult = await new BazelQuery(workspace, query, []).runAndParse();
+  const queryResult = await new BazelQuery(workspace, query, []).queryTargets();
   const result: BazelTargetQuickPick[] = [];
-  for (const rule of queryResult.rules) {
-    result.push(new BazelTargetQuickPick(rule.name, workspace));
+  for (const target of queryResult.target) {
+    result.push(new BazelTargetQuickPick(target.rule.name, workspace));
   }
   return result;
 }
