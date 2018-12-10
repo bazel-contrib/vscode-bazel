@@ -8,6 +8,8 @@ This extension provides support for Bazel in Visual Studio.
   workspace
 - **CodeLens** links in BUILD files to directly launch a build or test by simply
   clicking on the targets
+- **Buildifier** integration to lint and format your Bazel files (requires that
+  [Buildifier](https://github.com/bazelbuild/buildtools/releases) be installed)
 - Debug Starlark code in your `.bzl` files during a build (set breakpoints, step
   through code, inspect variables, etc.)
 
@@ -17,6 +19,16 @@ This extension adds a **Bazel** section to the extension settings in Visual
 Studio Code. If you have Bazel installed in a location that is not on your
 system path or if you wish to use a different version in the IDE, you should
 set the **Bazel: Executable** setting to the location of the Bazel executable.
+
+Similarly, the **Bazel: Buildifier Executable** setting can be configured if
+you install Buildifier in a location that is not on your system path.
+
+When Buildifier is installed, the **Format Document** command in Visual Studio
+code will reformat `BUILD`, `WORKSPACE`, `.bzl`, and `.sky` files using the
+tool and will display lint warnings from those files as you type. By default,
+this extension does not automatically _fix_ lint warnings during formatting,
+but you can opt into this by enabling the **Bazel: Buildifier Fix on Format**
+setting.
 
 ## Using the Starlark Debugger
 
