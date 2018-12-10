@@ -110,7 +110,7 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
       const loc = rule.location;
       const target = rule.name;
       let cmd: vscode.Command;
-      if (rule.ruleClass.endsWith("_test")) {
+      if (rule.ruleClass.endsWith("_test") || rule.ruleClass === "test_suite") {
         cmd = {
           arguments: [
             new CodeLensCommandAdapter(bazelWorkspaceDirectory, [target]),
