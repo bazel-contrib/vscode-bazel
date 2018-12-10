@@ -74,7 +74,11 @@ async function bazelBuildTarget(adapter: IBazelCommandAdapter | undefined) {
         canPickMany: false,
       },
     );
-    bazelBuildTarget(quickPick);
+    // If the result was undefined, the user cancelled the quick pick, so don't
+    // try again.
+    if (quickPick) {
+      bazelBuildTarget(quickPick);
+    }
     return;
   }
   const args = adapter.getBazelCommandArgs();
@@ -102,7 +106,11 @@ async function bazelBuildTargetWithDebugging(
         canPickMany: false,
       },
     );
-    bazelBuildTargetWithDebugging(quickPick);
+    // If the result was undefined, the user cancelled the quick pick, so don't
+    // try again.
+    if (quickPick) {
+      bazelBuildTargetWithDebugging(quickPick);
+    }
     return;
   }
   const args = adapter.getBazelCommandArgs();
@@ -134,7 +142,11 @@ async function bazelTestTarget(adapter: IBazelCommandAdapter | undefined) {
         canPickMany: false,
       },
     );
-    bazelTestTarget(quickPick);
+    // If the result was undefined, the user cancelled the quick pick, so don't
+    // try again.
+    if (quickPick) {
+      bazelTestTarget(quickPick);
+    }
     return;
   }
   const args = adapter.getBazelCommandArgs();
