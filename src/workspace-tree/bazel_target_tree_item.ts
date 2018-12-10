@@ -14,7 +14,12 @@
 
 import * as path from "path";
 import * as vscode from "vscode";
-import { IBazelCommandAdapter, IBazelCommandArgs, QueriedRule } from "../bazel";
+import {
+  IBazelCommandAdapter,
+  IBazelCommandArgs,
+  QueryLocation,
+} from "../bazel";
+import { blaze_query } from "../protos";
 import { IBazelTreeItem } from "./bazel_tree_item";
 import { getBazelRuleIcon } from "./icons";
 
@@ -25,10 +30,10 @@ export class BazelTargetTreeItem
    * Initializes a new tree item with the given query result representing a
    * build target.
    *
-   * @param queriedRule An object representing a build target that was produced
-   *     by a query.
+   * @param target An object representing a build target that was produced by a
+   *     query.
    */
-  constructor(private readonly queriedRule: QueriedRule) {}
+  constructor(private readonly target: blaze_query.Target) {}
 
   public mightHaveChildren(): boolean {
     return false;
@@ -39,22 +44,22 @@ export class BazelTargetTreeItem
   }
 
   public getLabel(): string {
-    const fullPath = this.queriedRule.name;
+    const fullPath = this.target.rule.name;
     const colonIndex = fullPath.lastIndexOf(":");
     const targetName = fullPath.substr(colonIndex);
-    return `${targetName}  (${this.queriedRule.ruleClass})`;
+    return `${targetName}  (${this.target.rule.ruleClass})`;
   }
 
   public getIcon(): vscode.ThemeIcon | string {
-    return getBazelRuleIcon(this.queriedRule);
+    return getBazelRuleIcon(this.target);
   }
 
   public getTooltip(): string {
-    return `${this.queriedRule.name}`;
+    return `${this.target.rule.name}`;
   }
 
   public getCommand(): vscode.Command | undefined {
-    const location = this.queriedRule.location;
+    const location = new QueryLocation(this.target.rule.location);
     return {
       arguments: [
         vscode.Uri.file(location.path),
@@ -66,7 +71,7 @@ export class BazelTargetTreeItem
   }
 
   public getContextValue(): string {
-    const ruleClass = this.queriedRule.ruleClass;
+    const ruleClass = this.target.rule.ruleClass;
     if (ruleClass.endsWith("_test") || ruleClass === "test_suite") {
       return "testRule";
     }
@@ -74,9 +79,10 @@ export class BazelTargetTreeItem
   }
 
   public getBazelCommandArgs(): IBazelCommandArgs {
-    const workingDirectory = path.dirname(this.queriedRule.location.path);
+    const location = new QueryLocation(this.target.rule.location);
+    const workingDirectory = path.dirname(location.path);
     return {
-      options: [`${this.queriedRule.name}`],
+      options: [`${this.target.rule.name}`],
       workingDirectory,
     };
   }

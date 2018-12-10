@@ -13,7 +13,8 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import { BazelQuery, QueriedRule } from "../bazel";
+import { BazelQuery } from "../bazel";
+import { blaze_query } from "../protos";
 import { BazelTargetTreeItem } from "./bazel_target_tree_item";
 import { IBazelTreeItem } from "./bazel_tree_item";
 
@@ -50,9 +51,9 @@ export class BazelPackageTreeItem implements IBazelTreeItem {
       `//${this.packagePath}:all`,
       [],
       true,
-    ).runAndParse();
-    const targets = queryResult.rules.map((rule: QueriedRule) => {
-      return new BazelTargetTreeItem(rule);
+    ).queryTargets();
+    const targets = queryResult.target.map((target: blaze_query.Target) => {
+      return new BazelTargetTreeItem(target);
     });
     return (this.directSubpackages as IBazelTreeItem[]).concat(targets);
   }

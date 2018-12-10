@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { BazelChildProcessCommand } from "./bazel_child_process_command";
-import { QueryResult } from "./query_result";
+import * as child_process from "child_process";
+import { blaze_query } from "../protos";
+import { BazelCommand } from "./bazel_command";
 
 /** Provides a promise-based API around a Bazel query. */
-export class BazelQuery extends BazelChildProcessCommand {
+export class BazelQuery extends BazelCommand {
   /**
    * Initializes a new Bazel query.
    *
@@ -33,30 +34,86 @@ export class BazelQuery extends BazelChildProcessCommand {
     workingDirectory: string,
     query: string,
     options: string[],
-    ignoresErrors: boolean = false,
+    private readonly ignoresErrors: boolean = false,
   ) {
-    super(workingDirectory, [query].concat(options), ignoresErrors);
+    super(workingDirectory, [query].concat(options));
   }
 
   /**
-   * Runs the query and parses its output into a rich object model that can be
-   * traversed.
+   * Runs the query and returns a {@code QueryResult} containing the targets
+   * that match.
    *
    * @param additionalOptions Additional command line options that should be
    *     passed just to this specific invocation of the query.
    * @returns A {@link QueryResult} object that contains structured information
    *     about the query results.
    */
-  public async runAndParse(
+  public async queryTargets(
     additionalOptions: string[] = [],
-  ): Promise<QueryResult> {
-    const xmlString = await this.run(
-      additionalOptions.concat(["--output=xml"]),
+  ): Promise<blaze_query.QueryResult> {
+    const buffer = await this.run(additionalOptions.concat(["--output=proto"]));
+    const result = blaze_query.QueryResult.decode(buffer);
+    return result;
+  }
+
+  /**
+   * Runs the query and returns an array of package paths containing the targets
+   * that match.
+   *
+   * @param additionalOptions Additional command line options that should be
+   *     passed just to this specific invocation of the query.
+   * @returns An array of package paths containing the targets that match.
+   */
+  public async queryPackages(
+    additionalOptions: string[] = [],
+  ): Promise<string[]> {
+    const buffer = await this.run(
+      additionalOptions.concat(["--output=package"]),
     );
-    return Promise.resolve(new QueryResult(xmlString));
+    const result = buffer
+      .toString("utf-8")
+      .trim()
+      .split("\n");
+    return result;
   }
 
   protected bazelCommand(): string {
     return "query";
+  }
+
+  /**
+   * Executes the command and returns a promise for the binary contents of
+   * standard output.
+   *
+   * @param additionalOptions Additional command line options that apply only to
+   *     this particular invocation of the command.
+   * @returns A promise that is resolved with the contents of the process's
+   *     standard output, or rejected if the command fails.
+   */
+  private run(additionalOptions: string[] = []): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+      const execOptions = {
+        cwd: this.workingDirectory,
+        // A null encoding causes the callback below to receive binary data as a
+        // Buffer instead of text data as strings.
+        encoding: null,
+        maxBuffer: Number.MAX_SAFE_INTEGER,
+      };
+      child_process.exec(
+        this.commandLine(additionalOptions),
+        execOptions,
+        (error: Error, stdout: Buffer, stderr: Buffer) => {
+          if (error) {
+            if (this.ignoresErrors) {
+              resolve(new Buffer(0));
+            } else {
+              reject(error);
+            }
+          } else {
+            resolve(stdout);
+          }
+        },
+      );
+    });
   }
 }

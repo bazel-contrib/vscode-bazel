@@ -12,4 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from "./protos";
+export {
+  blaze,
+  blaze_query,
+  build_event_stream,
+  command_line,
+  options,
+  skylark_debugging,
+} from "./protos";
