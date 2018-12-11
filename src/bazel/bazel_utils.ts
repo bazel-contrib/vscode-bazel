@@ -15,6 +15,8 @@
 import * as fs from "fs";
 import * as path from "path";
 
+import { BazelQuery, QueryResult } from ".";
+
 /**
  * Search for the path to the directory that has the Bazel WORKSPACE file for
  * the given file.
@@ -44,4 +46,35 @@ export function getBazelWorkspaceFolder(fsPath: string): string | undefined {
   } while (dirname !== "");
 
   return undefined;
+}
+
+/**
+ * Get the targets in the build file
+ *
+ * @param workspace The path to the workspace
+ * @param buildFile The path to the build file
+ * @returns A query result for targets in the build file
+ */
+export async function getTargetsForBuildFile(
+  workspace: string,
+  buildFile: string,
+): Promise<QueryResult> {
+  // Path to the BUILD file relative to the workspace.
+  const relPathToDoc = path.relative(workspace, buildFile);
+  // Strip away the name of the BUILD file from the relative path.
+  let relDirWithDoc = path.dirname(relPathToDoc);
+  // Strip away the "." if the BUILD file was in the same directory as the
+  // workspace.
+  if (relDirWithDoc === ".") {
+    relDirWithDoc = "";
+  }
+  // Turn the relative path into a package label
+  const pkg = `//${relDirWithDoc}`;
+  const queryResult = await new BazelQuery(
+    workspace,
+    `'kind(rule, ${pkg}:all)'`,
+    [],
+  ).runAndParse();
+
+  return queryResult;
 }
