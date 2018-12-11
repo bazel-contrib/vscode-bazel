@@ -118,8 +118,8 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
             new CodeLensCommandAdapter(bazelWorkspaceDirectory, [targetName]),
           ],
           command: "bazel.testTarget",
-          title: `Test ${target}`,
-          tooltip: `Build ${target}`,
+          title: `Test ${targetName}`,
+          tooltip: `Test ${targetName}`,
         };
       } else {
         cmd = {
@@ -127,8 +127,8 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
             new CodeLensCommandAdapter(bazelWorkspaceDirectory, [targetName]),
           ],
           command: "bazel.buildTarget",
-          title: `Build ${target}`,
-          tooltip: `Build ${target}`,
+          title: `Build ${targetName}`,
+          tooltip: `Build ${targetName}`,
         };
       }
       result.push(new vscode.CodeLens(location.range, cmd));
