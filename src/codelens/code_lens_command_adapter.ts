@@ -12,14 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { IBazelCommandAdapter, IBazelCommandArgs } from "../bazel";
+import {
+  BazelWorkspaceInfo,
+  IBazelCommandAdapter,
+  IBazelCommandOptions,
+} from "../bazel";
 
 /**
  * Command adapter to pass arguments to Bazel commands.
  */
 export class CodeLensCommandAdapter implements IBazelCommandAdapter {
-  /** Working directory from which to execute Bazel. */
-  private workingDirectory: string;
+  /** Workspace info in which to execute Bazel. */
+  private workspaceInfo: BazelWorkspaceInfo;
+
+  /** The list of targets to build. */
+  private targets: string[];
 
   /** Other command line arguments to pass to Bazel. */
   private options: string[];
@@ -27,18 +34,24 @@ export class CodeLensCommandAdapter implements IBazelCommandAdapter {
   /**
    * Initializes a new CodeLens command adapter that invokes Bazel.
    *
-   * @param workingDirectory Working directory from which to execute Bazel.
+   * @param workspaceFolder Workspace folder from which to execute Bazel.
    * @param options Other command line arguments to pass to Bazel.
    */
-  public constructor(workingDirectory: string, options: string[] = []) {
-    this.workingDirectory = workingDirectory;
+  public constructor(
+    workspaceInfo: BazelWorkspaceInfo,
+    targets: string[],
+    options: string[] = [],
+  ) {
+    this.workspaceInfo = workspaceInfo;
+    this.targets = targets;
     this.options = options;
   }
 
-  public getBazelCommandArgs(): IBazelCommandArgs {
+  public getBazelCommandOptions(): IBazelCommandOptions {
     return {
       options: this.options,
-      workingDirectory: this.workingDirectory,
+      targets: this.targets,
+      workspaceInfo: this.workspaceInfo,
     };
   }
 }

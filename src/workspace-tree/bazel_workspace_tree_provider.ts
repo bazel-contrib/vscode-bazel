@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
+import { BazelWorkspaceInfo } from "../bazel";
 import { IBazelTreeItem } from "./bazel_tree_item";
 import { BazelWorkspaceFolderTreeItem } from "./bazel_workspace_folder_tree_item";
 
@@ -72,8 +73,9 @@ export class BazelWorkspaceTreeProvider
       // then don't show the workspace folder; just show its packages at the top
       // level.
       if (vscode.workspace.workspaceFolders.length === 1) {
+        const workspaceFolder = vscode.workspace.workspaceFolders[0];
         const folderItem = new BazelWorkspaceFolderTreeItem(
-          vscode.workspace.workspaceFolders[0],
+          BazelWorkspaceInfo.fromWorkspaceFolder(workspaceFolder),
         );
         return folderItem.getChildren();
       }
@@ -82,7 +84,9 @@ export class BazelWorkspaceTreeProvider
       // individual top level items.
       return Promise.resolve(
         vscode.workspace.workspaceFolders.map((folder) => {
-          return new BazelWorkspaceFolderTreeItem(folder);
+          return new BazelWorkspaceFolderTreeItem(
+            BazelWorkspaceInfo.fromWorkspaceFolder(folder),
+          );
         }),
       );
     }
