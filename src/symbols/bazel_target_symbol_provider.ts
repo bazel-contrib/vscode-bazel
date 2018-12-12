@@ -23,7 +23,7 @@ import {
 import { blaze_query } from "../protos";
 
 /** Provids Symbols for targets in Bazel BUILD files. */
-export class StarlarkSymbolProvider implements DocumentSymbolProvider {
+export class BazelTargetSymbolProvider implements DocumentSymbolProvider {
   public async provideDocumentSymbols(
     document: vscode.TextDocument,
     token: vscode.CancellationToken,

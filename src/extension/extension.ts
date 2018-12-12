@@ -28,7 +28,7 @@ import {
   getDefaultBuildifierExecutablePath,
 } from "../buildifier";
 import { BazelBuildCodeLensProvider } from "../codelens";
-import { StarlarkSymbolProvider } from "../symbols";
+import { BazelTargetSymbolProvider } from "../symbols";
 import { BazelWorkspaceTreeProvider } from "../workspace-tree";
 
 /**
@@ -74,13 +74,8 @@ export function activate(context: vscode.ExtensionContext) {
     buildifierDiagnostics,
     // Symbol provider for BUILD files
     vscode.languages.registerDocumentSymbolProvider(
-      [
-        { pattern: "**/BUILD" },
-        { pattern: "**/BUILD.bazel" },
-        { pattern: "**/*.bzl" },
-        { pattern: "**/*.sky" },
-      ],
-      new StarlarkSymbolProvider(),
+      [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
+      new BazelTargetSymbolProvider(),
     ),
   );
 

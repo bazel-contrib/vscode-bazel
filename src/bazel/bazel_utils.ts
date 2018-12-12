@@ -17,7 +17,7 @@ import * as path from "path";
 
 import { blaze_query } from "../protos";
 
-import { BazelQuery } from ".";
+import { BazelQuery } from "./bazel_query";
 
 /**
  * Search for the path to the directory that has the Bazel WORKSPACE file for

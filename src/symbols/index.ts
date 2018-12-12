@@ -1,1 +1,1 @@
-export * from "./bazel_build_symbol_provider";
+export * from "./bazel_target_symbol_provider";
