@@ -13,9 +13,9 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import { IBazelCommandAdapter, IBazelCommandArgs } from "./bazel_command";
+import { IBazelCommandAdapter, IBazelCommandOptions } from "./bazel_command";
 import { BazelQuery } from "./bazel_query";
-import { getBazelWorkspaceFolder } from "./bazel_utils";
+import { BazelWorkspaceInfo } from "./bazel_workspace_info";
 
 /**
  * Represents a Bazel target in a QuickPick items window. Implements the
@@ -24,19 +24,21 @@ import { getBazelWorkspaceFolder } from "./bazel_utils";
  */
 export class BazelTargetQuickPick
   implements IBazelCommandAdapter, vscode.QuickPickItem {
-  // The fully qualified bazel target label.
+  /** The fully qualified bazel target label. */
   private readonly targetLabel: string;
-  // Path to the bazel workspace folder.
-  private readonly workspace: string;
+
+  /** Information about the workspace in which the target should be built. */
+  private readonly workspaceInfo: BazelWorkspaceInfo;
 
   /**
    * Initializes a new Bazel QuickPick target.
    * @param label The fully qualified bazel target label.
-   * @param workspace Path to the bazel workspace folder.
+   * @param workspaceInfo Information about the workspace in which the target
+   *     should be built.
    */
-  constructor(label: string, workspace: string) {
+  constructor(label: string, workspaceInfo: BazelWorkspaceInfo) {
     this.targetLabel = label;
-    this.workspace = workspace;
+    this.workspaceInfo = workspaceInfo;
   }
 
   get alwaysShow(): boolean {
@@ -51,10 +53,11 @@ export class BazelTargetQuickPick
     return false;
   }
 
-  public getBazelCommandArgs(): IBazelCommandArgs {
+  public getBazelCommandOptions(): IBazelCommandOptions {
     return {
-      options: [this.targetLabel],
-      workingDirectory: this.workspace,
+      options: [],
+      targets: [this.targetLabel],
+      workspaceInfo: this.workspaceInfo,
     };
   }
 }
@@ -66,13 +69,17 @@ export class BazelTargetQuickPick
  * @param query The bazel query string to run.
  */
 async function queryWorkspaceQuickPickTargets(
-  workspace: string,
+  workspaceInfo: BazelWorkspaceInfo,
   query: string,
 ): Promise<BazelTargetQuickPick[]> {
-  const queryResult = await new BazelQuery(workspace, query, []).queryTargets();
+  const queryResult = await new BazelQuery(
+    workspaceInfo.bazelWorkspacePath,
+    query,
+    [],
+  ).queryTargets();
   const result: BazelTargetQuickPick[] = [];
   for (const target of queryResult.target) {
-    result.push(new BazelTargetQuickPick(target.rule.name, workspace));
+    result.push(new BazelTargetQuickPick(target.rule.name, workspaceInfo));
   }
   return result;
 }
@@ -95,10 +102,12 @@ export async function queryQuickPickTargets(
     );
     return [];
   }
-  const filePath = vscode.window.activeTextEditor.document.uri.fsPath;
-  const workspace = getBazelWorkspaceFolder(filePath);
+
+  const document = vscode.window.activeTextEditor.document;
+  const workspace = BazelWorkspaceInfo.fromDocument(document);
 
   if (workspace === undefined) {
+    const filePath = document.uri.fsPath;
     vscode.window.showErrorMessage(filePath + " is not in a Bazel workspace");
     return [];
   }

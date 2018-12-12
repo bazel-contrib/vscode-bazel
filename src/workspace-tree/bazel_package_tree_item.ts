@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import { BazelQuery } from "../bazel";
+import { BazelQuery, BazelWorkspaceInfo } from "../bazel";
 import { blaze_query } from "../protos";
 import { BazelTargetTreeItem } from "./bazel_target_tree_item";
 import { IBazelTreeItem } from "./bazel_tree_item";
@@ -36,7 +36,7 @@ export class BazelPackageTreeItem implements IBazelTreeItem {
    *     {@code packagePath} should be stripped for the item's label.
    */
   constructor(
-    private readonly workspacePath: string,
+    private readonly workspaceInfo: BazelWorkspaceInfo,
     private readonly packagePath: string,
     private readonly parentPackagePath: string,
   ) {}
@@ -47,13 +47,13 @@ export class BazelPackageTreeItem implements IBazelTreeItem {
 
   public async getChildren(): Promise<IBazelTreeItem[]> {
     const queryResult = await new BazelQuery(
-      this.workspacePath,
+      this.workspaceInfo.bazelWorkspacePath,
       `//${this.packagePath}:all`,
       [],
       true,
     ).queryTargets();
     const targets = queryResult.target.map((target: blaze_query.Target) => {
-      return new BazelTargetTreeItem(target);
+      return new BazelTargetTreeItem(this.workspaceInfo, target);
     });
     return (this.directSubpackages as IBazelTreeItem[]).concat(targets);
   }

@@ -16,8 +16,7 @@ import * as vscode from "vscode";
 import * as which from "which";
 
 import {
-  BazelBuild,
-  BazelTest,
+  createBazelTask,
   getDefaultBazelExecutablePath,
   IBazelCommandAdapter,
   queryQuickPickTargets,
@@ -92,7 +91,7 @@ export function deactivate() {
 /**
  * Builds a Bazel target and streams output to the terminal.
  *
- * @param adapter An object that implements {@link BazelCommandAdapter} from
+ * @param adapter An object that implements {@link IBazelCommandAdapter} from
  *     which the command's arguments will be determined.
  */
 async function bazelBuildTarget(adapter: IBazelCommandAdapter | undefined) {
@@ -113,15 +112,15 @@ async function bazelBuildTarget(adapter: IBazelCommandAdapter | undefined) {
     }
     return;
   }
-  const args = adapter.getBazelCommandArgs();
-  const command = new BazelBuild(args.workingDirectory, args.options);
-  command.run();
+  const commandOptions = adapter.getBazelCommandOptions();
+  const task = createBazelTask("build", commandOptions);
+  vscode.tasks.executeTask(task);
 }
 
 /**
  * Builds a Bazel target and attaches the Starlark debugger.
  *
- * @param adapter An object that implements {@link BazelCommandAdapter} from
+ * @param adapter An object that implements {@link IBazelCommandAdapter} from
  *     which the command's arguments will be determined.
  */
 
@@ -145,12 +144,12 @@ async function bazelBuildTargetWithDebugging(
     }
     return;
   }
-  const args = adapter.getBazelCommandArgs();
+  const commandOptions = adapter.getBazelCommandOptions();
   vscode.debug.startDebugging(undefined, {
-    args: args.options,
+    args: commandOptions.targets.concat(commandOptions.options),
     bazelCommand: "build",
     bazelExecutablePath: getDefaultBazelExecutablePath(),
-    cwd: args.workingDirectory,
+    cwd: commandOptions.workspaceInfo.bazelWorkspacePath,
     name: "On-demand Bazel Build Debug",
     request: "launch",
     type: "bazel-launch-build",
@@ -160,7 +159,7 @@ async function bazelBuildTargetWithDebugging(
 /**
  * Tests a Bazel target and streams output to the terminal.
  *
- * @param adapter An object that implements {@link BazelCommandAdapter} from
+ * @param adapter An object that implements {@link IBazelCommandAdapter} from
  *     which the command's arguments will be determined.
  */
 async function bazelTestTarget(adapter: IBazelCommandAdapter | undefined) {
@@ -181,9 +180,9 @@ async function bazelTestTarget(adapter: IBazelCommandAdapter | undefined) {
     }
     return;
   }
-  const args = adapter.getBazelCommandArgs();
-  const command = new BazelTest(args.workingDirectory, args.options);
-  command.run();
+  const commandOptions = adapter.getBazelCommandOptions();
+  const task = createBazelTask("test", commandOptions);
+  vscode.tasks.executeTask(task);
 }
 
 /** The URL to load for buildifier's releases. */

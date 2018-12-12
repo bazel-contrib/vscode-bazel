@@ -172,6 +172,25 @@
                 }
             ]
         },
+        "taskDefinitions": [
+            {
+                "type": "bazel",
+                "required": [
+                    "command",
+                    "targets"
+                ],
+                "properties": {
+                    "command": {
+                        "type": "string",
+                        "description": "The Bazel command to execute (\"build\" or \"test\")."
+                    },
+                    "targets": {
+                        "type": "array",
+                        "description": "The labels of the targets to build or test."
+                    }
+                }
+            }
+        ],
         "views": {
             "explorer": [
                 {

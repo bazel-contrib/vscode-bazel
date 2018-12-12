@@ -13,14 +13,12 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-
 import {
-  getBazelWorkspaceFolder,
+  BazelWorkspaceInfo,
   getTargetsForBuildFile,
   QueryLocation,
 } from "../bazel";
 import { blaze_query } from "../protos";
-
 import { CodeLensCommandAdapter } from "./code_lens_command_adapter";
 
 /** Provids CodeLenses for targets in Bazel BUILD files. */
@@ -71,20 +69,21 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
       return [];
     }
 
-    const workspace = getBazelWorkspaceFolder(document.uri.fsPath);
-    if (workspace === undefined) {
+    const workspaceInfo = BazelWorkspaceInfo.fromDocument(document);
+    if (workspaceInfo === undefined) {
       vscode.window.showWarningMessage(
         "Bazel BUILD CodeLens unavailable as currently opened file is not in " +
           "a Bazel workspace",
       );
       return [];
     }
+
     const queryResult = await getTargetsForBuildFile(
-      workspace,
+      workspaceInfo.bazelWorkspacePath,
       document.uri.fsPath,
     );
 
-    return this.computeCodeLenses(workspace, queryResult);
+    return this.computeCodeLenses(workspaceInfo, queryResult);
   }
 
   /**
@@ -95,7 +94,7 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
    * @param queryResult The result of the bazel query.
    */
   private computeCodeLenses(
-    bazelWorkspaceDirectory: string,
+    bazelWorkspaceInfo: BazelWorkspaceInfo,
     queryResult: blaze_query.QueryResult,
   ): vscode.CodeLens[] {
     const result = [];
@@ -108,7 +107,7 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
       if (ruleClass.endsWith("_test") || ruleClass === "test_suite") {
         cmd = {
           arguments: [
-            new CodeLensCommandAdapter(bazelWorkspaceDirectory, [targetName]),
+            new CodeLensCommandAdapter(bazelWorkspaceInfo, [targetName]),
           ],
           command: "bazel.testTarget",
           title: `Test ${targetName}`,
@@ -117,7 +116,7 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
       } else {
         cmd = {
           arguments: [
-            new CodeLensCommandAdapter(bazelWorkspaceDirectory, [targetName]),
+            new CodeLensCommandAdapter(bazelWorkspaceInfo, [targetName]),
           ],
           command: "bazel.buildTarget",
           title: `Build ${targetName}`,
