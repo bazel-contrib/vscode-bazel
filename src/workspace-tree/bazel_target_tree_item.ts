@@ -15,8 +15,9 @@
 import * as path from "path";
 import * as vscode from "vscode";
 import {
+  BazelWorkspaceInfo,
   IBazelCommandAdapter,
-  IBazelCommandArgs,
+  IBazelCommandOptions,
   QueryLocation,
 } from "../bazel";
 import { blaze_query } from "../protos";
@@ -33,7 +34,10 @@ export class BazelTargetTreeItem
    * @param target An object representing a build target that was produced by a
    *     query.
    */
-  constructor(private readonly target: blaze_query.Target) {}
+  constructor(
+    private readonly workspaceInfo: BazelWorkspaceInfo,
+    private readonly target: blaze_query.Target,
+  ) {}
 
   public mightHaveChildren(): boolean {
     return false;
@@ -78,12 +82,13 @@ export class BazelTargetTreeItem
     return "rule";
   }
 
-  public getBazelCommandArgs(): IBazelCommandArgs {
+  public getBazelCommandOptions(): IBazelCommandOptions {
     const location = new QueryLocation(this.target.rule.location);
     const workingDirectory = path.dirname(location.path);
     return {
-      options: [`${this.target.rule.name}`],
-      workingDirectory,
+      options: [],
+      targets: [`${this.target.rule.name}`],
+      workspaceInfo: this.workspaceInfo,
     };
   }
 }

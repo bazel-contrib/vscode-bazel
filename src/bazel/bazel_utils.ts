@@ -14,41 +14,8 @@
 
 import * as fs from "fs";
 import * as path from "path";
-
 import { blaze_query } from "../protos";
-
 import { BazelQuery } from "./bazel_query";
-
-/**
- * Search for the path to the directory that has the Bazel WORKSPACE file for
- * the given file.
- *
- * If multiple directories along the path to the file has files called
- * "WORKSPACE", the lowest path is returned.
- *
- * @param fsPath The path to a file in a Bazel workspace.
- * @returns The path to the directory with the Bazel WORKSPACE file if found,
- *     others undefined.
- */
-export function getBazelWorkspaceFolder(fsPath: string): string | undefined {
-  let dirname: string;
-  do {
-    dirname = path.dirname(fsPath);
-
-    const workspace = path.join(dirname, "WORKSPACE");
-    try {
-      fs.accessSync(workspace, fs.constants.F_OK);
-      // WORKSPACE file is accessible. We have found the Bazel workspace
-      // directory.
-      return dirname;
-    } catch (err) {
-      // Intentionally do nothing; just try the next parent directory.
-    }
-    fsPath = dirname;
-  } while (dirname !== "");
-
-  return undefined;
-}
 
 /**
  * Get the targets in the build file

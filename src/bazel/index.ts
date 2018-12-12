@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from "./bazel_build";
 export * from "./bazel_command";
 export * from "./bazel_query";
 export * from "./bazel_quickpick";
-export * from "./bazel_terminal_command";
-export * from "./bazel_test";
 export * from "./bazel_utils";
+export * from "./bazel_workspace_info";
 export * from "./query_location";
+export * from "./tasks";

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import { BazelQuery } from "../bazel";
+import { BazelQuery, BazelWorkspaceInfo } from "../bazel";
 import { BazelPackageTreeItem } from "./bazel_package_tree_item";
 import { IBazelTreeItem } from "./bazel_tree_item";
 
@@ -24,7 +24,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
    *
    * @param workspaceFolder The workspace folder that the tree item represents.
    */
-  constructor(private workspaceFolder: vscode.WorkspaceFolder) {}
+  constructor(private workspaceInfo: BazelWorkspaceInfo) {}
 
   public mightHaveChildren(): boolean {
     return true;
@@ -35,7 +35,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
   }
 
   public getLabel(): string {
-    return this.workspaceFolder.name;
+    return this.workspaceInfo.workspaceFolder.name;
   }
 
   public getIcon(): vscode.ThemeIcon {
@@ -43,7 +43,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
   }
 
   public getTooltip(): string {
-    return this.workspaceFolder.uri.fsPath;
+    return this.workspaceInfo.workspaceFolder.uri.fsPath;
   }
 
   public getCommand(): vscode.Command | undefined {
@@ -119,7 +119,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
       // tree node for the element at groupStart and then recursively call the
       // algorithm again to group its children.
       const item = new BazelPackageTreeItem(
-        this.workspaceFolder.uri.fsPath,
+        this.workspaceInfo,
         packagePath,
         parentPackagePath,
       );
@@ -149,7 +149,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     // have a VS Code workspace that is pointed at a subpackage of a large
     // workspace without the performance penalty of querying the entire
     // workspace.
-    const workspacePath = this.workspaceFolder.uri.fsPath;
+    const workspacePath = this.workspaceInfo.workspaceFolder.uri.fsPath;
     const packagePaths = await new BazelQuery(workspacePath, "...", [
       "--output=package",
     ]).queryPackages();

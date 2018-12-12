@@ -13,24 +13,32 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
+import { BazelWorkspaceInfo } from "./bazel_workspace_info";
 
 /**
- * Arbitrary types should implement this interface to provide the arguments to
- * the Bazel build or test command to execute when the user selects a particular
- * target in the UI (explorer tree view, quick pick, document link, etc.).
+ * Arbitrary types should implement this interface to specify how a task should
+ * be created to represent the Bazel build or test of a particular target or set
+ * of targets in the UI (explorer tree view, quick pick, document link, etc.).
  */
 export interface IBazelCommandAdapter {
-  /** Returns the arguments that should be passed to the Bazel command. */
-  getBazelCommandArgs(): IBazelCommandArgs;
+  /**
+   * Returns options that control how Bazel is launched (such as by a task, or
+   * when launching the debugger).
+   */
+  getBazelCommandOptions(): IBazelCommandOptions;
 }
 
-/** Encapsulates the arguments to a Bazel command invoked through the UI. */
-export interface IBazelCommandArgs {
-  /** The working directory in which Bazel should be launched. */
-  workingDirectory: string;
+/** Encapsulates the information needed to invoke Bazel. */
+export interface IBazelCommandOptions {
+  /** The workspace folder in which Bazel should be launched. */
+  workspaceInfo: BazelWorkspaceInfo;
+
+  /** A list of targets to build (most often, this is just one). */
+  targets: string[];
 
   /**
-   * The list of targets and command line flags that should be passed to Bazel.
+   * The list of (non-startup) command line flags that should be passed to
+   * Bazel.
    */
   options: string[];
 }
