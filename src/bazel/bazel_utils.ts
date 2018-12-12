@@ -15,7 +15,9 @@
 import * as fs from "fs";
 import * as path from "path";
 
-import { BazelQuery, QueryResult } from ".";
+import { blaze_query } from "../protos";
+
+import { BazelQuery } from ".";
 
 /**
  * Search for the path to the directory that has the Bazel WORKSPACE file for
@@ -58,7 +60,7 @@ export function getBazelWorkspaceFolder(fsPath: string): string | undefined {
 export async function getTargetsForBuildFile(
   workspace: string,
   buildFile: string,
-): Promise<QueryResult> {
+): Promise<blaze_query.QueryResult> {
   // Path to the BUILD file relative to the workspace.
   const relPathToDoc = path.relative(workspace, buildFile);
   // Strip away the name of the BUILD file from the relative path.
@@ -74,7 +76,7 @@ export async function getTargetsForBuildFile(
     workspace,
     `'kind(rule, ${pkg}:all)'`,
     [],
-  ).runAndParse();
+  ).queryTargets();
 
   return queryResult;
 }

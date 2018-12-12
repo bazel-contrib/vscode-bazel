@@ -18,8 +18,9 @@ import { DocumentSymbolProvider } from "vscode";
 import {
   getBazelWorkspaceFolder,
   getTargetsForBuildFile,
-  QueryResult,
+  QueryLocation,
 } from "../bazel";
+import { blaze_query } from "../protos";
 
 /** Provids Symbols for targets in Bazel BUILD files. */
 export class StarlarkSymbolProvider implements DocumentSymbolProvider {
@@ -50,31 +51,27 @@ export class StarlarkSymbolProvider implements DocumentSymbolProvider {
    *
    * @param queryResult The result of the bazel query.
    */
-  private computeSymbols(queryResult: QueryResult): vscode.DocumentSymbol[] {
+  private computeSymbols(
+    queryResult: blaze_query.QueryResult,
+  ): vscode.DocumentSymbol[] {
     const result = [];
 
-    for (const rule of queryResult.rules) {
-      const loc = rule.location;
-      const target = rule.name;
+    for (const target of queryResult.target) {
+      const location = new QueryLocation(target.rule.location);
+      let targetName = target.rule.name;
 
-      const colonIndex = target.indexOf(":");
-      let targetName: string;
+      const colonIndex = targetName.indexOf(":");
       if (colonIndex !== -1) {
-        targetName = target.substr(colonIndex + 1);
-      } else {
-        targetName = target;
+        targetName = targetName.substr(colonIndex + 1);
       }
-
-      const linePosition = new vscode.Position(loc.line, 0);
-      const lineRangeStart = new vscode.Range(linePosition, linePosition);
 
       result.push(
         new vscode.DocumentSymbol(
           targetName,
           "",
           vscode.SymbolKind.Function,
-          lineRangeStart,
-          lineRangeStart,
+          location.range,
+          location.range,
         ),
       );
     }
