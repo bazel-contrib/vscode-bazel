@@ -12,10 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as path from "path";
 import * as vscode from "vscode";
-import { BazelQuery, getBazelWorkspaceFolder, QueryLocation } from "../bazel";
+
+import {
+  getBazelWorkspaceFolder,
+  getTargetsForBuildFile,
+  QueryLocation,
+} from "../bazel";
 import { blaze_query } from "../protos";
+
 import { CodeLensCommandAdapter } from "./code_lens_command_adapter";
 
 /** Provids CodeLenses for targets in Bazel BUILD files. */
@@ -74,22 +79,10 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
       );
       return [];
     }
-    // Path to the BUILD file relative to the workspace.
-    const relPathToDoc = path.relative(workspace, document.uri.fsPath);
-    // Strip away the name of the BUILD file from the relative path.
-    let relDirWithDoc = path.dirname(relPathToDoc);
-    // Strip away the "." if the BUILD file was in the same directory as the
-    // workspace.
-    if (relDirWithDoc === ".") {
-      relDirWithDoc = "";
-    }
-    // Turn the relative path into a package label
-    const pkg = `//${relDirWithDoc}`;
-    const queryResult = await new BazelQuery(
+    const queryResult = await getTargetsForBuildFile(
       workspace,
-      `'kind(rule, ${pkg}:all)'`,
-      [],
-    ).queryTargets();
+      document.uri.fsPath,
+    );
 
     return this.computeCodeLenses(workspace, queryResult);
   }

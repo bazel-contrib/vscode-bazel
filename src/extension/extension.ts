@@ -14,6 +14,7 @@
 
 import * as vscode from "vscode";
 import * as which from "which";
+
 import {
   BazelBuild,
   BazelTest,
@@ -27,6 +28,7 @@ import {
   getDefaultBuildifierExecutablePath,
 } from "../buildifier";
 import { BazelBuildCodeLensProvider } from "../codelens";
+import { BazelTargetSymbolProvider } from "../symbols";
 import { BazelWorkspaceTreeProvider } from "../workspace-tree";
 
 /**
@@ -70,6 +72,11 @@ export function activate(context: vscode.ExtensionContext) {
       new BuildifierFormatProvider(),
     ),
     buildifierDiagnostics,
+    // Symbol provider for BUILD files
+    vscode.languages.registerDocumentSymbolProvider(
+      [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
+      new BazelTargetSymbolProvider(),
+    ),
   );
 
   // Notify the user if buildifier is not available on their path (or where
