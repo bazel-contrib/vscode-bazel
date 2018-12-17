@@ -13,6 +13,7 @@
 // limitations under the License.
 
 export * from "./bazel_command";
+export * from "./bazel_label";
 export * from "./bazel_query";
 export * from "./bazel_quickpick";
 export * from "./bazel_utils";
