@@ -110,6 +110,11 @@ export class BazelWorkspaceTreeProvider
     return treeItem;
   }
 
+  /** Forces a re-query and refresh of the tree's contents. */
+  public refresh() {
+    this.onDidChangeTreeDataEmitter.fire();
+  }
+
   /**
    * Called to update the tree when a BUILD file is created, deleted, or
    * changed.
@@ -119,6 +124,6 @@ export class BazelWorkspaceTreeProvider
   private onBuildFilesChanged(uri: vscode.Uri) {
     // TODO(allevato): Look into firing the event only for tree items that are
     // affected by the change.
-    this.onDidChangeTreeDataEmitter.fire();
+    this.refresh();
   }
 }
