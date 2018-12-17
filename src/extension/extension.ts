@@ -55,6 +55,9 @@ export function activate(context: vscode.ExtensionContext) {
     ),
     vscode.commands.registerCommand("bazel.testTarget", bazelTestTarget),
     vscode.commands.registerCommand("bazel.clean", bazelClean),
+    vscode.commands.registerCommand("bazel.refreshBazelBuildTargets", () => {
+      workspaceTreeProvider.refresh();
+    }),
     // CodeLens provider for BUILD files
     vscode.languages.registerCodeLensProvider(
       [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],

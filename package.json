@@ -47,6 +47,15 @@
                 "category": "Bazel",
                 "command": "bazel.clean",
                 "title": "Clean"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.refreshBazelBuildTargets",
+                "title": "Refresh Bazel Build Targets",
+                "icon": {
+                    "dark": "./icons/refresh-dark.svg",
+                    "light": "./icons/refresh-light.svg"
+                }
             }
         ],
         "configuration": {
@@ -174,6 +183,13 @@
                     "command": "bazel.testTarget",
                     "when": "view == bazelWorkspace && viewItem == testRule",
                     "group": "build"
+                }
+            ],
+            "view/title": [
+                {
+                    "command": "bazel.refreshBazelBuildTargets",
+                    "when": "view == bazelWorkspace",
+                    "group": "navigation"
                 }
             ]
         },
