@@ -39,7 +39,7 @@ export async function buildifierFormat(
   type: BuildifierFileType,
   applyLintFixes: boolean,
 ): Promise<string> {
-  const args = [`--type=${type}`];
+  const args = [`--mode=fix`, `--type=${type}`];
   if (applyLintFixes) {
     args.push(`--lint=fix`);
   }
