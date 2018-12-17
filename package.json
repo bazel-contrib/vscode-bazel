@@ -42,6 +42,11 @@
                 "category": "Bazel",
                 "command": "bazel.testTarget",
                 "title": "Test Target"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.clean",
+                "title": "Clean"
             }
         ],
         "configuration": {
