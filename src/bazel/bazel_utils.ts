@@ -12,10 +12,70 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as fs from "fs";
 import * as path from "path";
 import { blaze_query } from "../protos";
 import { BazelQuery } from "./bazel_query";
+
+/**
+ * Encapsulates information about the "generator" of a BUILD target.
+ *
+ * The generator is the Starlark macro called in the BUILD file that eventually
+ * evaluates to a rule function invocation, if the rule invocation is not
+ * directly in the BUILD file.
+ */
+export interface IBlazeTargetGenerator {
+  /**
+   * The "name" argument of the generator function.
+   *
+   * If the generator function did not have an argument named "name", then this
+   * value is equal to the generated target's name.
+   */
+  name: string;
+
+  /** The name of the function called in the BUILD file. */
+  function: string;
+
+  /** The location string describing where the generator was called. */
+  location: string;
+}
+
+/**
+ * Gets the generator info for the given BUILD target query result.
+ *
+ * @param target The BUILD target proto from a query result.
+ * @returns The BUILD target generator info, or undefined if the BUILD target
+ *     was not generated.
+ */
+export function getTargetGenerator(
+  target: blaze_query.ITarget,
+): IBlazeTargetGenerator | undefined {
+  let generatorName: string | undefined;
+  let generatorFunction: string | undefined;
+  let generatorLocation: string | undefined;
+
+  for (const attribute of target.rule.attribute) {
+    switch (attribute.name) {
+      case "generator_name":
+        generatorName = attribute.stringValue;
+        break;
+      case "generator_function":
+        generatorFunction = attribute.stringValue;
+        break;
+      case "generator_location":
+        generatorLocation = attribute.stringValue;
+        break;
+    }
+  }
+
+  if (generatorName && generatorFunction && generatorLocation) {
+    return {
+      function: generatorFunction,
+      location: generatorLocation,
+      name: generatorName,
+    };
+  }
+  return undefined;
+}
 
 /**
  * Get the targets in the build file
