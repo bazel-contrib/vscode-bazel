@@ -30,7 +30,7 @@ function quotedOption(option: string): vscode.ShellQuotedString {
  * @param options Describes the options used to launch Bazel.
  */
 export function createBazelTask(
-  command: "build" | "test",
+  command: "build" | "clean" | "test",
   options: IBazelCommandOptions,
 ): vscode.Task {
   const args = [command as string]
@@ -42,6 +42,9 @@ export function createBazelTask(
   switch (command) {
     case "build":
       commandDescription = "Build";
+      break;
+    case "clean":
+      commandDescription = "Clean";
       break;
     case "test":
       commandDescription = "Test";

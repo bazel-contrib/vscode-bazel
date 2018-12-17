@@ -16,6 +16,7 @@ import * as vscode from "vscode";
 import * as which from "which";
 
 import {
+  BazelWorkspaceInfo,
   createBazelTask,
   getDefaultBazelExecutablePath,
   IBazelCommandAdapter,
@@ -53,6 +54,7 @@ export function activate(context: vscode.ExtensionContext) {
       bazelBuildTargetWithDebugging,
     ),
     vscode.commands.registerCommand("bazel.testTarget", bazelTestTarget),
+    vscode.commands.registerCommand("bazel.clean", bazelClean),
     // CodeLens provider for BUILD files
     vscode.languages.registerCodeLensProvider(
       [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
@@ -182,6 +184,41 @@ async function bazelTestTarget(adapter: IBazelCommandAdapter | undefined) {
   }
   const commandOptions = adapter.getBazelCommandOptions();
   const task = createBazelTask("test", commandOptions);
+  vscode.tasks.executeTask(task);
+}
+
+/**
+ * Cleans a Bazel workspace.
+ *
+ * If there is only a single workspace open, it will be cleaned immediately. If
+ * there are multiple workspace folders open, a quick-pick window will be opened
+ * asking the user to choose one.
+ */
+async function bazelClean() {
+  const workspaces = vscode.workspace.workspaceFolders;
+  let workspaceFolder: vscode.WorkspaceFolder;
+
+  switch (workspaces.length) {
+    case 0:
+      vscode.window.showInformationMessage(
+        "Please open a Bazel workspace folder to use this command.",
+      );
+      return;
+    case 1:
+      workspaceFolder = workspaces[0];
+      break;
+    default:
+      workspaceFolder = await vscode.window.showWorkspaceFolderPick();
+      if (workspaceFolder === undefined) {
+        return;
+      }
+  }
+
+  const task = createBazelTask("clean", {
+    options: [],
+    targets: [],
+    workspaceInfo: BazelWorkspaceInfo.fromWorkspaceFolder(workspaceFolder),
+  });
   vscode.tasks.executeTask(task);
 }
 
