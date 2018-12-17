@@ -209,10 +209,20 @@ class BazelDebugSession extends DebugSession {
     response: DebugProtocol.SetBreakpointsResponse,
     args: DebugProtocol.SetBreakpointsArguments,
   ) {
-    // VS Code passes us the absolute path to the file, but Bazel's debugger
-    // will match against paths beneath the output_base. It appears that even
-    // .bzl files in the same workspace as the one containing the target being
-    // built will be found in the "external" subtree.
+    // The path we need to pass to Bazel here depends on how the .bzl file has
+    // been loaded. Unfortunately this means we have to create two breakpoints,
+    // one for each possible path, because the way the .bzl file is loaded is
+    // chosen by the user:
+    //
+    // 1. If the file is loaded using an explicit repository reference (i.e.,
+    //    `@foo//:bar.bzl`), then it will appear in the `external` subdirectory
+    //    of Bazel's output_base.
+    // 2. If the file is loaded as a same-repository path (i.e., `//:bar.bzl`),
+    //    then Bazel will treat it as if it were under `execroot`, which is a
+    //    symlink to the actual filesystem location of the file.
+    //
+    // TODO(allevato): We may be able to simplify this once
+    // https://github.com/bazelbuild/bazel/issues/6848 is in a release.
     const workspaceName = path.basename(this.bazelInfo.get("execution_root"));
     const relativeSourcePath = path.relative(
       this.bazelInfo.get("workspace"),
@@ -224,6 +234,7 @@ class BazelDebugSession extends DebugSession {
       workspaceName,
       relativeSourcePath,
     );
+    this.sourceBreakpoints.set(args.source.path, args.breakpoints);
     this.sourceBreakpoints.set(sourcePathInExternal, args.breakpoints);
 
     // Convert to Bazel breakpoints.
@@ -271,29 +282,32 @@ class BazelDebugSession extends DebugSession {
       }),
     });
 
-    const bazelFrames = event.listFrames.frame;
-    const vsFrames = new Array<StackFrame>();
-    for (const bazelFrame of bazelFrames) {
-      const frameHandle = this.frameHandles.create(bazelFrame);
-      this.frameThreadIds.set(frameHandle, args.threadId);
+    if (event.listFrames) {
+      const bazelFrames = event.listFrames.frame;
+      const vsFrames = new Array<StackFrame>();
+      for (const bazelFrame of bazelFrames) {
+        const frameHandle = this.frameHandles.create(bazelFrame);
+        this.frameThreadIds.set(frameHandle, args.threadId);
 
-      const location = bazelFrame.location;
-      const vsFrame = new StackFrame(
-        frameHandle,
-        bazelFrame.functionName || "<global scope>",
-      );
-      if (location) {
-        // Resolve the real path to the file, which will make sure that when the
-        // user interacts with the stack frame, VS Code loads the file from it's
-        // actual path instead of from a location inside Bazel's output base.
-        const sourcePath = fs.realpathSync(location.path);
-        vsFrame.source = new Source(path.basename(sourcePath), sourcePath);
-        vsFrame.line = location.lineNumber;
+        const location = bazelFrame.location;
+        const vsFrame = new StackFrame(
+          frameHandle,
+          bazelFrame.functionName || "<global scope>",
+        );
+        if (location) {
+          // Resolve the real path to the file, which will make sure that when
+          // the user interacts with the stack frame, VS Code loads the file
+          // from it's actual path instead of from a location inside Bazel's
+          // output base.
+          const sourcePath = fs.realpathSync(location.path);
+          vsFrame.source = new Source(path.basename(sourcePath), sourcePath);
+          vsFrame.line = location.lineNumber;
+        }
+        vsFrames.push(vsFrame);
       }
-      vsFrames.push(vsFrame);
+      response.body = { stackFrames: vsFrames, totalFrames: vsFrames.length };
     }
 
-    response.body = { stackFrames: vsFrames, totalFrames: vsFrames.length };
     this.sendResponse(response);
   }
 

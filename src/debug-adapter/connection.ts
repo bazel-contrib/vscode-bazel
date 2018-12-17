@@ -168,7 +168,9 @@ export class BazelDebugConnection extends EventEmitter {
 
       this.collapse();
 
-      if (event.sequenceNumber !== 0) {
+      // Do the right thing whether the sequence number comes in as either a
+      // number or a Long (which is an object with separate low/high ints.)
+      if (event.sequenceNumber.toString() !== "0") {
         const handler = this.pendingResolvers.get(
           event.sequenceNumber.toString(),
         );
