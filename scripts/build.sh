@@ -22,17 +22,31 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.." > /dev/null
 readonly TSC=./node_modules/.bin/tsc
 readonly PBJS=./node_modules/protobufjs/bin/pbjs
 readonly PBTS=./node_modules/protobufjs/bin/pbts
+readonly PROTOC=./node_modules/.bin/grpc_tools_node_protoc
+readonly PROTOC_GEN_GRPC=./node_modules/.bin/grpc_tools_node_protoc_plugin
+readonly PROTOC_GEN_TS=./node_modules/.bin/protoc-gen-ts
 
-# Only regenerate the .js and .t.ds file if the protos have changed (i.e.,
+function all_files_exist() {
+  sed -e "s#^#src/protos/#" src/protos/protos_list.txt | \
+  while IFS="" read -r path ; do
+    test -f "${path%.proto}_pb.js" || return 1
+    test -f "${path%.proto}_pb.d.ts" || return 1
+  done
+}
+
+# Only regenerate the .js and .t.ds files if the protos have changed (i.e.,
 # it's a fresh checkout or update_protos.sh has been executed again and
 # deleted the old generated files). This shaves several seconds off the
 # extension's build time.
-if [[ ! -f src/protos/protos.js ]] ; then
+if ! all_files_exist ; then
   sed -e "s#^#src/protos/#" src/protos/protos_list.txt | \
-      xargs $PBJS -t static-module -o src/protos/protos.js
-fi
-if [[ ! -f src/protos/protos.d.ts ]] ; then
-  $PBTS -o src/protos/protos.d.ts src/protos/protos.js
+      xargs $PROTOC \
+          --plugin=protoc-gen-grpc=$PROTOC_GEN_GRPC \
+          --plugin=protoc-gen-ts=$PROTOC_GEN_TS \
+          -I src/protos \
+          --js_out=import_style=commonjs,binary:src/protos \
+          --grpc_out=src/protos \
+          --ts_out=src/protos
 fi
 
 # Compile the rest of the project.

@@ -18,7 +18,7 @@ import {
   getTargetsForBuildFile,
   QueryLocation,
 } from "../bazel";
-import { blaze_query } from "../protos";
+import * as blaze_query from "../protos/src/main/protobuf/build_pb";
 import { CodeLensCommandAdapter } from "./code_lens_command_adapter";
 
 /** Provids CodeLenses for targets in Bazel BUILD files. */
@@ -99,10 +99,10 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
   ): vscode.CodeLens[] {
     const result = [];
 
-    for (const target of queryResult.target) {
-      const location = new QueryLocation(target.rule.location);
-      const targetName = target.rule.name;
-      const ruleClass = target.rule.ruleClass;
+    for (const target of queryResult.getTargetList()) {
+      const location = new QueryLocation(target.getRule().getLocation());
+      const targetName = target.getRule().getName();
+      const ruleClass = target.getRule().getRuleClass();
       let cmd: vscode.Command;
       if (ruleClass.endsWith("_test") || ruleClass === "test_suite") {
         cmd = {

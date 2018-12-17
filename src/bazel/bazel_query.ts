@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as child_process from "child_process";
-import { blaze_query } from "../protos";
+import * as blaze_query from "../protos/src/main/protobuf/build_pb";
 import { BazelCommand } from "./bazel_command";
 
 /** Provides a promise-based API around a Bazel query. */
@@ -52,7 +52,7 @@ export class BazelQuery extends BazelCommand {
     additionalOptions: string[] = [],
   ): Promise<blaze_query.QueryResult> {
     const buffer = await this.run(additionalOptions.concat(["--output=proto"]));
-    const result = blaze_query.QueryResult.decode(buffer);
+    const result = blaze_query.QueryResult.deserializeBinary(buffer);
     return result;
   }
 

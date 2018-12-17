@@ -13,9 +13,9 @@
 // limitations under the License.
 
 import { EventEmitter } from "events";
+import * as jspb from "google-protobuf";
 import * as net from "net";
-import * as protobuf from "protobufjs";
-import { skylark_debugging } from "../protos";
+import * as skylark_debugging from "../protos/src/main/java/com/google/devtools/build/lib/skylarkdebug/proto/skylark_debugging_pb";
 
 /**
  * Manages the connection between the debug adapter and the debugging server
@@ -35,9 +35,6 @@ export class BazelDebugConnection extends EventEmitter {
    */
   private buffer: Buffer;
 
-  /** Reads protobuf messages from the buffer. */
-  private reader: protobuf.Reader;
-
   /**
    * A monotonically increasing sequence number used to uniquely identify
    * requests.
@@ -56,8 +53,8 @@ export class BazelDebugConnection extends EventEmitter {
    * the promise.
    */
   private pendingResolvers = new Map<
-    string,
-    (event: skylark_debugging.IDebugEvent) => void
+    number,
+    (event: skylark_debugging.DebugEvent) => void
   >();
 
   /**
@@ -81,25 +78,25 @@ export class BazelDebugConnection extends EventEmitter {
    * Sends a request to the Bazel debug server and returns a promise for its
    * response.
    *
-   * @param options The options for the request. The sequence number will be
-   *     populated by this method.
+   * @param builder A function that takes a {@code DebugRequest} proto whose
+   *     sequence number has been prepopulated. The function is expected to
+   *     fill in the rest of the payload with whatever content is appropriate
+   *     for the request being sent.
    * @returns A {@code Promise} for the response to the request.
    */
   public sendRequest(
-    options: skylark_debugging.IDebugRequest,
-  ): Promise<skylark_debugging.IDebugEvent> {
-    options.sequenceNumber = this.sequenceNumber++;
+    builder: (request: skylark_debugging.DebugRequest) => void,
+  ): Promise<skylark_debugging.DebugEvent> {
+    const request = new skylark_debugging.DebugRequest();
+    const sequenceNumber = this.sequenceNumber++;
+    request.setSequenceNumber(sequenceNumber);
 
-    const promise = new Promise<skylark_debugging.IDebugEvent>((resolve) => {
-      this.pendingResolvers.set(options.sequenceNumber.toString(), resolve);
+    const promise = new Promise<skylark_debugging.DebugEvent>((resolve) => {
+      this.pendingResolvers.set(sequenceNumber, resolve);
     });
 
-    const request = skylark_debugging.DebugRequest.create(options);
-
-    const writer = skylark_debugging.DebugRequest.encodeDelimited(request);
-    const bytes = writer.finish();
-    this.socket.write(bytes);
-
+    builder(request);
+    this.writeLengthDelimitedMessage(request);
     return promise;
   }
 
@@ -130,17 +127,84 @@ export class BazelDebugConnection extends EventEmitter {
             this.tryToConnect(host, port, attempt + 1);
           }, 1000);
         } else {
-          this.logger(
-            "Could not connect to Bazel debug server after 5 seconds",
-          );
-          // TODO(allevato): Improve the error case.
-          throw error;
+          this.emit("error", error);
         }
       });
     socket.connect(
       port,
       host,
     );
+  }
+
+  /**
+   * Writes a varint-length-delimited message to the socket.
+   *
+   * @param message The message to write.
+   */
+  private writeLengthDelimitedMessage(message: jspb.Message) {
+    const serializedRequestBytes = message.serializeBinary();
+
+    // JSPB provides no API for varint-length-delimited messages, but worse, it
+    // also apparently provides no low-level API for writing individual varints.
+    // We hack around it by writing a fake "message" containing a single varint
+    // at field number 1 and then peeling off the first byte (the field tag).
+    const writer = new jspb.BinaryWriter();
+    writer.writeUint64(1, serializedRequestBytes.byteLength);
+
+    this.socket.write(writer.getResultBuffer().subarray(1));
+    this.socket.write(serializedRequestBytes);
+  }
+
+  /**
+   * Reads a varint-length-delimited message from the data buffer.
+   *
+   * @param messageType The type of message to read.
+   * @returns The message that was read if the complete message was available in
+   *     the buffer. If there was not a complete message in the buffer, this
+   *     function returns {@code undefined}.
+   */
+  private readLengthDelimitedMessage<T extends jspb.Message>(
+    messageType: {
+      new (): T;
+    } & typeof jspb.Message,
+  ): T | undefined {
+    // Since JSPB doesn't expose low-level coding APIs here, we need to create
+    // a fake "message" containing the upcoming data as a field 1 varint so that
+    // we can read it. 11 bytes is enough to hold the field tag (the integer 8
+    // below) and the largest possible varint.
+    const fakeMessageBuffer = new Uint8Array(11);
+    fakeMessageBuffer.set([8], 0);
+    fakeMessageBuffer.set(
+      this.buffer.subarray(0, Math.min(this.buffer.byteLength, 10)),
+      1,
+    );
+    const varintReader = new jspb.BinaryReader(fakeMessageBuffer);
+    varintReader.nextField();
+    const messageLength = varintReader.readUint64();
+    const varintLength = varintReader.getCursor() - 1;
+
+    // If the buffer doesn't have enough data yet, wait until more comes along
+    // the wire.
+    if (this.buffer.byteLength < messageLength + varintLength) {
+      return undefined;
+    }
+
+    // Create a reader over the slice of the buffer that contains the message
+    // data; if the buffer has data for more than one message, we need to make
+    // sure that decoding stops after the first one.
+    const messageReader = new jspb.BinaryReader(
+      this.buffer,
+      varintLength,
+      messageLength,
+    );
+
+    const message = new messageType();
+    messageType.deserializeBinaryFromReader(message, messageReader);
+
+    // Remove the data that was decoded from the buffer before returning.
+    this.buffer = this.buffer.slice(varintLength + messageLength);
+
+    return message;
   }
 
   /**
@@ -154,28 +218,23 @@ export class BazelDebugConnection extends EventEmitter {
    * @param chunk A chunk of bytes from the socket.
    */
   private consumeChunk(chunk: Buffer) {
-    let event: skylark_debugging.DebugEvent = null;
     this.append(chunk);
 
     while (true) {
-      try {
-        event = skylark_debugging.DebugEvent.decodeDelimited(this.reader);
-      } catch (err) {
+      const event = this.readLengthDelimitedMessage(
+        skylark_debugging.DebugEvent,
+      );
+      if (event === undefined) {
         // This occurs if there is a partial message in the buffer; stop reading
         // and wait for more data.
         return;
       }
 
-      this.collapse();
-
-      // Do the right thing whether the sequence number comes in as either a
-      // number or a Long (which is an object with separate low/high ints.)
-      if (event.sequenceNumber.toString() !== "0") {
-        const handler = this.pendingResolvers.get(
-          event.sequenceNumber.toString(),
-        );
+      const sequenceNumber = event.getSequenceNumber();
+      if (sequenceNumber) {
+        const handler = this.pendingResolvers.get(sequenceNumber);
         if (handler) {
-          this.pendingResolvers.delete(event.sequenceNumber.toString());
+          this.pendingResolvers.delete(sequenceNumber);
           handler(event);
         }
       } else {
@@ -189,21 +248,13 @@ export class BazelDebugConnection extends EventEmitter {
     if (!this.buffer) {
       this.buffer = chunk;
     } else {
-      // The reader's position indicates where it last stopped trying to read
-      // data from the buffer. In the event of an unsuccessful read, this tells
-      // us how much data is in the buffer.
-      const pos = this.reader.pos;
-      const newBuffer = Buffer.alloc(pos + chunk.byteLength);
+      // Buffers can't be grown after allocation; we create a new one and copy
+      // both blobs of data into it.
+      const currentLength = this.buffer.byteLength;
+      const newBuffer = Buffer.alloc(currentLength + chunk.byteLength);
       this.buffer.copy(newBuffer, 0);
-      chunk.copy(newBuffer, pos);
+      chunk.copy(newBuffer, currentLength);
       this.buffer = newBuffer;
     }
-    this.reader = protobuf.Reader.create(this.buffer);
-  }
-
-  /** Collapses the buffer so that any data already read is removed. */
-  private collapse() {
-    this.buffer = this.buffer.slice(this.reader.pos);
-    this.reader = protobuf.Reader.create(this.buffer);
   }
 }

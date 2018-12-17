@@ -20,7 +20,7 @@ import {
   IBazelCommandOptions,
   QueryLocation,
 } from "../bazel";
-import { blaze_query } from "../protos";
+import * as blaze_query from "../protos/src/main/protobuf/build_pb";
 import { IBazelTreeItem } from "./bazel_tree_item";
 import { getBazelRuleIcon } from "./icons";
 
@@ -48,10 +48,10 @@ export class BazelTargetTreeItem
   }
 
   public getLabel(): string {
-    const fullPath = this.target.rule.name;
+    const fullPath = this.target.getRule().getName();
     const colonIndex = fullPath.lastIndexOf(":");
     const targetName = fullPath.substr(colonIndex);
-    return `${targetName}  (${this.target.rule.ruleClass})`;
+    return `${targetName}  (${this.target.getRule().getRuleClass()})`;
   }
 
   public getIcon(): vscode.ThemeIcon | string {
@@ -59,11 +59,11 @@ export class BazelTargetTreeItem
   }
 
   public getTooltip(): string {
-    return `${this.target.rule.name}`;
+    return `${this.target.getRule().getName()}`;
   }
 
   public getCommand(): vscode.Command | undefined {
-    const location = new QueryLocation(this.target.rule.location);
+    const location = new QueryLocation(this.target.getRule().getLocation());
     return {
       arguments: [
         vscode.Uri.file(location.path),
@@ -75,7 +75,7 @@ export class BazelTargetTreeItem
   }
 
   public getContextValue(): string {
-    const ruleClass = this.target.rule.ruleClass;
+    const ruleClass = this.target.getRule().getRuleClass();
     if (ruleClass.endsWith("_test") || ruleClass === "test_suite") {
       return "testRule";
     }
@@ -83,11 +83,11 @@ export class BazelTargetTreeItem
   }
 
   public getBazelCommandOptions(): IBazelCommandOptions {
-    const location = new QueryLocation(this.target.rule.location);
+    const location = new QueryLocation(this.target.getRule().getLocation());
     const workingDirectory = path.dirname(location.path);
     return {
       options: [],
-      targets: [`${this.target.rule.name}`],
+      targets: [`${this.target.getRule().getName()}`],
       workspaceInfo: this.workspaceInfo,
     };
   }

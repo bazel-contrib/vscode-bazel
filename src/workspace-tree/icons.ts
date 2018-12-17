@@ -14,7 +14,7 @@
 
 import * as path from "path";
 import * as vscode from "vscode";
-import { blaze_query } from "../protos";
+import * as blaze_query from "../protos/src/main/protobuf/build_pb";
 
 /**
  * Icons to use for specific rule classes.
@@ -61,7 +61,7 @@ const SPECIFIC_RULE_CLASS_ICONS = {
 export function getBazelRuleIcon(
   target: blaze_query.Target,
 ): string | vscode.ThemeIcon {
-  const ruleClass = target.rule.ruleClass;
+  const ruleClass = target.getRule().getRuleClass();
   let iconName = SPECIFIC_RULE_CLASS_ICONS[ruleClass];
   if (!iconName) {
     if (ruleClass.endsWith("_binary")) {

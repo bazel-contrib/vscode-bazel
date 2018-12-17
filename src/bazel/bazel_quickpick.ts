@@ -78,8 +78,10 @@ async function queryWorkspaceQuickPickTargets(
     [],
   ).queryTargets();
   const result: BazelTargetQuickPick[] = [];
-  for (const target of queryResult.target) {
-    result.push(new BazelTargetQuickPick(target.rule.name, workspaceInfo));
+  for (const target of queryResult.getTargetList()) {
+    result.push(
+      new BazelTargetQuickPick(target.getRule().getName(), workspaceInfo),
+    );
   }
   return result;
 }

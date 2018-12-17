@@ -14,13 +14,12 @@
 
 import * as vscode from "vscode";
 import { DocumentSymbolProvider } from "vscode";
-
 import {
   BazelWorkspaceInfo,
   getTargetsForBuildFile,
   QueryLocation,
 } from "../bazel";
-import { blaze_query } from "../protos";
+import * as blaze_query from "../protos/src/main/protobuf/build_pb";
 
 /** Provids Symbols for targets in Bazel BUILD files. */
 export class BazelTargetSymbolProvider implements DocumentSymbolProvider {
@@ -56,9 +55,9 @@ export class BazelTargetSymbolProvider implements DocumentSymbolProvider {
   ): vscode.DocumentSymbol[] {
     const result = [];
 
-    for (const target of queryResult.target) {
-      const location = new QueryLocation(target.rule.location);
-      let targetName = target.rule.name;
+    for (const target of queryResult.getTargetList()) {
+      const location = new QueryLocation(target.getRule().getLocation());
+      let targetName = target.getRule().getName();
 
       const colonIndex = targetName.indexOf(":");
       if (colonIndex !== -1) {

@@ -14,7 +14,7 @@
 
 import * as vscode from "vscode";
 import { BazelQuery, BazelWorkspaceInfo } from "../bazel";
-import { blaze_query } from "../protos";
+import * as blaze_query from "../protos/src/main/protobuf/build_pb";
 import { BazelTargetTreeItem } from "./bazel_target_tree_item";
 import { IBazelTreeItem } from "./bazel_tree_item";
 
@@ -52,9 +52,11 @@ export class BazelPackageTreeItem implements IBazelTreeItem {
       [],
       true,
     ).queryTargets();
-    const targets = queryResult.target.map((target: blaze_query.Target) => {
-      return new BazelTargetTreeItem(this.workspaceInfo, target);
-    });
+    const targets = queryResult
+      .getTargetList()
+      .map((target: blaze_query.Target) => {
+        return new BazelTargetTreeItem(this.workspaceInfo, target);
+      });
     return (this.directSubpackages as IBazelTreeItem[]).concat(targets);
   }
 

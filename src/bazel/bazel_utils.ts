@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as fs from "fs";
 import * as path from "path";
-import { blaze_query } from "../protos";
+import * as blaze_query from "../protos/src/main/protobuf/build_pb";
 import { BazelQuery } from "./bazel_query";
 
 /**
