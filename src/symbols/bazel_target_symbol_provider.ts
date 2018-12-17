@@ -16,7 +16,9 @@ import * as vscode from "vscode";
 import { DocumentSymbolProvider } from "vscode";
 
 import {
+  BazelLabel,
   BazelWorkspaceInfo,
+  getTargetGenerator,
   getTargetsForBuildFile,
   QueryLocation,
 } from "../bazel";
@@ -56,20 +58,39 @@ export class BazelTargetSymbolProvider implements DocumentSymbolProvider {
   ): vscode.DocumentSymbol[] {
     const result = [];
 
-    for (const target of queryResult.target) {
-      const location = new QueryLocation(target.rule.location);
-      let targetName = target.rule.name;
+    const generatorSymbols = new Map<string, vscode.DocumentSymbol>();
 
-      const colonIndex = targetName.indexOf(":");
-      if (colonIndex !== -1) {
-        targetName = targetName.substr(colonIndex + 1);
+    for (const target of queryResult.target) {
+      const generator = getTargetGenerator(target);
+      let symbolArrayToAppend = [];
+
+      if (generator) {
+        let generatorSymbol = generatorSymbols.get(generator.location);
+        if (generatorSymbol === undefined) {
+          const generatorLocation = new QueryLocation(generator.location);
+          generatorSymbol = new vscode.DocumentSymbol(
+            `${generator.function}("${generator.name}")`,
+            "",
+            vscode.SymbolKind.Function,
+            generatorLocation.range,
+            generatorLocation.range,
+          );
+          generatorSymbols.set(generator.location, generatorSymbol);
+          result.push(generatorSymbol);
+        }
+        symbolArrayToAppend = generatorSymbol.children;
+      } else {
+        symbolArrayToAppend = result;
       }
 
-      result.push(
+      const location = new QueryLocation(target.rule.location);
+      const label = BazelLabel.parse(target.rule.name);
+
+      symbolArrayToAppend.push(
         new vscode.DocumentSymbol(
-          targetName,
+          `:${label.name}`,
           "",
-          vscode.SymbolKind.Function,
+          vscode.SymbolKind.Class,
           location.range,
           location.range,
         ),
