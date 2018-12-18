@@ -28,7 +28,10 @@ import {
   getDefaultBuildifierExecutablePath,
 } from "../buildifier";
 import { BazelBuildCodeLensProvider } from "../codelens";
-import { BazelTargetSymbolProvider } from "../symbols";
+import {
+  BazelTargetReferenceProvider,
+  BazelTargetSymbolProvider,
+} from "../symbols";
 import { BazelWorkspaceTreeProvider } from "../workspace-tree";
 
 /**
@@ -80,6 +83,10 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.languages.registerDocumentSymbolProvider(
       [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
       new BazelTargetSymbolProvider(),
+    ),
+    vscode.languages.registerReferenceProvider(
+      [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
+      new BazelTargetReferenceProvider(),
     ),
   );
 
