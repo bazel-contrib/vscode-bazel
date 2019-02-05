@@ -203,10 +203,10 @@ function executeBuildifier(
       [getDefaultBuildifierExecutablePath()].concat(args).join(" "),
       execOptions,
       (error: Error, stdout: string, stderr: string) => {
-        if (error) {
-          reject(error);
-        } else {
+        if (shouldTreatBuildifierErrorAsSuccess(error)) {
           resolve({ stdout, stderr });
+        } else {
+          reject(error);
         }
       },
     );
@@ -215,4 +215,38 @@ function executeBuildifier(
     process.stdin.write(fileContent);
     process.stdin.end();
   });
+}
+
+/**
+ * Returns a value indicating whether we need to consider the given error to be
+ * a "successful" buildifier exit in the sense that it correctly reported
+ * warnings/errors in the file despite the non-zero exit code.
+ *
+ * @param error The {@code Error} passed to the `child_process.exec` callback.
+ */
+function shouldTreatBuildifierErrorAsSuccess(error: Error | null): boolean {
+  // If there was no error, it was a successful exit.
+  if (!error) {
+    return true;
+  }
+
+  // Some of buildifier's exit codes represent states that we want to treat as
+  // "successful" (i.e., the file had warnings/errors but we want to render
+  // them), and other exit codes represent legitimate failures (like I/O
+  // errors). We have to treat them specifically; see the following section for
+  // the specific exit codes we handle (and make sure that this is updated if
+  // new failure modes are introduced in the future):
+  //
+  // tslint:disable-next-line:max-line-length
+  // https://github.com/bazelbuild/buildtools/blob/831e4632/buildifier/buildifier.go#L323-L331
+  const code = (error as any).code;
+  switch (code) {
+    case 1: // syntax errors in input
+    case 4: // check mode failed
+      return true;
+    case undefined: // some other type of error, assume it's severe
+      return false;
+    default:
+      return false;
+  }
 }
