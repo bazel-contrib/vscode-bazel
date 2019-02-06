@@ -18,8 +18,11 @@ import * as which from "which";
 import {
   BazelWorkspaceInfo,
   createBazelTask,
+  exitCodeToUserString,
+  getBazelTaskInfo,
   getDefaultBazelExecutablePath,
   IBazelCommandAdapter,
+  parseExitCode,
   queryQuickPickTargets,
 } from "../bazel";
 import {
@@ -81,6 +84,9 @@ export function activate(context: vscode.ExtensionContext) {
       [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
       new BazelTargetSymbolProvider(),
     ),
+    // Task events.
+    vscode.tasks.onDidStartTaskProcess(onTaskProcessStart),
+    vscode.tasks.onDidEndTaskProcess(onTaskProcessEnd),
   );
 
   // Notify the user if buildifier is not available on their path (or where
@@ -223,6 +229,34 @@ async function bazelClean() {
     workspaceInfo: BazelWorkspaceInfo.fromWorkspaceFolder(workspaceFolder),
   });
   vscode.tasks.executeTask(task);
+}
+
+function onTaskProcessStart(event: vscode.TaskProcessStartEvent) {
+  const bazelTaskInfo = getBazelTaskInfo(event.execution.task);
+  if (bazelTaskInfo) {
+    bazelTaskInfo.setProcessId(event.processId);
+  }
+}
+
+function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
+  const bazelTaskInfo = getBazelTaskInfo(event.execution.task);
+  if (bazelTaskInfo) {
+    const rawExitCode = event.exitCode;
+    bazelTaskInfo.setExitCode(rawExitCode);
+
+    if (rawExitCode !== 0) {
+      const exitCode = parseExitCode(rawExitCode, bazelTaskInfo.command);
+      vscode.window.showErrorMessage(
+        `Bazel ${bazelTaskInfo.command} failed: ${exitCodeToUserString(
+          exitCode,
+        )}`,
+      );
+    } else {
+      vscode.window.showInformationMessage(
+        `Bazel ${bazelTaskInfo.command} completed successfully.`,
+      );
+    }
+  }
 }
 
 /** The URL to load for buildifier's releases. */
