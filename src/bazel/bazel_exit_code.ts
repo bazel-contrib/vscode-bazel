@@ -45,6 +45,12 @@ export enum ExitCode {
   UNKNOWN = "UNKNOWN",
 }
 
+/**
+ * Converts a given ExitCode to a user-presentable string.
+ *
+ * @param exitCode Bazel ExitCode to convert.
+ * @returns A {@link string} representing the ExitCode.
+ */
 export function exitCodeToUserString(exitCode: ExitCode): string {
   switch (exitCode) {
     case ExitCode.SUCCESS:
@@ -89,6 +95,13 @@ export function exitCodeToUserString(exitCode: ExitCode): string {
   }
 }
 
+/**
+ * Converts a (exit num, command) pair to a Bazel ExitCode.
+ *
+ * @param exitCode Raw exitcode number from a Bazel execution.
+ * @param command Bazel command used (optional).
+ * @returns A {@link ExitCode} representing the ExitCode.
+ */
 export function parseExitCode(exitCode: number, command?: string): ExitCode {
   switch (exitCode) {
     case 0:

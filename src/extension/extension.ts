@@ -85,6 +85,7 @@ export function activate(context: vscode.ExtensionContext) {
       new BazelTargetSymbolProvider(),
     ),
     // Task events.
+    vscode.tasks.onDidStartTask(onTaskStart),
     vscode.tasks.onDidStartTaskProcess(onTaskProcessStart),
     vscode.tasks.onDidEndTaskProcess(onTaskProcessEnd),
   );
@@ -231,10 +232,17 @@ async function bazelClean() {
   vscode.tasks.executeTask(task);
 }
 
+function onTaskStart(event: vscode.TaskStartEvent) {
+  const bazelTaskInfo = getBazelTaskInfo(event.execution.task);
+  if (bazelTaskInfo) {
+    bazelTaskInfo.startTime = process.hrtime();
+  }
+}
+
 function onTaskProcessStart(event: vscode.TaskProcessStartEvent) {
   const bazelTaskInfo = getBazelTaskInfo(event.execution.task);
   if (bazelTaskInfo) {
-    bazelTaskInfo.setProcessId(event.processId);
+    bazelTaskInfo.processId = event.processId;
   }
 }
 
@@ -242,7 +250,7 @@ function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
   const bazelTaskInfo = getBazelTaskInfo(event.execution.task);
   if (bazelTaskInfo) {
     const rawExitCode = event.exitCode;
-    bazelTaskInfo.setExitCode(rawExitCode);
+    bazelTaskInfo.exitCode = rawExitCode;
 
     if (rawExitCode !== 0) {
       const exitCode = parseExitCode(rawExitCode, bazelTaskInfo.command);
@@ -252,8 +260,11 @@ function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
         )}`,
       );
     } else {
+      const timeInSeconds = measurePerformance(bazelTaskInfo.startTime);
       vscode.window.showInformationMessage(
-        `Bazel ${bazelTaskInfo.command} completed successfully.`,
+        `Bazel ${
+          bazelTaskInfo.command
+        } completed successfully in ${timeInSeconds} seconds.`,
       );
     }
   }
@@ -262,6 +273,15 @@ function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
 /** The URL to load for buildifier's releases. */
 const BUILDTOOLS_RELEASES_URL =
   "https://github.com/bazelbuild/buildtools/releases";
+
+/**
+ * Returns the number of seconds elapsed with a single decimal place.
+ *
+ */
+function measurePerformance(start: [number, number]) {
+  const diff = process.hrtime(start);
+  return (diff[0] + diff[1] / 1e9).toFixed(1);
+}
 
 /**
  * Checks whether buildifier is available (either at the system PATH or a

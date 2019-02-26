@@ -18,10 +18,13 @@ import { IBazelCommandOptions } from "./bazel_command";
 /** Information about a Bazel task. */
 export class BazelTaskInfo {
   /** pid for the task (if started). */
-  private processId: number;
+  public processId: number;
 
   /** exit code for the task (if completed). */
-  private exitCode: number;
+  public exitCode: number;
+
+  /** start time (for internal performance tracking). */
+  public startTime: [number, number];
 
   /**
    * Initializes a new Bazel task info instance.
@@ -33,20 +36,6 @@ export class BazelTaskInfo {
     readonly command: string,
     readonly commandOptions: IBazelCommandOptions,
   ) {}
-
-  public setProcessId(processId: number) {
-    this.processId = processId;
-  }
-  public getProcessId(): number {
-    return this.processId;
-  }
-
-  public setExitCode(exitCode: number) {
-    this.exitCode = exitCode;
-  }
-  public getExitCode(): number {
-    return this.exitCode;
-  }
 }
 
 export function setBazelTaskInfo(task: vscode.Task, info: BazelTaskInfo) {
