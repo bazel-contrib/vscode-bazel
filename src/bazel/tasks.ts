@@ -14,6 +14,7 @@
 
 import * as vscode from "vscode";
 import { IBazelCommandOptions } from "./bazel_command";
+import { BazelTaskInfo, setBazelTaskInfo } from "./bazel_task_info";
 
 /**
  * Returns a {@code ShellQuotedString} indicating how to quote the given flag
@@ -52,7 +53,7 @@ export function createBazelTask(
   }
 
   const targetsDescription = options.targets.join(", ");
-  return new vscode.Task(
+  const task = new vscode.Task(
     { type: "bazel", command, targets: options.targets },
     // TODO(allevato): Change Workspace to Global once the fix for
     // Microsoft/vscode#63951 is in a stable release.
@@ -63,4 +64,6 @@ export function createBazelTask(
       cwd: options.workspaceInfo.bazelWorkspacePath,
     }),
   );
+  setBazelTaskInfo(task, new BazelTaskInfo(command, options));
+  return task;
 }
