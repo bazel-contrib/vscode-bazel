@@ -13,7 +13,10 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import { IBazelCommandOptions } from "./bazel_command";
+import {
+  getDefaultBazelExecutablePath,
+  IBazelCommandOptions,
+} from "./bazel_command";
 import { BazelTaskInfo, setBazelTaskInfo } from "./bazel_task_info";
 
 /**
@@ -60,7 +63,7 @@ export function createBazelTask(
     options.workspaceInfo.workspaceFolder || vscode.TaskScope.Workspace,
     `${commandDescription} ${targetsDescription}`,
     "bazel",
-    new vscode.ShellExecution("${config:bazel.executable}", args, {
+    new vscode.ShellExecution(getDefaultBazelExecutablePath(), args, {
       cwd: options.workspaceInfo.bazelWorkspacePath,
     }),
   );
