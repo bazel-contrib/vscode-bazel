@@ -73,6 +73,7 @@ export function activate(context: vscode.ExtensionContext) {
         { pattern: "**/BUILD.bazel" },
         { pattern: "**/WORKSPACE" },
         { pattern: "**/WORKSPACE.bazel" },
+        { pattern: "**/*.BUILD" },
         { pattern: "**/*.bzl" },
         { pattern: "**/*.sky" },
       ],
