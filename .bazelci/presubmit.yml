@@ -2,7 +2,17 @@
 tasks:
   ubuntu1804:
     shell_commands:
-      - touch WORKSPACE
+      # Buildkite expects to be able to build at least one target, so we create
+      # a dummy workspace here.
+      - echo 'workspace(name = "build_bazel_vscode_bazel_dummy")' > WORKSPACE
       - echo 'filegroup(name = "dummy")' > BUILD
+      # Install node_modules and then check the code for lint errors.
+      - npm install
+      - npm run check-lint
+      # TODO(allevato): Add a prettier check to verify that *.ts files don't
+      # differ from their prettier output. We need `prettier-tslint` so that
+      # prettier will obey our tslint config, but it doesn't support
+      # Typescript 3 yet.
+      # (https://github.com/azz/prettier-tslint/issues/18)
     build_targets:
       - "//:dummy"
