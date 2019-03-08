@@ -1,0 +1,8 @@
+---
+tasks:
+  ubuntu1804:
+    shell_commands:
+      - touch WORKSPACE
+      - echo 'filegroup(name = "dummy")' > BUILD
+    build_targets:
+      - "//:dummy"
