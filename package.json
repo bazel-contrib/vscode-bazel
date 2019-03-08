@@ -222,7 +222,7 @@
         }
     },
     "scripts": {
-        "check-lint": "tslint 'src/**/*.ts' --exclude 'src/**/*.d.ts'",
+        "check-lint": "tslint -t stylish 'src/**/*.ts' --exclude 'src/**/*.d.ts'",
         "compile": "./scripts/build.sh -watch",
         "postinstall": "node ./node_modules/vscode/bin/install",
         "vscode:prepublish": "./scripts/build.sh",
