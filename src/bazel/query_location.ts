@@ -30,14 +30,21 @@ export class QueryLocation {
 
   constructor(stringRepresentation: string) {
     const parts = stringRepresentation.split(":");
-    if (parts.length === 4) {
-      /* Account for extra ":" in path if running on Windows */
+    let isWindowsPath = false;
+    if (parts.length > 1 && isNaN(Number(parts[1]))) {
+      isWindowsPath = true;
+    }
+
+    let pathParts = 1;
+    if (isWindowsPath) {
       this.path = parts[0] + ":" + parts[1];
+      pathParts = 2;
     } else {
       this.path = parts[0];
     }
-    this.line = parts.length > 1 ? parseInt(parts[parts.length - 2], 10) : 1;
-    this.column = parts.length > 2 ? parseInt(parts[parts.length - 1], 10) : 1;
+    const partsAfterPath = parts.length - pathParts;
+    this.line = partsAfterPath > 0 ? parseInt(parts[pathParts], 10) : 1;
+    this.column = partsAfterPath > 1 ? parseInt(parts[pathParts + 1], 10) : 1;
   }
 
   /**
