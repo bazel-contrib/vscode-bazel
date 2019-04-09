@@ -33,7 +33,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
   }
 
   public getChildren(): Promise<IBazelTreeItem[]> {
-    return this.getPackages();
+    return this.getDirectoryItems();
   }
 
   public getLabel(): string {
@@ -141,9 +141,9 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
   }
 
   /**
-   * Returns a promise for an array of tree items representing build packages.
+   * Returns a promise for an array of tree items representing build items.
    */
-  private async getPackages(): Promise<IBazelTreeItem[]> {
+  private async getDirectoryItems(): Promise<IBazelTreeItem[]> {
     // Retrieve the list of all packages underneath the current workspace
     // folder. Note that if the workspace folder is not the root of a Bazel
     // workspace but is instead a folder underneath it, we query for *only* the
