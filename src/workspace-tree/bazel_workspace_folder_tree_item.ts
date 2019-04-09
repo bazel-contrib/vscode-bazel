@@ -14,7 +14,9 @@
 
 import * as vscode from "vscode";
 import { BazelQuery, BazelWorkspaceInfo } from "../bazel";
+import { blaze_query } from "../protos";
 import { BazelPackageTreeItem } from "./bazel_package_tree_item";
+import { BazelTargetTreeItem } from "./bazel_target_tree_item";
 import { IBazelTreeItem } from "./bazel_tree_item";
 
 /** A tree item representing a workspace folder. */
@@ -141,7 +143,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
   /**
    * Returns a promise for an array of tree items representing build packages.
    */
-  private async getPackages(): Promise<BazelPackageTreeItem[]> {
+  private async getPackages(): Promise<IBazelTreeItem[]> {
     // Retrieve the list of all packages underneath the current workspace
     // folder. Note that if the workspace folder is not the root of a Bazel
     // workspace but is instead a folder underneath it, we query for *only* the
@@ -163,6 +165,19 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
       topLevelItems,
       "",
     );
-    return Promise.resolve(topLevelItems);
+
+    // Now collect any targets in the directory also (this can fail since
+    // there might not be a BUILD files at this level (but down levels)).
+    const queryResult = await new BazelQuery(
+      workspacePath,
+      `:all`,
+      [],
+      true,
+    ).queryTargets();
+    const targets = queryResult.target.map((target: blaze_query.Target) => {
+      return new BazelTargetTreeItem(this.workspaceInfo, target);
+    });
+
+    return Promise.resolve((topLevelItems as IBazelTreeItem[]).concat(targets));
   }
 }
