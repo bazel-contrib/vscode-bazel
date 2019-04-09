@@ -40,8 +40,28 @@
             },
             {
                 "category": "Bazel",
+                "command": "bazel.buildAll",
+                "title": "Build Package"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.buildAllRecursive",
+                "title": "Build Package Recursively"
+            },
+            {
+                "category": "Bazel",
                 "command": "bazel.testTarget",
                 "title": "Test Target"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.testAll",
+                "title": "Test Package"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.testAllRecursive",
+                "title": "Test Package Recursively"
             },
             {
                 "category": "Bazel",
@@ -180,8 +200,28 @@
                     "group": "build"
                 },
                 {
+                    "command": "bazel.buildAll",
+                    "when": "view == bazelWorkspace && viewItem == package",
+                    "group": "build"
+                },
+                {
+                    "command": "bazel.buildAllRecursive",
+                    "when": "view == bazelWorkspace && viewItem == package",
+                    "group": "build"
+                },
+                {
                     "command": "bazel.testTarget",
                     "when": "view == bazelWorkspace && viewItem == testRule",
+                    "group": "build"
+                },
+                {
+                    "command": "bazel.testAll",
+                    "when": "view == bazelWorkspace && viewItem == package",
+                    "group": "build"
+                },
+                {
+                    "command": "bazel.testAllRecursive",
+                    "when": "view == bazelWorkspace && viewItem == package",
                     "group": "build"
                 }
             ],
