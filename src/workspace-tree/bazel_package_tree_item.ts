@@ -57,7 +57,7 @@ export class BazelPackageTreeItem
       `//${this.packagePath}:all`,
       [],
       true,
-    ).queryTargets();
+    ).queryTargets([], /* sortByRuleName: */ true);
     const targets = queryResult.target.map((target: blaze_query.Target) => {
       return new BazelTargetTreeItem(this.workspaceInfo, target);
     });
