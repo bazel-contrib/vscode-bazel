@@ -50,9 +50,24 @@ export class BazelQuery extends BazelCommand {
    */
   public async queryTargets(
     additionalOptions: string[] = [],
+    sortByRuleName: boolean = false,
   ): Promise<blaze_query.QueryResult> {
     const buffer = await this.run(additionalOptions.concat(["--output=proto"]));
     const result = blaze_query.QueryResult.decode(buffer);
+    if (sortByRuleName) {
+      const sorted = result.target.sort((t1, t2) => {
+        const n1 = t1.rule.name;
+        const n2 = t2.rule.name;
+        if (n1 > n2) {
+          return 1;
+        }
+        if (n1 < n2) {
+          return -1;
+        }
+        return 0;
+      });
+      result.target = sorted;
+    }
     return result;
   }
 
