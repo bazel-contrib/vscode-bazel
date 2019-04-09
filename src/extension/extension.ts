@@ -15,6 +15,7 @@
 import * as vscode from "vscode";
 import * as which from "which";
 
+import { build } from "protobufjs";
 import {
   BazelWorkspaceInfo,
   createBazelTask,
@@ -22,7 +23,9 @@ import {
   getBazelTaskInfo,
   getDefaultBazelExecutablePath,
   IBazelCommandAdapter,
+  IBazelCommandOptions,
   parseExitCode,
+  queryQuickPickPackage,
   queryQuickPickTargets,
 } from "../bazel";
 import {
@@ -56,7 +59,17 @@ export function activate(context: vscode.ExtensionContext) {
       "bazel.buildTargetWithDebugging",
       bazelBuildTargetWithDebugging,
     ),
+    vscode.commands.registerCommand("bazel.buildAll", bazelbuildAll),
+    vscode.commands.registerCommand(
+      "bazel.buildAllRecursive",
+      bazelbuildAllRecursive,
+    ),
     vscode.commands.registerCommand("bazel.testTarget", bazelTestTarget),
+    vscode.commands.registerCommand("bazel.testAll", bazelTestAll),
+    vscode.commands.registerCommand(
+      "bazel.testAllRecursive",
+      bazelTestAllRecursive,
+    ),
     vscode.commands.registerCommand("bazel.clean", bazelClean),
     vscode.commands.registerCommand("bazel.refreshBazelBuildTargets", () => {
       workspaceTreeProvider.refresh();
@@ -136,7 +149,6 @@ async function bazelBuildTarget(adapter: IBazelCommandAdapter | undefined) {
  * @param adapter An object that implements {@link IBazelCommandAdapter} from
  *     which the command's arguments will be determined.
  */
-
 async function bazelBuildTargetWithDebugging(
   adapter: IBazelCommandAdapter | undefined,
 ) {
@@ -170,6 +182,59 @@ async function bazelBuildTargetWithDebugging(
 }
 
 /**
+ * Builds a Bazel package and streams output to the terminal.
+ *
+ * @param adapter An object that implements {@link IBazelCommandAdapter} from
+ *     which the command's arguments will be determined.
+ */
+async function bazelbuildAll(adapter: IBazelCommandAdapter | undefined) {
+  buildPackage(":all", adapter);
+}
+
+/**
+ * Builds a Bazel package recursively and streams output to the terminal.
+ *
+ * @param adapter An object that implements {@link IBazelCommandAdapter} from
+ *     which the command's arguments will be determined.
+ */
+async function bazelbuildAllRecursive(
+  adapter: IBazelCommandAdapter | undefined,
+) {
+  buildPackage("/...", adapter);
+}
+
+async function buildPackage(
+  suffix: string,
+  adapter: IBazelCommandAdapter | undefined,
+) {
+  if (adapter === undefined) {
+    // If the command adapter was unspecified, it means this command is being
+    // invoked via the command palatte. Provide quickpick build targets for
+    // the user to choose from.
+    const quickPick = await vscode.window.showQuickPick(
+      queryQuickPickPackage(),
+      {
+        canPickMany: false,
+      },
+    );
+    // If the result was undefined, the user cancelled the quick pick, so don't
+    // try again.
+    if (quickPick) {
+      buildPackage(suffix, quickPick);
+    }
+    return;
+  }
+  const commandOptions = adapter.getBazelCommandOptions();
+  const allCommandOptions = {
+    options: commandOptions.options,
+    targets: commandOptions.targets.map((s) => s + suffix),
+    workspaceInfo: commandOptions.workspaceInfo,
+  };
+  const task = createBazelTask("build", allCommandOptions);
+  vscode.tasks.executeTask(task);
+}
+
+/**
  * Tests a Bazel target and streams output to the terminal.
  *
  * @param adapter An object that implements {@link IBazelCommandAdapter} from
@@ -195,6 +260,59 @@ async function bazelTestTarget(adapter: IBazelCommandAdapter | undefined) {
   }
   const commandOptions = adapter.getBazelCommandOptions();
   const task = createBazelTask("test", commandOptions);
+  vscode.tasks.executeTask(task);
+}
+
+/**
+ * Tests a Bazel package and streams output to the terminal.
+ *
+ * @param adapter An object that implements {@link IBazelCommandAdapter} from
+ *     which the command's arguments will be determined.
+ */
+async function bazelTestAll(adapter: IBazelCommandAdapter | undefined) {
+  testPackage(":all", adapter);
+}
+
+/**
+ * Tests a Bazel package recursively and streams output to the terminal.
+ *
+ * @param adapter An object that implements {@link IBazelCommandAdapter} from
+ *     which the command's arguments will be determined.
+ */
+async function bazelTestAllRecursive(
+  adapter: IBazelCommandAdapter | undefined,
+) {
+  testPackage("/...", adapter);
+}
+
+async function testPackage(
+  suffix: string,
+  adapter: IBazelCommandAdapter | undefined,
+) {
+  if (adapter === undefined) {
+    // If the command adapter was unspecified, it means this command is being
+    // invoked via the command palatte. Provide quickpick build targets for
+    // the user to choose from.
+    const quickPick = await vscode.window.showQuickPick(
+      queryQuickPickPackage(),
+      {
+        canPickMany: false,
+      },
+    );
+    // If the result was undefined, the user cancelled the quick pick, so don't
+    // try again.
+    if (quickPick) {
+      testPackage(suffix, quickPick);
+    }
+    return;
+  }
+  const commandOptions = adapter.getBazelCommandOptions();
+  const allCommandOptions = {
+    options: commandOptions.options,
+    targets: commandOptions.targets.map((s) => s + suffix),
+    workspaceInfo: commandOptions.workspaceInfo,
+  };
+  const task = createBazelTask("test", allCommandOptions);
   vscode.tasks.executeTask(task);
 }
 
@@ -253,8 +371,8 @@ function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
     const rawExitCode = event.exitCode;
     bazelTaskInfo.exitCode = rawExitCode;
 
+    const exitCode = parseExitCode(rawExitCode, bazelTaskInfo.command);
     if (rawExitCode !== 0) {
-      const exitCode = parseExitCode(rawExitCode, bazelTaskInfo.command);
       vscode.window.showErrorMessage(
         `Bazel ${bazelTaskInfo.command} failed: ${exitCodeToUserString(
           exitCode,
