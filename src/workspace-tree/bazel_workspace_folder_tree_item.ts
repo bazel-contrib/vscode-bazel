@@ -152,11 +152,11 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     // workspace without the performance penalty of querying the entire
     // workspace.
     const workspacePath = this.workspaceInfo.workspaceFolder.uri.fsPath;
-    const packagePaths = await new BazelQuery(workspacePath, "...", [
-      "--output=package",
-    ]).queryPackages();
-    packagePaths.sort();
-
+    const packagePaths = await new BazelQuery(
+      workspacePath,
+      "...:*",
+      [],
+    ).queryPackages();
     const topLevelItems: BazelPackageTreeItem[] = [];
     this.buildPackageTree(
       packagePaths,
