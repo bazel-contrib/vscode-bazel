@@ -97,10 +97,9 @@ async function queryWorkspaceQuickPickPackages(
 ): Promise<BazelTargetQuickPick[]> {
   const packagePaths = await new BazelQuery(
     workspaceInfo.bazelWorkspacePath,
-    "...",
-    ["--output=package"],
+    "...:*",
+    [],
   ).queryPackages();
-  packagePaths.sort();
   const result: BazelTargetQuickPick[] = [];
   for (const target of packagePaths) {
     result.push(new BazelTargetQuickPick("//" + target, workspaceInfo));

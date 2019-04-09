@@ -62,7 +62,8 @@ export class BazelQuery extends BazelCommand {
    *
    * @param additionalOptions Additional command line options that should be
    *     passed just to this specific invocation of the query.
-   * @returns An array of package paths containing the targets that match.
+   * @returns An sorted array of package paths containing the targets that
+   *     match.
    */
   public async queryPackages(
     additionalOptions: string[] = [],
@@ -73,7 +74,8 @@ export class BazelQuery extends BazelCommand {
     const result = buffer
       .toString("utf-8")
       .trim()
-      .split("\n");
+      .split("\n")
+      .sort();
     return result;
   }
 
