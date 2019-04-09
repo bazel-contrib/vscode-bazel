@@ -77,9 +77,12 @@ async function queryWorkspaceQuickPickTargets(
     query,
     [],
   ).queryTargets();
+  // Sort the labels so the QuickPick is ordered.
+  const labels = queryResult.target.map((target) => target.rule.name);
+  labels.sort();
   const result: BazelTargetQuickPick[] = [];
-  for (const target of queryResult.target) {
-    result.push(new BazelTargetQuickPick(target.rule.name, workspaceInfo));
+  for (const target of labels) {
+    result.push(new BazelTargetQuickPick(target, workspaceInfo));
   }
   return result;
 }
