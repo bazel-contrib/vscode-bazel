@@ -65,6 +65,8 @@ export function exitCodeToUserString(exitCode: ExitCode): string {
       return "Tests failed: check your test logs for errors.";
     case ExitCode.PARTIAL_ANALYSIS_FAILURE:
       return "Query failed: error during analysis.";
+    case ExitCode.NO_TESTS_FOUND:
+      return "No test targets were found.";
     case ExitCode.INTERRUPTED:
       return "Command interrupted.";
     case ExitCode.LOCK_HELD_NOBLOCK_FOR_LOCK:
