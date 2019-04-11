@@ -13,13 +13,19 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import { BazelQuery, BazelWorkspaceInfo } from "../bazel";
+import {
+  BazelQuery,
+  BazelWorkspaceInfo,
+  IBazelCommandAdapter,
+  IBazelCommandOptions,
+} from "../bazel";
 import { blaze_query } from "../protos";
 import { BazelTargetTreeItem } from "./bazel_target_tree_item";
 import { IBazelTreeItem } from "./bazel_tree_item";
 
 /** A tree item representing a build package. */
-export class BazelPackageTreeItem implements IBazelTreeItem {
+export class BazelPackageTreeItem
+  implements IBazelCommandAdapter, IBazelTreeItem {
   /**
    * The array of subpackages that should be shown directly under this package
    * item.
@@ -51,7 +57,7 @@ export class BazelPackageTreeItem implements IBazelTreeItem {
       `//${this.packagePath}:all`,
       [],
       true,
-    ).queryTargets();
+    ).queryTargets([], /* sortByRuleName: */ true);
     const targets = queryResult.target.map((target: blaze_query.Target) => {
       return new BazelTargetTreeItem(this.workspaceInfo, target);
     });
@@ -83,5 +89,13 @@ export class BazelPackageTreeItem implements IBazelTreeItem {
 
   public getContextValue(): string {
     return "package";
+  }
+
+  public getBazelCommandOptions(): IBazelCommandOptions {
+    return {
+      options: [],
+      targets: [`//${this.packagePath}`],
+      workspaceInfo: this.workspaceInfo,
+    };
   }
 }

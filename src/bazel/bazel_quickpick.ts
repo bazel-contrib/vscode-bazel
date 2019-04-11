@@ -77,9 +77,32 @@ async function queryWorkspaceQuickPickTargets(
     query,
     [],
   ).queryTargets();
+  // Sort the labels so the QuickPick is ordered.
+  const labels = queryResult.target.map((target) => target.rule.name);
+  labels.sort();
   const result: BazelTargetQuickPick[] = [];
-  for (const target of queryResult.target) {
-    result.push(new BazelTargetQuickPick(target.rule.name, workspaceInfo));
+  for (const target of labels) {
+    result.push(new BazelTargetQuickPick(target, workspaceInfo));
+  }
+  return result;
+}
+
+/**
+ * Runs a bazel query command for pacakges in the given bazel workspace and
+ * returns the resulting array of BazelTargetQuickPick as a promise.
+ * @param workspace The bazel workspace to run the bazel command from.
+ */
+async function queryWorkspaceQuickPickPackages(
+  workspaceInfo: BazelWorkspaceInfo,
+): Promise<BazelTargetQuickPick[]> {
+  const packagePaths = await new BazelQuery(
+    workspaceInfo.bazelWorkspacePath,
+    "...:*",
+    [],
+  ).queryPackages();
+  const result: BazelTargetQuickPick[] = [];
+  for (const target of packagePaths) {
+    result.push(new BazelTargetQuickPick("//" + target, workspaceInfo));
   }
   return result;
 }
@@ -113,4 +136,33 @@ export async function queryQuickPickTargets(
   }
 
   return queryWorkspaceQuickPickTargets(workspace, query);
+}
+
+/**
+ * Runs a bazel query command for package in an automatically determined bazel
+ * workspace and returns the resulting array of BazelTargetQuickPick as a
+ * promise. The workspace is determined by trying to determine the bazel
+ * workspace the currently active text editor is in.
+ * @param query The bazel query string to run.
+ */
+export async function queryQuickPickPackage(): Promise<BazelTargetQuickPick[]> {
+  // Use the active text editor's file to determine the directory of the Bazel
+  // workspace.
+  if (vscode.window.activeTextEditor === undefined) {
+    vscode.window.showErrorMessage(
+      "Unable to determine Bazel workspace. Open a file in the Bazel workspace",
+    );
+    return [];
+  }
+
+  const document = vscode.window.activeTextEditor.document;
+  const workspace = BazelWorkspaceInfo.fromDocument(document);
+
+  if (workspace === undefined) {
+    const filePath = document.uri.fsPath;
+    vscode.window.showErrorMessage(filePath + " is not in a Bazel workspace");
+    return [];
+  }
+
+  return queryWorkspaceQuickPickPackages(workspace);
 }

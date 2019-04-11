@@ -83,8 +83,6 @@ export class BazelTargetTreeItem
   }
 
   public getBazelCommandOptions(): IBazelCommandOptions {
-    const location = new QueryLocation(this.target.rule.location);
-    const workingDirectory = path.dirname(location.path);
     return {
       options: [],
       targets: [`${this.target.rule.name}`],
