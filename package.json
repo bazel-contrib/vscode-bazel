@@ -76,6 +76,11 @@
                     "dark": "./icons/refresh-dark.svg",
                     "light": "./icons/refresh-light.svg"
                 }
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.showExtensionLog",
+                "title": "Show Extension Log"
             }
         ],
         "configuration": {
@@ -96,6 +101,11 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Whether to automatically apply lint fixes from buildifier when formatting a Bazel file."
+                },
+                "bazel.showExtensionLog": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Show the VSCode-Bazel output channel when the Bazel extension initializes."
                 }
             }
         },
