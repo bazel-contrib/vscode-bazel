@@ -151,6 +151,9 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     // have a VS Code workspace that is pointed at a subpackage of a large
     // workspace without the performance penalty of querying the entire
     // workspace.
+    if (!this.workspaceInfo) {
+      return Promise.resolve([]);
+    }
     const workspacePath = this.workspaceInfo.workspaceFolder.uri.fsPath;
     const packagePaths = await new BazelQuery(
       workspacePath,
