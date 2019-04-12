@@ -15,7 +15,6 @@
 import * as vscode from "vscode";
 import * as which from "which";
 
-import { build } from "protobufjs";
 import {
   BazelWorkspaceInfo,
   createBazelTask,
@@ -23,7 +22,6 @@ import {
   getBazelTaskInfo,
   getDefaultBazelExecutablePath,
   IBazelCommandAdapter,
-  IBazelCommandOptions,
   parseExitCode,
   queryQuickPickPackage,
   queryQuickPickTargets,
@@ -34,6 +32,7 @@ import {
   getDefaultBuildifierExecutablePath,
 } from "../buildifier";
 import { BazelBuildCodeLensProvider } from "../codelens";
+import { setupLoggingOutputChannel } from "../logging";
 import { BazelTargetSymbolProvider } from "../symbols";
 import { BazelWorkspaceTreeProvider } from "../workspace-tree";
 
@@ -44,6 +43,8 @@ import { BazelWorkspaceTreeProvider } from "../workspace-tree";
  * @param context The extension context.
  */
 export function activate(context: vscode.ExtensionContext) {
+  setupLoggingOutputChannel(context);
+
   const workspaceTreeProvider = new BazelWorkspaceTreeProvider(context);
   const codeLensProvider = new BazelBuildCodeLensProvider(context);
   const buildifierDiagnostics = new BuildifierDiagnosticsManager();
