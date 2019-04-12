@@ -91,6 +91,11 @@ export class BazelWorkspaceInfo {
  */
 function getBazelWorkspaceFolder(fsPath: string): string | undefined {
   let dirname = fsPath;
+  let iteration = 0;
+  // Fail safe in case other file systems have a base dirname that doesn't
+  // match the checks below. Having this failsafe guarantees that we don't
+  // hang in an infinite loop.
+  const maxIterations = 100;
   if (fs.statSync(fsPath).isFile()) {
     dirname = path.dirname(dirname);
   }
@@ -105,7 +110,7 @@ function getBazelWorkspaceFolder(fsPath: string): string | undefined {
       // Intentionally do nothing; just try the next parent directory.
     }
     dirname = path.dirname(dirname);
-  } while (dirname !== "");
+  } while (++iteration < maxIterations && dirname !== "" && dirname !== "/");
 
   return undefined;
 }
