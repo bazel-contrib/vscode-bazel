@@ -20,11 +20,13 @@ import { BazelQuery } from "./bazel_query";
 /**
  * Get the targets in the build file
  *
- * @param workspace The path to the workspace
- * @param buildFile The path to the build file
- * @returns A query result for targets in the build file
+ * @param bazelExecutable The path to the Bazel executable.
+ * @param workspace The path to the workspace.
+ * @param buildFile The path to the build file.
+ * @returns A query result for targets in the build file.
  */
 export async function getTargetsForBuildFile(
+  bazelExecutable: string,
   workspace: string,
   buildFile: string,
 ): Promise<blaze_query.QueryResult> {
@@ -40,6 +42,7 @@ export async function getTargetsForBuildFile(
   // Turn the relative path into a package label
   const pkg = `//${relDirWithDoc}`;
   const queryResult = await new BazelQuery(
+    bazelExecutable,
     workspace,
     `'kind(rule, ${pkg}:all)'`,
     [],

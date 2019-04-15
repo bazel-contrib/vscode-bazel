@@ -13,10 +13,8 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import {
-  getDefaultBazelExecutablePath,
-  IBazelCommandOptions,
-} from "./bazel_command";
+import { getDefaultBazelExecutablePath } from "../extension/configuration";
+import { IBazelCommandOptions } from "./bazel_command";
 import { BazelTaskInfo, setBazelTaskInfo } from "./bazel_task_info";
 
 /**
