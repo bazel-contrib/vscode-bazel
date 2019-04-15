@@ -20,7 +20,6 @@ import {
   createBazelTask,
   exitCodeToUserString,
   getBazelTaskInfo,
-  getDefaultBazelExecutablePath,
   IBazelCommandAdapter,
   parseExitCode,
   queryQuickPickPackage,
@@ -35,6 +34,7 @@ import { BazelBuildCodeLensProvider } from "../codelens";
 import { setupLoggingOutputChannel } from "../logging";
 import { BazelTargetSymbolProvider } from "../symbols";
 import { BazelWorkspaceTreeProvider } from "../workspace-tree";
+import { getDefaultBazelExecutablePath } from "./configuration";
 
 /**
  * Called when the extension is activated; that is, when its first command is
