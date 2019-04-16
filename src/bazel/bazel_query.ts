@@ -21,6 +21,7 @@ export class BazelQuery extends BazelCommand {
   /**
    * Initializes a new Bazel query.
    *
+   * @param bazelExecutable The path to the Bazel executable.
    * @param workingDirectory The path to the directory from which Bazel will be
    *     spawned.
    * @param query The query to execute.
@@ -31,12 +32,13 @@ export class BazelQuery extends BazelCommand {
    *     empty string instead.
    */
   public constructor(
+    bazelExecutable: string,
     workingDirectory: string,
     query: string,
     options: string[],
     private readonly ignoresErrors: boolean = false,
   ) {
-    super(workingDirectory, [query].concat(options));
+    super(bazelExecutable, workingDirectory, [query].concat(options));
   }
 
   /**

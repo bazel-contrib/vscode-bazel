@@ -13,11 +13,13 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
+
 import {
   BazelWorkspaceInfo,
   getTargetsForBuildFile,
   QueryLocation,
 } from "../bazel";
+import { getDefaultBazelExecutablePath } from "../extension/configuration";
 import { blaze_query } from "../protos";
 import { CodeLensCommandAdapter } from "./code_lens_command_adapter";
 
@@ -79,6 +81,7 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
     }
 
     const queryResult = await getTargetsForBuildFile(
+      getDefaultBazelExecutablePath(),
       workspaceInfo.bazelWorkspacePath,
       document.uri.fsPath,
     );

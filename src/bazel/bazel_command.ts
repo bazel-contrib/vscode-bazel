@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as vscode from "vscode";
 import { BazelWorkspaceInfo } from "./bazel_workspace_info";
 
 /**
@@ -48,12 +47,14 @@ export abstract class BazelCommand {
   /**
    * Initializes a new Bazel command instance.
    *
+   * @param bazelExecutable The path to the Bazel executable.
    * @param workingDirectory The path to the directory from which Bazel will be
    *     spawned.
    * @param options Command line options that will be passed to Bazel (targets,
    *     query strings, flags, etc.).
    */
   public constructor(
+    readonly bazelExecutable: string,
     readonly workingDirectory: string,
     readonly options: string[] = [],
   ) {}
@@ -66,7 +67,7 @@ export abstract class BazelCommand {
 
   /** The command line string used to execute the query. */
   protected commandLine(additionalOptions: string[] = []) {
-    let result = `${getDefaultBazelExecutablePath()} ${this.bazelCommand()}`;
+    let result = `${this.bazelExecutable} ${this.bazelCommand()}`;
     if (this.options.length > 0) {
       result += " ";
       result += this.options.join(" ");
@@ -77,23 +78,4 @@ export abstract class BazelCommand {
     }
     return result;
   }
-}
-
-/**
- * Gets the path to the Bazel executable specified by the workspace
- * configuration, if present.
- *
- * @returns The path to the Bazel executable specified in the workspace
- * configuration, or just "bazel" if not present (in which case the system path
- * will be searched).
- */
-export function getDefaultBazelExecutablePath(): string {
-  // Try to retrieve the executable from VS Code's settings. If it's not set,
-  // just use "bazel" as the default and get it from the system PATH.
-  const bazelConfig = vscode.workspace.getConfiguration("bazel");
-  const bazelExecutable = bazelConfig.executable as string;
-  if (bazelExecutable.length === 0) {
-    return "bazel";
-  }
-  return bazelExecutable;
 }
