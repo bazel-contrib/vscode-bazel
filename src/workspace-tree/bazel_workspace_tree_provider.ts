@@ -83,11 +83,17 @@ export class BazelWorkspaceTreeProvider
       // If the user has multiple workspace folders open, then show them as
       // individual top level items.
       return Promise.resolve(
-        vscode.workspace.workspaceFolders.map((folder) => {
-          return new BazelWorkspaceFolderTreeItem(
-            BazelWorkspaceInfo.fromWorkspaceFolder(folder),
-          );
-        }),
+        vscode.workspace.workspaceFolders
+          .map((folder) => {
+            const workspaceInfo = BazelWorkspaceInfo.fromWorkspaceFolder(
+              folder,
+            );
+            if (workspaceInfo) {
+              return new BazelWorkspaceFolderTreeItem(workspaceInfo);
+            }
+            return undefined;
+          })
+          .filter((folder) => folder !== undefined),
       );
     }
 
