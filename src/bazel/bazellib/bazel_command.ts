@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { BazelWorkspaceInfo } from "./bazel_workspace_info";
+import { BazelWorkspaceInfo } from "../bazel_workspace_info";
 
 /**
  * Arbitrary types should implement this interface to specify how a task should
