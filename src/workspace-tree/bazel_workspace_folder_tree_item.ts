@@ -13,7 +13,8 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import { BazelQuery, BazelWorkspaceInfo } from "../bazel";
+import { BazelWorkspaceInfo } from "../bazel";
+import { BazelQuery } from "../bazel/bazellib";
 import { getDefaultBazelExecutablePath } from "../extension/configuration";
 import { blaze_query } from "../protos";
 import { BazelPackageTreeItem } from "./bazel_package_tree_item";
