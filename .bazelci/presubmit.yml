@@ -7,7 +7,7 @@ tasks:
       - echo 'workspace(name = "build_bazel_vscode_bazel_dummy")' > WORKSPACE
       - echo 'filegroup(name = "dummy")' > BUILD
       # Install node_modules and then check the code for lint errors.
-      - npm install
+      - npm ci
       - npm run check-lint
       # TODO(allevato): Add a prettier check to verify that *.ts files don't
       # differ from their prettier output. We need `prettier-tslint` so that
