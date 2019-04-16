@@ -1,5 +1,27 @@
 # Change Log
 
+## Version ?.?.? (??? ??, ????)
+
+### New Features
+
+- Support formatting of `*.BUILD` files.
+- TreeView and Command Palette QuickPicks results are now sorted making them
+  easy to scan.
+- Targets rooted in the directory opened are also included in the TreeView
+  and Command Palette QuickPicks.
+- Support in the TreeView and Command Palette QuickPicks for building a the
+  whole package or the package recursively (`:all` and `/...`).
+
+### Bug Fixes
+
+- Handle cases where `buildifier` exists with a non zero result, but did
+  successfully run.
+- Fix case where bazel executable wasn't properly defaulting.
+- Packages created by otherwise empty `BUILD` files are now properly detected
+  so the TreeView matches the disk core correctly.
+- Fixed issue when TreeView was opened and a VS Code had a folder opened that
+  was _not_ part of a Bazel workspace.
+
 ## Version 0.1.0 (January 23, 2019)
 
 ### New Features
