@@ -15,8 +15,8 @@
 import * as vscode from "vscode";
 import { DocumentSymbolProvider } from "vscode";
 
-import { BazelWorkspaceInfo, QueryLocation } from "../bazel";
-import { getTargetsForBuildFile } from "../bazel/bazellib";
+import { QueryLocation } from "../bazel";
+import { BazelWorkspaceInfo, getTargetsForBuildFile } from "../bazel/bazellib";
 import { getDefaultBazelExecutablePath } from "../extension/configuration";
 import { blaze_query } from "../protos";
 
@@ -26,7 +26,7 @@ export class BazelTargetSymbolProvider implements DocumentSymbolProvider {
     document: vscode.TextDocument,
     token: vscode.CancellationToken,
   ): Promise<vscode.SymbolInformation[] | vscode.DocumentSymbol[]> {
-    const workspaceInfo = BazelWorkspaceInfo.fromDocument(document);
+    const workspaceInfo = BazelWorkspaceInfo.fromPath(document.fileName);
     if (workspaceInfo === undefined) {
       vscode.window.showWarningMessage(
         "Bazel BUILD Symbols unavailable as currently opened file is not in " +

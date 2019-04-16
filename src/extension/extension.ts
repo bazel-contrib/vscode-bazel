@@ -16,13 +16,13 @@ import * as vscode from "vscode";
 import * as which from "which";
 
 import {
-  BazelWorkspaceInfo,
   createBazelTask,
   getBazelTaskInfo,
   queryQuickPickPackage,
   queryQuickPickTargets,
 } from "../bazel";
 import {
+  BazelWorkspaceInfo,
   exitCodeToUserString,
   IBazelCommandAdapter,
   parseExitCode,
@@ -126,7 +126,7 @@ export function deactivate() {
 async function bazelBuildTarget(adapter: IBazelCommandAdapter | undefined) {
   if (adapter === undefined) {
     // If the command adapter was unspecified, it means this command is being
-    // invoked via the command palatte. Provide quickpick build targets for
+    // invoked via the command palette. Provide quickpick build targets for
     // the user to choose from.
     const quickPick = await vscode.window.showQuickPick(
       queryQuickPickTargets("\"kind('.* rule', ...)\""),
@@ -142,7 +142,10 @@ async function bazelBuildTarget(adapter: IBazelCommandAdapter | undefined) {
     return;
   }
   const commandOptions = adapter.getBazelCommandOptions();
-  const task = createBazelTask("build", commandOptions);
+  const workspaceFolder = vscode.workspace.getWorkspaceFolder(
+    vscode.window.activeTextEditor.document.uri,
+  );
+  const task = createBazelTask("build", commandOptions, workspaceFolder);
   vscode.tasks.executeTask(task);
 }
 
@@ -233,7 +236,10 @@ async function buildPackage(
     targets: commandOptions.targets.map((s) => s + suffix),
     workspaceInfo: commandOptions.workspaceInfo,
   };
-  const task = createBazelTask("build", allCommandOptions);
+  const workspaceFolder = vscode.workspace.getWorkspaceFolder(
+    vscode.window.activeTextEditor.document.uri,
+  );
+  const task = createBazelTask("build", allCommandOptions, workspaceFolder);
   vscode.tasks.executeTask(task);
 }
 
@@ -262,7 +268,10 @@ async function bazelTestTarget(adapter: IBazelCommandAdapter | undefined) {
     return;
   }
   const commandOptions = adapter.getBazelCommandOptions();
-  const task = createBazelTask("test", commandOptions);
+  const workspaceFolder = vscode.workspace.getWorkspaceFolder(
+    vscode.window.activeTextEditor.document.uri,
+  );
+  const task = createBazelTask("test", commandOptions, workspaceFolder);
   vscode.tasks.executeTask(task);
 }
 
@@ -315,7 +324,10 @@ async function testPackage(
     targets: commandOptions.targets.map((s) => s + suffix),
     workspaceInfo: commandOptions.workspaceInfo,
   };
-  const task = createBazelTask("test", allCommandOptions);
+  const workspaceFolder = vscode.workspace.getWorkspaceFolder(
+    vscode.window.activeTextEditor.document.uri,
+  );
+  const task = createBazelTask("test", allCommandOptions, workspaceFolder);
   vscode.tasks.executeTask(task);
 }
 
@@ -346,11 +358,15 @@ async function bazelClean() {
       }
   }
 
-  const task = createBazelTask("clean", {
-    options: [],
-    targets: [],
-    workspaceInfo: BazelWorkspaceInfo.fromWorkspaceFolder(workspaceFolder),
-  });
+  const task = createBazelTask(
+    "clean",
+    {
+      options: [],
+      targets: [],
+      workspaceInfo: BazelWorkspaceInfo.fromPath(workspaceFolder.uri.fsPath),
+    },
+    workspaceFolder,
+  );
   vscode.tasks.executeTask(task);
 }
 

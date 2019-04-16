@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as fs from "fs";
 import * as path from "path";
 import { blaze_query } from "../../protos";
 import { BazelQuery } from "./bazel_query";
@@ -49,41 +48,4 @@ export async function getTargetsForBuildFile(
   ).queryTargets();
 
   return queryResult;
-}
-
-/**
- * Search for the path to the directory that has the Bazel WORKSPACE file for
- * the given file.
- *
- * If multiple directories along the path to the file has files called
- * "WORKSPACE", the lowest path is returned.
- *
- * @param fsPath The path to a file in a Bazel workspace.
- * @returns The path to the directory with the Bazel WORKSPACE file if found,
- *     others undefined.
- */
-export function getBazelWorkspaceFolder(fsPath: string): string | undefined {
-  let dirname = fsPath;
-  let iteration = 0;
-  // Fail safe in case other file systems have a base dirname that doesn't
-  // match the checks below. Having this failsafe guarantees that we don't
-  // hang in an infinite loop.
-  const maxIterations = 100;
-  if (fs.statSync(fsPath).isFile()) {
-    dirname = path.dirname(dirname);
-  }
-  do {
-    const workspace = path.join(dirname, "WORKSPACE");
-    try {
-      fs.accessSync(workspace, fs.constants.F_OK);
-      // WORKSPACE file is accessible. We have found the Bazel workspace
-      // directory.
-      return dirname;
-    } catch (err) {
-      // Intentionally do nothing; just try the next parent directory.
-    }
-    dirname = path.dirname(dirname);
-  } while (++iteration < maxIterations && dirname !== "" && dirname !== "/");
-
-  return undefined;
 }

@@ -14,6 +14,5 @@
 
 export * from "./bazel_quickpick";
 export * from "./bazel_task_info";
-export * from "./bazel_workspace_info";
 export * from "./query_location";
 export * from "./tasks";

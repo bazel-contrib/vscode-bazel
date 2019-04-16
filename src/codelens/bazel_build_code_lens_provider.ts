@@ -14,8 +14,8 @@
 
 import * as vscode from "vscode";
 
-import { BazelWorkspaceInfo, QueryLocation } from "../bazel";
-import { getTargetsForBuildFile } from "../bazel/bazellib";
+import { QueryLocation } from "../bazel";
+import { BazelWorkspaceInfo, getTargetsForBuildFile } from "../bazel/bazellib";
 import { getDefaultBazelExecutablePath } from "../extension/configuration";
 import { blaze_query } from "../protos";
 import { CodeLensCommandAdapter } from "./code_lens_command_adapter";
@@ -68,7 +68,7 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
       return [];
     }
 
-    const workspaceInfo = BazelWorkspaceInfo.fromDocument(document);
+    const workspaceInfo = BazelWorkspaceInfo.fromPath(document.fileName);
     if (workspaceInfo === undefined) {
       vscode.window.showWarningMessage(
         "Bazel BUILD CodeLens unavailable as currently opened file is not in " +

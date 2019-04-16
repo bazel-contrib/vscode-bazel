@@ -13,8 +13,12 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import { BazelWorkspaceInfo, QueryLocation } from "../bazel";
-import { IBazelCommandAdapter, IBazelCommandOptions } from "../bazel/bazellib";
+import { QueryLocation } from "../bazel";
+import {
+  BazelWorkspaceInfo,
+  IBazelCommandAdapter,
+  IBazelCommandOptions,
+} from "../bazel/bazellib";
 import { blaze_query } from "../protos";
 import { IBazelTreeItem } from "./bazel_tree_item";
 import { getBazelRuleIcon } from "./icons";

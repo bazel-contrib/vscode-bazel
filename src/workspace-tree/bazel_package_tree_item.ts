@@ -13,9 +13,9 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import { BazelWorkspaceInfo } from "../bazel";
 import {
   BazelQuery,
+  BazelWorkspaceInfo,
   IBazelCommandAdapter,
   IBazelCommandOptions,
 } from "../bazel/bazellib";

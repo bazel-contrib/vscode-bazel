@@ -12,8 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { BazelWorkspaceInfo } from "../bazel";
-import { IBazelCommandAdapter, IBazelCommandOptions } from "../bazel/bazellib";
+import {
+  BazelWorkspaceInfo,
+  IBazelCommandAdapter,
+  IBazelCommandOptions,
+} from "../bazel/bazellib";
 
 /**
  * Command adapter to pass arguments to Bazel commands.

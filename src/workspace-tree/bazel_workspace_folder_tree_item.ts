@@ -13,8 +13,7 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import { BazelWorkspaceInfo } from "../bazel";
-import { BazelQuery } from "../bazel/bazellib";
+import { BazelQuery, BazelWorkspaceInfo } from "../bazel/bazellib";
 import { getDefaultBazelExecutablePath } from "../extension/configuration";
 import { blaze_query } from "../protos";
 import { BazelPackageTreeItem } from "./bazel_package_tree_item";
@@ -27,8 +26,15 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
    * Initializes a new tree item with the given workspace folder.
    *
    * @param workspaceFolder The workspace folder that the tree item represents.
+   * @param workspaceFolder An object representing the VS Code workspace folder
+   *     that contains a document, or {@code undefined} if the file does not
+   *     belong to a workspace folder (for example, a standalone file loaded
+   *     into the editor).
    */
-  constructor(private workspaceInfo: BazelWorkspaceInfo) {}
+  constructor(
+    private workspaceInfo: BazelWorkspaceInfo,
+    private workspaceFolder: vscode.WorkspaceFolder,
+  ) {}
 
   public mightHaveChildren(): boolean {
     return true;
@@ -39,7 +45,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
   }
 
   public getLabel(): string {
-    return this.workspaceInfo.workspaceFolder.name;
+    return this.workspaceFolder.name;
   }
 
   public getIcon(): vscode.ThemeIcon {
@@ -47,7 +53,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
   }
 
   public getTooltip(): string {
-    return this.workspaceInfo.workspaceFolder.uri.fsPath;
+    return this.workspaceFolder.uri.fsPath;
   }
 
   public getCommand(): vscode.Command | undefined {
@@ -156,7 +162,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     if (!this.workspaceInfo) {
       return Promise.resolve([]);
     }
-    const workspacePath = this.workspaceInfo.workspaceFolder.uri.fsPath;
+    const workspacePath = this.workspaceFolder.uri.fsPath;
     const packagePaths = await new BazelQuery(
       getDefaultBazelExecutablePath(),
       workspacePath,

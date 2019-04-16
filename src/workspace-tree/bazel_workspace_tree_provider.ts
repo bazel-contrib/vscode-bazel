@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import { BazelWorkspaceInfo } from "../bazel";
+import { BazelWorkspaceInfo } from "../bazel/bazellib";
 import { IBazelTreeItem } from "./bazel_tree_item";
 import { BazelWorkspaceFolderTreeItem } from "./bazel_workspace_folder_tree_item";
 
@@ -75,7 +75,8 @@ export class BazelWorkspaceTreeProvider
       if (vscode.workspace.workspaceFolders.length === 1) {
         const workspaceFolder = vscode.workspace.workspaceFolders[0];
         const folderItem = new BazelWorkspaceFolderTreeItem(
-          BazelWorkspaceInfo.fromWorkspaceFolder(workspaceFolder),
+          BazelWorkspaceInfo.fromPath(workspaceFolder.uri.fsPath),
+          workspaceFolder,
         );
         return folderItem.getChildren();
       }
@@ -85,11 +86,11 @@ export class BazelWorkspaceTreeProvider
       return Promise.resolve(
         vscode.workspace.workspaceFolders
           .map((folder) => {
-            const workspaceInfo = BazelWorkspaceInfo.fromWorkspaceFolder(
-              folder,
+            const workspaceInfo = BazelWorkspaceInfo.fromPath(
+              folder.uri.fsPath,
             );
             if (workspaceInfo) {
-              return new BazelWorkspaceFolderTreeItem(workspaceInfo);
+              return new BazelWorkspaceFolderTreeItem(workspaceInfo, folder);
             }
             return undefined;
           })

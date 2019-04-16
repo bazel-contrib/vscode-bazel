@@ -15,9 +15,8 @@
 import * as vscode from "vscode";
 
 import { getDefaultBazelExecutablePath } from "../extension/configuration";
-import { BazelWorkspaceInfo } from "./bazel_workspace_info";
 import { IBazelCommandAdapter, IBazelCommandOptions } from "./bazellib";
-import { BazelQuery } from "./bazellib/bazel_query";
+import { BazelQuery, BazelWorkspaceInfo } from "./bazellib";
 
 /**
  * Represents a Bazel target in a QuickPick items window. Implements the
@@ -131,7 +130,7 @@ export async function queryQuickPickTargets(
   }
 
   const document = vscode.window.activeTextEditor.document;
-  const workspace = BazelWorkspaceInfo.fromDocument(document);
+  const workspace = BazelWorkspaceInfo.fromPath(document.fileName);
 
   if (workspace === undefined) {
     const filePath = document.uri.fsPath;
@@ -160,7 +159,7 @@ export async function queryQuickPickPackage(): Promise<BazelTargetQuickPick[]> {
   }
 
   const document = vscode.window.activeTextEditor.document;
-  const workspace = BazelWorkspaceInfo.fromDocument(document);
+  const workspace = BazelWorkspaceInfo.fromPath(document.fileName);
 
   if (workspace === undefined) {
     const filePath = document.uri.fsPath;

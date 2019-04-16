@@ -30,10 +30,13 @@ function quotedOption(option: string): vscode.ShellQuotedString {
  *
  * @param command The Bazel command to execute.
  * @param options Describes the options used to launch Bazel.
+ * @param workspaceFolder The VS Code workspace folder to which to scope the
+ *     task. If this is undefined, the task will be scoped to Global.
  */
 export function createBazelTask(
   command: "build" | "clean" | "test",
   options: IBazelCommandOptions,
+  workspaceFolder: vscode.WorkspaceFolder | undefined,
 ): vscode.Task {
   const args = [command as string]
     .concat(options.targets)
@@ -56,9 +59,7 @@ export function createBazelTask(
   const targetsDescription = options.targets.join(", ");
   const task = new vscode.Task(
     { type: "bazel", command, targets: options.targets },
-    // TODO(allevato): Change Workspace to Global once the fix for
-    // Microsoft/vscode#63951 is in a stable release.
-    options.workspaceInfo.workspaceFolder || vscode.TaskScope.Workspace,
+    workspaceFolder || vscode.TaskScope.Global,
     `${commandDescription} ${targetsDescription}`,
     "bazel",
     new vscode.ShellExecution(getDefaultBazelExecutablePath(), args, {
