@@ -18,13 +18,15 @@ import * as which from "which";
 import {
   BazelWorkspaceInfo,
   createBazelTask,
-  exitCodeToUserString,
   getBazelTaskInfo,
-  IBazelCommandAdapter,
-  parseExitCode,
   queryQuickPickPackage,
   queryQuickPickTargets,
 } from "../bazel";
+import {
+  exitCodeToUserString,
+  IBazelCommandAdapter,
+  parseExitCode,
+} from "../bazel/bazellib";
 import {
   BuildifierDiagnosticsManager,
   BuildifierFormatProvider,

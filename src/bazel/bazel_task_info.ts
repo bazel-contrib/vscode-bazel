@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import { IBazelCommandOptions } from "./bazel_command";
+import { IBazelCommandOptions } from "./bazellib";
 
 /** Information about a Bazel task. */
 export class BazelTaskInfo {

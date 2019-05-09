@@ -34,11 +34,11 @@ setting.
 
 ## Using the Starlark Debugger
 
-Currently, the Starlark debugger can be used by right-clicking a build target in
-the **Bazel Build Targets** view and selecting "Build Target with Debugging".
-This will start the build inside the Visual Studio Code debugger (output will
-be redirected to the Debug Console pane) and it will pause on any breakpoints
-hit during execution.
+Currently, the Starlark Debugger can be used by right-clicking a build target in
+the **Bazel Build Targets** view and selecting "Build Target with Starlark
+Debugger". This will start the build inside the Visual Studio Code debugger
+(output will be redirected to the Debug Console pane) and it will pause on any
+breakpoints hit during execution.
 
 When a Bazel thread is paused, you can step through Starlark code, add watch
 expressions, and execute arbitrary statements by typing them in the input area

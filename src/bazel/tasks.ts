@@ -14,8 +14,8 @@
 
 import * as vscode from "vscode";
 import { getDefaultBazelExecutablePath } from "../extension/configuration";
-import { IBazelCommandOptions } from "./bazel_command";
 import { BazelTaskInfo, setBazelTaskInfo } from "./bazel_task_info";
+import { IBazelCommandOptions } from "./bazellib";
 
 /**
  * Returns a {@code ShellQuotedString} indicating how to quote the given flag
