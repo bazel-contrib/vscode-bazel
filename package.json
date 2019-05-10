@@ -273,10 +273,10 @@
     },
     "scripts": {
         "check-lint": "tslint -t stylish 'src/**/*.ts' --exclude 'src/**/*.d.ts'",
-        "compile": "./scripts/build.sh -watch",
+        "compile": "./scripts/build.sh",
         "postinstall": "node ./node_modules/vscode/bin/install",
         "vscode:prepublish": "./scripts/build.sh",
-        "watch": "tsc -watch -p ./"
+        "watch": "./scripts/build.sh -watch"
     },
     "devDependencies": {
         "@types/node": "^6.0.40",
