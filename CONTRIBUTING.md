@@ -33,7 +33,7 @@ linting. We strongly recommend installing the following Visual Studio Code
 extensions to have these tools applied automatically as you develop:
 
 - [Prettier - Code Formatter](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
-- [TSLint](https://marketplace.visualstudio.com/items?itemName=eg2.tslint)
+- [TSLint](https://marketplace.visualstudio.com/items?itemName=ms-vscode.vscode-typescript-tslint-plugin)
 
 ## Code reviews
 
