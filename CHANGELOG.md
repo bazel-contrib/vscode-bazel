@@ -1,26 +1,32 @@
 # Change Log
 
-## Version ?.?.? (??? ??, ????)
+## Version 0.2.0 (May 15, 2019)
 
 ### New Features
 
 - Support formatting of `*.BUILD` files.
-- TreeView and Command Palette QuickPicks results are now sorted making them
-  easy to scan.
+- Bazel Build Targets view and Command Palette QuickPicks results are now
+  sorted making them easy to scan.
 - Targets rooted in the directory opened are also included in the TreeView
   and Command Palette QuickPicks.
-- Support in the TreeView and Command Palette QuickPicks for building a the
-  whole package or the package recursively (`:all` and `/...`).
+- Support in the Bazel Build Targets view and Command Palette QuickPicks for
+  building the whole package or the package recursively (`:all` and `/...`).
 
 ### Bug Fixes
 
+- On Windows, clicking a target in the Bazel Build Targets view should now
+  navigate to the BUILD file where that target is defined.
+- The "Bazel: Build Target with Debugging" command has been renamed to
+  "Bazel: Build Target with Starlark Debugger" to clarify that this command
+  debugs the Starlark build rules themselves and not the binary/executable
+  being built.
 - Handle cases where `buildifier` exists with a non zero result, but did
   successfully run.
-- Fix case where bazel executable wasn't properly defaulting.
+- Fix case where the Bazel executable wasn't properly defaulting.
 - Packages created by otherwise empty `BUILD` files are now properly detected
-  so the TreeView matches the disk core correctly.
-- Fixed issue when TreeView was opened and a VS Code had a folder opened that
-  was _not_ part of a Bazel workspace.
+  so the Bazel Build Targets matches the on-disk layout more closely.
+- Fixed issue where VS Code would hang when the Bazel Build Targets view was
+  opened and a workspace folder was _not_ part of a Bazel workspace.
 
 ## Version 0.1.0 (January 23, 2019)
 
