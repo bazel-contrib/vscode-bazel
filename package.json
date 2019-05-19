@@ -11,7 +11,7 @@
     },
     "icon": "media/bazel-logo.png",
     "engines": {
-        "vscode": "^1.27.0"
+        "vscode": "^1.30.0"
     },
     "categories": [
         "Programming Languages"
@@ -81,6 +81,11 @@
                 "category": "Bazel",
                 "command": "bazel.showExtensionLog",
                 "title": "Show Extension Log"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.copyTargetToClipboard",
+                "title": "Copy to Clipboard"
             }
         ],
         "configuration": {
@@ -188,6 +193,12 @@
             }
         ],
         "menus": {
+            "commandPalette": [
+                {
+                    "command": "bazel.copyTargetToClipboard",
+                    "when": "false"
+                }
+            ],
             "view/item/context": [
                 {
                     "command": "bazel.buildTarget",
@@ -232,6 +243,16 @@
                 {
                     "command": "bazel.testAllRecursive",
                     "when": "view == bazelWorkspace && viewItem == package",
+                    "group": "build"
+                },
+                {
+                    "command": "bazel.copyTargetToClipboard",
+                    "when": "view == bazelWorkspace && viewItem == rule",
+                    "group": "build"
+                },
+                {
+                    "command": "bazel.copyTargetToClipboard",
+                    "when": "view == bazelWorkspace && viewItem == testRule",
                     "group": "build"
                 }
             ],
@@ -282,7 +303,7 @@
         "@types/node": "^6.0.40",
         "tslint": "^5.11.0",
         "typescript": "^3.0.0",
-        "vscode": "^1.1.33"
+        "vscode": "^1.1.34"
     },
     "dependencies": {
         "protobufjs": "^6.8.0",
