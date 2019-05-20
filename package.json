@@ -85,7 +85,7 @@
             {
                 "category": "Bazel",
                 "command": "bazel.copyTargetToClipboard",
-                "title": "Copy to Clipboard"
+                "title": "Copy Label to Clipboard"
             }
         ],
         "configuration": {
