@@ -77,6 +77,10 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("bazel.refreshBazelBuildTargets", () => {
       workspaceTreeProvider.refresh();
     }),
+    vscode.commands.registerCommand(
+      "bazel.copyTargetToClipboard",
+      bazelCopyTargetToClipboard,
+    ),
     // CodeLens provider for BUILD files
     vscode.languages.registerCodeLensProvider(
       [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
@@ -352,6 +356,23 @@ async function bazelClean() {
     workspaceInfo: BazelWorkspaceInfo.fromWorkspaceFolder(workspaceFolder),
   });
   vscode.tasks.executeTask(task);
+}
+
+/**
+ * Copies a target to the clipboard.
+ */
+async function bazelCopyTargetToClipboard(
+  adapter: IBazelCommandAdapter | undefined,
+) {
+  if (adapter === undefined) {
+    // This command should not be enabled in the commands palette, so adapter
+    // should always be present.
+    return;
+  }
+  // This can only be called on single targets, so we can assume there is only
+  // one of them.
+  const target = adapter.getBazelCommandOptions().targets[0];
+  vscode.env.clipboard.writeText(target);
 }
 
 function onTaskStart(event: vscode.TaskStartEvent) {

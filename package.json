@@ -81,6 +81,11 @@
                 "category": "Bazel",
                 "command": "bazel.showExtensionLog",
                 "title": "Show Extension Log"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.copyTargetToClipboard",
+                "title": "Copy Label to Clipboard"
             }
         ],
         "configuration": {
@@ -188,6 +193,12 @@
             }
         ],
         "menus": {
+            "commandPalette": [
+                {
+                    "command": "bazel.copyTargetToClipboard",
+                    "when": "false"
+                }
+            ],
             "view/item/context": [
                 {
                     "command": "bazel.buildTarget",
@@ -232,6 +243,16 @@
                 {
                     "command": "bazel.testAllRecursive",
                     "when": "view == bazelWorkspace && viewItem == package",
+                    "group": "build"
+                },
+                {
+                    "command": "bazel.copyTargetToClipboard",
+                    "when": "view == bazelWorkspace && viewItem == rule",
+                    "group": "build"
+                },
+                {
+                    "command": "bazel.copyTargetToClipboard",
+                    "when": "view == bazelWorkspace && viewItem == testRule",
                     "group": "build"
                 }
             ],
