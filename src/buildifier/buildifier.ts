@@ -43,7 +43,7 @@ export async function buildifierFormat(
   if (applyLintFixes) {
     args.push(`--lint=fix`);
   }
-  return (await executeBuildifier(fileContent, args)).stdout;
+  return (await executeBuildifier(fileContent, args, false)).stdout;
 }
 
 /**
@@ -91,7 +91,7 @@ export async function buildifierLint(
     `--type=${type}`,
     `--lint=${lintMode}`,
   ];
-  const outputs = await executeBuildifier(fileContent, args);
+  const outputs = await executeBuildifier(fileContent, args, true);
   switch (lintMode) {
     case "fix":
       return outputs.stdout;
@@ -157,10 +157,13 @@ export function getDefaultBuildifierExecutablePath(): string {
  * @param fileContent The BUILD or .bzl file content to process, which is sent
  *     via stdin.
  * @param args Command line arguments to pass to buildifier.
+ * @param acceptNonSevereErrors If true, syntax/lint exit codes will not be
+ *     treated as severe tool errors.
  */
 function executeBuildifier(
   fileContent: string,
   args: string[],
+  acceptNonSevereErrors: boolean,
 ): Promise<{ stdout: string; stderr: string }> {
   return new Promise((resolve, reject) => {
     const execOptions = {
@@ -173,7 +176,10 @@ function executeBuildifier(
       [getDefaultBuildifierExecutablePath()].concat(args).join(" "),
       execOptions,
       (error: Error, stdout: string, stderr: string) => {
-        if (shouldTreatBuildifierErrorAsSuccess(error)) {
+        if (
+          !error ||
+          (acceptNonSevereErrors && shouldTreatBuildifierErrorAsSuccess(error))
+        ) {
           resolve({ stdout, stderr });
         } else {
           reject(error);
@@ -194,12 +200,7 @@ function executeBuildifier(
  *
  * @param error The {@code Error} passed to the `child_process.exec` callback.
  */
-function shouldTreatBuildifierErrorAsSuccess(error: Error | null): boolean {
-  // If there was no error, it was a successful exit.
-  if (!error) {
-    return true;
-  }
-
+function shouldTreatBuildifierErrorAsSuccess(error: Error): boolean {
   // Some of buildifier's exit codes represent states that we want to treat as
   // "successful" (i.e., the file had warnings/errors but we want to render
   // them), and other exit codes represent legitimate failures (like I/O
