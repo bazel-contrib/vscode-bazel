@@ -167,8 +167,9 @@ function executeBuildifier(
       maxBuffer: Number.MAX_SAFE_INTEGER,
     };
     const process = child_process.exec(
-      // TODO(allevato): If we can use the `--path=<path>` argument in the
-      // future, we'll need to quote the path to avoid issues with spaces.
+      // TODO(bazelbuild/buildtools#475): If we can use the `--path=<path>`
+      // argument in the future, we'll need to quote the path to avoid issues
+      // with spaces.
       [getDefaultBuildifierExecutablePath()].concat(args).join(" "),
       execOptions,
       (error: Error, stdout: string, stderr: string) => {
