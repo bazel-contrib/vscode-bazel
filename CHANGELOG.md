@@ -1,5 +1,13 @@
 # Change Log
 
+## Version ?.?.? (??? ??, ????)
+
+### New Features
+
+- This extension now requires version 0.25.1 of buildifier, which has
+  improved diagnostic reporting (for example, only the violating character
+  range is highlighted instead of the entire line).
+
 ## Version 0.2.0 (May 15, 2019)
 
 ### New Features

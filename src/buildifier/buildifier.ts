@@ -15,7 +15,7 @@
 import * as child_process from "child_process";
 import * as path from "path";
 import * as vscode from "vscode";
-import { BuildifierWarning } from "./buildifier_warning";
+import { IBuildifierResult, IBuildifierWarning } from "./buildifier_result";
 
 /** Whether to warn about lint findings or fix them. */
 export type BuildifierLintMode = "fix" | "warn";
@@ -72,28 +72,35 @@ export async function buildifierLint(
  * @param type Indicates whether to treat the file content as a BUILD file or a
  *     .bzl file.
  * @param lintMode Indicates whether to warn about lint findings or fix them.
- * @returns An array of strings representing the lint issues that occurred.
+ * @returns An array of objects representing the lint issues that occurred.
  */
 export async function buildifierLint(
   fileContent: string,
   type: BuildifierFileType,
   lintMode: "warn",
-): Promise<BuildifierWarning[]>;
+): Promise<IBuildifierWarning[]>;
 
 export async function buildifierLint(
   fileContent: string,
   type: BuildifierFileType,
   lintMode: BuildifierLintMode,
-): Promise<string | BuildifierWarning[]> {
-  const args = [`--type=${type}`, `--lint=${lintMode}`];
+): Promise<string | IBuildifierWarning[]> {
+  const args = [
+    `--format=json`,
+    `--mode=check`,
+    `--type=${type}`,
+    `--lint=${lintMode}`,
+  ];
   const outputs = await executeBuildifier(fileContent, args);
   switch (lintMode) {
     case "fix":
       return outputs.stdout;
     case "warn":
-      const trimmedOutput = outputs.stderr.trim();
-      if (trimmedOutput.length) {
-        return parseLintWarnings(trimmedOutput.split("\n"));
+      const result = JSON.parse(outputs.stdout) as IBuildifierResult;
+      for (const file of result.files) {
+        if (file.filename === "<stdin>") {
+          return file.warnings;
+        }
       }
       return [];
   }
@@ -142,44 +149,6 @@ export function getDefaultBuildifierExecutablePath(): string {
     return "buildifier";
   }
   return buildifierExecutable;
-}
-
-/**
- * Parses the output of buildifier's {@code --lint=warn} mode and constructs
- * objects representing the warnings.
- *
- * @param lines The lines of output from standard error.
- */
-function parseLintWarnings(lines: string[]): BuildifierWarning[] {
-  const warnings = new Array<BuildifierWarning>();
-  let lineNumber = 0;
-  let category = "";
-  let message = "";
-
-  for (const line of lines) {
-    // Lines that start a new lint warning will have the following format:
-    // "stdin:10: category: message"
-    // Some messages may span multiple lines; the loop below handled that by
-    // waiting until we see a new message start line (or the end of the input)
-    // before committing a warning.
-    if (line.startsWith("stdin:")) {
-      if (message) {
-        warnings.push(new BuildifierWarning(lineNumber, category, message));
-      }
-      const [_, lineNumberPart, categoryPart, ...remainder] = line.split(":");
-      lineNumber = parseInt(lineNumberPart, 10);
-      category = categoryPart.trim();
-      message = remainder.join(":");
-    } else {
-      message += `\n${line}`;
-    }
-  }
-
-  if (message) {
-    warnings.push(new BuildifierWarning(lineNumber, category, message));
-  }
-
-  return warnings;
 }
 
 /**
