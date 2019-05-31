@@ -83,15 +83,11 @@ export class BuildifierDiagnosticsManager implements vscode.Disposable {
         document.uri,
         warnings.map((warning) => {
           // Buildifier returns 1-based line numbers, but VS Code is 0-based.
-          const lineNumber = warning.line - 1;
-          const line = document.lineAt(lineNumber);
-          // Buildifier doesn't give us column numbers for warnings, so we cover
-          // the entire line but start with the first non-space character.
           const range = new vscode.Range(
-            lineNumber,
-            line.firstNonWhitespaceCharacterIndex,
-            lineNumber + 1,
-            0,
+            warning.start.line - 1,
+            warning.start.column - 1,
+            warning.end.line - 1,
+            warning.end.column - 1,
           );
           const diagnostic = new vscode.Diagnostic(
             range,
