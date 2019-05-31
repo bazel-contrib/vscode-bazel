@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import * as which from "which";
 
 import {
   BazelWorkspaceInfo,
@@ -30,7 +29,7 @@ import {
 import {
   BuildifierDiagnosticsManager,
   BuildifierFormatProvider,
-  getDefaultBuildifierExecutablePath,
+  checkBuildifierIsAvailable,
 } from "../buildifier";
 import { BazelBuildCodeLensProvider } from "../codelens";
 import { setupLoggingOutputChannel } from "../logging";
@@ -413,10 +412,6 @@ function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
   }
 }
 
-/** The URL to load for buildifier's releases. */
-const BUILDTOOLS_RELEASES_URL =
-  "https://github.com/bazelbuild/buildtools/releases";
-
 /**
  * Returns the number of seconds elapsed with a single decimal place.
  *
@@ -424,32 +419,4 @@ const BUILDTOOLS_RELEASES_URL =
 function measurePerformance(start: [number, number]) {
   const diff = process.hrtime(start);
   return (diff[0] + diff[1] / 1e9).toFixed(1);
-}
-
-/**
- * Checks whether buildifier is available (either at the system PATH or a
- * user-specified path, depending on the value in Settings).
- *
- * If not available, a warning message will be presented to the user with a
- * Download button that they can use to go to the GitHub releases page.
- */
-function checkBuildifierIsAvailable() {
-  const buildifierExecutable = getDefaultBuildifierExecutablePath();
-  which(buildifierExecutable, async (err, _) => {
-    if (err) {
-      const item = await vscode.window.showWarningMessage(
-        "Buildifier was not found; linting and formatting of Bazel files " +
-          "will not be available. Please download it from " +
-          `${BUILDTOOLS_RELEASES_URL} and install it ` +
-          "on your system PATH or set its location in Settings.",
-        { title: "Download" },
-      );
-      if (item && item.title === "Download") {
-        vscode.commands.executeCommand(
-          "vscode.open",
-          vscode.Uri.parse(BUILDTOOLS_RELEASES_URL),
-        );
-      }
-    }
-  });
 }
