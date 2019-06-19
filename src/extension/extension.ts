@@ -88,6 +88,7 @@ export function activate(context: vscode.ExtensionContext) {
     // Buildifier formatting support
     vscode.languages.registerDocumentFormattingEditProvider(
       [
+        { language: "starlark"},
         { pattern: "**/BUILD" },
         { pattern: "**/BUILD.bazel" },
         { pattern: "**/WORKSPACE" },
