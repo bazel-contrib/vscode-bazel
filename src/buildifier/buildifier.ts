@@ -114,6 +114,13 @@ export async function buildifierLint(
  * @returns The buildifier type of the file.
  */
 export function getBuildifierFileType(fsPath: string): BuildifierFileType {
+  // TODO(bazelbuild/buildtools#475, bazelbuild/buildtools#681): Switch to
+  // `--path=<path>` rather than duplicate the logic from buildifier. The
+  // catch is `--path` was already documented, but didn't work with stdin
+  // until bazelbuild/buildtools#681, so we'd need to dual code path testing
+  // --version to decide how to do things; so it likely is better to just
+  // ignore things until the support has been out a while.
+
   // NOTE: The implementation here should be kept in sync with buildifier's
   // automatic format detection (see:
   // https://github.com/bazelbuild/buildtools/blob/d39e4d/build/lex.go#L88)
@@ -170,9 +177,6 @@ function executeBuildifier(
       maxBuffer: Number.MAX_SAFE_INTEGER,
     };
     const process = child_process.exec(
-      // TODO(bazelbuild/buildtools#475): If we can use the `--path=<path>`
-      // argument in the future, we'll need to quote the path to avoid issues
-      // with spaces.
       [getDefaultBuildifierExecutablePath()].concat(args).join(" "),
       execOptions,
       (error: Error, stdout: string, stderr: string) => {
