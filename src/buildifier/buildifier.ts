@@ -126,14 +126,26 @@ export function getBuildifierFileType(fsPath: string): BuildifierFileType {
   // https://github.com/bazelbuild/buildtools/blob/d39e4d/build/lex.go#L88)
   // so that user actions in the IDE are consistent with the behavior they
   // would see running buildifier on the command line.
-  const parsedPath = path.parse(fsPath.toLowerCase());
+  const raw = fsPath.toLowerCase();
+  let parsedPath = path.parse(raw);
+  if (parsedPath.ext === ".oss") {
+    parsedPath = path.parse(parsedPath.name);
+  }
   if (parsedPath.ext === ".bzl" || parsedPath.ext === ".sky") {
     return "bzl";
   }
-  if (parsedPath.ext === ".build" || parsedPath.base === "build") {
+  if (
+    parsedPath.ext === ".build" ||
+    parsedPath.name === "build" ||
+    parsedPath.name.startsWith("build.")
+  ) {
     return "build";
   }
-  if (parsedPath.ext === ".workspace" || parsedPath.base === "workspace") {
+  if (
+    parsedPath.ext === ".workspace" ||
+    parsedPath.name === "workspace" ||
+    parsedPath.name.startsWith("workspace.")
+  ) {
     return "workspace";
   }
   return "bzl";
