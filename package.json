@@ -181,7 +181,8 @@
                     ".BUILD",
                     ".WORKSPACE",
                     ".bzl",
-                    ".sky"
+                    ".sky",
+                    ".star"
                 ],
                 "filenames": [
                     "BUILD",
