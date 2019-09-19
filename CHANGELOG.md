@@ -1,12 +1,27 @@
 # Change Log
 
-## Version ?.?.? (??? ??, ????)
+## Version 0.3.0 (September 19, 2019)
+
+### Breaking Changes
+
+- This extension now requires Visual Studio Code 1.30 or higher.
+- This extension now requires buildifier version 0.25.1 or higher.
 
 ### New Features
 
-- This extension now requires version 0.25.1 of buildifier, which has
-  improved diagnostic reporting (for example, only the violating character
-  range is highlighted instead of the entire line).
+- Buildifier diagnostics have been refined. For example, now only the
+  violating range of text is highlighted instead of the entire line.
+- Added the "Copy Label to Clipboard" context menu option to the Bazel
+  Build Targets view.
+- The `.star` file extension is now recognized as Starlark for syntax
+  highlighting.
+
+### Bug Fixes
+
+- Formatting a BUILD or Starlark file no longer deletes the editor's content
+  if the file contains syntax errors.
+- BUILD files named `BUILD.bazel` are now correctly treated as BUILD files,
+  not `bzl` files, for the purposes of formatting and linting.
 
 ## Version 0.2.0 (May 15, 2019)
 
