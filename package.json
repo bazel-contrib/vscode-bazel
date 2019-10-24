@@ -112,11 +112,11 @@
                     "default": false,
                     "description": "Show the VSCode-Bazel output channel when the Bazel extension initializes."
                 },
-                "bazel.directoriesToIgnore": {
+                "bazel.pathsToIgnore": {
                     "type": "string",
                     "scope": "application",
                     "default": "",
-                    "description": "Regex of directors to ignore when trying to figure out if something is in a Bazel Workspace. This just impacts things that need a Bazel Workspace, BUILD/.bzl syntax and buildifier support still work."
+                    "description": "Regex of paths to ignore when trying to figure out if a file is in a Bazel workspace. This impacts operations that require a workspace, like queries, but syntax highlighting and buildifier work regardless."
                 }
             }
         },
