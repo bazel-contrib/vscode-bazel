@@ -114,6 +114,7 @@
                 },
                 "bazel.directoriesToIgnore": {
                     "type": "string",
+                    "scope": "application",
                     "default": "",
                     "description": "Regex of directors to ignore when trying to figure out if something is in a Bazel Workspace. This just impacts things that need a Bazel Workspace, BUILD/.bzl syntax and buildifier support still work."
                 }
