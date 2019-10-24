@@ -14,6 +14,7 @@
 
 import * as fs from "fs";
 import * as path from "path";
+import * as vscode from "vscode";
 import { blaze_query } from "../../protos";
 import { BazelQuery } from "./bazel_query";
 
@@ -52,6 +53,30 @@ export async function getTargetsForBuildFile(
 }
 
 /**
+ * Check if a path should be ignored and not considered to be part of a
+ * Bazel Workspace.
+ *
+ * @param fsPath The path to a file in a Bazel workspace.
+ * @returns true / false for if the path should be ignore (assumed not to
+ *     be in a workspace).
+ */
+function shouldIgnorePath(fsPath: string): boolean {
+  const bazelConfig = vscode.workspace.getConfiguration("bazel");
+  const pathsToIgnore = bazelConfig.pathsToIgnore as string;
+  if (pathsToIgnore.length === 0) {
+    return false;
+  }
+  try {
+    const regex = new RegExp(pathsToIgnore);
+    return regex.test(fsPath);
+  } catch (err) {
+    vscode.window.showErrorMessage(
+      "pathsToIgnore setting isn't a valid regex: " + escape(pathsToIgnore));
+  }
+  return false;
+}
+
+/**
  * Search for the path to the directory that has the Bazel WORKSPACE file for
  * the given file.
  *
@@ -63,6 +88,9 @@ export async function getTargetsForBuildFile(
  *     others undefined.
  */
 export function getBazelWorkspaceFolder(fsPath: string): string | undefined {
+  if (shouldIgnorePath(fsPath)) {
+    return undefined;
+  }
   let dirname = fsPath;
   let iteration = 0;
   // Fail safe in case other file systems have a base dirname that doesn't
