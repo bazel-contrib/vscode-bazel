@@ -70,10 +70,7 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
 
     const workspaceInfo = BazelWorkspaceInfo.fromDocument(document);
     if (workspaceInfo === undefined) {
-      vscode.window.showWarningMessage(
-        "Bazel BUILD CodeLens unavailable as currently opened file is not in " +
-          "a Bazel workspace",
-      );
+      // Not in a Bazel Workspace.
       return [];
     }
 
