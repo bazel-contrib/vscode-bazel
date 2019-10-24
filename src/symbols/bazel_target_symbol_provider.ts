@@ -28,10 +28,7 @@ export class BazelTargetSymbolProvider implements DocumentSymbolProvider {
   ): Promise<vscode.SymbolInformation[] | vscode.DocumentSymbol[]> {
     const workspaceInfo = BazelWorkspaceInfo.fromDocument(document);
     if (workspaceInfo === undefined) {
-      vscode.window.showWarningMessage(
-        "Bazel BUILD Symbols unavailable as currently opened file is not in " +
-          "a Bazel workspace",
-      );
+      // Not in a Bazel Workspace.
       return [];
     }
 
