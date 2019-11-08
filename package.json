@@ -129,7 +129,7 @@
                     },
                     "uniqueItems": true,
                     "default": [],
-                    "markdownDescription": "A list of [Bazel startup options](https://docs.bazel.build/versions/master/command-line-reference.html#startup-options) to use when building or running tests."
+                    "markdownDescription": "A list of [Bazel startup options](https://docs.bazel.build/versions/master/command-line-reference.html#startup-options) to use when building, running tests, or cleaning."
                 },
                 "bazel.commandLine.commandArgs": {
                     "type": "array",
