@@ -354,7 +354,7 @@ async function bazelClean() {
     options: [],
     targets: [],
     workspaceInfo: BazelWorkspaceInfo.fromWorkspaceFolder(workspaceFolder),
-  });
+  }, false);
   vscode.tasks.executeTask(task);
 }
 
@@ -406,7 +406,7 @@ function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
       const timeInSeconds = measurePerformance(bazelTaskInfo.startTime);
       vscode.window.showInformationMessage(
         `Bazel ${
-          bazelTaskInfo.command
+        bazelTaskInfo.command
         } completed successfully in ${timeInSeconds} seconds.`,
       );
     }
