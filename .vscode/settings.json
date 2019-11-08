@@ -1,6 +1,7 @@
 {
     "files.exclude": {
-        "out": false
+        "node_modules": true,
+        "out": true
     },
     "search.exclude": {
         "out": true
