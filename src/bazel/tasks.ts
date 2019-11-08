@@ -35,7 +35,15 @@ export function createBazelTask(
   command: "build" | "clean" | "test",
   options: IBazelCommandOptions,
 ): vscode.Task {
-  const args = [command as string]
+  const bazelConfigCmdLine = vscode.workspace.getConfiguration("bazel.commandLine");
+  const startupOptions: [string] = bazelConfigCmdLine.startupOptions;
+  const addCommandArgs = command === "build" || command === "test";
+  const commandArgs: [string] =
+    (addCommandArgs ? bazelConfigCmdLine.commandArgs : []);
+
+  const args = startupOptions
+    .concat([command as string])
+    .concat(commandArgs)
     .concat(options.targets)
     .concat(options.options)
     .map(quotedOption);

@@ -121,6 +121,24 @@
                     "scope": "application",
                     "default": [],
                     "description": "A list of Regexs that when matched cause paths not to be checked for being in a WORKSPACE. This impacts operations that require a workspace, like queries, but syntax highlighting and buildifier work regardless."
+                },
+                "bazel.commandLine.startupOptions": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "uniqueItems": true,
+                    "default": [],
+                    "markdownDescription": "A list of [Bazel startup options](https://docs.bazel.build/versions/master/command-line-reference.html#startup-options) to use when building, running tests, or cleaning."
+                },
+                "bazel.commandLine.commandArgs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "uniqueItems": true,
+                    "default": [],
+                    "markdownDescription": "A list of Bazel command line options to use when building or running tests. From the [common options](https://docs.bazel.build/versions/master/command-line-reference.html#options-common-to-all-commands) and [build options](https://docs.bazel.build/versions/master/command-line-reference.html#build) (`test` honors all `build` options)."
                 }
             }
         },
