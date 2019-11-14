@@ -129,7 +129,7 @@
                     },
                     "uniqueItems": true,
                     "default": [],
-                    "markdownDescription": "A list of [Bazel startup options](https://docs.bazel.build/versions/master/command-line-reference.html#startup-options) to use when building, running tests, or cleaning."
+                    "markdownDescription": "A list of [Bazel startup options](https://docs.bazel.build/versions/master/command-line-reference.html#startup-options) to use when building, running tests, or cleaning. One option per entry, no shell escaping is needed."
                 },
                 "bazel.commandLine.commandArgs": {
                     "type": "array",
@@ -138,7 +138,7 @@
                     },
                     "uniqueItems": true,
                     "default": [],
-                    "markdownDescription": "A list of Bazel command line options to use when building or running tests. From the [common options](https://docs.bazel.build/versions/master/command-line-reference.html#options-common-to-all-commands) and [build options](https://docs.bazel.build/versions/master/command-line-reference.html#build) (`test` honors all `build` options)."
+                    "markdownDescription": "A list of Bazel command line options to use when building or running tests. From the [common options](https://docs.bazel.build/versions/master/command-line-reference.html#options-common-to-all-commands) and [build options](https://docs.bazel.build/versions/master/command-line-reference.html#build) (`test` honors all `build` options). One option per entry, no shell escaping is needed."
                 }
             }
         },
