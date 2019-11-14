@@ -176,11 +176,21 @@ async function bazelBuildTargetWithDebugging(
     }
     return;
   }
+  const bazelConfigCmdLine = vscode.workspace.getConfiguration("bazel.commandLine");
+  const startupOptions: [string] = bazelConfigCmdLine.startupOptions;
+  const commandArgs: [string] = bazelConfigCmdLine.commandArgs;
+
   const commandOptions = adapter.getBazelCommandOptions();
+
+  const fullArgs = commandArgs
+    .concat(commandOptions.targets)
+    .concat(commandOptions.options);
+
   vscode.debug.startDebugging(undefined, {
-    args: commandOptions.targets.concat(commandOptions.options),
+    args: fullArgs,
     bazelCommand: "build",
     bazelExecutablePath: getDefaultBazelExecutablePath(),
+    bazelStartupOptions: startupOptions,
     cwd: commandOptions.workspaceInfo.bazelWorkspacePath,
     name: "On-demand Bazel Build Debug",
     request: "launch",

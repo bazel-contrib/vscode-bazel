@@ -69,6 +69,12 @@ interface ILaunchRequestArguments extends DebugProtocol.LaunchRequestArguments {
    */
   bazelExecutablePath?: string;
 
+  /**
+   * Any Bazel startup options to be passed before the action ('build') in the
+   * final command line.
+   */
+  bazelStartupOptions?: [string];
+
   /** The working directory in which Bazel will be invoked. */
   cwd: string;
 
@@ -166,15 +172,17 @@ class BazelDebugSession extends DebugSession {
     const bazelExecutable = this.bazelExecutable(args);
     this.bazelInfo = await this.getBazelInfo(bazelExecutable, args.cwd);
 
-    const bazelArgs = [
-      args.bazelCommand,
-      "--color=yes",
-      "--experimental_skylark_debug",
-      `--experimental_skylark_debug_server_port=${port}`,
-      `--experimental_skylark_debug_verbose_logging=${verbose}`,
-    ].concat(args.args);
+    const fullArgs = args.bazelStartupOptions
+      .concat([
+        args.bazelCommand,
+        "--color=yes",
+        "--experimental_skylark_debug",
+        `--experimental_skylark_debug_server_port=${port}`,
+        `--experimental_skylark_debug_verbose_logging=${verbose}`,
+      ])
+      .concat(args.args);
 
-    this.launchBazel(bazelExecutable, args.cwd, bazelArgs);
+    this.launchBazel(bazelExecutable, args.cwd, fullArgs);
 
     this.bazelConnection = new BazelDebugConnection(
       "localhost",
