@@ -32,7 +32,6 @@ import {
   checkBuildifierIsAvailable,
 } from "../buildifier";
 import { BazelBuildCodeLensProvider } from "../codelens";
-import { setupLoggingOutputChannel } from "../logging";
 import { BazelTargetSymbolProvider } from "../symbols";
 import { BazelWorkspaceTreeProvider } from "../workspace-tree";
 import { getDefaultBazelExecutablePath } from "./configuration";
@@ -44,8 +43,6 @@ import { getDefaultBazelExecutablePath } from "./configuration";
  * @param context The extension context.
  */
 export function activate(context: vscode.ExtensionContext) {
-  setupLoggingOutputChannel(context);
-
   const workspaceTreeProvider = new BazelWorkspaceTreeProvider(context);
   const codeLensProvider = new BazelBuildCodeLensProvider(context);
   const buildifierDiagnostics = new BuildifierDiagnosticsManager();
