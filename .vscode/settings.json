@@ -3,9 +3,6 @@
         "node_modules": true,
         "out": true
     },
-    "search.exclude": {
-        "out": true
-    },
     "[typescript]": {
         "editor.tabSize": 2,
         "editor.detectIndentation": false,
