@@ -16,7 +16,7 @@ import * as vscode from "vscode";
 import { DocumentSymbolProvider } from "vscode";
 
 import { BazelWorkspaceInfo, QueryLocation } from "../bazel";
-import { getTargetsForBuildFile } from "../bazel/bazellib";
+import { getTargetsForBuildFile } from "../bazel";
 import { getDefaultBazelExecutablePath } from "../extension/configuration";
 import { blaze_query } from "../protos";
 

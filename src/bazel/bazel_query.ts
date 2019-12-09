@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import * as child_process from "child_process";
-import { blaze_query } from "../../protos";
+import { blaze_query } from "../protos";
 import { BazelCommand } from "./bazel_command";
 
 /** Provides a promise-based API around a Bazel query. */

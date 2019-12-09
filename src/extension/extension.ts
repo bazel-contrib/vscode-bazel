@@ -25,7 +25,7 @@ import {
   exitCodeToUserString,
   IBazelCommandAdapter,
   parseExitCode,
-} from "../bazel/bazellib";
+} from "../bazel";
 import {
   BuildifierDiagnosticsManager,
   BuildifierFormatProvider,

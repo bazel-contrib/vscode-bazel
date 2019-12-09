@@ -18,7 +18,7 @@ import {
   BazelQuery,
   IBazelCommandAdapter,
   IBazelCommandOptions,
-} from "../bazel/bazellib";
+} from "../bazel";
 import { getDefaultBazelExecutablePath } from "../extension/configuration";
 import { blaze_query } from "../protos";
 import { BazelTargetTreeItem } from "./bazel_target_tree_item";

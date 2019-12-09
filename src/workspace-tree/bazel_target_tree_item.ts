@@ -14,7 +14,7 @@
 
 import * as vscode from "vscode";
 import { BazelWorkspaceInfo, QueryLocation } from "../bazel";
-import { IBazelCommandAdapter, IBazelCommandOptions } from "../bazel/bazellib";
+import { IBazelCommandAdapter, IBazelCommandOptions } from "../bazel";
 import { blaze_query } from "../protos";
 import { IBazelTreeItem } from "./bazel_tree_item";
 import { getBazelRuleIcon } from "./icons";
