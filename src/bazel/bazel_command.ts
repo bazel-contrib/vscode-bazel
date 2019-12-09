@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as vscode from "vscode";
 import { BazelWorkspaceInfo } from "./bazel_workspace_info";
 
 /**
@@ -67,7 +68,11 @@ export abstract class BazelCommand {
 
   /** The args used to execute the for the command. */
   protected execArgs(additionalOptions: string[] = []) {
-    const result = [this.bazelCommand()]
+    const bazelConfigCmdLine = vscode.workspace.getConfiguration("bazel.commandLine");
+    const startupOptions: [string] = bazelConfigCmdLine.startupOptions;
+
+    const result = startupOptions
+      .concat([this.bazelCommand()])
       .concat(this.options)
       .concat(additionalOptions);
 
