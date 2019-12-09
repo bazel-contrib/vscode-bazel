@@ -41,8 +41,8 @@ export function checkBuildifierIsAvailable() {
     // buildifier on an empty input and see if it exits successfully and the
     // output parses.
     const process = child_process.execFile(
-      `${buildifierExecutable}`,
-      [`--format=json`, `--mode=check`],
+      buildifierExecutable,
+      ["--format=json", "--mode=check"],
       {},
       (error: Error, stdout: string, stderr: string) => {
         if (!error && stdout) {

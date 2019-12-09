@@ -67,7 +67,7 @@ export abstract class BazelCommand {
 
   /** The args used to execute the for the command. */
   protected execArgs(additionalOptions: string[] = []) {
-    const result = [`${this.bazelCommand()}`]
+    const result = [this.bazelCommand()]
       .concat(this.options)
       .concat(additionalOptions);
 
