@@ -118,8 +118,9 @@ export class BazelQuery extends BazelCommand {
         encoding: null,
         maxBuffer: Number.MAX_SAFE_INTEGER,
       };
-      child_process.exec(
-        this.commandLine(additionalOptions),
+      child_process.execFile(
+        this.bazelExecutable,
+        this.execArgs(additionalOptions),
         execOptions,
         (error: Error, stdout: Buffer, stderr: Buffer) => {
           if (error) {

@@ -188,8 +188,9 @@ function executeBuildifier(
     const execOptions = {
       maxBuffer: Number.MAX_SAFE_INTEGER,
     };
-    const process = child_process.exec(
-      [getDefaultBuildifierExecutablePath()].concat(args).join(" "),
+    const process = child_process.execFile(
+      getDefaultBuildifierExecutablePath(),
+      args,
       execOptions,
       (error: Error, stdout: string, stderr: string) => {
         if (
@@ -214,7 +215,8 @@ function executeBuildifier(
  * a "successful" buildifier exit in the sense that it correctly reported
  * warnings/errors in the file despite the non-zero exit code.
  *
- * @param error The {@code Error} passed to the `child_process.exec` callback.
+ * @param error The {@code Error} passed to the `child_process.execFile`
+ *     callback.
  */
 function shouldTreatBuildifierErrorAsSuccess(error: Error): boolean {
   // Some of buildifier's exit codes represent states that we want to treat as

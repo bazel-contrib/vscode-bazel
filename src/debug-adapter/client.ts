@@ -548,8 +548,9 @@ class BazelDebugSession extends DebugSession {
         // event-based `child_process` APIs instead.
         maxBuffer: 500 * 1024,
       };
-      child_process.exec(
-        [bazelExecutable, "info"].join(" "),
+      child_process.execFile(
+        bazelExecutable,
+        ["info"],
         execOptions,
         (error: Error, stdout: string, stderr: string) => {
           if (error) {

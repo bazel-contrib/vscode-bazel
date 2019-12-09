@@ -130,7 +130,7 @@ async function bazelBuildTarget(adapter: IBazelCommandAdapter | undefined) {
     // invoked via the command palatte. Provide quickpick build targets for
     // the user to choose from.
     const quickPick = await vscode.window.showQuickPick(
-      queryQuickPickTargets("\"kind('.* rule', ...)\""),
+      queryQuickPickTargets("kind('.* rule', ...)"),
       {
         canPickMany: false,
       },
@@ -161,7 +161,7 @@ async function bazelBuildTargetWithDebugging(
     // invoked via the command palatte. Provide quickpick build targets for
     // the user to choose from.
     const quickPick = await vscode.window.showQuickPick(
-      queryQuickPickTargets("\"kind('.* rule', ...)\""),
+      queryQuickPickTargets("kind('.* rule', ...)"),
       {
         canPickMany: false,
       },
@@ -260,7 +260,7 @@ async function bazelTestTarget(adapter: IBazelCommandAdapter | undefined) {
     // invoked via the command palatte. Provide quickpick test targets for
     // the user to choose from.
     const quickPick = await vscode.window.showQuickPick(
-      queryQuickPickTargets("\"kind('.*_test rule', ...)\""),
+      queryQuickPickTargets("kind('.*_test rule', ...)"),
       {
         canPickMany: false,
       },

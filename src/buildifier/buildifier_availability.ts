@@ -40,8 +40,9 @@ export function checkBuildifierIsAvailable() {
     // If we found it, make sure it's a compatible version by running
     // buildifier on an empty input and see if it exits successfully and the
     // output parses.
-    const process = child_process.exec(
-      `${buildifierExecutable} --format=json --mode=check`,
+    const process = child_process.execFile(
+      buildifierExecutable,
+      ["--format=json", "--mode=check"],
       {},
       (error: Error, stdout: string, stderr: string) => {
         if (!error && stdout) {
