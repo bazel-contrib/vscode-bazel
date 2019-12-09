@@ -45,7 +45,7 @@ export async function getTargetsForBuildFile(
   const queryResult = await new BazelQuery(
     bazelExecutable,
     workspace,
-    `"kind(rule, ${pkg}:all)"`,
+    `kind(rule, ${pkg}:all)`,
     [],
   ).queryTargets();
 

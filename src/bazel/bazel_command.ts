@@ -65,17 +65,12 @@ export abstract class BazelCommand {
    */
   protected abstract bazelCommand(): string;
 
-  /** The command line string used to execute the query. */
-  protected commandLine(additionalOptions: string[] = []) {
-    let result = `${this.bazelExecutable} ${this.bazelCommand()}`;
-    if (this.options.length > 0) {
-      result += " ";
-      result += this.options.join(" ");
-    }
-    if (additionalOptions.length > 0) {
-      result += " ";
-      result += additionalOptions.join(" ");
-    }
+  /** The args used to execute the for the command. */
+  protected execArgs(additionalOptions: string[] = []) {
+    const result = [`${this.bazelCommand()}`]
+      .concat(this.options)
+      .concat(additionalOptions);
+
     return result;
   }
 }
