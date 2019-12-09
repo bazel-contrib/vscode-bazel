@@ -15,7 +15,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
-import { blaze_query } from "../../protos";
+import { blaze_query } from "../protos";
 import { BazelQuery } from "./bazel_query";
 
 /**

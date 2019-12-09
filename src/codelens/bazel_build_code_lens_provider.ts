@@ -15,7 +15,7 @@
 import * as vscode from "vscode";
 
 import { BazelWorkspaceInfo, QueryLocation } from "../bazel";
-import { getTargetsForBuildFile } from "../bazel/bazellib";
+import { getTargetsForBuildFile } from "../bazel";
 import { getDefaultBazelExecutablePath } from "../extension/configuration";
 import { blaze_query } from "../protos";
 import { CodeLensCommandAdapter } from "./code_lens_command_adapter";

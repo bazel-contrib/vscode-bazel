@@ -15,9 +15,9 @@
 import * as vscode from "vscode";
 
 import { getDefaultBazelExecutablePath } from "../extension/configuration";
+import { IBazelCommandAdapter, IBazelCommandOptions } from "./bazel_command";
+import { BazelQuery } from "./bazel_query";
 import { BazelWorkspaceInfo } from "./bazel_workspace_info";
-import { IBazelCommandAdapter, IBazelCommandOptions } from "./bazellib";
-import { BazelQuery } from "./bazellib/bazel_query";
 
 /**
  * Represents a Bazel target in a QuickPick items window. Implements the

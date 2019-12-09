@@ -14,7 +14,7 @@
 
 import * as vscode from "vscode";
 import { BazelWorkspaceInfo } from "../bazel";
-import { BazelQuery } from "../bazel/bazellib";
+import { BazelQuery } from "../bazel";
 import { getDefaultBazelExecutablePath } from "../extension/configuration";
 import { blaze_query } from "../protos";
 import { BazelPackageTreeItem } from "./bazel_package_tree_item";

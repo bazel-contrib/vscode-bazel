@@ -14,7 +14,7 @@
 
 import * as vscode from "vscode";
 
-import { getBazelWorkspaceFolder } from "./bazellib";
+import { getBazelWorkspaceFolder } from "./bazel_utils";
 
 /**
  * Represents the Bazel workspace path containing a document as well as its
