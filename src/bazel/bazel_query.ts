@@ -13,8 +13,14 @@
 // limitations under the License.
 
 import * as child_process from "child_process";
+import * as crypto from "crypto";
+import * as os from "os";
+import * as path from "path";
+import * as vscode from "vscode";
+
 import { blaze_query } from "../protos";
 import { BazelCommand } from "./bazel_command";
+import { getBazelWorkspaceFolder } from "./bazel_utils";
 
 /** Provides a promise-based API around a Bazel query. */
 export class BazelQuery extends BazelCommand {
@@ -110,6 +116,28 @@ export class BazelQuery extends BazelCommand {
    *     standard output, or rejected if the command fails.
    */
   private run(additionalOptions: string[] = []): Promise<Buffer> {
+    const bazelConfig = vscode.workspace.getConfiguration("bazel");
+    const queriesShareServer: boolean = bazelConfig.queriesShareServer;
+    let additionalStartupOptions: string[] = [];
+    if (!queriesShareServer) {
+      // If not sharing the Bazel server, use a custom output_base.
+      //
+      // This helps get the queries out of the way of any other builds (or use
+      // of ibazel). The docs suggest using a custom output base for IDE support
+      // features, which is what these queries are. See:
+      // tslint:disable-next-line: max-line-length
+      // https://docs.bazel.build/versions/master/guide.html#choosing-the-output-base
+      //
+      // NOTE: This does NOT use a random directory for each query instead it
+      // uses a generated tmp directory based on the Bazel workspace, this way
+      // the server is shared for all the queries.
+      const ws = getBazelWorkspaceFolder(this.workingDirectory);
+      const hash = crypto.createHash("md5").update(ws).digest("hex");
+      const outputBase = path.join(os.tmpdir(), hash);
+      additionalStartupOptions = additionalStartupOptions.concat([
+        `--output_base=${outputBase}`,
+      ]);
+    }
     return new Promise((resolve, reject) => {
       const execOptions = {
         cwd: this.workingDirectory,
@@ -120,7 +148,7 @@ export class BazelQuery extends BazelCommand {
       };
       child_process.execFile(
         this.bazelExecutable,
-        this.execArgs(additionalOptions),
+        this.execArgs(additionalOptions, additionalStartupOptions),
         execOptions,
         (error: Error, stdout: Buffer, stderr: Buffer) => {
           if (error) {

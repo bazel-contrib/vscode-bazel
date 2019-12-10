@@ -102,6 +102,11 @@
                     "default": false,
                     "description": "Whether to automatically apply lint fixes from buildifier when formatting a Bazel file."
                 },
+                "bazel.queriesShareServer": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Use same Bazel server for queries and builds."
+                },
                 "bazel.pathsToIgnore": {
                     "type": "array",
                     "items": {
