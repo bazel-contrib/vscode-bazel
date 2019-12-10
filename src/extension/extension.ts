@@ -174,8 +174,8 @@ async function bazelBuildTargetWithDebugging(
     return;
   }
   const bazelConfigCmdLine = vscode.workspace.getConfiguration("bazel.commandLine");
-  const startupOptions: [string] = bazelConfigCmdLine.startupOptions;
-  const commandArgs: [string] = bazelConfigCmdLine.commandArgs;
+  const startupOptions = bazelConfigCmdLine.get<string[]>("startupOptions");
+  const commandArgs = bazelConfigCmdLine.get<string[]>("commandArgs");
 
   const commandOptions = adapter.getBazelCommandOptions();
 
