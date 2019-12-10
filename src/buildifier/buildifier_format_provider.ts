@@ -27,7 +27,7 @@ export class BuildifierFormatProvider
     token: vscode.CancellationToken,
   ): Promise<vscode.TextEdit[]> {
     const bazelConfig = vscode.workspace.getConfiguration("bazel");
-    const applyLintFixes = bazelConfig.buildifierFixOnFormat as boolean;
+    const applyLintFixes = bazelConfig.get<boolean>("buildifierFixOnFormat");
 
     const fileContent = document.getText();
     const type = getBuildifierFileType(document.uri.fsPath);

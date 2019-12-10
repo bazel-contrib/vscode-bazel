@@ -62,7 +62,7 @@ export async function getTargetsForBuildFile(
  */
 function shouldIgnorePath(fsPath: string): boolean {
   const bazelConfig = vscode.workspace.getConfiguration("bazel");
-  const pathsToIgnore = bazelConfig.pathsToIgnore as [string];
+  const pathsToIgnore = bazelConfig.get<string[]>("pathsToIgnore");
   for (const pathRegex of pathsToIgnore) {
     try {
       const regex = new RegExp(pathRegex);

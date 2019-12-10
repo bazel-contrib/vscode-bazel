@@ -71,8 +71,9 @@ export abstract class BazelCommand {
     additionalOptions: string[] = [],
     additionalStartupOptions: string[] = [],
   ) {
-    const bazelConfigCmdLine = vscode.workspace.getConfiguration("bazel.commandLine");
-    const startupOptions: [string] = bazelConfigCmdLine.startupOptions;
+    const bazelConfigCmdLine =
+      vscode.workspace.getConfiguration("bazel.commandLine");
+    const startupOptions = bazelConfigCmdLine.get<string[]>("startupOptions");
 
     const result = startupOptions
       .concat(additionalStartupOptions)

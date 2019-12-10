@@ -36,10 +36,10 @@ export function createBazelTask(
   options: IBazelCommandOptions,
 ): vscode.Task {
   const bazelConfigCmdLine = vscode.workspace.getConfiguration("bazel.commandLine");
-  const startupOptions: [string] = bazelConfigCmdLine.startupOptions;
+  const startupOptions = bazelConfigCmdLine.get<string[]>("startupOptions");
   const addCommandArgs = command === "build" || command === "test";
-  const commandArgs: [string] =
-    (addCommandArgs ? bazelConfigCmdLine.commandArgs : []);
+  const commandArgs =
+    (addCommandArgs ? bazelConfigCmdLine.get<string[]>("commandArgs") : []);
 
   const args = startupOptions
     .concat([command as string])
