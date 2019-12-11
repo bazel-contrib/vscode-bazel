@@ -24,8 +24,8 @@ export class BazelWorkspaceInfo {
   /**
    * Returns the VS Code and Bazel workspace info for the given text document.
    *
-   * If the file is not in a Bazel workspace, this function returns
-   * {@code undefined}.
+   * If the file is not in a Bazel workspace or in a VSCode workspace, this
+   * function returns {@code undefined}.
    *
    * @param document The {@code vscode.TextDocument} whose workspace info should
    *     be retrieved.
@@ -34,9 +34,13 @@ export class BazelWorkspaceInfo {
     document: vscode.TextDocument,
   ): BazelWorkspaceInfo | undefined {
     const uri = document.uri;
+    // Make sure the current document is from a workspace folder.
+    const vscodeWorkspace = vscode.workspace.getWorkspaceFolder(uri);
+    if (vscodeWorkspace === undefined) {
+      return undefined;
+    }
     const bazelWorkspace = getBazelWorkspaceFolder(uri.fsPath);
     if (bazelWorkspace) {
-      const vscodeWorkspace = vscode.workspace.getWorkspaceFolder(uri);
       return new BazelWorkspaceInfo(bazelWorkspace, vscodeWorkspace);
     }
     return undefined;
