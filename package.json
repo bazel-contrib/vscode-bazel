@@ -18,7 +18,8 @@
     ],
     "activationEvents": [
         "onLanguage:starlark",
-        "onView:bazelWorkspace"
+        "onView:bazelWorkspace",
+        "onCommand:bazel.refreshBazelBuildTargets"
     ],
     "main": "./out/src/extension/extension",
     "contributes": {
@@ -221,6 +222,38 @@
                 {
                     "command": "bazel.copyTargetToClipboard",
                     "when": "false"
+                },
+                {
+                    "command": "bazel.buildTarget",
+                    "when": "vscodeBazelHaveBazelWorkspace"
+                },
+                {
+                    "command": "bazel.buildTargetWithDebugging",
+                    "when": "vscodeBazelHaveBazelWorkspace"
+                },
+                {
+                    "command": "bazel.buildAll",
+                    "when": "vscodeBazelHaveBazelWorkspace"
+                },
+                {
+                    "command": "bazel.buildAllRecursive",
+                    "when": "vscodeBazelHaveBazelWorkspace"
+                },
+                {
+                    "command": "bazel.testTarget",
+                    "when": "vscodeBazelHaveBazelWorkspace"
+                },
+                {
+                    "command": "bazel.testAll",
+                    "when": "vscodeBazelHaveBazelWorkspace"
+                },
+                {
+                    "command": "bazel.testAllRecursive",
+                    "when": "vscodeBazelHaveBazelWorkspace"
+                },
+                {
+                    "command": "bazel.clean",
+                    "when": "vscodeBazelHaveBazelWorkspace"
                 }
             ],
             "view/item/context": [
@@ -311,7 +344,8 @@
             "explorer": [
                 {
                     "id": "bazelWorkspace",
-                    "name": "Bazel Build Targets"
+                    "name": "Bazel Build Targets",
+                    "when": "vscodeBazelHaveBazelWorkspace"
                 }
             ]
         }

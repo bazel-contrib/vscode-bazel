@@ -64,6 +64,8 @@ export class BazelWorkspaceTreeProvider
     );
 
     vscode.workspace.onDidChangeWorkspaceFolders(this.refresh, this);
+
+    this.updateWorkspaceFolderTreeItems();
   }
 
   public getChildren(element?: IBazelTreeItem): Thenable<IBazelTreeItem[]> {
@@ -74,18 +76,7 @@ export class BazelWorkspaceTreeProvider
     }
 
     if (this.workspaceFolderTreeItems === undefined) {
-      this.workspaceFolderTreeItems =
-        vscode.workspace.workspaceFolders
-          .map((folder) => {
-            const workspaceInfo = BazelWorkspaceInfo.fromWorkspaceFolder(
-              folder,
-            );
-            if (workspaceInfo) {
-              return new BazelWorkspaceFolderTreeItem(workspaceInfo);
-            }
-            return undefined;
-          })
-          .filter((folder) => folder !== undefined);
+      this.updateWorkspaceFolderTreeItems();
     }
 
     if (this.workspaceFolderTreeItems && vscode.workspace.workspaceFolders) {
@@ -123,7 +114,7 @@ export class BazelWorkspaceTreeProvider
 
   /** Forces a re-query and refresh of the tree's contents. */
   public refresh() {
-    this.workspaceFolderTreeItems = undefined;
+    this.updateWorkspaceFolderTreeItems();
     this.onDidChangeTreeDataEmitter.fire();
   }
 
@@ -137,5 +128,31 @@ export class BazelWorkspaceTreeProvider
     // TODO(allevato): Look into firing the event only for tree items that are
     // affected by the change.
     this.refresh();
+  }
+
+  /** Refresh the cached BazelWorkspaceFolderTreeItems. */
+  private updateWorkspaceFolderTreeItems() {
+    if (vscode.workspace.workspaceFolders) {
+      this.workspaceFolderTreeItems =
+        vscode.workspace.workspaceFolders
+          .map((folder) => {
+            const workspaceInfo = BazelWorkspaceInfo.fromWorkspaceFolder(
+              folder,
+            );
+            if (workspaceInfo) {
+              return new BazelWorkspaceFolderTreeItem(workspaceInfo);
+            }
+            return undefined;
+          })
+          .filter((folder) => folder !== undefined);
+    } else {
+      this.workspaceFolderTreeItems = [];
+    }
+
+    // All the UI to update based on having items.
+    const haveBazelWorkspace = this.workspaceFolderTreeItems.length !== 0;
+    vscode.commands.executeCommand(
+      "setContext", "vscodeBazelHaveBazelWorkspace", haveBazelWorkspace,
+    );
   }
 }
