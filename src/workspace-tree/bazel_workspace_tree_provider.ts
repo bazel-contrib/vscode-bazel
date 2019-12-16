@@ -30,6 +30,9 @@ export class BazelWorkspaceTreeProvider
     IBazelTreeItem | undefined
   >();
 
+  /** The cached toplevel items. */
+  private workspaceFolderTreeItems: BazelWorkspaceFolderTreeItem[] | undefined;
+
   /**
    * Initializes a new tree provider with the given extension context.
    *
@@ -59,6 +62,8 @@ export class BazelWorkspaceTreeProvider
       this,
       context.subscriptions,
     );
+
+    vscode.workspace.onDidChangeWorkspaceFolders(this.refresh, this);
   }
 
   public getChildren(element?: IBazelTreeItem): Thenable<IBazelTreeItem[]> {
@@ -68,21 +73,8 @@ export class BazelWorkspaceTreeProvider
       return element.getChildren();
     }
 
-    if (vscode.workspace.workspaceFolders) {
-      // If the user has a workspace open and there's only one folder in it,
-      // then don't show the workspace folder; just show its packages at the top
-      // level.
-      if (vscode.workspace.workspaceFolders.length === 1) {
-        const workspaceFolder = vscode.workspace.workspaceFolders[0];
-        const folderItem = new BazelWorkspaceFolderTreeItem(
-          BazelWorkspaceInfo.fromWorkspaceFolder(workspaceFolder),
-        );
-        return folderItem.getChildren();
-      }
-
-      // If the user has multiple workspace folders open, then show them as
-      // individual top level items.
-      return Promise.resolve(
+    if (this.workspaceFolderTreeItems === undefined) {
+      this.workspaceFolderTreeItems =
         vscode.workspace.workspaceFolders
           .map((folder) => {
             const workspaceInfo = BazelWorkspaceInfo.fromWorkspaceFolder(
@@ -93,12 +85,25 @@ export class BazelWorkspaceTreeProvider
             }
             return undefined;
           })
-          .filter((folder) => folder !== undefined),
-      );
+          .filter((folder) => folder !== undefined);
     }
 
-    // If the user doesn't have a folder open in the workspace, don't show
-    // anything.
+    if (this.workspaceFolderTreeItems && vscode.workspace.workspaceFolders) {
+      // If the user has a workspace open and there's only one folder in it,
+      // then don't show the workspace folder; just show its packages at the top
+      // level.
+      if (vscode.workspace.workspaceFolders.length === 1) {
+        const folderItem = this.workspaceFolderTreeItems[0];
+        return folderItem.getChildren();
+      }
+
+      // If the user has multiple workspace folders open, then show them as
+      // individual top level items.
+      return Promise.resolve(this.workspaceFolderTreeItems);
+    }
+
+    // If the user doesn't have a folder open in the workspace, or none of them
+    // have Bazel workspaces, don't show anything.
     return Promise.resolve([]);
   }
 
@@ -118,6 +123,7 @@ export class BazelWorkspaceTreeProvider
 
   /** Forces a re-query and refresh of the tree's contents. */
   public refresh() {
+    this.workspaceFolderTreeItems = undefined;
     this.onDidChangeTreeDataEmitter.fire();
   }
 
