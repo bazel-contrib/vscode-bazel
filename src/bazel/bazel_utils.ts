@@ -102,14 +102,17 @@ export function getBazelWorkspaceFolder(fsPath: string): string | undefined {
     dirname = path.dirname(dirname);
   }
   do {
-    const workspace = path.join(dirname, "WORKSPACE");
-    try {
-      fs.accessSync(workspace, fs.constants.F_OK);
-      // WORKSPACE file is accessible. We have found the Bazel workspace
-      // directory.
-      return dirname;
-    } catch (err) {
-      // Intentionally do nothing; just try the next parent directory.
+    const WORKSPACE_FILES = ["WORKSPACE.bazel", "WORKSPACE"];
+    for (const workspaceFileName of WORKSPACE_FILES) {
+      const workspace = path.join(dirname, workspaceFileName);
+      try {
+        fs.accessSync(workspace, fs.constants.F_OK);
+        // workspace file is accessible. We have found the Bazel workspace
+        // directory.
+        return dirname;
+      } catch (err) {
+        // Intentionally do nothing; just try the next parent directory.
+      }
     }
     dirname = path.dirname(dirname);
   } while (++iteration < maxIterations && dirname !== "" && dirname !== "/");
