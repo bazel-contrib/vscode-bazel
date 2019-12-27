@@ -27,7 +27,7 @@ again.
 
 ## Setting up your development environment
 
-To contribute, you likely should already be familiar with VSCode extensions.
+To contribute, you likely should already be familiar with VS Code extensions.
 The best place to start is probably their
 [guide](https://code.visualstudio.com/api/get-started/your-first-extension).
 
