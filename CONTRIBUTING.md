@@ -33,7 +33,7 @@ The best place to start is probably their
 
 Once somewhat familiar with the process, you just need to checked out this
 project, do an `npm install` to gets the required packages into the local
-checkout's *node_modules* and then open the directory in VSCode. There are
+checkout's *node_modules* and then open the directory in VS Code. There are
 already tasks configured to build/debug the extension. Note: having the released
 version of this extension install what trying to work on it can some times
 confuse things, so it is usually best to not have the release version installed
