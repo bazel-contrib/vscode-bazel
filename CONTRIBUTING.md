@@ -32,7 +32,7 @@ The best place to start is probably their
 [guide](https://code.visualstudio.com/api/get-started/your-first-extension).
 
 Once somewhat familiar with the process, you just need to checked out this
-project, do an `npm install` to gets the required packages into the local
+project, do an `npm install` to get the required packages into the local
 checkout's *node_modules* and then open the directory in VS Code. There are
 already tasks configured to build/debug the extension. Note: having the released
 version of this extension install what trying to work on it can some times
