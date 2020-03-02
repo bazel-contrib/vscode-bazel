@@ -114,7 +114,6 @@
                         "type": "string"
                     },
                     "uniqueItems": true,
-                    "scope": "application",
                     "default": [],
                     "description": "A list of Regexs that when matched cause paths not to be checked for being in a WORKSPACE. This impacts operations that require a workspace, like queries, but syntax highlighting and buildifier work regardless."
                 },
