@@ -559,7 +559,10 @@ class BazelDebugSession extends DebugSession {
             const keyValues = new Map<string, string>();
             const lines = stdout.trim().split("\n");
             for (const line of lines) {
-              const [key, value] = line.split(":", 2);
+              // Windows paths can have >1 ':', so can't use line.split(":", 2)
+              const splitterIndex = line.indexOf(":");
+              const key = line.substring(0, splitterIndex);
+              const value = line.substring(splitterIndex + 1);
               keyValues.set(key.trim(), value.trim());
             }
             resolve(keyValues);
