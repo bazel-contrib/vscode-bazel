@@ -108,6 +108,11 @@
                     "default": false,
                     "description": "Use the same Bazel server for queries and builds. By default, vscode-bazel uses a separate server for queries so that they can be executed in parallel with builds. You can enable this setting if running multiple Bazel servers has a negative performance impact on your system, but you may experience degraded performance in Visual Studio Code for operations that require queries."
                 },
+                "bazel.enableCodeLens": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "Whether to add a CodeLens to `BUILD`/`BUILD.bazel` files to provide actions while browsing the file."
+                },
                 "bazel.pathsToIgnore": {
                     "type": "array",
                     "items": {

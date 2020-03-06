@@ -48,6 +48,12 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
       this,
       context.subscriptions,
     );
+
+    vscode.workspace.onDidChangeConfiguration((change) => {
+      if (change.affectsConfiguration("bazel.enableCodeLens")) {
+        this.onDidChangeCodeLensesEmitter.fire();
+      }
+    });
   }
 
   /**
@@ -61,6 +67,12 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
     document: vscode.TextDocument,
     token: vscode.CancellationToken,
   ): Promise<vscode.CodeLens[]> {
+    const bazelConfig = vscode.workspace.getConfiguration("bazel");
+    const enableCodeLens = bazelConfig.get<boolean>("enableCodeLens");
+    if (!enableCodeLens) {
+      return [];
+    }
+
     if (document.isDirty) {
       // Don't show code lenses for dirty BUILD files; we can't reliably
       // determine what the build targets in it are until it is saved and we can
