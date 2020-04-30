@@ -2,9 +2,9 @@
     "name": "Starlark",
     "scopeName": "source.starlark",
     "fileTypes": [
-        "bzl"
-        "star"
-        "build_defs"
+        "bzl",
+        "star",
+        "build_defs",
         "BUILD"
     ],
     "patterns": [
