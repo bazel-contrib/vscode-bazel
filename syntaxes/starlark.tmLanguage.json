@@ -2,10 +2,15 @@
     "name": "Starlark",
     "scopeName": "source.starlark",
     "fileTypes": [
+        "BUILD",
+        "WORKSPACE",
         "bzl",
+        "sky",
         "star",
         "build_defs",
-        "BUILD"
+        "BUILD.bazel",
+        "WORKSPACE",
+        "WORKSPACE.bazel",
     ],
     "patterns": [
         {
