@@ -210,7 +210,8 @@
                     ".WORKSPACE",
                     ".bzl",
                     ".sky",
-                    ".star"
+                    ".star",
+                    ".build_defs"
                 ],
                 "filenames": [
                     "BUILD",
