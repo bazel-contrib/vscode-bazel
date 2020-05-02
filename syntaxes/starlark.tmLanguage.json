@@ -7,7 +7,6 @@
         "bzl",
         "sky",
         "star",
-        "build_defs",
         "BUILD.bazel",
         "WORKSPACE",
         "WORKSPACE.bazel",

@@ -211,7 +211,6 @@
                     ".bzl",
                     ".sky",
                     ".star",
-                    ".build_defs"
                 ],
                 "filenames": [
                     "BUILD",
