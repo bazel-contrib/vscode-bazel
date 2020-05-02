@@ -9,7 +9,7 @@
         "star",
         "BUILD.bazel",
         "WORKSPACE",
-        "WORKSPACE.bazel",
+        "WORKSPACE.bazel"
     ],
     "patterns": [
         {
