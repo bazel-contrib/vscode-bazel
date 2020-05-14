@@ -23,11 +23,11 @@ import { BazelWorkspaceFolderTreeItem } from "./bazel_workspace_folder_tree_item
  */
 export class BazelWorkspaceTreeProvider
   implements vscode.TreeDataProvider<IBazelTreeItem> {
-  public onDidChangeTreeData: vscode.Event<IBazelTreeItem | undefined>;
+  public onDidChangeTreeData: vscode.Event<IBazelTreeItem | void>;
 
   /** Fired when BUILD files change in the workspace. */
   private onDidChangeTreeDataEmitter = new vscode.EventEmitter<
-    IBazelTreeItem | undefined
+    IBazelTreeItem | void
   >();
 
   /** The cached toplevel items. */
