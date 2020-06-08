@@ -1,6 +1,6 @@
 {
     "name": "vscode-bazel",
-    "displayName": "vscode-bazel",
+    "displayName": "Bazel",
     "description": "Bazel BUILD integration",
     "version": "0.3.0",
     "publisher": "BazelBuild",
