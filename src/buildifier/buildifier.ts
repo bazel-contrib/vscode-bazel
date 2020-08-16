@@ -165,7 +165,10 @@ export function getDefaultBuildifierExecutablePath(): string {
   const bazelConfig = vscode.workspace.getConfiguration("bazel");
   const buildifierExecutable = bazelConfig.get<string>("buildifierExecutable");
   if (vscode.workspace.rootPath !== undefined) {
-    buildifierExecutable.replace("${workspaceFolder}", vscode.workspace.rootPath);
+    buildifierExecutable.replace(
+      "${workspaceFolder}",
+      vscode.workspace.rootPath
+    );
   }
   if (buildifierExecutable.length === 0) {
     return "buildifier";
