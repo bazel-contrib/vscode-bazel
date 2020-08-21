@@ -1,5 +1,16 @@
 # Change Log
 
+## Version 0.4.0 (August 21, 2020)
+
+### New Features
+
+- CodeLens has been disabled by default, but can be enabled via a new option.
+
+### Bug Fixes
+
+- WORKSPACE.bazel files are now properly recognized.
+- We made multiple improvements to Windows support.
+
 ## Version 0.3.0 (September 19, 2019)
 
 ### Breaking Changes
