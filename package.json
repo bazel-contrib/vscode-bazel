@@ -2,7 +2,7 @@
     "name": "vscode-bazel",
     "displayName": "Bazel",
     "description": "Bazel BUILD integration",
-    "version": "0.3.0",
+    "version": "0.4.0",
     "publisher": "BazelBuild",
     "license": "Apache-2.0",
     "repository": {
@@ -357,15 +357,15 @@
     "scripts": {
         "check-lint": "tslint -t stylish 'src/**/*.ts' --exclude 'src/**/*.d.ts'",
         "compile": "./scripts/build.sh",
-        "postinstall": "node ./node_modules/vscode/bin/install",
         "vscode:prepublish": "./scripts/build.sh",
         "watch": "./scripts/build.sh -watch"
     },
     "devDependencies": {
         "@types/node": "^6.14.9",
+        "@types/vscode": "^1.30.0",
         "tslint": "^5.20.1",
         "typescript": "^3.7.2",
-        "vscode": "^1.1.36"
+        "vscode-test": "^1.3.0"
     },
     "dependencies": {
         "protobufjs": "^6.8.0",
