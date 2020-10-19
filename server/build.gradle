@@ -9,6 +9,7 @@ repositories {
 
 dependencies {
     implementation "com.google.guava:guava:${guava_version}"
+    implementation "org.eclipse.lsp4j:org.eclipse.lsp4j:${lsp4j_version}"
     testImplementation "org.junit.jupiter:junit-jupiter-api:${junit_version}"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junit_version}"
     testImplementation "org.mockito:mockito-core:${mockito_version}"
