@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 
-import * as utils from "./utils";
+import { JavaUtils } from "./utils";
 
 /**
  * Called when the extension is activated; that is, when its first command is
@@ -26,7 +26,7 @@ export function activate(context: vscode.ExtensionContext): void {
   // - Press command + shift + p
   // - Type in "bazel.helloworld" and run it
   const disposable = vscode.commands.registerCommand("bazel.helloworld", () => {
-    console.log(`getJavaExecPath: ${utils.getJavaExecPath()}`);
+    console.log(`getJavaExecPath: ${JavaUtils.getJavaExecPath()}`);
   });
 
   context.subscriptions.push(disposable);
