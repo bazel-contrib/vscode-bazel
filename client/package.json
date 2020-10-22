@@ -22,7 +22,7 @@
         "onCommand:bazel.refreshBazelBuildTargets",
         "onCommand:bazel.helloworld"
     ],
-    "main": "./out/src/extension/extension",
+    "main": "./out/src/extension",
     "contributes": {
         "breakpoints": [
             {
