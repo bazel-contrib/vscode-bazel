@@ -7,14 +7,10 @@ public class BazelServerLogger {
 
     private static BazelServerLogger instance;
 
-    private PrintStream logStream;
+    private static PrintStream logStream = System.out;
 
-    private BazelServerLogger(PrintStream stream) {
-        this.logStream = stream;
-    }
-
-    private BazelServerLogger() {
-        this.logStream = System.out;
+    static void setStream(PrintStream stream) {
+        logStream = stream;
     }
 
     public static BazelServerLogger getLogger() {
