@@ -25,7 +25,7 @@ set -eu
 (
     printf "${GREEN}Building server...${NC}\n"
     cd ../server
-    ./gradlew jar
+    ./gradlew shadowJar
 )
 
 # Build the client.
