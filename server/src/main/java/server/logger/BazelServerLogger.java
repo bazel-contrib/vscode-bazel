@@ -27,4 +27,6 @@ public class BazelServerLogger {
     public void log(String line) {
         logStream.println(line);
     }
+
+
 }
