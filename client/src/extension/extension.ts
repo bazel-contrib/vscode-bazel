@@ -173,7 +173,9 @@ async function bazelBuildTargetWithDebugging(
     }
     return;
   }
-  const bazelConfigCmdLine = vscode.workspace.getConfiguration("bazel.commandLine");
+  const bazelConfigCmdLine = vscode.workspace.getConfiguration(
+    "bazel.commandLine",
+  );
   const startupOptions = bazelConfigCmdLine.get<string[]>("startupOptions");
   const commandArgs = bazelConfigCmdLine.get<string[]>("commandArgs");
 
@@ -412,9 +414,7 @@ function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
     } else {
       const timeInSeconds = measurePerformance(bazelTaskInfo.startTime);
       vscode.window.showInformationMessage(
-        `Bazel ${
-          bazelTaskInfo.command
-        } completed successfully in ${timeInSeconds} seconds.`,
+        `Bazel ${bazelTaskInfo.command} completed successfully in ${timeInSeconds} seconds.`,
       );
     }
   }
