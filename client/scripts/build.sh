@@ -14,26 +14,45 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Colors
+GREEN="\033[0;32m"
+CYAN="\033[0;36m"
+NC="\033[0m"
+
 set -eu
 
-# Move into the top-level directory of the project.
-cd "$(dirname "${BASH_SOURCE[0]}")/.." > /dev/null
+# Build the server.
+(
+    printf "${GREEN}Building server...${NC}\n"
+    cd ../server
+    ./gradlew jar
+)
 
-readonly TSC=./node_modules/.bin/tsc
-readonly PBJS=./node_modules/protobufjs/bin/pbjs
-readonly PBTS=./node_modules/protobufjs/bin/pbts
+# Build the client.
+(
+    printf "${GREEN}Building client...${NC}\n"
 
-# Only regenerate the .js and .t.ds file if the protos have changed (i.e.,
-# it's a fresh checkout or update_protos.sh has been executed again and
-# deleted the old generated files). This shaves several seconds off the
-# extension's build time.
-if [[ ! -f src/protos/protos.js ]] ; then
-  sed -e "s#^#src/protos/#" src/protos/protos_list.txt | \
-      xargs $PBJS -t static-module -o src/protos/protos.js
-fi
-if [[ ! -f src/protos/protos.d.ts ]] ; then
-  $PBTS -o src/protos/protos.d.ts src/protos/protos.js
-fi
+    # Move into the top-level directory of the project.
+    cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 
-# Compile the rest of the project.
-$TSC "$@" -p ./
+    readonly TSC=./node_modules/.bin/tsc
+    readonly PBJS=./node_modules/protobufjs/bin/pbjs
+    readonly PBTS=./node_modules/protobufjs/bin/pbts
+
+    # Only regenerate the .js and .t.ds file if the protos have changed (i.e.,
+    # it's a fresh checkout or update_protos.sh has been executed again and
+    # deleted the old generated files). This shaves several seconds off the
+    # extension's build time.
+    if [[ ! -f src/protos/protos.js ]]; then
+        sed -e "s#^#src/protos/#" src/protos/protos_list.txt |
+            xargs $PBJS -t static-module -o src/protos/protos.js
+    fi
+    if [[ ! -f src/protos/protos.d.ts ]]; then
+        $PBTS -o src/protos/protos.d.ts src/protos/protos.js
+    fi
+
+    # Compile the rest of the project.
+    $TSC "$@" -p ./
+)
+
+printf "${CYAN}Success!${NC}\n"
