@@ -22,15 +22,16 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 # Build the server.
 (
     # Remove the old server if it exists.
-    rm bin/bazel-language-server-all.jar 2> /dev/null
+    rm -rf bin/* 2> /dev/null || true
 
     # Build the server (with dependencies).
     cd ../server
-    ./gradlew shadowJar
+    ./gradlew shadowJar > /dev/null
 
-    # Move the language server into the client dev environment.
+    # Move the language server into the client bin (for development purposes).
     # TODO: Rename language server.
     cd ../
+    mkdir client/bin 2> /dev/null || true
     mv server/build/libs/server-all.jar client/bin/bazel-language-server-all.jar
 )
 
@@ -55,5 +56,3 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
     # Compile the rest of the project.
     $TSC "$@" -p ./
 )
-
-printf "${CYAN}Success!${NC}\n"
