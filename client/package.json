@@ -20,7 +20,7 @@
         "onLanguage:starlark",
         "onView:bazelWorkspace",
         "onCommand:bazel.refreshBazelBuildTargets",
-        "onCommand:bazel.helloworld"
+        "onCommand:bazel.restartServer"
     ],
     "main": "./out/src/extension",
     "contributes": {
@@ -32,8 +32,8 @@
         "commands": [
             {
                 "category": "Bazel",
-                "command": "bazel.helloworld",
-                "title": "Print out 'hello world'"
+                "command": "bazel.restartServer",
+                "title": "Restart Bazel language server"
             },
             {
                 "category": "Bazel",
@@ -94,6 +94,14 @@
             "type": "object",
             "title": "Bazel",
             "properties": {
+                "bazel.java.home": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "default": null,
+                    "description": "Specifies the folder path to the JDK. Use this setting if the extension cannot find Java automatically."
+                },
                 "bazel.executable": {
                     "type": "string",
                     "default": "",
