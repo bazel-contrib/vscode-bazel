@@ -24,7 +24,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
     # Remove the old server if it exists.
     rm -rf bin/* 2> /dev/null || true
 
-    # Build the server (with dependencies).
+    # Build the server with dependencies.
     cd ../server
     ./gradlew shadowJar > /dev/null
 

@@ -37,7 +37,7 @@ export class WorkspaceUtils {
    * Variables specific to the server.
    */
   public static readonly SERVER = {
-    jarName: "server-all.jar",
+    jarName: "bazel-language-server-all.jar",
   };
 
   /**

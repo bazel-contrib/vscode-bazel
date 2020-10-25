@@ -86,11 +86,6 @@ function restartServer(): void {
 
 function startServer(): void {
   const javaPath = JavaUtils.getJavaExecPath();
-  console.log(`HEREEEEEEE`);
-  console.log(process.cwd());
-  console.log(ext.context.extensionPath);
-  console.log("ALSO HERE");
-  return;
 
   vscode.window.withProgress(
     { location: vscode.ProgressLocation.Window },
