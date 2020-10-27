@@ -1,6 +1,9 @@
 package server;
 
+import org.eclipse.lsp4j.DidChangeTextDocumentParams;
+import org.eclipse.lsp4j.DidCloseTextDocumentParams;
 import org.eclipse.lsp4j.DidOpenTextDocumentParams;
+import org.eclipse.lsp4j.DidSaveTextDocumentParams;
 import org.eclipse.lsp4j.MessageActionItem;
 import org.eclipse.lsp4j.MessageParams;
 import org.eclipse.lsp4j.PublishDiagnosticsParams;
@@ -10,6 +13,8 @@ import org.eclipse.lsp4j.services.LanguageClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -33,7 +38,7 @@ class BazelServicesTest {
             srcRoot.toFile().mkdirs();
         }
 
-        services = new BazelServices();
+        services = Mockito.spy(new BazelServices());
         services.setWorkspaceRoot(workspaceRoot);
         services.connect(new LanguageClient() {
             @Override
@@ -64,17 +69,9 @@ class BazelServicesTest {
     }
 
     @Test
-    void simpleTest() throws Exception {
-        Path filePath = srcRoot.resolve("Definitions.groovy");
-        String uri = filePath.toUri().toString();
-        StringBuilder contents = new StringBuilder();
-        contents.append("class TypeDefinitions {\n");
-        contents.append("  public TypeDefinitions() {\n");
-        contents.append("    TypeDefinitions localVar\n");
-        contents.append("  }\n");
-        contents.append("}");
-        TextDocumentItem textDocumentItem = new TextDocumentItem(uri, LANGUAGE_BAZEL, 1, contents.toString());
-        services.didOpen(new DidOpenTextDocumentParams(textDocumentItem));
+    void didOpen() throws Exception {
+        services.didOpen(new DidOpenTextDocumentParams());
+        Mockito.verify(services).didOpen(new DidOpenTextDocumentParams());
     }
 
     @AfterEach
@@ -82,5 +79,23 @@ class BazelServicesTest {
         services = null;
         workspaceRoot = null;
         srcRoot = null;
+    }
+
+    @Test
+    void didChange() {
+        services.didChange(new DidChangeTextDocumentParams());
+        Mockito.verify(services).didChange(new DidChangeTextDocumentParams());
+    }
+
+    @Test
+    void didClose() {
+        services.didClose(new DidCloseTextDocumentParams());
+        Mockito.verify(services).didClose(new DidCloseTextDocumentParams());
+    }
+
+    @Test
+    void didSave() {
+        services.didSave(new DidSaveTextDocumentParams());
+        Mockito.verify(services).didSave(new DidSaveTextDocumentParams());
     }
 }
