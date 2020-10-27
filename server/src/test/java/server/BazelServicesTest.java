@@ -102,6 +102,6 @@ class BazelServicesTest {
     
     @Test
     void failTest() { // for testing the gradle test in yaml
-        assertEquals(1, 2);
+        Assertions.assertEquals(1, 2);
     }
 }
