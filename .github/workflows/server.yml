@@ -29,5 +29,5 @@ jobs:
         cd server
         chmod +x gradlew
         ./gradlew build
-        gradle test --debug
+        gradle test
         
