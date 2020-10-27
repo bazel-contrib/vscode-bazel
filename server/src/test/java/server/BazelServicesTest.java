@@ -98,4 +98,9 @@ class BazelServicesTest {
         services.didSave(new DidSaveTextDocumentParams());
         Mockito.verify(services).didSave(new DidSaveTextDocumentParams());
     }
+    
+    @Test
+    void failTest() { // for testing the gradle test in yaml
+        assertEquals(1, 2);
+    }
 }
