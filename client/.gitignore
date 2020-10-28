@@ -7,3 +7,9 @@ node_modules
 # that end up in the src/ tree.
 src/protos/protos.d.ts
 src/protos/protos.js
+
+# Package-lock has proven to have bad line endings,
+# causing other platforms to have build issues. Ignoring
+# it to allow people to manage their package-lock.json
+# files independently.
+package-lock.json
