@@ -1,5 +1,7 @@
 package server;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.lsp4j.DidChangeConfigurationParams;
 import org.eclipse.lsp4j.DidChangeTextDocumentParams;
 import org.eclipse.lsp4j.DidChangeWatchedFilesParams;
@@ -17,40 +19,42 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
     private LanguageClient languageClient;
     private Path workspaceRoot;
 
+    private static final Logger logger = LogManager.getLogger(BazelServices.class);
+
     @Override
     public void didOpen(DidOpenTextDocumentParams params) {
-        System.out.println("Did Open");
-        System.out.println(params.toString());
+        logger.info("Did Open");
+        logger.info(params.toString());
     }
 
     @Override
     public void didChange(DidChangeTextDocumentParams params) {
-        System.out.println("Did Change");
-        System.out.println(params.toString());
+        logger.info("Did Change");
+        logger.info(params.toString());
     }
 
     @Override
     public void didClose(DidCloseTextDocumentParams params) {
-        System.out.println("Did Close");
-        System.out.println(params.toString());
+        logger.info("Did Close");
+        logger.info(params.toString());
     }
 
     @Override
     public void didSave(DidSaveTextDocumentParams params) {
-        System.out.println("Did Save");
-        System.out.println(params.toString());
+        logger.info("Did Save");
+        logger.info(params.toString());
     }
 
     @Override
     public void didChangeConfiguration(DidChangeConfigurationParams params) {
-        System.out.println("Did Change Configuration");
-        System.out.println(params.toString());
+        logger.info("Did Change Configuration");
+        logger.info(params.toString());
     }
 
     @Override
     public void didChangeWatchedFiles(DidChangeWatchedFilesParams params) {
-        System.out.println("Did Change Watched Files");
-        System.out.println(params.toString());
+        logger.info("Did Change Watched Files");
+        logger.info(params.toString());
     }
 
     @Override
