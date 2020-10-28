@@ -132,14 +132,17 @@ function startServer(): void {
         // The client options.
         const clientOptions: vscodelc.LanguageClientOptions = {
           documentSelector: [
-            { scheme: "file", language: WorkspaceUtils.LANGUAGES.starlark },
+            { scheme: "file", language: WorkspaceUtils.LANGUAGES.starlark.id },
           ],
           synchronize: {
             configurationSection: WorkspaceUtils.CONFIG.bazelConfig,
             fileEvents: [
-              vscode.workspace.createFileSystemWatcher("**/.star"),
-              vscode.workspace.createFileSystemWatcher("**/.starlark"),
-              vscode.workspace.createFileSystemWatcher("**/BUILD"),
+              vscode.workspace.createFileSystemWatcher(
+                `**/.{${WorkspaceUtils.LANGUAGES.starlark.extensions}}`,
+              ),
+              vscode.workspace.createFileSystemWatcher(
+                `**/{${WorkspaceUtils.LANGUAGES.starlark.filenames}}`,
+              ),
             ],
           },
         };

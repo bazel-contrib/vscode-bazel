@@ -30,11 +30,17 @@ export class WorkspaceUtils {
    * The valid languages for the bazel extension.
    */
   public static readonly LANGUAGES = {
-    starlark: "starlark",
+    starlark: {
+      extensions: [".BUILD", ".WORKSPACE", ".bzl", ".sky", ".star"],
+      filenames: ["BUILD", "BUILD.bazel", "WORKSPACE", "WORKSPACE.bazel"],
+      id: "starlark",
+    },
   };
 
   /**
    * Variables specific to the server.
+   *
+   * TODO: this should be a configuration.
    */
   public static readonly SERVER = {
     jarName: "bazel-language-server-all.jar",
