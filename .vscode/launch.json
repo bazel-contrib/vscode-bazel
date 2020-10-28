@@ -6,10 +6,10 @@
             "type": "extensionHost",
             "request": "launch",
             "runtimeExecutable": "${execPath}",
-            "args": ["--extensionDevelopmentPath=${workspaceRoot}"],
+            "args": ["--extensionDevelopmentPath=${workspaceRoot}/client"],
             "stopOnEntry": false,
             "sourceMaps": true,
-            "outFiles": ["${workspaceRoot}/out/src/**/*.js"],
+            "outFiles": ["${workspaceRoot}/client/out/src/**/*.js"],
             "preLaunchTask": "npm"
         },
         {
@@ -17,10 +17,10 @@
             "type": "node",
             "request": "launch",
             "cwd": "${workspaceFolder}",
-            "program": "${workspaceFolder}/src/debug-adapter/client.ts",
+            "program": "${workspaceFolder}/client/src/debug-adapter/client.ts",
             "args": ["--server=4711"],
             "sourceMaps": true,
-            "outFiles": ["${workspaceRoot}/out/src/**/*.js"]
+            "outFiles": ["${workspaceRoot}/client/out/src/**/*.js"]
         }
     ],
     "compounds": [
