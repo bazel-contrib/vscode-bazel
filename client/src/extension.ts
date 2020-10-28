@@ -145,6 +145,19 @@ function startServer(): void {
               ),
             ],
           },
+          uriConverters: {
+            code2Protocol: (value: vscode.Uri) => {
+              if (/^win32/.test(process.platform)) {
+                // Drive letters on Windows are encoded with "%3A" instead of
+                // ":", but Java doesn't treat them the same
+                return value.toString().replace("%3A", ":");
+              } else {
+                return value.toString();
+              }
+            },
+            // This is just the default behavior, but we need to define both.
+            protocol2Code: (value) => vscode.Uri.parse(value),
+          },
         };
 
         const client = new vscodelc.LanguageClient(
