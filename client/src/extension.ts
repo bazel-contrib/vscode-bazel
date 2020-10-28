@@ -116,8 +116,8 @@ function startServer(): void {
         // started initializing the server.
         progress.report({ message: MESSAGES.init });
 
-        // The java executable to run the server.
-        const javaExec: vscodelc.Executable = {
+        // The server options (AKA the java executable to run the server).
+        const serverOptions: vscodelc.Executable = {
           args: [
             "-jar",
             path.resolve(
@@ -136,13 +136,18 @@ function startServer(): void {
           ],
           synchronize: {
             configurationSection: WorkspaceUtils.CONFIG.bazelConfig,
+            fileEvents: [
+              vscode.workspace.createFileSystemWatcher("**/.star"),
+              vscode.workspace.createFileSystemWatcher("**/.starlark"),
+              vscode.workspace.createFileSystemWatcher("**/BUILD"),
+            ],
           },
         };
 
         const client = new vscodelc.LanguageClient(
           "bazel",
           "Bazel Language Server",
-          javaExec,
+          serverOptions,
           clientOptions,
         );
 
