@@ -4,5 +4,4 @@ RUN yum install -y curl \
   && curl -sL https://rpm.nodesource.com/setup_current.x | bash - \
   && yum install -y nodejs
 
-RUN mkdir /bazel_dev
-COPY testing /bazel_dev/testing
+COPY examples /root/bazeldev/examples
