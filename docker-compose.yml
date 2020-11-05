@@ -1,0 +1,8 @@
+version: "3.4"
+
+services:
+  clientvscode:
+    image: clientvscode
+    build:
+      context: ./client/
+      dockerfile: ./Dockerfile

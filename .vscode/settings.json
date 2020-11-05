@@ -17,5 +17,6 @@
         "-i",
         "-l"
     ],
-    "terminal.integrated.shellArgs.windows": []
+    "terminal.integrated.shellArgs.windows": [],
+    "files.eol": "\n"
 }
