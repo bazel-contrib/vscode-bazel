@@ -1,8 +1,20 @@
 version: "3.4"
-
 services:
-  clientvscode:
-    image: clientvscode
+  base:
     build:
-      context: ./client/
+      context: .
       dockerfile: ./Dockerfile
+      target: base
+    stdin_open: true
+  server:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      target: server
+    stdin_open: true
+  client_vscode:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+      target: client_vscode
+    stdin_open: true

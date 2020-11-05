@@ -1,9 +1,0 @@
-out
-bin
-node_modules
-*.vsix
-
-# Ignore the generated .d.ts and .js files for protos 
-# that end up in the src/ tree.
-src/protos/protos.d.ts
-src/protos/protos.js

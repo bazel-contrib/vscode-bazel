@@ -2,18 +2,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Launch Extension",
-            "type": "extensionHost",
-            "request": "launch",
-            "runtimeExecutable": "${execPath}",
-            "args": ["--extensionDevelopmentPath=${workspaceRoot}/client_vscode"],
-            "stopOnEntry": false,
-            "sourceMaps": true,
-            "outFiles": ["${workspaceRoot}/client_vscode/out/src/**/*.js"],
-            "preLaunchTask": "npm"
-        },
-        {
-            "name": "Launch Debug Server",
+            "name": "Run Extension",
             "type": "node",
             "request": "launch",
             "cwd": "${workspaceFolder}",
@@ -23,13 +12,41 @@
             "outFiles": ["${workspaceRoot}/client_vscode/out/src/**/*.js"]
         }
     ],
-    "compounds": [
-        {
-            "name": "Extension and Debug Server",
-            "configurations": [
-                "Launch Extension",
-                "Launch Debug Server"
-            ]
-        }
-    ]
 }
+
+// OLD LAUNCH CONFIG
+// {
+//     "version": "0.2.0",
+//     "configurations": [
+//         {
+//             "name": "Launch Extension",
+//             "type": "extensionHost",
+//             "request": "launch",
+//             "runtimeExecutable": "${execPath}",
+//             "args": ["--extensionDevelopmentPath=${workspaceRoot}/client_vscode"],
+//             "stopOnEntry": false,
+//             "sourceMaps": true,
+//             "outFiles": ["${workspaceRoot}/client_vscode/out/src/**/*.js"],
+//             "preLaunchTask": "npm"
+//         },
+//         {
+//             "name": "Launch Debug Server",
+//             "type": "node",
+//             "request": "launch",
+//             "cwd": "${workspaceFolder}",
+//             "program": "${workspaceFolder}/client_vscode/src/debug-adapter/client.ts",
+//             "args": ["--server=4711"],
+//             "sourceMaps": true,
+//             "outFiles": ["${workspaceRoot}/client_vscode/out/src/**/*.js"]
+//         }
+//     ],
+//     "compounds": [
+//         {
+//             "name": "Extension and Debug Server",
+//             "configurations": [
+//                 "Launch Extension",
+//                 "Launch Debug Server"
+//             ]
+//         }
+//     ]
+// }
