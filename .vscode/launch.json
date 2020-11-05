@@ -6,10 +6,10 @@
             "type": "extensionHost",
             "request": "launch",
             "runtimeExecutable": "${execPath}",
-            "args": ["--extensionDevelopmentPath=${workspaceRoot}/client"],
+            "args": ["--extensionDevelopmentPath=${workspaceRoot}/client_vscode"],
             "stopOnEntry": false,
             "sourceMaps": true,
-            "outFiles": ["${workspaceRoot}/client/out/src/**/*.js"],
+            "outFiles": ["${workspaceRoot}/client_vscode/out/src/**/*.js"],
             "preLaunchTask": "npm"
         },
         {
@@ -17,10 +17,10 @@
             "type": "node",
             "request": "launch",
             "cwd": "${workspaceFolder}",
-            "program": "${workspaceFolder}/client/src/debug-adapter/client.ts",
+            "program": "${workspaceFolder}/client_vscode/src/debug-adapter/client.ts",
             "args": ["--server=4711"],
             "sourceMaps": true,
-            "outFiles": ["${workspaceRoot}/client/out/src/**/*.js"]
+            "outFiles": ["${workspaceRoot}/client_vscode/out/src/**/*.js"]
         }
     ],
     "compounds": [

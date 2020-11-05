@@ -1,6 +1,6 @@
 FROM node:14.15.0
 
-WORKDIR /client
+WORKDIR /client_vscode
 
 COPY package*.json ./
 
