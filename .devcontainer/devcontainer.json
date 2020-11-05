@@ -21,8 +21,4 @@
         "ms-vscode.vscode-typescript-tslint-plugin",
         "esbenp.prettier-vscode",
     ],
-
-    // A command to run after creating the container. If this is a single string, it will be run
-    // in a shell. If this is an array of strings, it will be run as a single command without shell.
-    "postCreateCommand": "bash scripts/install_dev_tools.sh",
 }
