@@ -28,11 +28,12 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
     cd ../server
     ./gradlew shadowJar > /dev/null
 
-    # Move the language server into the client bin (for development purposes).
+    # Move the language server into the client bin (for development 
+    # purposes).
     # TODO: Rename language server.
     cd ../
-    mkdir client/bin 2> /dev/null || true
-    mv server/build/libs/server-all.jar client/bin/bazel-language-server-all.jar
+    mkdir client_vscode/bin 2> /dev/null || true
+    mv server/build/libs/server-all.jar client_vscode/bin/bazel-language-server-all.jar
 )
 
 # Build the client.

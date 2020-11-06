@@ -1,11 +1,15 @@
 {
-	"name": "Existing Dockerfile",
+	"name": "Bazel Language Server",
 
 	// Sets the run context to one level up instead of the .devcontainer folder.
 	"context": "..",
 
-	// Update the 'dockerFile' property if you aren't using the standard 'Dockerfile' filename.
-	"dockerFile": "../Dockerfile",
+    // Sets the default path that VS Code should open when connecting to the container (which 
+    // is often the path to a volume mount where the source code can be found in the container).
+    "workspaceFolder": "/workspaces/bazells",
+
+    // Docker build related options.
+    "dockerFile": "../Dockerfile",
 
 	// Set *default* container specific settings.json values on container create.
 	"settings": { 
@@ -15,21 +19,6 @@
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
         "ms-vscode.vscode-typescript-tslint-plugin",
-		"esbenp.prettier-vscode",
-    ]
-
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
-
-	// Uncomment the next line to run commands after the container is created - for example installing curl.
-	// "postCreateCommand": "apt-get update && apt-get install -y curl",
-
-	// Uncomment when using a ptrace-based debugger like C++, Go, and Rust
-	// "runArgs": [ "--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined" ],
-
-	// Uncomment to use the Docker CLI from inside the container. See https://aka.ms/vscode-remote/samples/docker-from-docker.
-	// "mounts": [ "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind" ],
-
-	// Uncomment to connect as a non-root user if you've added one. See https://aka.ms/vscode-remote/containers/non-root.
-	// "remoteUser": "vscode"
+        "esbenp.prettier-vscode",
+    ],
 }

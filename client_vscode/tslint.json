@@ -5,6 +5,7 @@
     ],
     "jsRules": {},
     "rules": {
+        "no-console": false,
         "max-line-length": [
             true,
             {

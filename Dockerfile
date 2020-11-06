@@ -1,7 +1,9 @@
-FROM openjdk:12-jdk-oracle
-
-RUN yum install -y curl \
-  && curl -sL https://rpm.nodesource.com/setup_current.x | bash - \
-  && yum install -y nodejs
-
-COPY examples /root/bazeldev/examples
+FROM openjdk:12-alpine as dev
+RUN apk update
+RUN apk add --no-cache openssh
+RUN apk add --no-cache git
+RUN apk add --no-cache nodejs
+RUN apk add --no-cache npm
+RUN apk add --no-cache bash
+RUN apk add --no-cache bash-completion
+ENV SHELL /bin/bash

@@ -2,6 +2,7 @@ out
 bin
 node_modules
 *.vsix
+.vscode-test
 
 # Ignore the generated .d.ts and .js files for protos 
 # that end up in the src/ tree.

@@ -15,7 +15,7 @@
 
     // Run this in the client folder.
     "options": {
-        "cwd": "${workspaceFolder}/client"
+        "cwd": "${workspaceFolder}/client_vscode"
     },
 
     // The command is a shell script.
