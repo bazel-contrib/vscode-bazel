@@ -12,6 +12,7 @@ import org.eclipse.lsp4j.services.LanguageClient;
 import org.eclipse.lsp4j.services.LanguageClientAware;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
+import server.util.DocumentTracker;
 
 import java.nio.file.Path;
 
@@ -19,24 +20,30 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
     private LanguageClient languageClient;
     private Path workspaceRoot;
 
+    private DocumentTracker documentTracker = new DocumentTracker();
+
     private static final Logger logger = LogManager.getLogger(BazelServices.class);
 
     @Override
     public void didOpen(DidOpenTextDocumentParams params) {
         logger.info("Did Open");
         logger.info(params.toString());
+        documentTracker.didOpen(params);
+
     }
 
     @Override
     public void didChange(DidChangeTextDocumentParams params) {
         logger.info("Did Change");
         logger.info(params.toString());
+        documentTracker.didChange(params);
     }
 
     @Override
     public void didClose(DidCloseTextDocumentParams params) {
         logger.info("Did Close");
         logger.info(params.toString());
+        documentTracker.didClose(params);
     }
 
     @Override
