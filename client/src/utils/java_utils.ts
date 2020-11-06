@@ -22,7 +22,7 @@ export class JavaUtils {
   public static getJavaExecPath(): string | null {
     const javaExecName = JavaUtils.getJavaExecName();
     const settingsJavaHome = WorkspaceUtils.config().get(
-      WorkspaceUtils.CONFIG.java.home,
+      WorkspaceUtils.CONFIG.bazel.java.home,
     ) as string;
 
     // Prefer to use a Java SDK specified in the workspace configuration.

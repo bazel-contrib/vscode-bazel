@@ -14,27 +14,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Colors
-GREEN="\033[0;32m"
-CYAN="\033[0;36m"
-NC="\033[0m"
-
 set -eu
+
+# Move into the top-level directory of the project.
+cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 
 # Build the server.
 (
-    printf "${GREEN}Building server...${NC}\n"
+    # Remove the old server if it exists.
+    rm -rf bin/* 2> /dev/null || true
+
+    # Build the server with dependencies.
     cd ../server
-    ./gradlew shadowJar
+    ./gradlew shadowJar > /dev/null
+
+    # Move the language server into the client bin (for development purposes).
+    # TODO: Rename language server.
+    cd ../
+    mkdir client/bin 2> /dev/null || true
+    mv server/build/libs/server-all.jar client/bin/bazel-language-server-all.jar
 )
 
 # Build the client.
 (
-    printf "${GREEN}Building client...${NC}\n"
-
-    # Move into the top-level directory of the project.
-    cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
-
     readonly TSC=./node_modules/.bin/tsc
     readonly PBJS=./node_modules/protobufjs/bin/pbjs
     readonly PBTS=./node_modules/protobufjs/bin/pbts
@@ -54,5 +56,3 @@ set -eu
     # Compile the rest of the project.
     $TSC "$@" -p ./
 )
-
-printf "${CYAN}Success!${NC}\n"
