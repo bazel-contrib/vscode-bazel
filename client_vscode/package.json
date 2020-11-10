@@ -370,11 +370,11 @@
     },
     "scripts": {
         "lint": "tslint -t stylish 'src/**/*.ts' --exclude 'src/**/*.d.ts'",
-        "compile": "./scripts/build.sh",
-        "vscode:prepublish": "./scripts/build.sh",
-        "watch": "./scripts/build.sh -watch",
+        "compile": "bash scripts/build.sh",
+        "vscode:prepublish": "bash scripts/build.sh",
+        "watch": "bash scripts/build.sh -watch",
         "pretest": "npm run compile && npm run lint",
-        "test": "node ./out/src/test/run_test.js"
+        "test": "node out/src/test/run_test.js"
     },
     "devDependencies": {
         "@types/node": "^6.14.9",
