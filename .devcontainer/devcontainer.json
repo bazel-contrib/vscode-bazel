@@ -18,7 +18,8 @@
 
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
-        "ms-vscode.vscode-typescript-tslint-plugin",
         "esbenp.prettier-vscode",
+        "ms-vscode.vscode-typescript-tslint-plugin",
+        "ms-vscode.cpptools",
     ],
 }
