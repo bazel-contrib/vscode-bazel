@@ -3,5 +3,5 @@
 This example has lots of files. Use the generator shell script to generate a new file system.
 
 ```
-./scripts/generator.sh file_count
+./generator.sh file_count
 ```
