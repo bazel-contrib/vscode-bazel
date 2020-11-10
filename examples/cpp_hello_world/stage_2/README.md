@@ -1,4 +1,4 @@
-# CPP Example - Hello World 02
+# Stage 2
 
 ### Library
 

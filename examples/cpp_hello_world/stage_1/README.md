@@ -1,4 +1,4 @@
-# CPP Example - Hello World 01
+# Stage 1
 
 This showcases how to build a single file to create a runnable application.
 
