@@ -7,15 +7,15 @@ Logger::Logger(std::ostream &str)
 
 void Logger::info(std::string msg)
 {
-    this->log() << "[Info]" << msg << "\n";
+    this->log() << "[Info]" << msg << std::endl;
 }
 
 void Logger::warn(std::string msg)
 {
-    this->log() << "[Warn]" << msg << "\n";
+    this->log() << "[Warn]" << msg << std::endl;
 }
 
 void Logger::err(std::string msg)
 {
-    this->log() << "[Err]" << msg << "\n";
+    this->log() << "[Err]" << msg << std::endl;
 }
