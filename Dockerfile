@@ -13,6 +13,16 @@ RUN apt install -y git && \
 RUN apt install -y nodejs && \
     apt install -y npm
 
+# Install python
+RUN apt install -y python3.7 && \
+    apt install -y python3.7-dev && \
+    apt install -y python3.7-distutils && \
+    update-alternatives --install /usr/bin/python python /usr/bin/python3.7 1 && \
+    update-alternatives --set python /usr/bin/python3.7 && \
+    curl -s https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
+    python get-pip.py --force-reinstall && \
+    rm get-pip.py
+
 # Install java
 RUN apt install -y openjdk-11-jdk
     
