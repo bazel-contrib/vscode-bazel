@@ -1,0 +1,6 @@
+
+# Add the `external_local_repo` as a dependency of this project.
+local_repository(
+    name = "my_external_local_repo",
+    path = "../external_local_repo",
+)
