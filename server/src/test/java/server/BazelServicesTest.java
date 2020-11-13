@@ -1,14 +1,6 @@
 package server;
 
-import org.eclipse.lsp4j.DidChangeTextDocumentParams;
-import org.eclipse.lsp4j.DidCloseTextDocumentParams;
-import org.eclipse.lsp4j.DidOpenTextDocumentParams;
-import org.eclipse.lsp4j.DidSaveTextDocumentParams;
-import org.eclipse.lsp4j.MessageActionItem;
-import org.eclipse.lsp4j.MessageParams;
-import org.eclipse.lsp4j.PublishDiagnosticsParams;
-import org.eclipse.lsp4j.ShowMessageRequestParams;
-import org.eclipse.lsp4j.TextDocumentItem;
+import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -20,6 +12,7 @@ import org.mockito.Mockito;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 
 class BazelServicesTest {
@@ -71,8 +64,11 @@ class BazelServicesTest {
 
     @Test
     void didOpen() throws Exception {
-        services.didOpen(new DidOpenTextDocumentParams());
-        Mockito.verify(services).didOpen(new DidOpenTextDocumentParams());
+        DidOpenTextDocumentParams params = new DidOpenTextDocumentParams();
+        params.setTextDocument(new TextDocumentItem("test.txt", "plaintext", 1, "arbitrary value"));
+
+        services.didOpen(params);
+        Mockito.verify(services).didOpen(params);
     }
 
     @AfterEach
@@ -84,14 +80,29 @@ class BazelServicesTest {
 
     @Test
     void didChange() {
-        services.didChange(new DidChangeTextDocumentParams());
-        Mockito.verify(services).didChange(new DidChangeTextDocumentParams());
+        DidOpenTextDocumentParams params = new DidOpenTextDocumentParams();
+        params.setTextDocument(new TextDocumentItem("test.txt", "plaintext", 1, "arbitrary value"));
+        services.didOpen(params);
+
+        DidChangeTextDocumentParams changeParams = new DidChangeTextDocumentParams();
+        changeParams.setTextDocument(new VersionedTextDocumentIdentifier("test.txt", 2));
+
+        TextDocumentContentChangeEvent changeEvent = new TextDocumentContentChangeEvent();
+        changeEvent.setText(" data");
+        changeEvent.setRange(new Range(new Position(0,9), new Position(0, 15)));
+        changeParams.setContentChanges(Collections.singletonList(changeEvent));
+
+        services.didChange(changeParams);
+        Mockito.verify(services).didChange(changeParams);
     }
 
     @Test
     void didClose() {
-        services.didClose(new DidCloseTextDocumentParams());
-        Mockito.verify(services).didClose(new DidCloseTextDocumentParams());
+        DidCloseTextDocumentParams params = new DidCloseTextDocumentParams();
+        params.setTextDocument(new TextDocumentIdentifier("test.txt"));
+
+        services.didClose(params);
+        Mockito.verify(services).didClose(params);
     }
 
     @Test
