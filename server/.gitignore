@@ -6,3 +6,10 @@ logs
 # Ignore Gradle build output directory
 build
 
+# Ignore Eclipse files
+.settings
+.classpath
+.project
+
+# Ignore misc build files
+bin

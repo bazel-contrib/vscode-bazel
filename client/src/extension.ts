@@ -116,8 +116,8 @@ function startServer(): void {
         // started initializing the server.
         progress.report({ message: MESSAGES.init });
 
-        // The java executable to run the server.
-        const javaExec: vscodelc.Executable = {
+        // The server options (AKA the java executable to run the server).
+        const serverOptions: vscodelc.Executable = {
           args: [
             "-jar",
             path.resolve(
@@ -132,17 +132,38 @@ function startServer(): void {
         // The client options.
         const clientOptions: vscodelc.LanguageClientOptions = {
           documentSelector: [
-            { scheme: "file", language: WorkspaceUtils.LANGUAGES.starlark },
+            { scheme: "file", language: WorkspaceUtils.LANGUAGES.starlark.id },
           ],
           synchronize: {
             configurationSection: WorkspaceUtils.CONFIG.bazelConfig,
+            fileEvents: [
+              vscode.workspace.createFileSystemWatcher(
+                `**/.{${WorkspaceUtils.LANGUAGES.starlark.extensions}}`,
+              ),
+              vscode.workspace.createFileSystemWatcher(
+                `**/{${WorkspaceUtils.LANGUAGES.starlark.filenames}}`,
+              ),
+            ],
+          },
+          uriConverters: {
+            code2Protocol: (value: vscode.Uri) => {
+              if (/^win32/.test(process.platform)) {
+                // Drive letters on Windows are encoded with "%3A" instead of
+                // ":", but Java doesn't treat them the same
+                return value.toString().replace("%3A", ":");
+              } else {
+                return value.toString();
+              }
+            },
+            // This is just the default behavior, but we need to define both.
+            protocol2Code: (value) => vscode.Uri.parse(value),
           },
         };
 
         const client = new vscodelc.LanguageClient(
           "bazel",
           "Bazel Language Server",
-          javaExec,
+          serverOptions,
           clientOptions,
         );
 

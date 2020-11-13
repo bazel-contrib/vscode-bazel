@@ -12,4 +12,10 @@
     "prettier.trailingComma": "all",
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "terminal.integrated.shellArgs.linux": [],
+    "terminal.integrated.shellArgs.osx": [
+        "-i",
+        "-l"
+    ],
+    "terminal.integrated.shellArgs.windows": []
 }

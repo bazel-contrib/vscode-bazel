@@ -1,10 +1,10 @@
-// Available variables which can be used inside of strings.
-// ${workspaceRoot}: the root folder of the team
-// ${file}: the current opened file
-// ${fileBasename}: the current opened file's basename
-// ${fileDirname}: the current opened file's dirname
-// ${fileExtname}: the current opened file's extension
-// ${cwd}: the current working directory of the spawned process
+// Available variables which can be used inside of strings:
+// - ${workspaceRoot}: the root folder of the team
+// - ${file}: the current opened file
+// - ${fileBasename}: the current opened file's basename
+// - ${fileDirname}: the current opened file's dirname
+// - ${fileExtname}: the current opened file's extension
+// - ${cwd}: the current working directory of the spawned process
 
 // A task runner that calls a custom npm script that compiles the extension.
 {
@@ -12,6 +12,11 @@
 
     // We want to run npm.
     "command": "npm",
+
+    // Run this in the client folder.
+    "options": {
+        "cwd": "${workspaceFolder}/client"
+    },
 
     // The command is a shell script.
     "type": "shell",

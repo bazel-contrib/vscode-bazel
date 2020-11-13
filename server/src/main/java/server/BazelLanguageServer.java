@@ -2,7 +2,10 @@ package server;
 
 import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
+import org.eclipse.lsp4j.SaveOptions;
 import org.eclipse.lsp4j.ServerCapabilities;
+import org.eclipse.lsp4j.TextDocumentSyncKind;
+import org.eclipse.lsp4j.TextDocumentSyncOptions;
 import org.eclipse.lsp4j.jsonrpc.Launcher;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.eclipse.lsp4j.services.LanguageClientAware;
@@ -38,7 +41,7 @@ public class BazelLanguageServer implements LanguageServer, LanguageClientAware 
             bazelServices.setWorkspaceRoot(workspaceRoot);
         }
         ServerCapabilities serverCapabilities = new ServerCapabilities();
-        // Add capabilities here
+        serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full);
 
         InitializeResult initializeResult = new InitializeResult(serverCapabilities);
         return CompletableFuture.completedFuture(initializeResult);
