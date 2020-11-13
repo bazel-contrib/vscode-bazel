@@ -49,6 +49,10 @@ public class DocumentTracker {
 
     public void didChange(DidChangeTextDocumentParams params) {
         URI uri = URI.create(params.getTextDocument().getUri());
+        if (!isOpen(uri)) {
+            logger.error("Attempted to change unopened document: " + uri);
+            return;
+        }
         String oldText = openFiles.get(uri);
         TextDocumentContentChangeEvent change = params.getContentChanges().get(0);
         Range range = change.getRange();
