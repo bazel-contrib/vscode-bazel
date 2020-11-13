@@ -1,5 +1,7 @@
 package server.util;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.lsp4j.*;
 
 import java.io.BufferedReader;
@@ -16,6 +18,8 @@ public class DocumentTracker {
 
     private Map<URI, String> openFiles = new HashMap<>();
     private Set<URI> changedFiles = new HashSet<>();
+
+    private static final Logger logger = LogManager.getLogger(DocumentTracker.class);
 
     public Set<URI> getOpenURIs() {
         return openFiles.keySet();
@@ -86,7 +90,7 @@ public class DocumentTracker {
                     try {
                         reader.close();
                     } catch (IOException e) {
-                        // FIXME swallowed Exception
+                        logger.error(e);
                     }
                 }
             }

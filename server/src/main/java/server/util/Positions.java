@@ -1,5 +1,7 @@
 package server.util;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.lsp4j.Position;
 
 import java.io.BufferedReader;
@@ -8,6 +10,9 @@ import java.io.StringReader;
 import java.util.Comparator;
 
 public class Positions {
+
+    private static final Logger logger = LogManager.getLogger(Positions.class);
+
     public static final Comparator<Position> COMPARATOR = (Position p1, Position p2) -> {
         if (p1.getLine() != p2.getLine()) {
             return p1.getLine() - p2.getLine();
@@ -46,7 +51,7 @@ public class Positions {
             try {
                 reader.close();
             } catch (IOException e) {
-                // FIXME swallowed exception
+                logger.error(e);
             }
         }
         return currentIndex + character;
