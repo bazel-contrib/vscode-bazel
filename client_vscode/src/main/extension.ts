@@ -32,8 +32,14 @@ export function activate(context: vscode.ExtensionContext): void {
   ext.context = context;
 
   vscode.workspace.onDidChangeConfiguration(onDidChangeConfiguration);
+
   vscode.commands.registerCommand(
     WorkspaceUtils.COMMANDS.bazel.restartServer,
+    restartServer,
+  );
+
+  vscode.commands.registerCommand(
+    WorkspaceUtils.COMMANDS.bazel.openAssociatedBuildFile,
     restartServer,
   );
 
