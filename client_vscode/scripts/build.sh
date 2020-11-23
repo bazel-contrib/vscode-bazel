@@ -21,23 +21,34 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 
 # Build the server.
 (
+    echo "BUILDING SERVER"
+
     # Remove the old server if it exists.
+    echo "Removing old server code..."
     rm -rf bin/* 2> /dev/null || true
 
     # Build the server with dependencies.
+    echo "Building server jar..."
     cd ../server
     ./gradlew shadowJar > /dev/null
 
     # Move the language server into the client bin (for development 
     # purposes).
     # TODO: Rename language server.
+    echo "Migrating server jar..."
     cd ../
     mkdir client_vscode/bin 2> /dev/null || true
-    mv server/build/libs/server-all.jar client_vscode/bin/bazel-language-server-all.jar
+    cp server/build/libs/server-all.jar client_vscode/bin/bazel-language-server-all.jar
+
+    echo "Server compiled successfully!"
 )
+
+echo ""
 
 # Build the client.
 (
+    echo "BUILDING CLIENT"
+
     readonly TSC=./node_modules/.bin/tsc
     readonly PBJS=./node_modules/protobufjs/bin/pbjs
     readonly PBTS=./node_modules/protobufjs/bin/pbts
@@ -46,14 +57,18 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
     # it's a fresh checkout or update_protos.sh has been executed again and
     # deleted the old generated files). This shaves several seconds off the
     # extension's build time.
-    if [[ ! -f src/protos/protos.js ]]; then
-        sed -e "s#^#src/protos/#" src/protos/protos_list.txt |
-            xargs $PBJS -t static-module -o src/protos/protos.js
+    echo "Generating protobuf files..."
+    if [[ ! -f src/legacy/protos/protos.js ]]; then
+        sed -e "s#^#src/legacy/protos/#" src/legacy/protos/protos_list.txt |
+            xargs $PBJS -t static-module -o src/legacy/protos/protos.js
     fi
-    if [[ ! -f src/protos/protos.d.ts ]]; then
-        $PBTS -o src/protos/protos.d.ts src/protos/protos.js
+    if [[ ! -f src/legacy/protos/protos.d.ts ]]; then
+        $PBTS -o src/legacy/protos/protos.d.ts src/legacy/protos/protos.js
     fi
 
     # Compile the rest of the project.
+    echo "Compiling the rest of the project..."
     $TSC "$@" -p ./
+
+    echo "Client compiled successfully!"
 )

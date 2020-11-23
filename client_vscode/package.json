@@ -22,7 +22,7 @@
         "onCommand:bazel.refreshBazelBuildTargets",
         "onCommand:bazel.restartServer"
     ],
-    "main": "./out/src/extension",
+    "main": "./out/src/main/extension",
     "contributes": {
         "breakpoints": [
             {
@@ -32,8 +32,13 @@
         "commands": [
             {
                 "category": "Bazel",
+                "command": "bazel.openAssociatedBuildFile",
+                "title": "Open associated BUILD file"
+            },
+            {
+                "category": "Bazel",
                 "command": "bazel.restartServer",
-                "title": "Restart Bazel language server"
+                "title": "Restart language server"
             },
             {
                 "category": "Bazel",

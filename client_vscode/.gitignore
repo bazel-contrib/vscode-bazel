@@ -6,8 +6,8 @@ node_modules
 
 # Ignore the generated .d.ts and .js files for protos 
 # that end up in the src/ tree.
-src/protos/protos.d.ts
-src/protos/protos.js
+src/**/protos.d.ts
+src/**/protos.js
 
 # Package-lock has proven to have bad line endings,
 # causing other platforms to have build issues. Ignoring

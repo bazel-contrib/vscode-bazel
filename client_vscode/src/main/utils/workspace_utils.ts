@@ -22,6 +22,7 @@ export class WorkspaceUtils {
    */
   public static readonly COMMANDS = {
     bazel: {
+      openAssociatedBuildFile: "bazel.openAssociatedBuildFile",
       restartServer: "bazel.restartServer",
     },
   };
