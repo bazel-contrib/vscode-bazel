@@ -1,10 +1,10 @@
 package server.util;
 
 import org.eclipse.lsp4j.*;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 import java.net.URI;
 import java.util.Collections;
@@ -12,26 +12,26 @@ import java.util.Collections;
 public class DocumentTrackerTest {
     private DocumentTracker tracker;
 
-    @BeforeEach
-    void setup() {
+    @Before
+    public void setup() {
         tracker = new DocumentTracker();
         DidOpenTextDocumentParams params = new DidOpenTextDocumentParams();
         params.setTextDocument(new TextDocumentItem("test.txt", "plaintext", 1, "arbitrary value"));
         tracker.didOpen(params);
     }
 
-    @AfterEach
-    void tearDown() {
+    @After
+    public void tearDown() {
         tracker = null;
     }
 
     @Test
-    void testDidOpen() {
-        Assertions.assertEquals("arbitrary value", tracker.getContents(URI.create("test.txt")));
+    public void testDidOpen() {
+        Assert.assertEquals("arbitrary value", tracker.getContents(URI.create("test.txt")));
     }
 
     @Test
-    void testDidChangeWithRange() {
+    public void testDidChangeWithRange() {
         DidChangeTextDocumentParams changeParams = new DidChangeTextDocumentParams();
         changeParams.setTextDocument(new VersionedTextDocumentIdentifier("test.txt", 2));
 
@@ -41,11 +41,11 @@ public class DocumentTrackerTest {
         changeParams.setContentChanges(Collections.singletonList(changeEvent));
 
         tracker.didChange(changeParams);
-        Assertions.assertEquals("arbitrary data", tracker.getContents(URI.create("test.txt")));
+        Assert.assertEquals("arbitrary data", tracker.getContents(URI.create("test.txt")));
     }
 
     @Test
-    void testDidChangeWithoutRange() {
+    public void testDidChangeWithoutRange() {
         DidChangeTextDocumentParams changeParams = new DidChangeTextDocumentParams();
         changeParams.setTextDocument(new VersionedTextDocumentIdentifier("test.txt", 2));
 
@@ -54,11 +54,11 @@ public class DocumentTrackerTest {
         changeParams.setContentChanges(Collections.singletonList(changeEvent));
 
         tracker.didChange(changeParams);
-        Assertions.assertEquals("random nonsense", tracker.getContents(URI.create("test.txt")));
+        Assert.assertEquals("random nonsense", tracker.getContents(URI.create("test.txt")));
     }
 
     @Test
-    void testDidChangeWithRangeMultiline() {
+    public void testDidChangeWithRangeMultiline() {
         DidOpenTextDocumentParams openParams = new DidOpenTextDocumentParams();
         openParams.setTextDocument(new TextDocumentItem("multiline.txt", "plaintext", 1, "multiple\nlines"));
         tracker.didOpen(openParams);
@@ -72,6 +72,6 @@ public class DocumentTrackerTest {
         changeParams.setContentChanges(Collections.singletonList(changeEvent));
 
         tracker.didChange(changeParams);
-        Assertions.assertEquals("multiple\nlistening\nears", tracker.getContents(URI.create("multiline.txt")));
+        Assert.assertEquals("multiple\nlistening\nears", tracker.getContents(URI.create("multiline.txt")));
     }
 }

@@ -34,7 +34,7 @@ public class Positions {
                 int readLines = 0;
                 while (true) {
                     char currentChar = (char) reader.read();
-                    if (currentChar == -1) {
+                    if (currentChar == (char) -1) {
                         return -1;
                     }
                     currentIndex++;

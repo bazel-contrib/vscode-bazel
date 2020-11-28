@@ -1,15 +1,19 @@
-# Ignore Gradle project-specific cache directory
-.gradle
-.idea
-logs
+# Bazel build
+bazel-bin
+bazel-genfiles
+bazel-server
+bazel-java-maven
+bazel-out
+bazel-testlogs
 
-# Ignore Gradle build output directory
-build
-
-# Ignore Eclipse files
+# Eclipse
 .settings
 .classpath
 .project
 
-# Ignore misc build files
-bin
+# IntelliJ
+.idea
+.ijwb
+
+# Misc
+logs
