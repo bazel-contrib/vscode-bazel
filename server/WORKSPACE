@@ -17,20 +17,23 @@ maven_install(
         # Guava
         "com.google.guava:guava:29.0-jre",
 
-        # LSP
-        "org.eclipse.lsp4j:org.eclipse.lsp4j:0.10.0",
-        "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.10.0",
-
-        # Logging
-        "org.apache.logging.log4j:log4j-core:2.13.3",
-        "org.apache.logging.log4j:log4j-api:2.13.3",
-
         # JUnit
         "junit:junit:4.12",
 
         # Mockito
         "org.mockito:mockito-core:3.5.15",
         "org.mockito:mockito-junit-jupiter:3.5.15",
+
+        # LSP
+        "org.eclipse.lsp4j:org.eclipse.lsp4j:0.10.0",
+        "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.10.0",
+        "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc.debug:0.10.0",
+        "org.eclipse.lsp4j:org.eclipse.lsp4j.generator:0.10.0",
+        "org.eclipse.lsp4j:org.eclipse.lsp4j.websocket:0.10.0",
+
+        # Logging
+        "org.apache.logging.log4j:log4j-core:2.13.3",
+        "org.apache.logging.log4j:log4j-api:2.13.3",
     ],
     repositories = [
         "https://repo1.maven.org/maven2",

@@ -44,7 +44,7 @@ export class WorkspaceUtils {
    * TODO: this should be a configuration.
    */
   public static readonly SERVER = {
-    jarName: "bazel-language-server-all.jar",
+    jarName: "bazel_language_server_deploy.jar",
   };
 
   /**

@@ -38,7 +38,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
     echo "Migrating server jar..."
     cd ../
     mkdir client_vscode/bin 2> /dev/null || true
-    cp server/bazel-bin/bazel_language_server.jar client_vscode/bin/bazel_language_server.jar
+    cp server/bazel-bin/bazel_language_server_deploy.jar client_vscode/bin/bazel_language_server_deploy.jar
 
     echo "Server compiled successfully!"
 )
