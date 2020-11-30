@@ -3,7 +3,7 @@ load("@rules_java//java:defs.bzl", "java_binary", "java_library", "java_test")
 package(default_visibility = ["//visibility:public"])
 
 java_library(
-    name = "bazel_language_server_lib",
+    name = "root",
     srcs = glob([
         "src/main/java/**/*.java",
     ]),
@@ -11,6 +11,8 @@ java_library(
         "src/main/resources/**",
     ]),
     deps = [
+        "@bazel//src/main/java/net/starlark/java/syntax:syntax",
+
         "@maven//:com_google_guava_guava",
         "@maven//:org_eclipse_lsp4j_org_eclipse_lsp4j",
         "@maven//:org_eclipse_lsp4j_org_eclipse_lsp4j_jsonrpc",
@@ -20,19 +22,19 @@ java_library(
 )
 
 java_binary(
-    name = "bazel_language_server",
+    name = "bazel_ls",
     main_class = "server.BazelLanguageServer",
     runtime_deps = [
-        ":bazel_language_server_lib",
+        "//:root",
     ],
 )
 
 java_test(
-    name = "bazel_language_server_test",
+    name = "bazel_ls_test",
     srcs = glob(["src/test/java/**/*.java"]),
     test_class = "AllTests",
     deps = [
-        ":bazel_language_server_lib",
+        "//:root",
 
         "@maven//:com_google_guava_guava",
 

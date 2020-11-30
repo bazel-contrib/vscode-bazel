@@ -11,7 +11,7 @@ The server uses Bazel as its build system. To properly run these commands make s
 To build the server, use Bazel's build command.
 
 ```
-bazel build //:bazel_language_server
+bazel build //:bazel_ls
 ```
 
 ### **Build the server (as a fat JAR)**
@@ -19,7 +19,7 @@ bazel build //:bazel_language_server
 Suffixing the name of the target with '\_deploy.jar' instructs Bazel to package all the dependencies within the jar and make it ready for deployment. To build the server as a fat JAR (with all dependencies included in the jar), use Bazel's build command.
 
 ```
-bazel build //:bazel_language_server_deploy.jar
+bazel build //:bazel_ls_deploy.jar
 ```
 
 ### **Test the server**
@@ -27,7 +27,7 @@ bazel build //:bazel_language_server_deploy.jar
 To build the server, use Bazel's build command.
 
 ```
-bazel test //:bazel_language_server_test
+bazel test //:bazel_ls_test
 ```
 
 ---

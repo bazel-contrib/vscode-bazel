@@ -30,7 +30,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
     # Build the server with dependencies.
     echo "Building server jar..."
     cd ../server
-    bazel build :bazel_language_server 
+    bazel build //:bazel_ls_deploy.jar
 
     # Move the language server into the client bin (for development 
     # purposes).
@@ -38,7 +38,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
     echo "Migrating server jar..."
     cd ../
     mkdir client_vscode/bin 2> /dev/null || true
-    cp server/bazel-bin/bazel_language_server_deploy.jar client_vscode/bin/bazel_language_server_deploy.jar
+    cp server/bazel-bin/bazel_ls_deploy.jar client_vscode/bin/bazel_ls_deploy.jar
 
     echo "Server compiled successfully!"
 )
