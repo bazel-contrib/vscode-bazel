@@ -17,6 +17,9 @@ load("@rules_jvm_external//:defs.bzl", "maven_install")
 
 maven_install(
     artifacts = [
+        # Gson
+        "com.google.code.gson:gson:2.8.6",
+
         # Guava
         "com.google.guava:guava:29.0-jre",
 
@@ -29,6 +32,7 @@ maven_install(
 
         # LSP
         "org.eclipse.lsp4j:org.eclipse.lsp4j:0.10.0",
+        "org.eclipse.lsp4j:org.eclipse.lsp4j.debug:0.10.0",
         "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.10.0",
         "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc.debug:0.10.0",
         "org.eclipse.lsp4j:org.eclipse.lsp4j.generator:0.10.0",

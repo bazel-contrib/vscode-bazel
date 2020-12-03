@@ -1,11 +1,3 @@
-# Bazel build
-bazel-bin
-bazel-genfiles
-bazel-server
-bazel-java-maven
-bazel-out
-bazel-testlogs
-
 # Eclipse
 .settings
 .classpath

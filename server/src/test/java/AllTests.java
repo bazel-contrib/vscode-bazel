@@ -10,6 +10,6 @@ import server.util.DocumentTrackerTest;
 @RunWith(Suite.class)
 @SuiteClasses({
     BazelServicesTest.class,
-    DocumentTrackerTest.class
+    // DocumentTrackerTest.class
 })
 public class AllTests {}
