@@ -4,27 +4,25 @@
 # A dev environment will include example bazel projects for
 # debugging.
 
-# set -eu
-
 usage()
 {
-   echo "Usage: $0 -n name"
-   echo -e "-n The name of the client, e.g. client_vscode"
-   exit 1
+    echo "Usage: $0 -n name"
+    echo -e "-n The name of the client, e.g. client_vscode"
+    exit 1
 }
 
 while getopts "n:" opt
 do
-   case "$opt" in
-      n ) name="$OPTARG" ;;
-      ? ) usage ;;
-   esac
+    case "$opt" in
+        n ) name="$OPTARG" ;;
+        ? ) usage ;;
+    esac
 done
 
 if [ -z "$name" ]
 then
-   echo "Some or all of the parameters are empty";
-   usage
+    echo "Some or all of the parameters are empty.";
+    usage
 fi
 
 # Move into the top-level directory of the project.

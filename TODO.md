@@ -1,4 +1,3 @@
-BUILD A JAR FROM BAZELS REMOTE REPO!!!!!!!!!
-~~Update third_party folder to have extern deps~~
-Update the readme.md to have build changes
-~~Come up with good names for the binaries~~
+Finish up client_vscode to use bazel
+Update readme to reflect bazel build/run/test changes
+Pull down jar from bazel ls repo to get starlark parser

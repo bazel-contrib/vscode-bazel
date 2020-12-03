@@ -16,8 +16,8 @@
 
 set -eu
 
-# Move into the top-level directory of the project.
-cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
+echo "[Obsolete] Don't use this script, instead use `./scripts/build.sh -n client_vscode`"
+cd "$(dirname "$0")/../"
 
 # Build the server.
 (
@@ -32,9 +32,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
     cd ../server
     bazel build //:bazel_ls_deploy.jar
 
-    # Move the language server into the client bin (for development 
-    # purposes).
-    # TODO: Rename language server.
+    # Move the language server into the client bin (for development purposes).
     echo "Migrating server jar..."
     cd ../
     mkdir client_vscode/bin 2> /dev/null || true

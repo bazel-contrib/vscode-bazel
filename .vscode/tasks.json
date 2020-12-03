@@ -31,7 +31,7 @@
                 "cwd": "${workspaceRoot}"
             },
             "args": [
-                "./scripts/create_client_dev_env.sh -n client_vscode && cd client_vscode && npm run compile --loglevel silent",
+                "./scripts/env_builder.sh -n client_vscode && ./scripts/build.sh -n client_vscode",
             ]
         },
     ],

@@ -1,4 +1,13 @@
-workspace(name = "bazel_language_server")
+workspace(
+    name = "bazel_language_server",
+    managed_directories = { 
+        "@npm": ["node_modules"],
+    },
+)
+
+################
+## JAVA MAVEN ##
+################
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
@@ -52,6 +61,24 @@ maven_install(
 git_repository(
     name = "bazel",
     remote = "https://github.com/bazelbuild/bazel.git",
-    # Commit: "starlark resolver: implement "flat globals" optimization"
     commit = "8974ba2518603710c9e602d6d8518b7494eadc09",
+)
+
+##########
+## NODE ##
+##########
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+http_archive(
+    name = "build_bazel_rules_nodejs",
+    sha256 = "121f17d8b421ce72f3376431c3461cd66bfe14de49059edc7bb008d5aebd16be",
+    urls = ["https://github.com/bazelbuild/rules_nodejs/releases/download/2.3.1/rules_nodejs-2.3.1.tar.gz"],
+)
+
+load("@build_bazel_rules_nodejs//:index.bzl", "node_repositories")
+
+node_repositories(
+    package_json = [
+        "//client_vscode:package.json"
+    ],
 )
