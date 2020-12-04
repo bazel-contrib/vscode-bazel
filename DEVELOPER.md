@@ -6,7 +6,39 @@ This document has some how-to's for this repo as well as some helpful informatio
 
 This repo has multiple projects inside of it, including extension clients and a language server. The repo has been dockerized, you may open the project from within VSCode inside of the provided `.devcontainer` for the most consistent developer experience.
 
-## Building the projects
+## Running the projects
+
+Much of the project uses bazel as the build tool (we're working on migrating everything over to bazel as we get the time).
+
+**VSCode extension client**
+
+Use the provided shell script to build the VSCode client (see below). Alternatively, since the VScode client is built for VSCode, you may open this project in VSCode and press `f5` to build and run the development extension host (reccommended).
+
+```
+scripts/build.sh -n client_vscode
+```
+
+When you're ready to run the VSCode client test suite to ensure everything is working, use the provided test shell script (see below). This will run the VSCode client's unit tests.
+
+> Note: Integration tests are not currently supported for the VSCode client.
+
+```
+scripts/test.sh -n client_vscode
+```
+
+**Language server**
+
+Use the provided shell script to build the language server.
+
+```
+scripts/build.sh -n server
+```
+
+When you're ready to run the server test suite to ensure everything is working, use the provided test shell script (see below). This will test the server using bazel's test cli.
+
+```
+scripts/test.sh -n server
+```
 
 ## Helpful bazel commands
 
