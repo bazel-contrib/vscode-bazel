@@ -26,9 +26,6 @@ jobs:
         uses: actions/setup-java@v1
         with:
           java-version: 11
-      - name: test client via npm
+      - name: Compile and run the client_vscode test cases
         run: |
-          cd client_vscode
-          npm install
-          npm run compile
-          npm test
+          ./scripts/test.sh -n client_vscode
