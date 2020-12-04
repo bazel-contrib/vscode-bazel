@@ -2,6 +2,11 @@ load("@rules_java//java:defs.bzl", "java_binary", "java_library", "java_test")
 
 package(default_visibility = ["//visibility:public"])
 
+alias(
+    name = "build",
+    actual = ":bazel_ls_deploy.jar",
+)
+
 java_library(
     name = "server",
     srcs = glob([
@@ -11,9 +16,12 @@ java_library(
         "src/main/resources/**",
     ]),
     deps = [
-        "//third_party/java:log4j",
-        "//third_party/java:lsp4j",
-        "//third_party/java:guava",
+        "@maven//:org_eclipse_lsp4j_org_eclipse_lsp4j",
+        "@maven//:org_eclipse_lsp4j_org_eclipse_lsp4j_jsonrpc",
+        "//third_party:log4j",
+        # "//third_party:lsp4j",
+        "//third_party:guava",
+        # "//third_party:starlark",
     ],
 )
 
@@ -31,10 +39,10 @@ java_test(
     test_class = "AllTests",
     deps = [
         ":server",
-        "//third_party/java:gson",
-        "//third_party/java:guava",
-        "//third_party/java:junit",
-        "//third_party/java:lsp4j",
-        "//third_party/java:mockito",
+        "//third_party:gson",
+        "//third_party:guava",
+        "//third_party:junit",
+        "//third_party:lsp4j",
+        "//third_party:mockito",
     ],
 )
