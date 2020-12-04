@@ -18,10 +18,9 @@ java_library(
     deps = [
         "@maven//:org_eclipse_lsp4j_org_eclipse_lsp4j",
         "@maven//:org_eclipse_lsp4j_org_eclipse_lsp4j_jsonrpc",
-        "//third_party:log4j",
-        # "//third_party:lsp4j",
-        "//third_party:guava",
-        # "//third_party:starlark",
+        "@maven//:org_apache_logging_log4j_log4j_core",
+        "@maven//:org_apache_logging_log4j_log4j_api",
+        "@maven//:com_google_guava_guava",
     ],
 )
 
@@ -39,10 +38,10 @@ java_test(
     test_class = "AllTests",
     deps = [
         ":server",
-        "//third_party:gson",
-        "//third_party:guava",
-        "//third_party:junit",
-        "//third_party:lsp4j",
-        "//third_party:mockito",
+        "@maven//:com_google_guava_guava",
+        "@maven//:junit_junit",
+        "@maven//:org_eclipse_lsp4j_org_eclipse_lsp4j",
+        "@maven//:org_eclipse_lsp4j_org_eclipse_lsp4j_jsonrpc",
+        "@maven//:org_mockito_mockito_core",
     ],
 )

@@ -1,9 +1,4 @@
-workspace(
-    name = "bazel_language_server",
-    managed_directories = { 
-        "@npm": ["node_modules"],
-    },
-)
+workspace(name = "bazel_language_server")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
@@ -37,11 +32,7 @@ maven_install(
 
         # lsp4j
         "org.eclipse.lsp4j:org.eclipse.lsp4j:0.10.0",
-        "org.eclipse.lsp4j:org.eclipse.lsp4j.debug:0.10.0",
         "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.10.0",
-        "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc.debug:0.10.0",
-        "org.eclipse.lsp4j:org.eclipse.lsp4j.generator:0.10.0",
-        "org.eclipse.lsp4j:org.eclipse.lsp4j.websocket:0.10.0",
 
         # log4j
         "org.apache.logging.log4j:log4j-core:2.13.3",
@@ -49,7 +40,6 @@ maven_install(
 
         # mockito
         "org.mockito:mockito-core:3.5.15",
-        "org.mockito:mockito-junit-jupiter:3.5.15",
     ],
     repositories = [
         "https://repo1.maven.org/maven2",
@@ -62,10 +52,6 @@ maven_install(
 ## BAZELBUILD - JAVA STARLARK PARSER ##
 #######################################
 
-git_repository(
-    name = "bazel",
-    remote = "https://github.com/BYU-Bazel/bazel.git",
-    branch = "dependable-packages",
-)
-
-# TODO: Add in the bazel starlark parser
+# TODO (josiahsrc): Add in the bazel starlark parser. Once the starlark 
+# becomes publically available, use that import instead of the raw jar. 
+# This will allow this code to be up-to-date with the remote repo.

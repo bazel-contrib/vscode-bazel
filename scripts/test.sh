@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# This script will build a specified project.
+# This script will test a specified project.
 
 usage()
 {
@@ -28,7 +28,7 @@ fi
 if [[ "$name" == "server" ]]
 then
     (
-        bazel build //server:build
+        bazel test //server:test
     )
 elif [[ "$name" == "client_vscode" ]]
 then
@@ -36,6 +36,7 @@ then
         cd client_vscode
         npm i
         npm run compile
+        npm test
     )
 else
     echo "The name must be one of the provided targets.";

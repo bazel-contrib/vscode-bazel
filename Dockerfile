@@ -10,8 +10,8 @@ RUN apt install -y git && \
     apt install -y software-properties-common
 
 # Install node
-RUN apt install -y nodejs && \
-    apt install -y npm
+RUN curl -sL https://deb.nodesource.com/setup_15.x | bash && \
+    apt-get install -y nodejs
 
 # Install python
 RUN apt install -y python3.7 && \

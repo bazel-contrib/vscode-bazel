@@ -16,7 +16,6 @@
 
 set -eu
 
-echo "[Obsolete] Don't use this script, instead use `./scripts/build.sh -n client_vscode`"
 cd "$(dirname "$0")/../"
 
 # Build the server.
@@ -29,14 +28,12 @@ cd "$(dirname "$0")/../"
 
     # Build the server with dependencies.
     echo "Building server jar..."
-    cd ../server
-    bazel build //:bazel_ls_deploy.jar
+    ../scripts/build.sh -n server
 
     # Move the language server into the client bin (for development purposes).
     echo "Migrating server jar..."
-    cd ../
-    mkdir client_vscode/bin 2> /dev/null || true
-    cp server/bazel-bin/bazel_ls_deploy.jar client_vscode/bin/bazel_ls_deploy.jar
+    mkdir bin 2> /dev/null || true
+    cp ../bazel-bin/server/bazel_ls_deploy.jar bin/bazel_ls_deploy.jar
 
     echo "Server compiled successfully!"
 )
