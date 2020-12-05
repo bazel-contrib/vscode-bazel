@@ -6,6 +6,10 @@ This document has some how-to's for this repo as well as some helpful informatio
 
 This repo has multiple projects inside of it, including extension clients and a language server. The repo has been dockerized, you may open the project from within VSCode inside of the provided `.devcontainer` for the most consistent developer experience.
 
+## Environment setup
+
+As mentioned before, for the best experience, open up this project within VSCode inside of the provided `.devcontainer`. To develop the project's server code, consider using a project like IntelliJ (make sure you have the bazel extension installed). From there, open up this project using the existing BUILD file bazel configuration. That should give you intellisense for running the project within IntelliJ.
+
 ## Running the projects
 
 Much of the project uses bazel as the build tool (we're working on migrating everything over to bazel as we get the time).
