@@ -2,10 +2,10 @@ package server;
 
 import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.services.LanguageClient;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Assertions;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 
@@ -15,7 +15,7 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 
-class BazelServicesTest {
+public class BazelServicesTest {
     private static final String LANGUAGE_BAZEL = "bazel";
     private static final String PATH_WORKSPACE = "./build/test_workspace/";
     private static final String PATH_SRC = "./src/main/bazel";
@@ -24,8 +24,8 @@ class BazelServicesTest {
     private Path workspaceRoot;
     private Path srcRoot;
 
-    @BeforeEach
-    void setup() {
+    @Before
+    public void setup() {
         workspaceRoot = Paths.get(System.getProperty("user.dir")).resolve(PATH_WORKSPACE);
         srcRoot = workspaceRoot.resolve(PATH_SRC);
         if(!Files.exists(srcRoot)) {
@@ -62,8 +62,15 @@ class BazelServicesTest {
         });
     }
 
+    @After
+    public void tearDown() {
+        services = null;
+        workspaceRoot = null;
+        srcRoot = null;
+    }
+
     @Test
-    void didOpen() throws Exception {
+    public void didOpen() throws Exception {
         DidOpenTextDocumentParams params = new DidOpenTextDocumentParams();
         params.setTextDocument(new TextDocumentItem("test.txt", "plaintext", 1, "arbitrary value"));
 
@@ -71,15 +78,8 @@ class BazelServicesTest {
         Mockito.verify(services).didOpen(params);
     }
 
-    @AfterEach
-    void tearDown() {
-        services = null;
-        workspaceRoot = null;
-        srcRoot = null;
-    }
-
     @Test
-    void didChange() {
+    public void didChange() {
         DidOpenTextDocumentParams params = new DidOpenTextDocumentParams();
         params.setTextDocument(new TextDocumentItem("test.txt", "plaintext", 1, "arbitrary value"));
         services.didOpen(params);
@@ -97,7 +97,7 @@ class BazelServicesTest {
     }
 
     @Test
-    void didClose() {
+    public void didClose() {
         DidCloseTextDocumentParams params = new DidCloseTextDocumentParams();
         params.setTextDocument(new TextDocumentIdentifier("test.txt"));
 
@@ -106,7 +106,7 @@ class BazelServicesTest {
     }
 
     @Test
-    void didSave() {
+    public void didSave() {
         services.didSave(new DidSaveTextDocumentParams());
         Mockito.verify(services).didSave(new DidSaveTextDocumentParams());
     }

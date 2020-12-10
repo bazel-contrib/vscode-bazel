@@ -1,0 +1,11 @@
+############
+## Output ##
+############
+
+# A more useful default output mode for bazel query, which prints 
+# "java rule //foo:bar" instead of just "//foo:bar".
+query --output=label_kind
+
+# By default, failing tests don't print any output, it's logged to 
+# a file instead. Make it so failing tests show up in the console.
+test --test_output=errors

@@ -16,8 +16,7 @@
 
 set -eu
 
-# Move into the top-level directory of the project.
-cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
+cd "$(dirname "$0")/../"
 
 # Build the server.
 (
@@ -29,16 +28,12 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 
     # Build the server with dependencies.
     echo "Building server jar..."
-    cd ../server
-    ./gradlew shadowJar > /dev/null
+    ../scripts/build.sh -n server
 
-    # Move the language server into the client bin (for development 
-    # purposes).
-    # TODO: Rename language server.
+    # Move the language server into the client bin (for development purposes).
     echo "Migrating server jar..."
-    cd ../
-    mkdir client_vscode/bin 2> /dev/null || true
-    cp server/build/libs/server-all.jar client_vscode/bin/bazel-language-server-all.jar
+    mkdir bin 2> /dev/null || true
+    cp ../bazel-bin/server/bazel_ls_deploy.jar bin/bazel_ls_deploy.jar
 
     echo "Server compiled successfully!"
 )

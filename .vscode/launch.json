@@ -22,7 +22,7 @@
             "type": "node",
             "request": "launch",
             "cwd": "${workspaceFolder}",
-            "program": "${workspaceFolder}/client_vscode/src/debug-adapter/client.ts",
+            "program": "${workspaceFolder}/client_vscode/src/legacy/debug-adapter/client.ts",
             "args": [
                 "--server=4711"
             ],
