@@ -21,24 +21,13 @@ load("@rules_jvm_external//:defs.bzl", "maven_install")
 
 maven_install(
     artifacts = [
-        # guava
         "com.google.guava:guava:29.0-jre",
-
-        # gson
         "com.google.code.gson:gson:2.8.6",
-
-        # junit
         "junit:junit:4.12",
-
-        # lsp4j
         "org.eclipse.lsp4j:org.eclipse.lsp4j:0.10.0",
         "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.10.0",
-
-        # log4j
         "org.apache.logging.log4j:log4j-core:2.13.3",
         "org.apache.logging.log4j:log4j-api:2.13.3",
-
-        # mockito
         "org.mockito:mockito-core:3.5.15",
     ],
     repositories = [
