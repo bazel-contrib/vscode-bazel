@@ -6,7 +6,10 @@
     "[typescript]": {
         "editor.tabSize": 2,
         "editor.detectIndentation": false,
-        "editor.rulers": [80]
+        "editor.rulers": [
+            80
+        ],
+        "editor.defaultFormatter": "vscode.typescript-language-features"
     },
     "prettier.tslintIntegration": true,
     "prettier.trailingComma": "all",
@@ -73,5 +76,8 @@
         "ratio": "cpp",
         "regex": "cpp",
         "set": "cpp"
+    },
+    "[go]": {
+        "editor.defaultFormatter": "golang.go"
     }
 }

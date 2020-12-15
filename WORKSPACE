@@ -3,9 +3,9 @@ workspace(name = "bazel_language_server")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
-###############################
-## MAVEN - JAVA DEPENDENCIES ##
-###############################
+##############################
+## JAVA: MAVEN DEPENDENCIES ##
+##############################
 
 RULES_JVM_EXTERNAL_TAG = "3.3"
 RULES_JVM_EXTERNAL_SHA = "d85951a92c0908c80bd8551002d66cb23c3434409c814179c0ff026b53544dab"
@@ -37,10 +37,23 @@ maven_install(
     ],
 )
 
-#######################################
-## BAZELBUILD - JAVA STARLARK PARSER ##
-#######################################
+######################
+## GO: DEPENDENCIES ##
+######################
 
-# TODO (josiahsrc): Add in the bazel starlark parser. Once the starlark 
-# becomes publically available, use that import instead of the raw jar. 
-# This will allow this code to be up-to-date with the remote repo.
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+http_archive(
+    name = "io_bazel_rules_go",
+    sha256 = "6f111c57fd50baf5b8ee9d63024874dd2a014b069426156c55adbf6d3d22cb7b",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.25.0/rules_go-v0.25.0.tar.gz",
+        "https://github.com/bazelbuild/rules_go/releases/download/v0.25.0/rules_go-v0.25.0.tar.gz",
+    ],
+)
+
+load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_dependencies")
+
+go_rules_dependencies()
+
+go_register_toolchains(version = "1.15.5")

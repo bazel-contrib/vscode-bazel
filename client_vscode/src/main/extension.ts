@@ -96,7 +96,7 @@ function startServer(): void {
   vscode.window.withProgress(
     { location: vscode.ProgressLocation.Window },
     (progress) => {
-      return new Promise((resolve, _) => {
+      return new Promise<void>((resolve, _) => {
         // Ensure that the context has been setup.
         if (!ext.context) {
           resolve();

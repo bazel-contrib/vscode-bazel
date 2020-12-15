@@ -14,8 +14,9 @@
 
 	// Add the IDs of extensions you want installed when the container is created.
 	"extensions": [
-        "esbenp.prettier-vscode",
+        "golang.go",
         "ms-vscode.vscode-typescript-tslint-plugin",
         "ms-vscode.cpptools",
+        "vscjava.vscode-java-pack",
     ],
 }

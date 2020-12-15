@@ -23,6 +23,10 @@ RUN apt install -y python3.7 && \
     python get-pip.py --force-reinstall && \
     rm get-pip.py
 
+# Install golang
+RUN curl -sL https://dl.google.com/go/go1.15.5.linux-amd64.tar.gz | tar -C /usr/local -xz && \
+    export PATH=$PATH:/usr/local/go/bin
+
 # Install java
 RUN apt install -y openjdk-11-jdk
     
