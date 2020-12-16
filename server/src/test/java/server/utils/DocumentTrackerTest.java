@@ -1,4 +1,4 @@
-package server.util;
+package server.utils;
 
 import org.eclipse.lsp4j.*;
 import org.junit.After;

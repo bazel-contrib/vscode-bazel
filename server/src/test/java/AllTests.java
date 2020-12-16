@@ -3,7 +3,7 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 import server.BazelServicesTest;
-import server.util.DocumentTrackerTest;
+import server.utils.DocumentTrackerTest;
 
 // [TODO] 
 // Create an automated test runner so we don't have to explicitely define tests here.

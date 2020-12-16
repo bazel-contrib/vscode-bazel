@@ -13,7 +13,7 @@ RUN apt install -y git && \
 RUN curl -sL https://deb.nodesource.com/setup_15.x | bash && \
     apt-get install -y nodejs
 
-# Install python
+# Install python (and pip)
 RUN apt install -y python3.7 && \
     apt install -y python3.7-dev && \
     apt install -y python3.7-distutils && \
@@ -23,9 +23,16 @@ RUN apt install -y python3.7 && \
     python get-pip.py --force-reinstall && \
     rm get-pip.py
 
-# Install golang
-RUN curl -sL https://dl.google.com/go/go1.15.5.linux-amd64.tar.gz | tar -C /usr/local -xz && \
-    export PATH=$PATH:/usr/local/go/bin
+# Install golang (and common dependencies)
+RUN curl -sL https://dl.google.com/go/go1.15.6.linux-amd64.tar.gz | tar -C /usr/local -xz && \
+    export PATH=$PATH:/usr/local/go/bin && \
+    go get -v github.com/uudashr/gopkgs/v2/cmd/gopkgs && \
+    go get -v github.com/ramya-rao-a/go-outline && \
+    go get -v github.com/rogpeppe/godef && \
+    go get -v github.com/sqs/goreturns && \
+    go get -v golang.org/x/lint/golint && \
+    go get -v github.com/acroca/go-symbols && \
+    go get -v github.com/stamblerre/gocode
 
 # Install java
 RUN apt install -y openjdk-11-jdk

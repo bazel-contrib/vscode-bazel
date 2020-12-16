@@ -1,0 +1,18 @@
+syntax = "proto3";
+package starlark;
+
+option java_multiple_files = true;
+option java_package = "proto.starlark";
+option java_generic_services = true;
+
+service SyntaxService {
+  rpc ParseFile(ParseFileRequest) returns (ParseFileResponse);
+}
+
+message ParseFileRequest {
+   string file_path  = 1;
+}
+
+message ParseFileResponse {
+  string message = 1;
+}

@@ -44,7 +44,28 @@ When you're ready to run the server test suite to ensure everything is working, 
 scripts/test.sh -n server
 ```
 
-## Helpful bazel commands
+## Helpful resources
+
+Protocol buffers
+
+- [Protocol Buffers in Bazel](https://blog.bazel.build/2017/02/27/protocol-buffers.html)
+- [Cross-language API schemas with Bazel](https://blog.nrwl.io/cross-language-api-schemas-with-bazel-eff0f498ce0d)
+
+## Helpful BUILD rules
+
+Load statements
+
+```
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+load("@rules_java//java:defs.bzl", "java_proto_library")
+load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
+```
+
+## Helpful commands
+
+Some helpful commands that can be used to debug this bazel project.
+
+### Query for a rule
 
 To query for a specific rule being used in a package (and any of its sub-folders), use bazel's query function. This will display a list of rules matching the specified kind.
 
@@ -52,8 +73,24 @@ To query for a specific rule being used in a package (and any of its sub-folders
 bazel query 'kind(java_library, //server/...)'
 ```
 
+### Query for WORKSPACE packages
+
 To query for all packages listed in some workspace (e.g. maven), use the bazel query command and specify the workspace to look into. This is helpful for tracking down and copying the bazel targets at a specific location.
 
 ```
 bazel query @maven//...
+```
+
+### List classes in a jar file
+
+To get a list of java packages present within a jar package (e.g bazel_ls_deploy.jar), use the jar tool.
+
+```
+jar tvf bazel-bin/server/src/main/java/server/bazel_ls_deploy.jar
+```
+
+Or pipe the results into grep to query for a specific path.
+
+```
+jar tvf bazel-bin/server/src/main/java/server/bazel_ls_deploy.jar | grep BazelLanguageServer
 ```

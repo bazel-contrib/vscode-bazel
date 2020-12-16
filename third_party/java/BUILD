@@ -10,6 +10,14 @@ java_library(
     ],
 )
 
+# LICENSE: Apache License 2.0
+java_library(
+    name = "gson",
+    exports = [
+        "@maven//:com_google_code_gson_gson",
+    ],
+)
+
 # LICENSE: EPL
 java_library(
     name = "junit",
@@ -41,5 +49,13 @@ java_library(
     name = "mockito",
     exports = [
         "@maven//:org_mockito_mockito_core",
+    ],
+)
+
+# LICENSE: BSD 3-clause
+java_library(
+    name = "protobuf",
+    exports = [
+        "@maven//:com_google_protobuf_protobuf_java",
     ],
 )
