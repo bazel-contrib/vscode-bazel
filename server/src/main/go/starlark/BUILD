@@ -4,6 +4,8 @@ go_library(
     name = "starlark",
     srcs = glob(["*.go"]),
     importpath = "starlark",
-    deps = [],
+    deps = [
+        "//third_party/go:protobuf",
+    ],
     visibility = ["//visibility:public"],
 )

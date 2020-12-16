@@ -7,15 +7,17 @@ This folder contains third party packages which can be imported into the various
 Go
 
 ```
-
+//third_party/go:protobuf
 ```
 
 Java
 
 ```
-//third_party:guava
-//third_party:junit
-//third_party:log4j
-//third_party:lsp4j
-//third_party:mockito
+//third_party/java:guava
+//third_party/java:gson
+//third_party/java:junit
+//third_party/java:log4j
+//third_party/java:lsp4j
+//third_party/java:mockito
+//third_party/java:protobuf
 ```

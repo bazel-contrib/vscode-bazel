@@ -3,9 +3,9 @@ package external.starlark;
 import com.google.protobuf.RpcCallback;
 import com.google.protobuf.RpcController;
 
-import proto.starlark.ParseFileRequest;
-import proto.starlark.ParseFileResponse;
-import proto.starlark.SyntaxService;
+import proto.starlark.syntax.ParseFileRequest;
+import proto.starlark.syntax.ParseFileResponse;
+import proto.starlark.syntax.SyntaxService;
 
 public class Syntax extends SyntaxService {
     @Override

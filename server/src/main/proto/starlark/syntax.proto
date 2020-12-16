@@ -1,8 +1,10 @@
 syntax = "proto3";
 package starlark;
 
+option go_package = "proto/starlark/syntax";
+
 option java_multiple_files = true;
-option java_package = "proto.starlark";
+option java_package = "proto.starlark.syntax";
 option java_generic_services = true;
 
 service SyntaxService {

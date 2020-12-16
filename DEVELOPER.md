@@ -94,3 +94,11 @@ Or pipe the results into grep to query for a specific path.
 ```
 jar tvf bazel-bin/server/src/main/java/server/bazel_ls_deploy.jar | grep BazelLanguageServer
 ```
+
+### Summarize a golang module
+
+To summarize a golang module, use golang's module command. This command will allow you to get the sum of a module, which is useful for building Golang workspace dependencies.
+
+```
+go mod download -json <module>@<version>
+```

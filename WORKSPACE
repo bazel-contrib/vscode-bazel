@@ -88,7 +88,12 @@ load("@io_bazel_rules_go//go:deps.bzl", "go_register_toolchains", "go_rules_depe
 load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies", "go_repository")
 
 # Declare Go direct dependencies.
-# TODO: Add Golang dependencies here.
+go_repository(
+    name = "golang_org_golang_google_protobuf",
+    importpath = "google.golang.org/protobuf",
+    sum = "h1:Ejskq+SyPohKW+1uil0JJMtmHCgJPJ/qWTxr8qp+R4c=",
+    version = "v1.25.0",
+)
 
 # Declare indirect dependencies and register toolchains.
 go_rules_dependencies()
