@@ -3,12 +3,12 @@ load("@rules_java//java:defs.bzl", "java_library")
 package(default_visibility = ["//visibility:public"])
 
 java_library(
-    name = "syntax_lib",
+    name = "index",
     srcs = [
-        "Syntax.java",
+        "Indexer.java",
     ],
     deps = [
-        "//third_party/java:protobuf",
-        "//server/src/main/proto/starlark:syntax_java_proto",
+        "//third_party/java:guava",
+        "//third_party/java:log4j",
     ],
 )

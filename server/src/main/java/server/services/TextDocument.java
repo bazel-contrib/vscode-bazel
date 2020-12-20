@@ -35,9 +35,9 @@ public class TextDocument implements TextDocumentService {
         logger.info(params.toString());
     }
 
-    // TODO:
-    // - Create observer pattern, one observer per service
-    // - Create generic observer collection
-    // - Subscribe the indexer to the text document observer changes
-    public interface IObserver extends TextDocumentService { }
+//    // TODO:
+//    // - Create observer pattern, one observer per service
+//    // - Create generic observer collection
+//    // - Subscribe the indexer to the text document observer changes
+//    public interface IObserver extends server.services.TextDocument { }
 }

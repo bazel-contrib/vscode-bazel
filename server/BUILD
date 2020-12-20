@@ -2,43 +2,44 @@ load("@rules_java//java:defs.bzl", "java_binary", "java_library", "java_test")
 
 package(default_visibility = ["//visibility:public"])
 
-#alias(
-#    name = "build",
-#    actual = ":bazel_ls_deploy.jar",
-#)
-#
-#java_library(
-#    name = "server",
-#    srcs = glob([
-#        "src/main/java/**/*.java",
-#    ]),
-#    resources = glob([
-#        "src/main/res/**",
-#    ]),
-#    deps = [
-#        "//third_party/java:lsp4j",
-#        "//third_party/java:log4j",
-#        "//third_party/java:guava",
-#    ],
-#)
-#
-#java_binary(
-#    name = "bazel_ls",
-#    main_class = "server.BazelLanguageServer",
-#    runtime_deps = [
-#        ":server",
-#    ],
-#)
-#
-#java_test(
-#    name = "test",
-#    srcs = glob(["src/test/java/**/*.java"]),
-#    test_class = "AllTests",
-#    deps = [
-#        ":server",
-#        "//third_party/java:guava",
-#        "//third_party/java:junit",
-#        "//third_party/java:lsp4j",
-#        "//third_party/java:mockito",
-#    ],
-#)
+alias(
+    name = "build",
+    actual = ":bazel_ls_deploy.jar",
+)
+
+alias(
+    name = "server_deploy.jar",
+    actual = ":bazel_ls_deploy.jar",
+)
+
+alias(
+    name = "server",
+    actual = ":bazel_ls",
+)
+
+java_binary(
+    name = "bazel_ls",
+    main_class = "server.BazelLanguageServer",
+    runtime_deps = [
+        "//server/src/main/java/server:server",
+    ],
+    resources = [
+        "//server/src/main/resources:all",
+    ],
+)
+
+alias(
+    name = "server_test",
+    actual = ":test",
+)
+
+java_test(
+    name = "test",
+    test_class = "AllTests",
+    runtime_deps = [
+        "//server/src/test/java:all_tests",
+        "//server/src/test/java/server/index:index",
+        "//server/src/test/java/server/services:services",
+        "//server/src/test/java/server/utils:utils",
+    ],
+)

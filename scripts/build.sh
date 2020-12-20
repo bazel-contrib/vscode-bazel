@@ -21,14 +21,14 @@ done
 
 if [ -z "$name" ]
 then
-    echo "Some or all of the parameters are empty.";
+    echo "Some or all of the parameters were empty.";
     usage
 fi
 
 if [[ "$name" == "server" ]]
 then
     (
-        bazel build //server:build
+        bazel build //server:server_deploy.jar
     )
 elif [[ "$name" == "client_vscode" ]]
 then

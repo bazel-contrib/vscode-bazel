@@ -9,8 +9,6 @@ import org.eclipse.lsp4j.services.LanguageClientAware;
 import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
-import server.services.TextDocument;
-import server.services.Workspace;
 
 public class BazelLanguageServer implements LanguageServer, LanguageClientAware {
     private static final int EXIT_SUCCESS = 0;
@@ -21,8 +19,8 @@ public class BazelLanguageServer implements LanguageServer, LanguageClientAware 
 
     public BazelLanguageServer() {
         client = null;
-        textDocumentService = new TextDocument();
-        workspaceService = new Workspace();
+        textDocumentService = new server.services.TextDocument();
+        workspaceService = new server.services.Workspace();
     }
 
     public static void main(String[] args) {
@@ -37,8 +35,6 @@ public class BazelLanguageServer implements LanguageServer, LanguageClientAware 
         ServerCapabilities serverCapabilities = new ServerCapabilities();
         serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full);
         serverCapabilities.setWorkspace(new WorkspaceServerCapabilities());
-
-
 
         InitializeResult initializeResult = new InitializeResult(serverCapabilities);
         return CompletableFuture.completedFuture(initializeResult);

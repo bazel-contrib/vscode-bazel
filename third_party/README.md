@@ -1,14 +1,8 @@
 # Third Party
 
-This folder contains third party packages which can be imported into the various BUILD files in the repo.
+This folder contains third party packages which can be imported into the various BUILD files in the repo. These directories mostly exist so we can get autocomplete on our Bazel paths.
 
 ## Available Imports
-
-Go
-
-```
-//third_party/go:protobuf
-```
 
 Java
 
