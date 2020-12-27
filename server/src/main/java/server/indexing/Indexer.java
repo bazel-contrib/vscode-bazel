@@ -1,4 +1,4 @@
-package server.index;
+package server.indexing;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
