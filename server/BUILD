@@ -38,8 +38,5 @@ java_test(
     test_class = "AllTests",
     runtime_deps = [
         "//server/src/test/java:all_tests",
-        "//server/src/test/java/server/index:index",
-        "//server/src/test/java/server/services:services",
-        "//server/src/test/java/server/utils:utils",
     ],
 )

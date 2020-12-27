@@ -2,7 +2,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
-import server.services.TextDocumentTest;
+import server.BazelServicesTest;
 import server.utils.DocumentTrackerTest;
 
 // [TODO] 
@@ -10,7 +10,7 @@ import server.utils.DocumentTrackerTest;
 // https://stackoverflow.com/questions/46365464/how-to-run-all-tests-in-bazel-from-a-single-java-test-rule
 @RunWith(Suite.class)
 @SuiteClasses({
-        TextDocumentTest.class,
+        BazelServicesTest.class,
         DocumentTrackerTest.class
 })
 public class AllTests {}

@@ -1,4 +1,4 @@
-package server.index;
+package server.indexing;
 
 public class IndexTest {
 }

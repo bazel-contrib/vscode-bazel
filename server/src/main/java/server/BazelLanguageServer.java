@@ -1,7 +1,5 @@
 package server;
 
-import java.util.concurrent.CompletableFuture;
-
 import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.jsonrpc.Launcher;
 import org.eclipse.lsp4j.services.LanguageClient;
@@ -10,18 +8,13 @@ import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
+import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.concurrent.CompletableFuture;
+
 public class BazelLanguageServer implements LanguageServer, LanguageClientAware {
     private static final int EXIT_SUCCESS = 0;
-
-    private LanguageClient client;
-    private TextDocumentService textDocumentService;
-    private WorkspaceService workspaceService;
-
-    public BazelLanguageServer() {
-        client = null;
-        textDocumentService = new server.services.TextDocument();
-        workspaceService = new server.services.Workspace();
-    }
 
     public static void main(String[] args) {
         BazelLanguageServer server = new BazelLanguageServer();
@@ -30,11 +23,23 @@ public class BazelLanguageServer implements LanguageServer, LanguageClientAware 
         launcher.startListening();
     }
 
+    private BazelServices bazelServices;
+
+    public BazelLanguageServer() {
+        bazelServices = new BazelServices();
+    }
+
     @Override
     public CompletableFuture<InitializeResult> initialize(InitializeParams params) {
+        String rootUriString = params.getRootUri();
+        if (rootUriString != null) {
+            URI uri = URI.create(params.getRootUri());
+            Path workspaceRoot = Paths.get(uri);
+            bazelServices.setWorkspaceRoot(workspaceRoot);
+        }
+
         ServerCapabilities serverCapabilities = new ServerCapabilities();
         serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full);
-        serverCapabilities.setWorkspace(new WorkspaceServerCapabilities());
 
         InitializeResult initializeResult = new InitializeResult(serverCapabilities);
         return CompletableFuture.completedFuture(initializeResult);
@@ -52,16 +57,16 @@ public class BazelLanguageServer implements LanguageServer, LanguageClientAware 
 
     @Override
     public TextDocumentService getTextDocumentService() {
-        return textDocumentService;
+        return bazelServices;
     }
 
     @Override
     public WorkspaceService getWorkspaceService() {
-        return workspaceService;
+        return bazelServices;
     }
 
     @Override
     public void connect(LanguageClient client) {
-        this.client = client;
+        bazelServices.connect(client);
     }
 }

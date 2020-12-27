@@ -8,8 +8,8 @@ java_library(
         "AllTests.java",
     ],
     deps = [
-        "//server/src/test/java/server/index:index",
-        "//server/src/test/java/server/services:services",
+        "//server/src/test/java/server:server",
+        "//server/src/test/java/server/indexing:indexing",
         "//server/src/test/java/server/utils:utils",
         "//third_party/java:guava",
         "//third_party/java:junit",
