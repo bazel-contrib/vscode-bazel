@@ -5,7 +5,7 @@ package(default_visibility = ["//visibility:public"])
 java_library(
     name = "highlighting",
     srcs = [
-        
+        "HighlightingProvider.java",
     ],
     deps = [
         "//third_party/java:guava",

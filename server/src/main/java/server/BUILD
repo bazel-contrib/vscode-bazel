@@ -11,7 +11,9 @@ java_library(
     deps = [
         "//server/src/main/java/server/buildifier:buildifier",
         "//server/src/main/java/server/completion:completion",
+        "//server/src/main/java/server/highlighting:highlighting",
         "//server/src/main/java/server/indexing:indexing",
+        "//server/src/main/java/server/starlark:starlark",
         "//server/src/main/java/server/utils:utils",
         "//third_party/java:guava",
         "//third_party/java:log4j",

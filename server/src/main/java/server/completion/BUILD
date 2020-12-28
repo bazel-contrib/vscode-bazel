@@ -5,7 +5,7 @@ package(default_visibility = ["//visibility:public"])
 java_library(
     name = "completion",
     srcs = [
-        "Provider.java",
+        "CompletionProvider.java",
     ],
     deps = [
         "//third_party/java:guava",
