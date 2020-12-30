@@ -54,6 +54,7 @@ export function checkBuildifierIsAvailable() {
           }
         }
         // If we didn't get valid JSON back, we don't have a compatible version.
+        // tslint:disable-next-line:no-floating-promises
         showBuildifierDownloadPrompt(
           "Buildifier is too old (0.25.1 or higher is needed)",
         );

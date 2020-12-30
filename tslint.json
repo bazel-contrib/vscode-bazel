@@ -11,7 +11,8 @@
                 "limit": 80,
                 "ignore-pattern": "^import |^export {(.*?)}"
             }
-        ]
+        ],
+        "no-floating-promises": true
     },
     "rulesDirectory": []
 }

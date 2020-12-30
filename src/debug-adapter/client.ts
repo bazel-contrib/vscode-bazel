@@ -265,7 +265,7 @@ class BazelDebugSession extends DebugSession {
       setBreakpoints: skylark_debugging.SetBreakpointsRequest.create({
         breakpoint: bazelBreakpoints,
       }),
-    });
+    }).catch((err) => this.debugLog("Error setting breakpoint: " + err));
     this.sendResponse(response);
   }
 
@@ -485,7 +485,7 @@ class BazelDebugSession extends DebugSession {
         stepping,
         threadId,
       }),
-    });
+    }).catch((err) => this.debugLog("Error continuing execution: " + err));
   }
 
   /**
