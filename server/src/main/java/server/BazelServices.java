@@ -22,16 +22,12 @@ import server.starlark.StarlarkFacade;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 public class BazelServices implements TextDocumentService, WorkspaceService, LanguageClientAware {
-    private LanguageClient languageClient;
-    private Path workspaceRoot;
-
-    private DocumentTracker documentTracker = new DocumentTracker();
-
     private static final Logger logger = LogManager.getLogger(BazelServices.class);
+
+    private LanguageClient languageClient;
+    private DocumentTracker documentTracker = new DocumentTracker();
 
     @Override
     public void didOpen(DidOpenTextDocumentParams params) {
@@ -91,9 +87,5 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
     @Override
     public void connect(LanguageClient client) {
         languageClient = client;
-    }
-
-    public void setWorkspaceRoot(Path workspaceRoot) {
-        this.workspaceRoot = workspaceRoot;
     }
 }

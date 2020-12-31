@@ -1,5 +1,8 @@
 package server;
 
+import com.google.common.collect.ImmutableList;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.jsonrpc.Launcher;
 import org.eclipse.lsp4j.services.LanguageClient;
@@ -7,14 +10,19 @@ import org.eclipse.lsp4j.services.LanguageClientAware;
 import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
+import server.analysis.Analyzer;
+import server.analysis.AnalyzerConfig;
 
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 public class BazelLanguageServer implements LanguageServer, LanguageClientAware {
     private static final int EXIT_SUCCESS = 0;
+    private static final Logger logger = LogManager.getLogger(BazelLanguageServer.class);
 
     public static void main(String[] args) {
         BazelLanguageServer server = new BazelLanguageServer();
@@ -31,17 +39,24 @@ public class BazelLanguageServer implements LanguageServer, LanguageClientAware 
 
     @Override
     public CompletableFuture<InitializeResult> initialize(InitializeParams params) {
-        String rootUriString = params.getRootUri();
-        if (rootUriString != null) {
-            URI uri = URI.create(params.getRootUri());
-            Path workspaceRoot = Paths.get(uri);
-            bazelServices.setWorkspaceRoot(workspaceRoot);
+        // Initialize the analyzer.
+        {
+            AnalyzerConfig config = new AnalyzerConfig();
+
+            final URI rootURI = URI.create(params.getRootUri());
+            config.setRootPath(Paths.get(rootURI));
+
+            Analyzer.getInstance().initialize(config);
         }
 
-        ServerCapabilities serverCapabilities = new ServerCapabilities();
-        serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full);
+        // Specify capabilities for the server.
+        ServerCapabilities serverCapabilities;
+        {
+            serverCapabilities = new ServerCapabilities();
+            serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full);
+        }
 
-        InitializeResult initializeResult = new InitializeResult(serverCapabilities);
+        final InitializeResult initializeResult = new InitializeResult(serverCapabilities);
         return CompletableFuture.completedFuture(initializeResult);
     }
 

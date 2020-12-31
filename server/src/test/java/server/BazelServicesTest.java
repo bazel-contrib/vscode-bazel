@@ -33,7 +33,6 @@ public class BazelServicesTest {
         }
 
         services = Mockito.spy(new BazelServices());
-        services.setWorkspaceRoot(workspaceRoot);
         services.connect(new LanguageClient() {
             @Override
             public void telemetryEvent(Object object) {

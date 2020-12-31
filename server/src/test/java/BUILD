@@ -9,7 +9,7 @@ java_library(
     ],
     deps = [
         "//server/src/test/java/server:server",
-        "//server/src/test/java/server/indexing:indexing",
+        "//server/src/test/java/server/analysis:analysis",
         "//server/src/test/java/server/utils:utils",
         "//third_party/java:guava",
         "//third_party/java:junit",

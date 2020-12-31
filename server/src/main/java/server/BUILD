@@ -12,7 +12,7 @@ java_library(
         "//server/src/main/java/server/buildifier:buildifier",
         "//server/src/main/java/server/completion:completion",
         "//server/src/main/java/server/highlighting:highlighting",
-        "//server/src/main/java/server/indexing:indexing",
+        "//server/src/main/java/server/analysis:analysis",
         "//server/src/main/java/server/starlark:starlark",
         "//server/src/main/java/server/utils:utils",
         "//third_party/java:guava",

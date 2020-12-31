@@ -6,6 +6,7 @@ java_library(
     name = "utils",
     srcs = [
         "DocumentTracker.java",
+        "Observatory.java",
         "Positions.java",
     ],
     deps = [
