@@ -84,7 +84,7 @@ public class BazelServicesTest {
         services.didOpen(params);
 
         DidChangeTextDocumentParams changeParams = new DidChangeTextDocumentParams();
-        changeParams.setTextDocument(new VersionedTextDocumentIdentifier("test.txt", 2));
+        changeParams.setTextDocument(new VersionedTextDocumentIdentifier("/test.txt", 2));
 
         TextDocumentContentChangeEvent changeEvent = new TextDocumentContentChangeEvent();
         changeEvent.setText(" data");

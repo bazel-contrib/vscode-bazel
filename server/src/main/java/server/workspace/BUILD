@@ -3,18 +3,18 @@ load("@rules_java//java:defs.bzl", "java_library")
 package(default_visibility = ["//visibility:public"])
 
 java_library(
-    name = "analysis",
+    name = "workspace",
     srcs = [
-        "Analyzer.java",
-        "AnalyzerConfig.java",
-        "BazelBuildFile.java",
-        "BazelFile.java",
-        "BazelWorkspaceFile.java",
-        "Utilities.java",
+        "ExtensionConfig.java",
+        "ProjectFolder.java",
+        "Workspace.java",
+        "WorkspaceCallbacks.java",
     ],
     deps = [
         "//server/src/main/java/server/utils:utils",
+        "//third_party/java:gson",
         "//third_party/java:guava",
         "//third_party/java:log4j",
+        "//third_party/java:lsp4j",
     ],
 )

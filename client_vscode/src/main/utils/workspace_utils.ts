@@ -9,6 +9,14 @@ export class WorkspaceUtils {
    */
   public static readonly CONFIG = {
     bazel: {
+      executable: "bazel.executable",
+
+      buildifier: {
+        executable: "bazel.buildifier.executable",
+        fixOnFormat: "bazel.buildifier.fixOnFormat",
+      },
+      buildifierConfig: "bazel.buildifier",
+
       java: {
         home: "bazel.java.home",
       },

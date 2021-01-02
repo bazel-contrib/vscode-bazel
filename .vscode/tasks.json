@@ -31,7 +31,7 @@
                 "cwd": "${workspaceRoot}"
             },
             "args": [
-                "./scripts/env_builder.sh -n client_vscode && ./scripts/build.sh -n example_sandbox",
+                "./scripts/env_builder.sh -n playground && ./scripts/build.sh -n client_vscode",
             ]
         },
     ],

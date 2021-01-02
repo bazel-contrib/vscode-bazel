@@ -24,17 +24,17 @@ public class BazelLanguageServer implements LanguageServer, LanguageClientAware 
     private static final int EXIT_SUCCESS = 0;
     private static final Logger logger = LogManager.getLogger(BazelLanguageServer.class);
 
+    private final BazelServices bazelServices;
+
+    public BazelLanguageServer() {
+        bazelServices = new BazelServices();
+    }
+
     public static void main(String[] args) {
         BazelLanguageServer server = new BazelLanguageServer();
         Launcher<LanguageClient> launcher = Launcher.createLauncher(server, LanguageClient.class, System.in, System.out);
         server.connect(launcher.getRemoteProxy());
         launcher.startListening();
-    }
-
-    private BazelServices bazelServices;
-
-    public BazelLanguageServer() {
-        bazelServices = new BazelServices();
     }
 
     @Override

@@ -35,8 +35,8 @@ alias(
 
 java_test(
     name = "test",
-    test_class = "AllTests",
+    test_class = "AllServerTests",
     runtime_deps = [
-        "//server/src/test/java:all_tests",
+        "//server/src/test/java/server:server",
     ],
 )

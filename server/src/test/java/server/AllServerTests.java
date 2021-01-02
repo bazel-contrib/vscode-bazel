@@ -1,3 +1,5 @@
+package server;
+
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
@@ -13,4 +15,4 @@ import server.utils.DocumentTrackerTest;
         BazelServicesTest.class,
         DocumentTrackerTest.class
 })
-public class AllTests {}
+public class AllServerTests {}

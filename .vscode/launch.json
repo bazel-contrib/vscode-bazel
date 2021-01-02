@@ -7,7 +7,7 @@
             "request": "launch",
             "runtimeExecutable": "${execPath}",
             "args": [
-                "/workspaces/dev/client_vscode",
+                "/workspaces/dev/playground",
                 "--extensionDevelopmentPath=${workspaceRoot}/client_vscode",
             ],
             "stopOnEntry": false,
