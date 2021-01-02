@@ -12,6 +12,7 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 import server.analysis.Analyzer;
 import server.analysis.AnalyzerConfig;
+import server.workspace.Workspace;
 
 import java.net.URI;
 import java.nio.file.Path;
@@ -47,6 +48,8 @@ public class BazelLanguageServer implements LanguageServer, LanguageClientAware 
             config.setRootPath(Paths.get(rootURI));
 
             Analyzer.getInstance().initialize(config);
+
+            Workspace.getInstance().getObservatory().addListener(Analyzer.getInstance());
         }
 
         // Specify capabilities for the server.

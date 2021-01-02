@@ -9,6 +9,7 @@ java_library(
         "BazelServices.java",
     ],
     deps = [
+        "//server/src/main/proto:example_java_proto",
         "//server/src/main/java/server/analysis:analysis",
         "//server/src/main/java/server/buildifier:buildifier",
         "//server/src/main/java/server/completion:completion",

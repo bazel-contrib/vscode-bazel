@@ -19,15 +19,12 @@ java_library(
 java_library(
     name = "all_tests",
     srcs = [
-        "BazelServicesTest.java",
+        "AllServerTests.java",
     ],
     deps = [
         ":server",
         "//server/src/test/java/server/analysis:analysis",
         "//server/src/test/java/server/utils:utils",
-        "//third_party/java:guava",
         "//third_party/java:junit",
-        "//third_party/java:lsp4j",
-        "//third_party/java:mockito",
     ],
 )

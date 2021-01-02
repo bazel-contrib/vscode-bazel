@@ -3,13 +3,16 @@ package server.analysis;
 import com.google.common.base.Preconditions;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import server.workspace.ExtensionConfig;
+import server.workspace.ProjectFolder;
+import server.workspace.WorkspaceCallbacks;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class Analyzer {
+public class Analyzer implements WorkspaceCallbacks {
     private static final Logger logger = LogManager.getLogger(Analyzer.class);
     private static final Analyzer instance = new Analyzer();
 
@@ -21,6 +24,14 @@ public class Analyzer {
 
     public static Analyzer getInstance() {
         return instance;
+    }
+
+    /**
+     * Analyzes the entire project.
+     * TODO: Don't analyze just the diffs, just do the whol project each time.
+     */
+    public void analyze() {
+
     }
 
     public void initialize(AnalyzerConfig config) {
@@ -55,5 +66,15 @@ public class Analyzer {
         }
 
         isInitialized = true;
+    }
+
+    @Override
+    public void onConfigChanged(ExtensionConfig config) {
+
+    }
+
+    @Override
+    public void onProjectFoldersChanged(Iterable<ProjectFolder> projectFolders) {
+
     }
 }

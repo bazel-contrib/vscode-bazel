@@ -14,6 +14,7 @@ java_library(
     ],
     deps = [
         "//server/src/main/java/server/utils:utils",
+        "//server/src/main/java/server/workspace:workspace",
         "//third_party/java:guava",
         "//third_party/java:log4j",
     ],
