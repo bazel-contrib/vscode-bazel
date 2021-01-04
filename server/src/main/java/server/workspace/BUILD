@@ -7,8 +7,10 @@ java_library(
     srcs = [
         "ExtensionConfig.java",
         "ProjectFolder.java",
+        "UpdateExtensionConfigArgs.java",
+        "UpdateRootFolderArgs.java",
+        "UpdateWorkspaceFoldersArgs.java",
         "Workspace.java",
-        "WorkspaceCallbacks.java",
     ],
     deps = [
         "//server/src/main/java/server/utils:utils",

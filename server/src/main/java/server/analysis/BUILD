@@ -6,7 +6,6 @@ java_library(
     name = "analysis",
     srcs = [
         "Analyzer.java",
-        "AnalyzerConfig.java",
         "BazelBuildFile.java",
         "BazelFile.java",
         "BazelWorkspaceFile.java",

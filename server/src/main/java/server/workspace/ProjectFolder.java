@@ -1,19 +1,24 @@
 package server.workspace;
 
+import java.net.URI;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Objects;
 
 public class ProjectFolder {
-    private String name;
     private Path path;
 
-    public ProjectFolder(String name, Path path) {
-        this.name = name;
-        this.path = path;
+    private ProjectFolder() {
     }
 
-    public String getName() {
-        return name;
+    public static ProjectFolder fromURI(String uri) {
+        return fromURI(URI.create(uri));
+    }
+
+    public static ProjectFolder fromURI(URI uri) {
+        ProjectFolder result = new ProjectFolder();
+        result.path = Paths.get(uri);
+        return result;
     }
 
     public Path getPath() {
@@ -25,12 +30,18 @@ public class ProjectFolder {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ProjectFolder that = (ProjectFolder) o;
-        return Objects.equals(name, that.name) &&
-                Objects.equals(path, that.path);
+        return Objects.equals(path, that.path);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, path);
+        return Objects.hash(path);
+    }
+
+    @Override
+    public String toString() {
+        return "ProjectFolder{" +
+                "path=" + path +
+                '}';
     }
 }

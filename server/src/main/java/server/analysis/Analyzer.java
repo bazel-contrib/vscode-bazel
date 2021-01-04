@@ -1,80 +1,60 @@
 package server.analysis;
 
-import com.google.common.base.Preconditions;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import server.workspace.ExtensionConfig;
 import server.workspace.ProjectFolder;
-import server.workspace.WorkspaceCallbacks;
+import server.workspace.Workspace;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class Analyzer implements WorkspaceCallbacks {
+public class Analyzer {
     private static final Logger logger = LogManager.getLogger(Analyzer.class);
     private static final Analyzer instance = new Analyzer();
 
-    private boolean isInitialized;
-
     private Analyzer() {
-        isInitialized = false;
+
     }
 
     public static Analyzer getInstance() {
         return instance;
     }
 
-    /**
-     * Analyzes the entire project.
-     * TODO: Don't analyze just the diffs, just do the whol project each time.
-     */
     public void analyze() {
-
-    }
-
-    public void initialize(AnalyzerConfig config) {
-        if (isInitialized) {
-            logger.warn("Already initialized.");
-            return;
-        }
-
-        Preconditions.checkNotNull(config);
-        Preconditions.checkNotNull(config.getRootPath());
-
-        logger.info("Root=" + config.getRootPath());
+        logger.info("Analyzing project");
+        List<BazelBuildFile> buildFiles = new ArrayList<>();
+        List<BazelWorkspaceFile> workspaceFiles = new ArrayList<>();
 
         try {
-            List<Path> files = Files.walk(config.getRootPath())
+            ProjectFolder folder = Workspace.getInstance().getRootFolder();
+            logger.info("Analyzing folder=" + folder.getPath());
+
+            List<Path> files = Files.walk(folder.getPath())
                     .filter(Utilities::isBuildFile)
                     .collect(Collectors.toList());
 
             for (Path file : files) {
                 logger.info("BUILD File name=" + file);
+                BazelBuildFile f = new BazelBuildFile();
+                f.setPath(file);
+                buildFiles.add(f);
             }
 
-            files = Files.walk(config.getRootPath())
+            files = Files.walk(folder.getPath())
                     .filter(Utilities::isWorkspaceFile)
                     .collect(Collectors.toList());
 
             for (Path file : files) {
                 logger.info("WORKSPACE File name=" + file);
+                BazelWorkspaceFile f = new BazelWorkspaceFile();
+                f.setPath(file);
+                workspaceFiles.add(f);
             }
         } catch (Exception e) {
             logger.error("Failed to walk=" + e.getMessage());
         }
-
-        isInitialized = true;
-    }
-
-    @Override
-    public void onConfigChanged(ExtensionConfig config) {
-
-    }
-
-    @Override
-    public void onProjectFoldersChanged(Iterable<ProjectFolder> projectFolders) {
-
     }
 }

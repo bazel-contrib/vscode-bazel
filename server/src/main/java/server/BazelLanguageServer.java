@@ -1,6 +1,5 @@
 package server;
 
-import com.google.common.collect.ImmutableList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.lsp4j.*;
@@ -10,26 +9,18 @@ import org.eclipse.lsp4j.services.LanguageClientAware;
 import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
-import server.analysis.Analyzer;
-import server.analysis.AnalyzerConfig;
+import server.workspace.ProjectFolder;
+import server.workspace.UpdateRootFolderArgs;
 import server.workspace.Workspace;
 
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 public class BazelLanguageServer implements LanguageServer, LanguageClientAware {
     private static final int EXIT_SUCCESS = 0;
     private static final Logger logger = LogManager.getLogger(BazelLanguageServer.class);
-
-    private final BazelServices bazelServices;
-
-    public BazelLanguageServer() {
-        bazelServices = new BazelServices();
-    }
 
     public static void main(String[] args) {
         BazelLanguageServer server = new BazelLanguageServer();
@@ -38,18 +29,19 @@ public class BazelLanguageServer implements LanguageServer, LanguageClientAware 
         launcher.startListening();
     }
 
+    private BazelServices bazelServices;
+
+    public BazelLanguageServer() {
+        bazelServices = new BazelServices();
+    }
+
     @Override
     public CompletableFuture<InitializeResult> initialize(InitializeParams params) {
-        // Initialize the analyzer.
+        // Initialize the workspace root folder.
         {
-            AnalyzerConfig config = new AnalyzerConfig();
-
-            final URI rootURI = URI.create(params.getRootUri());
-            config.setRootPath(Paths.get(rootURI));
-
-            Analyzer.getInstance().initialize(config);
-
-            Workspace.getInstance().getObservatory().addListener(Analyzer.getInstance());
+            UpdateRootFolderArgs rootFolderArgs = new UpdateRootFolderArgs();
+            rootFolderArgs.setRootFolder(ProjectFolder.fromURI(params.getRootUri()));
+            Workspace.getInstance().updateRootFolder(rootFolderArgs);
         }
 
         // Specify capabilities for the server.
