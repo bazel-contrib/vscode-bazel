@@ -2,7 +2,7 @@ package server.analysis;
 
 import java.nio.file.Path;
 
-public class BazelFile {
+public abstract class BazelFile {
     private Path path;
 
     public BazelFile() {

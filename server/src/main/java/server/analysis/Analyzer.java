@@ -1,13 +1,19 @@
 package server.analysis;
 
+import com.google.common.base.Preconditions;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import server.starlark.ParseException;
+import server.starlark.ParseInput;
+import server.starlark.ParseOutput;
+import server.starlark.StarlarkFacade;
 import server.workspace.ProjectFolder;
 import server.workspace.Workspace;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,38 +29,44 @@ public class Analyzer {
         return instance;
     }
 
-    public void analyze() {
-        logger.info("Analyzing project");
-        List<BazelBuildFile> buildFiles = new ArrayList<>();
-        List<BazelWorkspaceFile> workspaceFiles = new ArrayList<>();
+    public void analyze() throws AnalysisException {
+        Preconditions.checkNotNull(Workspace.getInstance());
+        Preconditions.checkNotNull(Workspace.getInstance().getRootFolder());
 
+        final ProjectFolder rootFolder = Workspace.getInstance().getRootFolder();
+
+        // Locate all of Bazel's BUILD and WORKSPACE files.
+        List<BazelBuildFile> buildFiles;
+        List<BazelWorkspaceFile> workspaceFiles;
         try {
-            ProjectFolder folder = Workspace.getInstance().getRootFolder();
-            logger.info("Analyzing folder=" + folder.getPath());
-
-            List<Path> files = Files.walk(folder.getPath())
-                    .filter(Utilities::isBuildFile)
-                    .collect(Collectors.toList());
-
-            for (Path file : files) {
-                logger.info("BUILD File name=" + file);
-                BazelBuildFile f = new BazelBuildFile();
-                f.setPath(file);
-                buildFiles.add(f);
-            }
-
-            files = Files.walk(folder.getPath())
-                    .filter(Utilities::isWorkspaceFile)
-                    .collect(Collectors.toList());
-
-            for (Path file : files) {
-                logger.info("WORKSPACE File name=" + file);
-                BazelWorkspaceFile f = new BazelWorkspaceFile();
-                f.setPath(file);
-                workspaceFiles.add(f);
-            }
-        } catch (Exception e) {
-            logger.error("Failed to walk=" + e.getMessage());
+            buildFiles = findBuildFiles(rootFolder);
+            workspaceFiles = findWorkspaceFiles(rootFolder);
+        } catch (IOException e) {
+            throw new AnalysisException();
         }
+
+        // Interpret and cache BUILD files using the starlark API.
+        try {
+            ParseInput input = new ParseInput();
+            input.setFilePath(buildFiles.get(0).getPath());
+
+            ParseOutput output = StarlarkFacade.parse(input);
+        } catch (ParseException e) {
+            throw new AnalysisException();
+        }
+    }
+
+    private List<BazelBuildFile> findBuildFiles(ProjectFolder folder) throws IOException {
+        return Files.walk(folder.getPath())
+                .filter(Utilities::isBuildFile)
+                .map(BazelBuildFile::fromPath)
+                .collect(Collectors.toList());
+    }
+
+    private List<BazelWorkspaceFile> findWorkspaceFiles(ProjectFolder folder) throws IOException {
+        return Files.walk(folder.getPath())
+                .filter(Utilities::isWorkspaceFile)
+                .map(BazelWorkspaceFile::fromPath)
+                .collect(Collectors.toList());
     }
 }

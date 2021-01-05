@@ -8,6 +8,7 @@ import org.eclipse.lsp4j.services.LanguageClientAware;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
+import server.analysis.AnalysisException;
 import server.analysis.Analyzer;
 import server.utils.DocumentTracker;
 import server.workspace.ProjectFolder;
@@ -72,7 +73,11 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
 //            logger.info(String.format("Caused a %s exception!", e.getClass().getName()));
 //        }
 
-//        Analyzer.getInstance().analyze();
+        try {
+            Analyzer.getInstance().analyze();
+        } catch (AnalysisException e) {
+            logger.info("Unable to analayze project", e);
+        }
     }
 
     @Override
@@ -98,8 +103,6 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
             args.setSettings(params.getSettings());
             Workspace.getInstance().updateExtensionConfig(args);
         }
-
-        Analyzer.getInstance().analyze();
     }
 
     @Override
