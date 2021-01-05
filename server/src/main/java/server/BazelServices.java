@@ -10,6 +10,7 @@ import org.eclipse.lsp4j.services.WorkspaceService;
 
 import server.analysis.AnalysisException;
 import server.analysis.Analyzer;
+import server.buildifier.BuildifierFacade;
 import server.utils.DocumentTracker;
 import server.workspace.ProjectFolder;
 import server.workspace.UpdateExtensionConfigArgs;
@@ -102,6 +103,16 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
             UpdateExtensionConfigArgs args = new UpdateExtensionConfigArgs();
             args.setSettings(params.getSettings());
             Workspace.getInstance().updateExtensionConfig(args);
+        }
+
+        // Verify that the buildifier exists
+        logger.info("Configuration changed");
+        if (!BuildifierFacade.buildifierExists()) {
+            logger.info("Buildifier doesn't exist...");
+            final MessageParams messageParams = new MessageParams();
+            messageParams.setMessage("Unable to locate buildifier");
+            messageParams.setType(MessageType.Warning);
+            languageClient.showMessage(messageParams);
         }
     }
 

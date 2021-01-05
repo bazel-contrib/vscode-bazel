@@ -104,20 +104,6 @@ public class StarlarkFacade {
             }
         }
 
-//        for (int i = 0; i < starlarkFile.getStatements().size(); ++i) {
-//            StringBuilder builder = new StringBuilder();
-//            builder.append(starlarkFile.getStatements().get(i).kind() + "\n");
-//            builder.append(starlarkFile.getStatements().get(i) as
-//        }
-
-//        logger.info(String.format("Parsed some input. Found %d errors with the file.", starlarkFile.errors().size()));
-//        logger.info(String.format("Starlark comment count = %s", starlarkFile.getComments().size()));
-//        logger.info(String.format("Starlark first comment = %s",
-//                starlarkFile.getComments().size() > 0 ? starlarkFile.getComments().get(0) : "No comments"));
-//        logger.info(String.format("Starlark statement count = %s", starlarkFile.getComments().size()));
-//        logger.info(String.format("Starlark first statement = %s",
-//                starlarkFile.getStatements().size() > 0 ? starlarkFile.getStatements().get(0).kind().toString() : "No statements"));
-
         final ParseOutput output = new ParseOutput();
 
         return output;

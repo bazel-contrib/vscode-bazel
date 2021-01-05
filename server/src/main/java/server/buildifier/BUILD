@@ -5,9 +5,11 @@ package(default_visibility = ["//visibility:public"])
 java_library(
     name = "buildifier",
     srcs = [
-        "API.java",
+        "BuildifierException.java",
+        "BuildifierFacade.java",
     ],
     deps = [
+        "//server/src/main/java/server/workspace:workspace",
         "//third_party/java:guava",
         "//third_party/java:log4j",
     ],

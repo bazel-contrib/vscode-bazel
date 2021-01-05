@@ -34,7 +34,7 @@ public class Workspace {
         return rootFolder;
     }
 
-    public Set<ProjectFolder> getWorkspaceFolders() {
+    public Iterable<ProjectFolder> getWorkspaceFolders() {
         return workspaceFolders;
     }
 

@@ -37,6 +37,10 @@ public class BazelLanguageServer implements LanguageServer, LanguageClientAware 
 
     @Override
     public CompletableFuture<InitializeResult> initialize(InitializeParams params) {
+        // NOTE:
+        // Don't place logging messages inside this function. They will cause the
+        // server to hang indefinitely when it starts up for some unknown reason.
+
         // Initialize the workspace root folder.
         {
             UpdateRootFolderArgs rootFolderArgs = new UpdateRootFolderArgs();

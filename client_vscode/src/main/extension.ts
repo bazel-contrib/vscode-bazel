@@ -10,8 +10,6 @@ interface IExtensionVars {
 }
 
 const MESSAGES = {
-  buildifierNotFound: "Buildifier was not detected on your machine, " +
-    "would you like to install the binary now?",
   init: "Starting up Bazel language server...",
   initFailed: "The Bazel extension failed to start.",
   invalidJava: "The bazel.java.home setting does not point to a valid JDK.",
@@ -46,15 +44,6 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   startServer();
-
-  // Message box for installing buildifer binaries
-  vscode.window.showInformationMessage(MESSAGES.buildifierNotFound, ...["Yes"])
-    .then((selection) => {
-      console.log(selection);
-      if (selection === "Yes") {
-        // send request to server to install the binary in a specified path
-      }
-    });
 }
 
 export function deactivate(): Thenable<void> | undefined {
