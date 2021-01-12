@@ -74,11 +74,11 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
 //            logger.info(String.format("Caused a %s exception!", e.getClass().getName()));
 //        }
 
-        try {
-            Analyzer.getInstance().analyze();
-        } catch (AnalysisException e) {
-            logger.info("Unable to analayze project", e);
-        }
+//        try {
+//            Analyzer.getInstance().analyze();
+//        } catch (AnalysisException e) {
+//            logger.info("Unable to analayze project", e);
+//        }
     }
 
     @Override

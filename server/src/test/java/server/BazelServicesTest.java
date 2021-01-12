@@ -69,7 +69,7 @@ public class BazelServicesTest {
     }
 
     @Test
-    public void didOpen() throws Exception {
+    public void testDidOpen() {
         DidOpenTextDocumentParams params = new DidOpenTextDocumentParams();
         params.setTextDocument(new TextDocumentItem("test.txt", "plaintext", 1, "arbitrary value"));
 
@@ -78,7 +78,7 @@ public class BazelServicesTest {
     }
 
     @Test
-    public void didChange() {
+    public void testDidChange() {
         DidOpenTextDocumentParams params = new DidOpenTextDocumentParams();
         params.setTextDocument(new TextDocumentItem("test.txt", "plaintext", 1, "arbitrary value"));
         services.didOpen(params);
@@ -96,7 +96,7 @@ public class BazelServicesTest {
     }
 
     @Test
-    public void didClose() {
+    public void testDidClose() {
         DidCloseTextDocumentParams params = new DidCloseTextDocumentParams();
         params.setTextDocument(new TextDocumentIdentifier("test.txt"));
 
@@ -105,7 +105,7 @@ public class BazelServicesTest {
     }
 
     @Test
-    public void didSave() {
+    public void testSave() {
         services.didSave(new DidSaveTextDocumentParams());
         Mockito.verify(services).didSave(new DidSaveTextDocumentParams());
     }
