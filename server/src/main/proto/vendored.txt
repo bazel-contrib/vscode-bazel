@@ -1,6 +1,0 @@
-src/main/java/com/google/devtools/build/lib/buildeventstream/proto/build_event_stream.proto
-src/main/java/com/google/devtools/build/lib/skylarkdebug/proto/skylark_debugging.proto
-src/main/protobuf/build.proto
-src/main/protobuf/command_line.proto
-src/main/protobuf/invocation_policy.proto
-src/main/protobuf/option_filters.proto
