@@ -8,6 +8,7 @@ import java.nio.file.Path;
 class BuildifierInput {
     /**
      * The Bazel file content to process. This is passed to the buildifier through stdin.
+     * TODO: This should probably just be a string. If we want to parse multiple files, a string would be easy.
      */
     private Path path;
 
