@@ -85,6 +85,8 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
     public void didClose(DidCloseTextDocumentParams params) {
         logger.info("Did Close");
         logger.info(params.toString());
+        logger.info("BUILDIFIER EXISTS=" + BuildifierFacade.buildifierExists());
+        logger.info("Finished buildifier thing");
     }
 
     @Override
