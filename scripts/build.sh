@@ -33,6 +33,20 @@ then
 elif [[ "$name" == "client_vscode" ]]
 then
     (
+        # Remove the old server if it exists.
+        echo "Removing old server code..."
+        rm -rf client_vscode/bin/* 2> /dev/null || true
+        
+        # Build the server with dependencies.
+        echo "Building server jar..."
+        ./scripts/build.sh -n server
+        
+        # Move the language server into the client bin (for development purposes).
+        echo "Migrating server jar..."
+        mkdir bin 2> /dev/null || true
+        cp bazel-bin/server/bazel_ls_deploy.jar client_vscode/bin/bazel_ls_deploy.jar
+ 
+        echo "Building client..."
         cd client_vscode
         npm i
         npm run compile
