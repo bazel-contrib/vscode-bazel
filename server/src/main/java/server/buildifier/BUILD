@@ -7,6 +7,11 @@ java_library(
     srcs = [
         "BuildifierException.java",
         "BuildifierFacade.java",
+        "BuildifierFileType.java",
+        "BuildifierInput.java",
+        "BuildifierNotFoundException.java",
+        "BuildifierOutput.java",
+        "FormatArgs.java",
     ],
     deps = [
         "//server/src/main/java/server/utils:utils",

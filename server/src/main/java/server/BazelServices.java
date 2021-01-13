@@ -8,15 +8,18 @@ import org.eclipse.lsp4j.services.LanguageClientAware;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
-import server.analysis.AnalysisException;
-import server.analysis.Analyzer;
+import server.buildifier.BuildifierException;
 import server.buildifier.BuildifierFacade;
+import server.buildifier.BuildifierFileType;
+import server.buildifier.FormatArgs;
 import server.utils.DocumentTracker;
 import server.workspace.ProjectFolder;
 import server.workspace.UpdateExtensionConfigArgs;
 import server.workspace.UpdateWorkspaceFoldersArgs;
 import server.workspace.Workspace;
 
+import java.net.URI;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.stream.Collectors;
 
@@ -86,6 +89,25 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
         logger.info("Did Close");
         logger.info(params.toString());
         logger.info("BUILDIFIER EXISTS=" + BuildifierFacade.buildifierExists());
+
+        logger.info("ABOUT TO FORMAT A DOCUMENT!!!!!!");
+        try {
+            final FormatArgs args = new FormatArgs();
+            final URI uri = URI.create(params.getTextDocument().getUri());
+
+            args.setPath(Paths.get(uri));
+            args.setShouldApplyLintFixes(true);
+            args.setType(BuildifierFileType.BUILD);
+
+            logger.info("FORMATTING NOW");
+            BuildifierFacade.format(args);
+            logger.info("FORMAT DONE");
+        } catch (BuildifierException e) {
+            logger.info("BUILDIFER FAILED :( ... error=" + e.getClass());
+        } catch (Exception e) {
+            logger.error("FORMATTING FAILED FOR SOME RANDOM REASON...", e);
+        }
+
         logger.info("Finished buildifier thing");
     }
 
@@ -108,14 +130,15 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
         }
 
         // Verify that the buildifier exists
-        logger.info("Configuration changed");
-        if (!BuildifierFacade.buildifierExists()) {
-            logger.info("Buildifier doesn't exist...");
-            final MessageParams messageParams = new MessageParams();
-            messageParams.setMessage("Unable to locate buildifier");
-            messageParams.setType(MessageType.Warning);
-            languageClient.showMessage(messageParams);
-        }
+        // TODO: Display a prompt asking to install if it doesn't.
+//        logger.info("Configuration changed");
+//        if (!BuildifierFacade.buildifierExists()) {
+//            logger.info("Buildifier doesn't exist...");
+//            final MessageParams messageParams = new MessageParams();
+//            messageParams.setMessage("Unable to locate buildifier");
+//            messageParams.setType(MessageType.Warning);
+//            languageClient.showMessage(messageParams);
+//        }
     }
 
     @Override
