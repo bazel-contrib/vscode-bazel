@@ -5,13 +5,15 @@ package(default_visibility = ["//visibility:public"])
 java_library(
     name = "buildifier",
     srcs = [
+        "Buildifier.java",
         "BuildifierException.java",
-        "BuildifierFacade.java",
         "BuildifierFileType.java",
-        "BuildifierInput.java",
+        "BuildifierFormatArgs.java",
         "BuildifierNotFoundException.java",
-        "BuildifierOutput.java",
-        "FormatArgs.java",
+        "Executor.java",
+        "ExecutorFallback.java",
+        "ExecutorInput.java",
+        "ExecutorOutput.java",
     ],
     deps = [
         "//server/src/main/java/server/utils:utils",

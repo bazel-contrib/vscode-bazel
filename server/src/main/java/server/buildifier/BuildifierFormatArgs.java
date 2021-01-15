@@ -5,7 +5,7 @@ import java.nio.file.Path;
 /**
  * Arguments passed into the buildifier's file formatting tool.
  */
-public final class FormatArgs {
+public final class BuildifierFormatArgs {
     /**
      * The bazel file content to process.
      */

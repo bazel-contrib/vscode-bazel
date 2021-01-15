@@ -10,9 +10,9 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
 import server.buildifier.BuildifierException;
-import server.buildifier.BuildifierFacade;
+import server.buildifier.Buildifier;
 import server.buildifier.BuildifierFileType;
-import server.buildifier.FormatArgs;
+import server.buildifier.BuildifierFormatArgs;
 import server.utils.DocumentTracker;
 import server.workspace.ExtensionConfig;
 import server.workspace.ProjectFolder;
@@ -89,30 +89,32 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
     public void didClose(DidCloseTextDocumentParams params) {
         logger.info("Did Close");
         logger.info(params.toString());
-        logger.info("BUILDIFIER EXISTS=" + BuildifierFacade.buildifierExists());
 
-        logger.info("ABOUT TO FORMAT A DOCUMENT!!!!!!");
-        try {
-            final URI uri = URI.create(params.getTextDocument().getUri());
-            final String content = new String(Files.readAllBytes(Paths.get(uri)));
-
-            final FormatArgs args = new FormatArgs();
-            {
-                args.setContent(content);
-                args.setShouldApplyLintFixes(true);
-                args.setType(BuildifierFileType.BUILD);
-            }
-
-            logger.info("FORMATTING NOW");
-            final String formattedContent = BuildifierFacade.format(args);
-            logger.info("FORMAT DONE=" + formattedContent);
-        } catch (BuildifierException e) {
-            logger.info("BUILDIFER FAILED :( ... error=" + e.getClass());
-        } catch (Exception e) {
-            logger.error("FORMATTING FAILED FOR SOME RANDOM REASON...", e);
-        }
-
-        logger.info("Finished buildifier thing");
+//        final Buildifier buildifier = new Buildifier();
+//        logger.info("BUILDIFIER EXISTS=" + buildifier.exists());
+//
+//        logger.info("ABOUT TO FORMAT A DOCUMENT!!!!!!");
+//        try {
+//            final URI uri = URI.create(params.getTextDocument().getUri());
+//            final String content = new String(Files.readAllBytes(Paths.get(uri)));
+//
+//            final BuildifierFormatArgs args = new BuildifierFormatArgs();
+//            {
+//                args.setContent(content);
+//                args.setShouldApplyLintFixes(true);
+//                args.setType(BuildifierFileType.BUILD);
+//            }
+//
+//            logger.info("FORMATTING NOW");
+//            final String formattedContent = buildifier.format(args);
+//            logger.info("FORMAT DONE=" + formattedContent);
+//        } catch (BuildifierException e) {
+//            logger.info("BUILDIFER FAILED :( ... error=" + e.getClass());
+//        } catch (Exception e) {
+//            logger.error("FORMATTING FAILED FOR SOME RANDOM REASON...", e);
+//        }
+//
+//        logger.info("Finished buildifier thing");
     }
 
     @Override
