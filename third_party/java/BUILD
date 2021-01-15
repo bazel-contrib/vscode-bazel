@@ -18,6 +18,14 @@ java_library(
     ],
 )
 
+# LICENSE: Apache License 2.0
+java_library(
+    name = "jmifs",
+    exports = [
+        "@maven//:com_google_jimfs_jimfs",
+    ],
+)
+
 # LICENSE: EPL
 java_library(
     name = "junit",

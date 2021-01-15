@@ -1,7 +1,10 @@
 package server.workspace;
 
-import java.util.Objects;
-
+/**
+ * The extension configuration. This will reflect the configuration that is
+ * expected from the client. Each client's configuration should mirror this
+ * object.
+ */
 public class ExtensionConfig {
     private Bazel bazel;
 
@@ -13,20 +16,14 @@ public class ExtensionConfig {
         return bazel;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ExtensionConfig that = (ExtensionConfig) o;
-        return Objects.equals(bazel, that.bazel);
+    public void setBazel(Bazel bazel) {
+        this.bazel = bazel;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(bazel);
-    }
-
-    public class Bazel {
+    /**
+     * The Bazel configuration.
+     */
+    public static class Bazel {
         private Buildifier buildifier;
         private Java java;
 
@@ -35,30 +32,27 @@ public class ExtensionConfig {
             java = null;
         }
 
-        public Java getJava() {
-            return java;
-        }
-
         public Buildifier getBuildifier() {
             return buildifier;
         }
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Bazel bazel = (Bazel) o;
-            return Objects.equals(buildifier, bazel.buildifier) &&
-                    Objects.equals(java, bazel.java);
+        public void setBuildifier(Buildifier buildifier) {
+            this.buildifier = buildifier;
         }
 
-        @Override
-        public int hashCode() {
-            return Objects.hash(buildifier, java);
+        public Java getJava() {
+            return java;
+        }
+
+        public void setJava(Java java) {
+            this.java = java;
         }
     }
 
-    public class Buildifier {
+    /**
+     * The Buildifier configuration.
+     */
+    public static class Buildifier {
         private String executable;
         private Boolean fixOnFormat;
 
@@ -71,26 +65,23 @@ public class ExtensionConfig {
             return executable;
         }
 
+        public void setExecutable(String executable) {
+            this.executable = executable;
+        }
+
         public Boolean getFixOnFormat() {
             return fixOnFormat;
         }
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Buildifier that = (Buildifier) o;
-            return Objects.equals(executable, that.executable) &&
-                    Objects.equals(fixOnFormat, that.fixOnFormat);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(executable, fixOnFormat);
+        public void setFixOnFormat(Boolean fixOnFormat) {
+            this.fixOnFormat = fixOnFormat;
         }
     }
 
-    public class Java {
+    /**
+     * The java configuration.
+     */
+    public static class Java {
         private String home;
 
         public Java() {
@@ -101,17 +92,8 @@ public class ExtensionConfig {
             return home;
         }
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Java java = (Java) o;
-            return Objects.equals(home, java.home);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(home);
+        public void setHome(String home) {
+            this.home = home;
         }
     }
 }

@@ -16,6 +16,7 @@ java_library(
         "//server/src/main/java/server/starlark:starlark",
         "//server/src/main/java/server/utils:utils",
         "//server/src/main/java/server/workspace:workspace",
+        "//third_party/java:gson",
         "//third_party/java:guava",
         "//third_party/java:log4j",
         "//third_party/java:lsp4j",

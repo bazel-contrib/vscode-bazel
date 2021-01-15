@@ -52,11 +52,12 @@ public final class BuildifierFacade {
      * Invokes the buildifier in format mode.
      *
      * @param args The arguments to run the buildifier with.
+     * @return The formatted content.
      * @throws BuildifierException If the buildifier fails to execute.
      */
-    public static void format(final FormatArgs args) throws BuildifierException {
+    public static String format(final FormatArgs args) throws BuildifierException {
         Preconditions.checkNotNull(args);
-        Preconditions.checkNotNull(args.getPath());
+        Preconditions.checkNotNull(args.getContent());
         Preconditions.checkNotNull(args.getType());
 
         final BuildifierInput input = new BuildifierInput();
@@ -72,16 +73,29 @@ public final class BuildifierFacade {
             }
         }
 
-        logger.info(String.format("Formatting file content at \"%s\".", args.getPath().toAbsolutePath()));
+        logger.info(String.format("Formatting content \"%s\".", args.getContent()));
 
         // Run the buildifier.
-        input.setPath(args.getPath());
+        input.setContent(args.getContent());
         input.setArgs(cliargs.toArray(new String[0]));
         final BuildifierOutput output = execute(input);
 
-        logger.info("OUTPUT: " + output.getRawOutput());
-        logger.info("ERROR: " + output.getRawError());
-        logger.info("EXIT CODE: " + output.getExitCode());
+        // Return the successfully formated contents if the exit code
+        // indicated a valid format result.
+        if (output.getExitCode() == 0) {
+            logger.info(String.format(
+                    "Successfully formatted content: \"%s\"",
+                    output.getRawOutput()));
+            return output.getRawOutput();
+        }
+
+        // TODO: Handle errors more appropriately with more information.
+        logger.warn(String.format(
+                "Failed to format with exit code %d. Error output is \"%s\"",
+                output.getExitCode(),
+                output.getRawError()));
+
+        throw new BuildifierException();
     }
 
     /**
@@ -95,7 +109,7 @@ public final class BuildifierFacade {
     private static BuildifierOutput execute(BuildifierInput input) throws BuildifierException {
         Preconditions.checkNotNull(input);
         Preconditions.checkNotNull(input.getArgs());
-        Preconditions.checkNotNull(input.getPath());
+        Preconditions.checkNotNull(input.getContent());
 
         // Get the effective paths for the buildifier.
         final String buildifierPath = locateBuildifier().toAbsolutePath().toString();
@@ -117,10 +131,10 @@ public final class BuildifierFacade {
             final OutputStream outputStream = process.getOutputStream();
             final InputStream errorStream = process.getErrorStream();
 
-            // Write the file contents to buildifier using its stdin.
+            // Write the contents to buildifier using its stdin.
             {
-                final byte[] contents = Files.readAllBytes(input.getPath());
-                outputStream.write(contents);
+                final byte[] content = input.getContent().getBytes();
+                outputStream.write(content);
                 outputStream.close();
             }
 

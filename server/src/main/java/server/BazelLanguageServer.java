@@ -10,7 +10,6 @@ import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 import server.workspace.ProjectFolder;
-import server.workspace.UpdateRootFolderArgs;
 import server.workspace.Workspace;
 
 import java.net.URI;
@@ -43,9 +42,8 @@ public class BazelLanguageServer implements LanguageServer, LanguageClientAware 
 
         // Initialize the workspace root folder.
         {
-            UpdateRootFolderArgs rootFolderArgs = new UpdateRootFolderArgs();
-            rootFolderArgs.setRootFolder(ProjectFolder.fromURI(params.getRootUri()));
-            Workspace.getInstance().updateRootFolder(rootFolderArgs);
+            final ProjectFolder folder = ProjectFolder.fromURI(params.getRootUri());
+            Workspace.getInstance().setRootFolder(folder);
         }
 
         // Specify capabilities for the server.

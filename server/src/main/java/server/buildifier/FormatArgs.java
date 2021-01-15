@@ -9,7 +9,7 @@ public final class FormatArgs {
     /**
      * The bazel file content to process.
      */
-    private Path path;
+    private String content;
 
     /**
      * Indicates which type of formatting should be appled to the file content.
@@ -21,12 +21,12 @@ public final class FormatArgs {
      */
     private boolean shouldApplyLintFixes;
 
-    public Path getPath() {
-        return path;
+    public String getContent() {
+        return content;
     }
 
-    public void setPath(Path path) {
-        this.path = path;
+    public void setContent(String content) {
+        this.content = content;
     }
 
     public BuildifierFileType getType() {

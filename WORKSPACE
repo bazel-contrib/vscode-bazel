@@ -26,6 +26,7 @@ maven_install(
     artifacts = [
         "com.google.code.gson:gson:2.8.6",
         "com.google.guava:guava:29.0-jre",
+        "com.google.jimfs:jimfs:1.2",
         "com.google.protobuf:protobuf-java:3.14.0",
         "junit:junit:4.12",
         "org.apache.logging.log4j:log4j-core:2.13.3",

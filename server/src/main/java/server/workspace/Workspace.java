@@ -1,10 +1,10 @@
 package server.workspace;
 
 import com.google.common.base.Preconditions;
-import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -30,38 +30,29 @@ public class Workspace {
         return extensionConfig;
     }
 
+    public void setExtensionConfig(ExtensionConfig extensionConfig) {
+        this.extensionConfig = extensionConfig;
+    }
+
     public ProjectFolder getRootFolder() {
         return rootFolder;
+    }
+
+    public void setRootFolder(ProjectFolder rootFolder) {
+        this.rootFolder = rootFolder;
     }
 
     public Iterable<ProjectFolder> getWorkspaceFolders() {
         return workspaceFolders;
     }
 
-    public void updateExtensionConfig(UpdateExtensionConfigArgs args) {
-        Preconditions.checkNotNull(args);
-        Preconditions.checkNotNull(args.getSettings());
-
-        Object settings = args.getSettings();
-        Gson gson = new Gson();
-        String json = new Gson().toJson(settings);
-
-        extensionConfig = gson.fromJson(json, ExtensionConfig.class);
+    public void addWorkspaceFolders(Collection<ProjectFolder> folders) {
+        Preconditions.checkNotNull(folders);
+        workspaceFolders.addAll(folders);
     }
 
-    public void updateRootFolder(UpdateRootFolderArgs args) {
-        Preconditions.checkNotNull(args);
-        Preconditions.checkNotNull(args.getRootFolder());
-
-        rootFolder = args.getRootFolder();
-    }
-
-    public void updateWorkspaceFolders(UpdateWorkspaceFoldersArgs args) {
-        Preconditions.checkNotNull(args);
-        Preconditions.checkNotNull(args.getFoldersToAdd());
-        Preconditions.checkNotNull(args.getFoldersToRemove());
-
-        workspaceFolders.removeAll(args.getFoldersToRemove());
-        workspaceFolders.addAll(args.getFoldersToRemove());
+    public void removeWorkspaceFolders(Collection<ProjectFolder> folders) {
+        Preconditions.checkNotNull(folders);
+        workspaceFolders.removeAll(folders);
     }
 }

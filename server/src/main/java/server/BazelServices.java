@@ -1,5 +1,6 @@
 package server;
 
+import com.google.gson.Gson;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.lsp4j.*;
@@ -13,12 +14,12 @@ import server.buildifier.BuildifierFacade;
 import server.buildifier.BuildifierFileType;
 import server.buildifier.FormatArgs;
 import server.utils.DocumentTracker;
+import server.workspace.ExtensionConfig;
 import server.workspace.ProjectFolder;
-import server.workspace.UpdateExtensionConfigArgs;
-import server.workspace.UpdateWorkspaceFoldersArgs;
 import server.workspace.Workspace;
 
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -92,16 +93,19 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
 
         logger.info("ABOUT TO FORMAT A DOCUMENT!!!!!!");
         try {
-            final FormatArgs args = new FormatArgs();
             final URI uri = URI.create(params.getTextDocument().getUri());
+            final String content = new String(Files.readAllBytes(Paths.get(uri)));
 
-            args.setPath(Paths.get(uri));
-            args.setShouldApplyLintFixes(true);
-            args.setType(BuildifierFileType.BUILD);
+            final FormatArgs args = new FormatArgs();
+            {
+                args.setContent(content);
+                args.setShouldApplyLintFixes(true);
+                args.setType(BuildifierFileType.BUILD);
+            }
 
             logger.info("FORMATTING NOW");
-            BuildifierFacade.format(args);
-            logger.info("FORMAT DONE");
+            final String formattedContent = BuildifierFacade.format(args);
+            logger.info("FORMAT DONE=" + formattedContent);
         } catch (BuildifierException e) {
             logger.info("BUILDIFER FAILED :( ... error=" + e.getClass());
         } catch (Exception e) {
@@ -124,21 +128,11 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
 
         // Update extension configuration.
         {
-            UpdateExtensionConfigArgs args = new UpdateExtensionConfigArgs();
-            args.setSettings(params.getSettings());
-            Workspace.getInstance().updateExtensionConfig(args);
+            final Gson gson = new Gson();
+            final String json = gson.toJson(params.getSettings());
+            final ExtensionConfig config = gson.fromJson(json, ExtensionConfig.class);
+            Workspace.getInstance().setExtensionConfig(config);
         }
-
-        // Verify that the buildifier exists
-        // TODO: Display a prompt asking to install if it doesn't.
-//        logger.info("Configuration changed");
-//        if (!BuildifierFacade.buildifierExists()) {
-//            logger.info("Buildifier doesn't exist...");
-//            final MessageParams messageParams = new MessageParams();
-//            messageParams.setMessage("Unable to locate buildifier");
-//            messageParams.setType(MessageType.Warning);
-//            languageClient.showMessage(messageParams);
-//        }
     }
 
     @Override
@@ -154,19 +148,16 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
 
         // Update workspace folders.
         {
-            UpdateWorkspaceFoldersArgs args = new UpdateWorkspaceFoldersArgs();
-
-            Collection<ProjectFolder> foldersToAdd = params.getEvent().getAdded().stream()
+            final Collection<ProjectFolder> foldersToAdd = params.getEvent().getAdded().stream()
                     .map(e -> ProjectFolder.fromURI(e.getUri()))
                     .collect(Collectors.toList());
-            args.setFoldersToAdd(foldersToAdd);
 
-            Collection<ProjectFolder> foldersToRemove = params.getEvent().getRemoved().stream()
+            final Collection<ProjectFolder> foldersToRemove = params.getEvent().getRemoved().stream()
                     .map(e -> ProjectFolder.fromURI(e.getUri()))
                     .collect(Collectors.toList());
-            args.setFoldersToRemove(foldersToRemove);
 
-            Workspace.getInstance().updateWorkspaceFolders(args);
+            Workspace.getInstance().removeWorkspaceFolders(foldersToRemove);
+            Workspace.getInstance().addWorkspaceFolders(foldersToAdd);
         }
     }
 

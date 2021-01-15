@@ -1,16 +1,13 @@
 package server.buildifier;
 
-import java.nio.file.Path;
-
 /**
  * A configuration used to execute the buildifier.
  */
 class BuildifierInput {
     /**
      * The Bazel file content to process. This is passed to the buildifier through stdin.
-     * TODO: This should probably just be a string. If we want to parse multiple files, a string would be easy.
      */
-    private Path path;
+    private String content;
 
     /**
      * Command line arguments to pass to buildifier. These will typicall be flags, e.g.
@@ -18,12 +15,12 @@ class BuildifierInput {
      */
     private String[] args;
 
-    public Path getPath() {
-        return path;
+    public String getContent() {
+        return content;
     }
 
-    public void setPath(Path path) {
-        this.path = path;
+    public void setContent(String content) {
+        this.content = content;
     }
 
     public String[] getArgs() {
