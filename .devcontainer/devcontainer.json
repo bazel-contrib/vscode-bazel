@@ -1,21 +1,18 @@
 {
-	"name": "Bazel Language Server",
-
-	// Sets the run context to one level up instead of the .devcontainer folder.
-	"context": "..",
-
+    "name": "Bazel Language Server",
+    // Sets the run context to one level up instead of the .devcontainer folder.
+    "context": "..",
     // Docker build related options.
     "dockerFile": "../Dockerfile",
-
-	// Set *default* container specific settings.json values on container create.
-	"settings": { 
-		"terminal.integrated.shell.linux": null
-	},
-
-	// Add the IDs of extensions you want installed when the container is created.
-	"extensions": [
-        "esbenp.prettier-vscode",
+    // Set *default* container specific settings.json values on container create.
+    "settings": {
+        "terminal.integrated.shell.linux": null
+    },
+    // Add the IDs of extensions you want installed when the container is created.
+    "extensions": [
+        "golang.go",
         "ms-vscode.vscode-typescript-tslint-plugin",
         "ms-vscode.cpptools",
+        "zxh404.vscode-proto3",
     ],
 }

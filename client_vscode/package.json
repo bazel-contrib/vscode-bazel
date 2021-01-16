@@ -99,65 +99,25 @@
             "type": "object",
             "title": "Bazel",
             "properties": {
-                "bazel.java.home": {
-                    "type": [
-                        "string",
-                        "null"
-                    ],
-                    "default": null,
-                    "description": "Specifies the folder path to the JDK. Use this setting if the extension cannot find Java automatically."
-                },
                 "bazel.executable": {
                     "type": "string",
                     "default": "",
-                    "description": "The name of the Bazel executable. This may be an absolute path, or a simple name that will be searched for on the system path. If empty, \"bazel\" on the system path will be used."
+                    "description": "The name of the Bazel executable. This may be an absolute path or a simple name that will be searched for on the system path. If empty, \"bazel\" on the system path will be used."
                 },
-                "bazel.buildifierExecutable": {
+                "bazel.buildifier.executable": {
                     "type": "string",
                     "default": "",
-                    "markdownDescription": "The name of the Buildifier executable. This may be an absolute path, or a simple name that will be searched for on the system path. If empty, \"buildifier\" on the system path will be used.\n\nBuildifier can be downloaded from https://github.com/bazelbuild/buildtools/releases."
+                    "markdownDescription": "The name of the Buildifier executable. This may be an absolute path or a simple name that will be searched for on the system path. If empty, \"buildifier\" on the system path will be used.\n\nBuildifier can be downloaded from https://github.com/bazelbuild/buildtools/releases."
                 },
-                "bazel.buildifierFixOnFormat": {
+                "bazel.buildifier.fixOnFormat": {
                     "type": "boolean",
                     "default": false,
                     "description": "Whether to automatically apply lint fixes from buildifier when formatting a Bazel file."
                 },
-                "bazel.queriesShareServer": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Use the same Bazel server for queries and builds. By default, vscode-bazel uses a separate server for queries so that they can be executed in parallel with builds. You can enable this setting if running multiple Bazel servers has a negative performance impact on your system, but you may experience degraded performance in Visual Studio Code for operations that require queries."
-                },
-                "bazel.enableCodeLens": {
-                    "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "Whether to add a CodeLens to `BUILD`/`BUILD.bazel` files to provide actions while browsing the file."
-                },
-                "bazel.pathsToIgnore": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "uniqueItems": true,
-                    "default": [],
-                    "description": "A list of Regexs that when matched cause paths not to be checked for being in a WORKSPACE. This impacts operations that require a workspace, like queries, but syntax highlighting and buildifier work regardless."
-                },
-                "bazel.commandLine.startupOptions": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "uniqueItems": true,
-                    "default": [],
-                    "markdownDescription": "A list of [Bazel startup options](https://docs.bazel.build/versions/master/command-line-reference.html#startup-options) to use when building, running tests, running queries, or cleaning. One option per entry, no shell escaping is needed."
-                },
-                "bazel.commandLine.commandArgs": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    },
-                    "uniqueItems": true,
-                    "default": [],
-                    "markdownDescription": "A list of Bazel command line options to use when building or running tests. From the [common options](https://docs.bazel.build/versions/master/command-line-reference.html#options-common-to-all-commands) and [build options](https://docs.bazel.build/versions/master/command-line-reference.html#build) (`test` honors all `build` options). One option per entry, no shell escaping is needed."
+                "bazel.java.home": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Specifies the folder path to the JDK. If empty, the extension will try to locate the default java path."
                 }
             }
         },
@@ -393,9 +353,16 @@
         "vscode-test": "^1.3.0"
     },
     "dependencies": {
+        "escodegen": "^2.0.0",
+        "espree": "^7.3.1",
+        "estraverse": "^5.2.0",
         "i": "^0.3.6",
+        "jsdoc": "^3.6.6",
         "npm": "^6.14.8",
         "protobufjs": "^6.8.0",
+        "semver": "^7.3.4",
+        "tmp": "^0.2.1",
+        "uglify-js": "^3.12.4",
         "vscode-debugadapter": "^1.37.1",
         "vscode-debugprotocol": "^1.37.0",
         "vscode-languageclient": "^6.1.3",

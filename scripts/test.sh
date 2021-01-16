@@ -21,7 +21,7 @@ done
 
 if [ -z "$name" ]
 then
-    echo "Some or all of the parameters are empty.";
+    echo "Some or all of the parameters were empty.";
     usage
 fi
 

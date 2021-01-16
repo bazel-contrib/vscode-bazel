@@ -1,5 +1,7 @@
 package server;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.jsonrpc.Launcher;
 import org.eclipse.lsp4j.services.LanguageClient;
@@ -7,6 +9,9 @@ import org.eclipse.lsp4j.services.LanguageClientAware;
 import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
+import server.workspace.ProjectFolder;
+import server.workspace.UpdateRootFolderArgs;
+import server.workspace.Workspace;
 
 import java.net.URI;
 import java.nio.file.Path;
@@ -14,6 +19,9 @@ import java.nio.file.Paths;
 import java.util.concurrent.CompletableFuture;
 
 public class BazelLanguageServer implements LanguageServer, LanguageClientAware {
+    private static final int EXIT_SUCCESS = 0;
+    private static final Logger logger = LogManager.getLogger(BazelLanguageServer.class);
+
     public static void main(String[] args) {
         BazelLanguageServer server = new BazelLanguageServer();
         Launcher<LanguageClient> launcher = Launcher.createLauncher(server, LanguageClient.class, System.in, System.out);
@@ -29,18 +37,25 @@ public class BazelLanguageServer implements LanguageServer, LanguageClientAware 
 
     @Override
     public CompletableFuture<InitializeResult> initialize(InitializeParams params) {
-        String rootUriString = params.getRootUri();
-        if(rootUriString != null) {
-            URI uri = URI.create(params.getRootUri());
-            Path workspaceRoot = Paths.get(uri);
-            bazelServices.setWorkspaceRoot(workspaceRoot);
+        // NOTE:
+        // Don't place logging messages inside this function. They will cause the
+        // server to hang indefinitely when it starts up for some unknown reason.
+
+        // Initialize the workspace root folder.
+        {
+            UpdateRootFolderArgs rootFolderArgs = new UpdateRootFolderArgs();
+            rootFolderArgs.setRootFolder(ProjectFolder.fromURI(params.getRootUri()));
+            Workspace.getInstance().updateRootFolder(rootFolderArgs);
         }
 
-        ServerCapabilities serverCapabilities = new ServerCapabilities();
-        serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full);
-        serverCapabilities.setCodeActionProvider(true); // TODO use this to locate the appropriate build file
+        // Specify capabilities for the server.
+        ServerCapabilities serverCapabilities;
+        {
+            serverCapabilities = new ServerCapabilities();
+            serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full);
+        }
 
-        InitializeResult initializeResult = new InitializeResult(serverCapabilities);
+        final InitializeResult initializeResult = new InitializeResult(serverCapabilities);
         return CompletableFuture.completedFuture(initializeResult);
     }
 
@@ -51,7 +66,7 @@ public class BazelLanguageServer implements LanguageServer, LanguageClientAware 
 
     @Override
     public void exit() {
-        System.exit(0);
+        System.exit(EXIT_SUCCESS);
     }
 
     @Override

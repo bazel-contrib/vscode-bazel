@@ -5,7 +5,7 @@ import * as vscodelc from "vscode-languageclient";
 import { JavaUtils, WorkspaceUtils } from "./utils";
 
 interface IExtensionVars {
-  client: vscodelc.LanguageClient | null;
+  langClient: vscodelc.LanguageClient | null;
   context: vscode.ExtensionContext | null;
 }
 
@@ -24,8 +24,8 @@ const LABELS = {
 };
 
 const ext: IExtensionVars = {
-  client: null,
   context: null,
+  langClient: null,
 };
 
 export function activate(context: vscode.ExtensionContext): void {
@@ -48,7 +48,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
 export function deactivate(): Thenable<void> | undefined {
   ext.context = null;
-  ext.client = null;
+  ext.langClient = null;
   return undefined;
 }
 
@@ -61,13 +61,13 @@ export function onDidChangeConfiguration(
 }
 
 function restartServer(): void {
-  if (!ext.client) {
+  if (!ext.langClient) {
     startServer();
     return;
   }
 
-  const prevClient = ext.client;
-  ext.client = null;
+  const prevClient = ext.langClient;
+  ext.langClient = null;
 
   // Attempt to restart the server. If the server fails to shut down,
   // prompt the user with a dialog to allow them to manually restart
@@ -96,7 +96,7 @@ function startServer(): void {
   vscode.window.withProgress(
     { location: vscode.ProgressLocation.Window },
     (progress) => {
-      return new Promise((resolve, _) => {
+      return new Promise<void>((resolve, _) => {
         // Ensure that the context has been setup.
         if (!ext.context) {
           resolve();
@@ -166,21 +166,21 @@ function startServer(): void {
           },
         };
 
-        const client = new vscodelc.LanguageClient(
+        const langClient = new vscodelc.LanguageClient(
           "bazel",
           "Bazel Language Server",
           serverOptions,
           clientOptions,
         );
 
-        client.onReady().then(resolve, (__) => {
+        langClient.onReady().then(resolve, (__) => {
           resolve();
           vscode.window.showErrorMessage(MESSAGES.initFailed);
         });
 
         // Start the server.
-        ext.context.subscriptions.push(client.start());
-        ext.client = client;
+        ext.context.subscriptions.push(langClient.start());
+        ext.langClient = langClient;
       });
     },
   );

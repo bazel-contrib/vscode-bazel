@@ -33,7 +33,6 @@ public class BazelServicesTest {
         }
 
         services = Mockito.spy(new BazelServices());
-        services.setWorkspaceRoot(workspaceRoot);
         services.connect(new LanguageClient() {
             @Override
             public void telemetryEvent(Object object) {
@@ -70,7 +69,7 @@ public class BazelServicesTest {
     }
 
     @Test
-    public void didOpen() throws Exception {
+    public void testDidOpen() {
         DidOpenTextDocumentParams params = new DidOpenTextDocumentParams();
         params.setTextDocument(new TextDocumentItem("test.txt", "plaintext", 1, "arbitrary value"));
 
@@ -79,13 +78,13 @@ public class BazelServicesTest {
     }
 
     @Test
-    public void didChange() {
+    public void testDidChange() {
         DidOpenTextDocumentParams params = new DidOpenTextDocumentParams();
         params.setTextDocument(new TextDocumentItem("test.txt", "plaintext", 1, "arbitrary value"));
         services.didOpen(params);
 
         DidChangeTextDocumentParams changeParams = new DidChangeTextDocumentParams();
-        changeParams.setTextDocument(new VersionedTextDocumentIdentifier("test.txt", 2));
+        changeParams.setTextDocument(new VersionedTextDocumentIdentifier("/test.txt", 2));
 
         TextDocumentContentChangeEvent changeEvent = new TextDocumentContentChangeEvent();
         changeEvent.setText(" data");
@@ -97,7 +96,7 @@ public class BazelServicesTest {
     }
 
     @Test
-    public void didClose() {
+    public void testDidClose() {
         DidCloseTextDocumentParams params = new DidCloseTextDocumentParams();
         params.setTextDocument(new TextDocumentIdentifier("test.txt"));
 
@@ -106,7 +105,7 @@ public class BazelServicesTest {
     }
 
     @Test
-    public void didSave() {
+    public void testSave() {
         services.didSave(new DidSaveTextDocumentParams());
         Mockito.verify(services).didSave(new DidSaveTextDocumentParams());
     }
