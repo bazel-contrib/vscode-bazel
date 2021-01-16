@@ -5,7 +5,7 @@ import java.nio.file.Path;
 /**
  * A configuration used to execute the buildifier.
  */
-class ExecutorInput {
+class RunnerInput {
     /**
      * The Bazel file content to process. This is passed to the buildifier through stdin.
      */
@@ -17,10 +17,9 @@ class ExecutorInput {
     private Path executable;
 
     /**
-     * Command line arguments to pass to buildifier. These will typicall be flags, e.g.
-     * `--mode=fix`, `--lint=fix`, etc...
+     * Flags passed to the buildifier. Some examples of flags include "--mode=fix", "--lint=fix", etc...
      */
-    private String[] args;
+    private String[] flags;
 
     public String getContent() {
         return content;
@@ -38,11 +37,11 @@ class ExecutorInput {
         this.executable = executable;
     }
 
-    public String[] getArgs() {
-        return args;
+    public String[] getFlags() {
+        return flags;
     }
 
-    public void setArgs(String[] args) {
-        this.args = args;
+    public void setFlags(String[] flags) {
+        this.flags = flags;
     }
 }

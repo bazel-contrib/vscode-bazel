@@ -12,9 +12,6 @@ import org.eclipse.lsp4j.services.WorkspaceService;
 import server.workspace.ProjectFolder;
 import server.workspace.Workspace;
 
-import java.net.URI;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.concurrent.CompletableFuture;
 
 public class BazelLanguageServer implements LanguageServer, LanguageClientAware {

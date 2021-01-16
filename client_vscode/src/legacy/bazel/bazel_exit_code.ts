@@ -76,7 +76,7 @@ export function exitCodeToUserString(exitCode: ExitCode): string {
     case ExitCode.OOM_ERROR:
       return "Out of Memory error: Try giving Bazel more RAM?";
     case ExitCode.REMOTE_ERROR:
-      return "Remote error: check your remote cache and executor.";
+      return "Remote error: check your remote cache and runner.";
     case ExitCode.LOCAL_ENVIRONMENTAL_ERROR:
       return (
         "Local environment error: " +
@@ -87,7 +87,7 @@ export function exitCodeToUserString(exitCode: ExitCode): string {
     case ExitCode.PUBLISH_ERROR:
       return "BES publish error: uploading failed.";
     case ExitCode.REMOTE_EXECUTOR_OVERLOADED:
-      return "Remote error: Remote executor is overloaded.";
+      return "Remote error: Remote runner is overloaded.";
     case ExitCode.RESERVED:
       return "Reserved error: unexpected, please file a vscode-bazel issue.";
     default:

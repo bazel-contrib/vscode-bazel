@@ -14,15 +14,17 @@ import java.util.Arrays;
 import java.util.stream.Stream;
 
 /**
- * The fallback buildifier executable.
+ * The fallback buildifier runner. This runner will run a buildifier executable at a
+ * provided location. The input and output will be sent to and retrived from the buildifier
+ * through stdin and stdout respectively.
  */
-class ExecutorFallback implements Executor {
-    private static final Logger logger = LogManager.getLogger(ExecutorFallback.class);
+class FallbackRunner implements Runner {
+    private static final Logger logger = LogManager.getLogger(FallbackRunner.class);
 
     @Override
-    public ExecutorOutput run(ExecutorInput input) throws BuildifierException {
+    public RunnerOutput run(RunnerInput input) throws BuildifierException {
         Preconditions.checkNotNull(input);
-        Preconditions.checkNotNull(input.getArgs());
+        Preconditions.checkNotNull(input.getFlags());
         Preconditions.checkNotNull(input.getContent());
         Preconditions.checkNotNull(input.getExecutable());
 
@@ -30,9 +32,9 @@ class ExecutorFallback implements Executor {
         final String buildifierPath = input.getExecutable().toAbsolutePath().toString();
 
         // Package the command line arguments.
-        final String[] cmdarr = Stream.concat(
+        final String[] cmdArgs = Stream.concat(
                 Arrays.stream(new String[]{buildifierPath}),
-                Arrays.stream(input.getArgs()))
+                Arrays.stream(input.getFlags()))
                 .toArray(String[]::new);
 
         // Execute the buildifier.
@@ -40,7 +42,7 @@ class ExecutorFallback implements Executor {
             logger.info(String.format("Executing buildifier at \"%s\".", buildifierPath));
 
             final Runtime runtime = Runtime.getRuntime();
-            final Process process = runtime.exec(cmdarr);
+            final Process process = runtime.exec(cmdArgs);
 
             final InputStream inputStream = process.getInputStream();
             final OutputStream outputStream = process.getOutputStream();
@@ -51,15 +53,19 @@ class ExecutorFallback implements Executor {
                 final byte[] content = input.getContent().getBytes();
                 outputStream.write(content);
                 outputStream.close();
+
+                logger.info(String.format("Wrote content into the buildifier: \"%s\".", input.getContent()));
             }
 
-            final ExecutorOutput output = new ExecutorOutput();
+            final RunnerOutput output = new RunnerOutput();
 
             // Package stdout output.
             {
                 final Readable readable = new InputStreamReader(inputStream, Charsets.UTF_8);
                 output.setRawOutput(CharStreams.toString(readable));
                 inputStream.close();
+
+                logger.info(String.format("Read raw output from buildifier: \"%s\".", output.getRawOutput()));
             }
 
             // Package stderr output.
@@ -67,17 +73,16 @@ class ExecutorFallback implements Executor {
                 final Readable readable = new InputStreamReader(errorStream, Charsets.UTF_8);
                 output.setRawError(CharStreams.toString(readable));
                 errorStream.close();
+
+                logger.info(String.format("Read raw error from buildifier: \"%s\".", output.getRawError()));
             }
 
             // Package the exit code once it finishes executing.
             // TODO: We should probably use a completable future here so we don't hang.
             {
                 output.setExitCode(process.waitFor());
+                logger.info(String.format("Buildifier finished with exit code \"%d\".", output.getExitCode()));
             }
-
-            logger.info(String.format("Finished executing buildifier.\n" +
-                    "Recieved output: \"%s\"\n" +
-                    "Recieved error: \"%s\"", output.getRawOutput(), output.getRawError()));
 
             return output;
         } catch (IOException e) {

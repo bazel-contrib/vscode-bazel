@@ -9,6 +9,7 @@ java_library(
         "FileRepository.java",
         "Observatory.java",
         "Positions.java",
+        "Utility.java",
     ],
     deps = [
         "//third_party/java:guava",

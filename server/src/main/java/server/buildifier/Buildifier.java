@@ -4,9 +4,11 @@ import com.google.common.base.Preconditions;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import server.utils.FileRepository;
+import server.utils.Utility;
 import server.workspace.ExtensionConfig;
 import server.workspace.Workspace;
 
+import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -19,15 +21,15 @@ import java.util.List;
  */
 public final class Buildifier {
     public static final String DEFAULT_BUILDIFIER_NAME = "buildifier";
-    private static final Executor FALLBACK_EXECUTOR = new ExecutorFallback();
+    private static final Runner FALLBACK_RUNNER = new FallbackRunner();
     private static final Logger logger = LogManager.getLogger(Buildifier.class);
 
     private FileRepository fileRepository;
-    private Executor executor;
+    private Runner runner;
 
     public Buildifier() {
         fileRepository = null;
-        executor = null;
+        runner = null;
     }
 
     FileRepository getFileRepository() {
@@ -38,20 +40,20 @@ public final class Buildifier {
         this.fileRepository = fileRepository;
     }
 
-    Executor getExecutor() {
-        return executor;
+    Runner getRunner() {
+        return runner;
     }
 
-    void setExecutor(Executor executor) {
-        this.executor = executor;
+    void setRunner(Runner runner) {
+        this.runner = runner;
     }
 
     private FileRepository getEffectiveFileRepository() {
         return getFileRepository() == null ? FileRepository.getDefault() : getFileRepository();
     }
 
-    private Executor getEffectiveExecutor() {
-        return getExecutor() == null ? FALLBACK_EXECUTOR : getExecutor();
+    private Runner getEffectiveExecutor() {
+        return getRunner() == null ? FALLBACK_RUNNER : getRunner();
     }
 
     /**
@@ -80,7 +82,7 @@ public final class Buildifier {
         Preconditions.checkNotNull(args.getContent());
         Preconditions.checkNotNull(args.getType());
 
-        final ExecutorInput input = new ExecutorInput();
+        final RunnerInput input = new RunnerInput();
 
         // Build the command line args.
         final List<String> cmdArgs = new ArrayList<>();
@@ -97,12 +99,12 @@ public final class Buildifier {
 
         // Run the buildifier.
         input.setContent(args.getContent());
-        input.setArgs(cmdArgs.toArray(new String[0]));
+        input.setFlags(cmdArgs.toArray(new String[0]));
         input.setExecutable(locateExecutable());
-        final ExecutorOutput output = getEffectiveExecutor().run(input);
+        final RunnerOutput output = getEffectiveExecutor().run(input);
 
-        // Return the successfully formated contents if the exit code
-        // indicated a valid format result.
+        // Return the successfully formated contents if the exit code indicated a valid
+        // format result.
         if (output.getExitCode() == 0) {
             logger.info(String.format(
                     "Successfully formatted content: \"%s\"",
@@ -131,17 +133,18 @@ public final class Buildifier {
         Preconditions.checkNotNull(Workspace.getInstance());
         Preconditions.checkNotNull(getEffectiveFileRepository());
 
-        final ExtensionConfig config = Workspace.getInstance().getExtensionConfig();
         logger.info("Locating buildifier.");
 
         // The extension config path will take priority over the inferred paths. Try
         // to load the buildifier from the extension configuration.
         {
-            final Path path = getFileRepository().getFileSystem().getPath(
-                    config.getBazel().getBuildifier().getExecutable()
-            );
+            final FileSystem fileSystem = getEffectiveFileRepository().getFileSystem();
+            final String executablePath = Utility.nullAccess(() -> Workspace.getInstance().getExtensionConfig().
+                    getBazel().getBuildifier().getExecutable());
+            final String effExecutablePath = executablePath == null ? "" : executablePath;
 
-            if (Files.exists(path, LinkOption.NOFOLLOW_LINKS) && path.toFile().canExecute()) {
+            final Path path = fileSystem.getPath(effExecutablePath);
+            if (!effExecutablePath.isEmpty() && Files.exists(path, LinkOption.NOFOLLOW_LINKS) && path.toFile().canExecute()) {
                 logger.info("Buildifer was located from the configuration settings.");
                 return path;
             }

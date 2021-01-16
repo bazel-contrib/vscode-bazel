@@ -3,7 +3,7 @@ package server.buildifier;
 /**
  * A summary of the buildifier executable's output.
  */
-class ExecutorOutput {
+class RunnerOutput {
     /**
      * The raw output result. This is the result produced by buildifier's stdout.
      */

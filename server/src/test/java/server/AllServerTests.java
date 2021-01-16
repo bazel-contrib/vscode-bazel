@@ -5,7 +5,9 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 import server.BazelServicesTest;
+import server.buildifier.BuildifierTest;
 import server.utils.DocumentTrackerTest;
+import server.utils.UtilityTest;
 
 // [TODO] 
 // Create an automated test runner so we don't have to explicitly define tests here.
@@ -13,6 +15,8 @@ import server.utils.DocumentTrackerTest;
 @RunWith(Suite.class)
 @SuiteClasses({
         BazelServicesTest.class,
-        DocumentTrackerTest.class
+        BuildifierTest.class,
+        DocumentTrackerTest.class,
+        UtilityTest.class,
 })
 public class AllServerTests {}
