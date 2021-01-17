@@ -189,4 +189,9 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
 
         return CompletableFuture.completedFuture(Either.forRight(new CompletionList(completionItems)));
     }
+
+    @Override
+    public CompletableFuture<CompletionItem> resolveCompletionItem(CompletionItem unresolved) {
+        return CompletableFuture.completedFuture(unresolved);
+    }
 }
