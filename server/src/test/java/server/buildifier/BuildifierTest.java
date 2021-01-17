@@ -18,8 +18,20 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class BuildifierTest {
+    private static final String BUILDIFIER_CONFIG_PATH =
+            "/valid/buildifier/location/" + Buildifier.getStandardExecutableName();
+    private static final String BUILDIFIER_SYSTEM_PATH =
+            "/usr/bin/" + Buildifier.getStandardExecutableName();
+    private static final String BUILDIFIER_INVALID_PATH =
+            "/path/that/doesnt/exist/" + Buildifier.getStandardExecutableName();
+    final String BUILDIFIER_UNFORMATTED_CONTENT =
+            "Not formatted content.";
+    final String BUILDIFIER_FORMATTED_CONTENT =
+            "Formatted content.";
+
     private FileSystem fileSystemJimf;
     private FileRepository fileRepositoryMock;
+    private FakeRunner fakeRunner;
     private Buildifier buildifier;
 
     @Before
@@ -29,8 +41,11 @@ public class BuildifierTest {
         fileRepositoryMock = Mockito.mock(FileRepository.class);
         Mockito.when(fileRepositoryMock.getFileSystem()).thenReturn(fileSystemJimf);
 
+        fakeRunner = new FakeRunner();
+
         buildifier = new Buildifier();
         buildifier.setFileRepository(fileRepositoryMock);
+        buildifier.setRunner(fakeRunner);
     }
 
     @After
@@ -39,16 +54,59 @@ public class BuildifierTest {
 
         fileSystemJimf = null;
         fileRepositoryMock = null;
+        fakeRunner = null;
         buildifier = null;
     }
 
     @Test
-    public void test_exists_foundInExtensionConfig() throws Exception {
-        final String BUILDIFIER_PATH = "/valid/buildifier/location/" + Buildifier.getStandardExecutableName();
+    public void test_format_success() throws Exception {
+        putBuildifierInPATH();
 
+        final BuildifierFormatArgs args = new BuildifierFormatArgs();
+        {
+            args.setContent(BUILDIFIER_UNFORMATTED_CONTENT);
+            args.setShouldApplyLintFixes(true);
+            args.setType(BuildifierFileType.BUILD);
+        }
+
+        // Mimic the expected buildifier process output.
+        {
+            fakeRunner.targetOutput = BUILDIFIER_FORMATTED_CONTENT;
+            fakeRunner.targetError = "";
+            fakeRunner.targetExitCode = 0;
+        }
+
+        String output = buildifier.format(args);
+
+        Assert.assertEquals(BUILDIFIER_FORMATTED_CONTENT, output);
+    }
+
+    @Test(expected = BuildifierException.class)
+    public void test_format_failure() throws Exception {
+        putBuildifierInPATH();
+
+        final BuildifierFormatArgs args = new BuildifierFormatArgs();
+        {
+            args.setContent(BUILDIFIER_UNFORMATTED_CONTENT);
+            args.setShouldApplyLintFixes(true);
+            args.setType(BuildifierFileType.WORKSAPCE);
+        }
+
+        // Mimic the expected buildifier process output.
+        {
+            fakeRunner.targetOutput = "";
+            fakeRunner.targetError = "Failed to format content.";
+            fakeRunner.targetExitCode = 5;
+        }
+
+        String output = buildifier.format(args);
+    }
+
+    @Test
+    public void test_exists_foundInExtensionConfig() throws Exception {
         // Set the extension config to have a valid path. This is the buildifier that should be used.
-        putBuildifier(BUILDIFIER_PATH);
-        setBuildifierExensionConfigLocation(BUILDIFIER_PATH);
+        putBuildifierInConfig();
+        setBuildifierConfigLocation(BUILDIFIER_CONFIG_PATH);
 
         // Make sure system PATH searching is never reached. If it is reached, throw an exception to force
         // this test to fail.
@@ -61,10 +119,8 @@ public class BuildifierTest {
 
     @Test
     public void test_exists_foundInSystemPATH() throws Exception {
-        final String VALID_BUILDIFIER_PATH = "/usr/bin/" + Buildifier.getStandardExecutableName();
-
         // Set the PATH to have a valid buildifier. This is the buildifier that should be used.
-        putBuildifierInPATH(VALID_BUILDIFIER_PATH);
+        putBuildifierInPATH();
 
         // Buildifier should exist.
         Assert.assertTrue(buildifier.exists());
@@ -78,21 +134,18 @@ public class BuildifierTest {
 
     @Test
     public void test_exists_notFoundWithInvalidConfigLocation() throws Exception {
-        final String INVALID_BUILDIFIER_PATH = "/path/that/doesnt/exist/" + Buildifier.getStandardExecutableName();
-        final String VALID_BUILDIFIER_PATH = "/valid/buildifier/location/" + Buildifier.getStandardExecutableName();
-
         // Put a valid buildifier somewhere in the file system.
-        putBuildifier(VALID_BUILDIFIER_PATH);
+        putBuildifierInConfig();
 
         // If the extension config is invalid, it shouldn't return a valid path.
-        setBuildifierExensionConfigLocation(INVALID_BUILDIFIER_PATH);
+        setBuildifierConfigLocation(BUILDIFIER_INVALID_PATH);
 
         // Buildifier should not exist if it doesn't exist in the extension config or the PATH.
         Assert.assertFalse(buildifier.exists());
     }
 
-    private void putBuildifierInPATH(String location) throws IOException {
-        final Path path = fileSystemJimf.getPath(location);
+    private void putBuildifierInPATH() throws IOException {
+        final Path path = fileSystemJimf.getPath(BUILDIFIER_SYSTEM_PATH);
         Files.createDirectories(path.getParent());
         Files.createFile(path);
 
@@ -101,20 +154,41 @@ public class BuildifierTest {
         Mockito.when(fileRepositoryMock.isExecutable(path)).thenReturn(true);
     }
 
-    private void putBuildifier(String location) throws IOException {
-        final Path path = fileSystemJimf.getPath(location);
+    private void putBuildifierInConfig() throws IOException {
+        final Path path = fileSystemJimf.getPath(BUILDIFIER_CONFIG_PATH);
         Files.createDirectories(path.getParent());
         Files.createFile(path);
 
         Mockito.when(fileRepositoryMock.isExecutable(path)).thenReturn(true);
     }
 
-    private void setBuildifierExensionConfigLocation(String location) {
+    private void setBuildifierConfigLocation(String location) {
         ExtensionConfig config = new ExtensionConfig();
         config.setBazel(new ExtensionConfig.Bazel());
         config.getBazel().setBuildifier(new ExtensionConfig.Buildifier());
         config.getBazel().getBuildifier().setExecutable(location);
 
         Workspace.getInstance().setExtensionConfig(config);
+    }
+
+    private static final class FakeRunner implements Runner {
+        int targetExitCode = 0;
+        String targetError = "";
+        String targetOutput = "";
+        RunnerInput input;
+
+        @Override
+        public RunnerOutput run(RunnerInput input) throws BuildifierException {
+            this.input = input;
+
+            final RunnerOutput output = new RunnerOutput();
+            {
+                output.setExitCode(targetExitCode);
+                output.setRawError(targetError);
+                output.setRawOutput(targetOutput);
+            }
+
+            return output;
+        }
     }
 }
