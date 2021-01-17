@@ -1,7 +1,6 @@
 import * as path from "path";
 import * as vscode from "vscode";
 import * as vscodelc from "vscode-languageclient";
-import { _Middleware } from "vscode-languageclient";
 
 import { JavaUtils, WorkspaceUtils } from "./utils";
 
