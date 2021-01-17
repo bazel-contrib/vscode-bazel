@@ -16,6 +16,7 @@ import server.workspace.Workspace;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
 
 public class BazelLanguageServer implements LanguageServer, LanguageClientAware {
@@ -52,7 +53,11 @@ public class BazelLanguageServer implements LanguageServer, LanguageClientAware 
         ServerCapabilities serverCapabilities;
         {
             serverCapabilities = new ServerCapabilities();
+
             serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full);
+
+            final CompletionOptions completionOptions = new CompletionOptions(true, Arrays.asList(":", "/"));
+            serverCapabilities.setCompletionProvider(completionOptions);
         }
 
         final InitializeResult initializeResult = new InitializeResult(serverCapabilities);

@@ -1,6 +1,7 @@
 import * as path from "path";
 import * as vscode from "vscode";
 import * as vscodelc from "vscode-languageclient";
+import { _Middleware } from "vscode-languageclient";
 
 import { JavaUtils, WorkspaceUtils } from "./utils";
 
@@ -140,6 +141,22 @@ function startServer(): void {
           documentSelector: [
             { scheme: "file", language: WorkspaceUtils.LANGUAGES.starlark.id },
           ],
+          middleware: {
+            provideCompletionItem: (
+              document,
+              position,
+              context,
+              token,
+              next,
+            ) => {
+              console.log("I AM PROVIDING A COMPLETION ITEM FOR MY MASTERS");
+              return undefined;
+            },
+            resolveCompletionItem: (item, token, next) => {
+              console.log("I AM RESOLVING A COMPLETION ITEM FOR MY MASTERS");
+              return undefined;
+            },
+          },
           synchronize: {
             configurationSection: WorkspaceUtils.CONFIG.bazelConfig,
             fileEvents: [
