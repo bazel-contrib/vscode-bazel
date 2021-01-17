@@ -1,5 +1,6 @@
 package server;
 
+import com.google.common.collect.Lists;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.lsp4j.*;
@@ -57,6 +58,20 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
     public void didChange(DidChangeTextDocumentParams params) {
         logger.info("Did Change");
         logger.info(params.toString());
+        PublishDiagnosticsParams diagnostics = new PublishDiagnosticsParams();
+        diagnostics.setUri(params.getTextDocument().getUri());
+
+        Diagnostic diagnostic = new Diagnostic();
+        diagnostic.setMessage("This is a test");
+        diagnostic.setSource(params.getTextDocument().getUri());
+        diagnostic.setCode(123);
+        diagnostic.setRange(new Range(new Position(0, 0)));
+        logger.info("Set severity");
+        diagnostic.setSeverity(DiagnosticSeverity.Error);
+        diagnostics.setDiagnostics(Lists.newArrayList(diagnostic));
+
+        logger.info("Publish Diagnostics");
+        languageClient.publishDiagnostics(diagnostics);
 //        URI uri = URI.create(params.getTextDocument().getUri());
 //        File file = new File(uri);
 //
@@ -149,4 +164,6 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
     public void connect(LanguageClient client) {
         languageClient = client;
     }
+
+
 }
