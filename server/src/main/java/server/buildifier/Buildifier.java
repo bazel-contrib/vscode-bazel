@@ -4,11 +4,9 @@ import com.google.common.base.Preconditions;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import server.utils.FileRepository;
-import server.utils.Utility;
-import server.workspace.ExtensionConfig;
+import server.utils.Nullability;
 import server.workspace.Workspace;
 
-import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
@@ -20,40 +18,18 @@ import java.util.List;
  * format documents, check linting, etc.
  */
 public final class Buildifier {
-    public static final String DEFAULT_BUILDIFIER_NAME = "buildifier";
     private static final Runner FALLBACK_RUNNER = new FallbackRunner();
     private static final Logger logger = LogManager.getLogger(Buildifier.class);
 
     private FileRepository fileRepository;
     private Runner runner;
 
+    /**
+     * Creates an instance of a buildifier.
+     */
     public Buildifier() {
         fileRepository = null;
         runner = null;
-    }
-
-    FileRepository getFileRepository() {
-        return fileRepository;
-    }
-
-    void setFileRepository(FileRepository fileRepository) {
-        this.fileRepository = fileRepository;
-    }
-
-    Runner getRunner() {
-        return runner;
-    }
-
-    void setRunner(Runner runner) {
-        this.runner = runner;
-    }
-
-    private FileRepository getEffectiveFileRepository() {
-        return getFileRepository() == null ? FileRepository.getDefault() : getFileRepository();
-    }
-
-    private Runner getEffectiveExecutor() {
-        return getRunner() == null ? FALLBACK_RUNNER : getRunner();
     }
 
     /**
@@ -101,7 +77,7 @@ public final class Buildifier {
         input.setContent(args.getContent());
         input.setFlags(cmdArgs.toArray(new String[0]));
         input.setExecutable(locateExecutable());
-        final RunnerOutput output = getEffectiveExecutor().run(input);
+        final RunnerOutput output = getEffectiveRunner().run(input);
 
         // Return the successfully formated contents if the exit code indicated a valid
         // format result.
@@ -130,30 +106,33 @@ public final class Buildifier {
      * @throws BuildifierNotFoundException If the buildifer couldn't be found.
      */
     private Path locateExecutable() throws BuildifierNotFoundException {
-        Preconditions.checkNotNull(Workspace.getInstance());
-        Preconditions.checkNotNull(getEffectiveFileRepository());
-
         logger.info("Locating buildifier.");
 
         // The extension config path will take priority over the inferred paths. Try
         // to load the buildifier from the extension configuration.
         {
-            final FileSystem fileSystem = getEffectiveFileRepository().getFileSystem();
-            final String executablePath = Utility.nullAccess(() -> Workspace.getInstance().getExtensionConfig().
+            String executablePathStr = Nullability.access(() -> Workspace.getInstance().getExtensionConfig().
                     getBazel().getBuildifier().getExecutable());
-            final String effExecutablePath = executablePath == null ? "" : executablePath;
+            executablePathStr = executablePathStr == null ? "" : executablePathStr;
 
-            final Path path = fileSystem.getPath(effExecutablePath);
-            if (!effExecutablePath.isEmpty() && Files.exists(path, LinkOption.NOFOLLOW_LINKS) && path.toFile().canExecute()) {
+            final Path executablePath = fileRepository.getFileSystem().getPath(executablePathStr);
+            if (!executablePathStr.isEmpty() &&
+                    Files.exists(executablePath, LinkOption.NOFOLLOW_LINKS) &&
+                    fileRepository.isExecutable(executablePath)
+            ) {
                 logger.info("Buildifer was located from the configuration settings.");
-                return path;
+                return executablePath;
             }
         }
 
         // Try to find the buildifier in the system PATH.
         {
-            final Path path = getEffectiveFileRepository().searchPATH(DEFAULT_BUILDIFIER_NAME);
-            if (path != null && Files.exists(path, LinkOption.NOFOLLOW_LINKS) && path.toFile().canExecute()) {
+            final String buildifierName = getStandardExecutableName();
+            final Path path = getEffectiveFileRepository().searchPATH(buildifierName);
+            if (path != null &&
+                    Files.exists(path, LinkOption.NOFOLLOW_LINKS) &&
+                    fileRepository.isExecutable(path)
+            ) {
                 logger.info("Buildifier was located from the system PATH.");
                 return path;
             }
@@ -161,5 +140,50 @@ public final class Buildifier {
 
         logger.info("Buildifier not found.");
         throw new BuildifierNotFoundException();
+    }
+
+    /**
+     * The standard buildifier executable name. This will match the name of the executable as found
+     * on the buildifier releases page.
+     *
+     * @see <a href="https://github.com/bazelbuild/buildtools/releases">Buildifier releases</a>
+     */
+    static String getStandardExecutableName() {
+        // TODO: Return different values based on linux, mac, windows.
+        return "buildifier";
+    }
+
+    /**
+     * Gets the effective file repository used for accessing files.
+     *
+     * @return The effective file repository.
+     */
+    private FileRepository getEffectiveFileRepository() {
+        return getFileRepository() == null ? FileRepository.getDefault() : getFileRepository();
+    }
+
+    /**
+     * Gets the effective runner used for running a buildifier.
+     *
+     * @return The effective runner.
+     */
+    private Runner getEffectiveRunner() {
+        return getRunner() == null ? FALLBACK_RUNNER : getRunner();
+    }
+
+    FileRepository getFileRepository() {
+        return fileRepository;
+    }
+
+    void setFileRepository(FileRepository fileRepository) {
+        this.fileRepository = fileRepository;
+    }
+
+    Runner getRunner() {
+        return runner;
+    }
+
+    void setRunner(Runner runner) {
+        this.runner = runner;
     }
 }

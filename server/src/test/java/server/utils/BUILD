@@ -6,7 +6,7 @@ java_library(
     name = "utils",
     srcs = [
         "DocumentTrackerTest.java",
-        "UtilityTest.java",
+        "NullabilityTest.java",
     ],
     deps = [
         "//server/src/main/java/server/utils:utils",

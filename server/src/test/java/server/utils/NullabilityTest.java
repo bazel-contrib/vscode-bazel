@@ -5,7 +5,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-public class UtilityTest {
+public class NullabilityTest {
 
     @Before
     public void setup() {
@@ -17,8 +17,8 @@ public class UtilityTest {
     }
 
     @Test
-    public void nullAccess_returnsNull() {
-        String result = Utility.nullAccess(() -> {
+    public void test_access_returnsNullOnNullPointerException() {
+        String result = Nullability.access(() -> {
             throw new NullPointerException();
         });
 
@@ -26,11 +26,11 @@ public class UtilityTest {
     }
 
     @Test
-    public void nullAccess_returnsCorrectNonNullValue() {
+    public void test_access_returnsCorrectNonNullValue() {
         final String lowerCase = "abc";
         final String upperCase = "ABC";
 
-        String result = Utility.nullAccess(lowerCase::toUpperCase);
+        String result = Nullability.access(lowerCase::toUpperCase);
 
         Assert.assertNotNull(result);
         Assert.assertEquals(upperCase, result);
