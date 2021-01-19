@@ -10,6 +10,7 @@ import org.eclipse.lsp4j.services.LanguageClientAware;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
+import server.completion.CompletionProvider;
 import server.utils.DocumentTracker;
 import server.workspace.ExtensionConfig;
 import server.workspace.ProjectFolder;
@@ -24,13 +25,18 @@ import java.util.stream.Collectors;
 public class BazelServices implements TextDocumentService, WorkspaceService, LanguageClientAware {
     private static final Logger logger = LogManager.getLogger(BazelServices.class);
 
-    private final DocumentTracker documentTracker = new DocumentTracker();
+    public static DocumentTracker getDocumentTracker() {
+        return documentTracker;
+    }
+
+    private static final DocumentTracker documentTracker = new DocumentTracker();
     private LanguageClient languageClient;
 
     @Override
     public void didOpen(DidOpenTextDocumentParams params) {
         logger.info("Did Open");
         logger.info(params.toString());
+        documentTracker.didOpen(params);
 //        documentTracker.didOpen(params);
 
 //        try {
@@ -58,7 +64,7 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
     public void didChange(DidChangeTextDocumentParams params) {
         logger.info("Did Change");
         logger.info(params.toString());
-
+        documentTracker.didChange(params);
 
         {
 //        PublishDiagnosticsParams diagnostics = new PublishDiagnosticsParams();
@@ -105,6 +111,7 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
     public void didClose(DidCloseTextDocumentParams params) {
         logger.info("Did Close");
         logger.info(params.toString());
+        documentTracker.didClose(params);
 
 //        final Buildifier buildifier = new Buildifier();
 //        logger.info("BUILDIFIER EXISTS=" + buildifier.exists());
@@ -188,16 +195,17 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
 
     @Override
     public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(CompletionParams completionParams) {
-        String item = "THIS IS MY FAKE ITEM";
-
-        CompletionItem completionItem = new CompletionItem(item);
-        completionItem.setKind(CompletionItemKind.Folder);
-        completionItem.setInsertText(item);
-        completionItem.setTextEdit(new TextEdit(new Range(completionParams.getPosition(), new Position(completionParams.getPosition().getLine(), completionParams.getPosition().getCharacter() + item.length())), item));
-        logger.info("Added item: " + completionItem);
-        completionItems.add(completionItem);
-
-        return CompletableFuture.completedFuture(Either.forRight(new CompletionList(completionItems)));
+//        String item = "THIS IS MY FAKE ITEM 2";
+//
+//        CompletionItem completionItem = new CompletionItem(item);
+//        completionItem.setKind(CompletionItemKind.Folder);
+//        completionItem.setInsertText(item);
+//        completionItem.setTextEdit(new TextEdit(new Range(completionParams.getPosition(), new Position(completionParams.getPosition().getLine(), completionParams.getPosition().getCharacter() + item.length())), item));
+//        logger.info("Added item: " + completionItem);
+//        completionItems.add(completionItem);
+//
+//        return CompletableFuture.completedFuture(Either.forRight(new CompletionList(completionItems)));
+        return CompletionProvider.getCompletion(Workspace.getInstance().getRootFolder().getPath(), completionParams);
     }
 
     @Override

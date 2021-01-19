@@ -10,5 +10,6 @@ java_library(
     deps = [
         "//third_party/java:guava",
         "//third_party/java:log4j",
+        "//third_party/java:lsp4j",
     ],
 )
