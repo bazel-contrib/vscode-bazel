@@ -1,8 +1,10 @@
 package server;
 
+import com.google.common.collect.Lists;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.lsp4j.*;
+import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.LanguageClient;
 import org.eclipse.lsp4j.services.LanguageClientAware;
 import org.eclipse.lsp4j.services.TextDocumentService;
@@ -17,7 +19,10 @@ import server.workspace.UpdateExtensionConfigArgs;
 import server.workspace.UpdateWorkspaceFoldersArgs;
 import server.workspace.Workspace;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public class BazelServices implements TextDocumentService, WorkspaceService, LanguageClientAware {
@@ -57,6 +62,25 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
     public void didChange(DidChangeTextDocumentParams params) {
         logger.info("Did Change");
         logger.info(params.toString());
+
+
+        {
+//        PublishDiagnosticsParams diagnostics = new PublishDiagnosticsParams();
+//        diagnostics.setUri(params.getTextDocument().getUri());
+
+//        Diagnostic diagnostic = new Diagnostic();
+//        diagnostic.setMessage("This is a test");
+//        diagnostic.setSource(params.getTextDocument().getUri());
+//        diagnostic.setCode(123);
+//        diagnostic.setRange(new Range(new Position(0, 0)));
+//        logger.info("Set severity");
+//        diagnostic.setSeverity(DiagnosticSeverity.Error);
+//        diagnostics.setDiagnostics(Lists.newArrayList(diagnostic));
+//
+//        logger.info("Publish Diagnostics");
+//        languageClient.publishDiagnostics(diagnostics);
+        }
+
 //        URI uri = URI.create(params.getTextDocument().getUri());
 //        File file = new File(uri);
 //
@@ -148,5 +172,26 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
     @Override
     public void connect(LanguageClient client) {
         languageClient = client;
+    }
+
+    private List<CompletionItem> completionItems = new ArrayList<>();
+
+    @Override
+    public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(CompletionParams completionParams) {
+        String item = "THIS IS MY FAKE ITEM";
+
+        CompletionItem completionItem = new CompletionItem(item);
+        completionItem.setKind(CompletionItemKind.Folder);
+        completionItem.setInsertText(item);
+        completionItem.setTextEdit(new TextEdit(new Range(completionParams.getPosition(), new Position(completionParams.getPosition().getLine(), completionParams.getPosition().getCharacter() + item.length())), item));
+        logger.info("Added item: " + completionItem);
+        completionItems.add(completionItem);
+
+        return CompletableFuture.completedFuture(Either.forRight(new CompletionList(completionItems)));
+    }
+
+    @Override
+    public CompletableFuture<CompletionItem> resolveCompletionItem(CompletionItem unresolved) {
+        return CompletableFuture.completedFuture(unresolved);
     }
 }
