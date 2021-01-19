@@ -24,7 +24,7 @@ java_binary(
         "//server/src/main/java/server:server",
     ],
     resources = [
-        "//server/src/main/resources:all",
+        "//server/src/main/resources:resources",
     ],
 )
 
@@ -38,5 +38,9 @@ java_test(
     test_class = "server.AllServerTests",
     runtime_deps = [
         "//server/src/test/java/server:all_tests",
+    ],
+    resources = [
+        "//server/src/main/resources:resources",
+        "//server/src/test/resources:resources",
     ],
 )

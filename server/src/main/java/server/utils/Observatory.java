@@ -2,14 +2,13 @@ package server.utils;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.function.Consumer;
 
 public class Observatory<L> {
     private Set<L> listeners = new HashSet<>();
 
-    public void notifyListeners(Consumer<L> callback) {
+    public void notifyListeners(Callbacks.Consumer<L> callback) {
         for (L listener : listeners) {
-            callback.accept(listener);
+            callback.invoke(listener);
         }
     }
 

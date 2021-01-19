@@ -43,5 +43,9 @@ RUN (curl -fsSL https://bazel.build/bazel-release.pub.gpg | gpg --dearmor > /etc
     apt update && \
     apt install -y bazel
 
+# Install buildifier
+RUN curl -LJ https://github.com/bazelbuild/buildtools/releases/download/3.5.0/buildifier > /usr/bin/buildifier &&  \
+    chmod 766 /usr/bin/buildifier
+
 # Set the default shell to bash
 ENV SHELL /bin/bash

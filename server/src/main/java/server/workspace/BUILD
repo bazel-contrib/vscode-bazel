@@ -7,14 +7,10 @@ java_library(
     srcs = [
         "ExtensionConfig.java",
         "ProjectFolder.java",
-        "UpdateExtensionConfigArgs.java",
-        "UpdateRootFolderArgs.java",
-        "UpdateWorkspaceFoldersArgs.java",
         "Workspace.java",
     ],
     deps = [
         "//server/src/main/java/server/utils:utils",
-        "//third_party/java:gson",
         "//third_party/java:guava",
         "//third_party/java:log4j",
         "//third_party/java:lsp4j",

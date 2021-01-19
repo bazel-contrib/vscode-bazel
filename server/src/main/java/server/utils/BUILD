@@ -5,7 +5,10 @@ package(default_visibility = ["//visibility:public"])
 java_library(
     name = "utils",
     srcs = [
+        "Callbacks.java",
         "DocumentTracker.java",
+        "FileRepository.java",
+        "Nullability.java",
         "Observatory.java",
         "Positions.java",
     ],
