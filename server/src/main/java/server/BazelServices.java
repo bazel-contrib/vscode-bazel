@@ -25,18 +25,13 @@ import java.util.stream.Collectors;
 public class BazelServices implements TextDocumentService, WorkspaceService, LanguageClientAware {
     private static final Logger logger = LogManager.getLogger(BazelServices.class);
 
-    public static DocumentTracker getDocumentTracker() {
-        return documentTracker;
-    }
-
-    private static final DocumentTracker documentTracker = new DocumentTracker();
     private LanguageClient languageClient;
 
     @Override
     public void didOpen(DidOpenTextDocumentParams params) {
         logger.info("Did Open");
         logger.info(params.toString());
-        documentTracker.didOpen(params);
+        DocumentTracker.getInstance().didOpen(params);
 //        documentTracker.didOpen(params);
 
 //        try {
@@ -64,7 +59,7 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
     public void didChange(DidChangeTextDocumentParams params) {
         logger.info("Did Change");
         logger.info(params.toString());
-        documentTracker.didChange(params);
+        DocumentTracker.getInstance().didChange(params);
 
         {
 //        PublishDiagnosticsParams diagnostics = new PublishDiagnosticsParams();
@@ -111,7 +106,7 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
     public void didClose(DidCloseTextDocumentParams params) {
         logger.info("Did Close");
         logger.info(params.toString());
-        documentTracker.didClose(params);
+        DocumentTracker.getInstance().didClose(params);
 
 //        final Buildifier buildifier = new Buildifier();
 //        logger.info("BUILDIFIER EXISTS=" + buildifier.exists());

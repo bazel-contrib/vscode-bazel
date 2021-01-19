@@ -19,7 +19,7 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
-import server.BazelServices;
+import server.utils.DocumentTracker;
 
 public class CompletionProvider {
     private static final Logger logger = LogManager.getLogger(CompletionProvider.class);
@@ -38,7 +38,7 @@ public class CompletionProvider {
         List<CompletionItem> completionItems = new ArrayList<>();
         try {
             logger.info("URI: " + completionParams.getTextDocument().getUri().substring(7));
-            List<String> lines = Arrays.asList(BazelServices.getDocumentTracker().getContents(URI.create(completionParams.getTextDocument().getUri())).split("\n"));
+            List<String> lines = Arrays.asList(DocumentTracker.getInstance().getContents(URI.create(completionParams.getTextDocument().getUri())).split("\n"));
             String line = lines.get(completionParams.getPosition().getLine());
 
             logger.info("Working line: " + line);
