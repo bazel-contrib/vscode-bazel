@@ -20,6 +20,13 @@ public class DocumentTracker {
     private Set<URI> changedFiles = new HashSet<>();
 
     private static final Logger logger = LogManager.getLogger(DocumentTracker.class);
+    private static final DocumentTracker instance = new DocumentTracker();
+
+    private DocumentTracker() {}
+
+    public static DocumentTracker getInstance() {
+        return instance;
+    }
 
     public Set<URI> getOpenURIs() {
         return openFiles.keySet();
