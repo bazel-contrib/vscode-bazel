@@ -32,6 +32,8 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
         logger.info("Did Open");
         logger.info(params.toString());
         DocumentTracker.getInstance().didOpen(params);
+        languageClient.showMessage(new MessageParams(MessageType.Info, "hello world"));
+
 //        documentTracker.didOpen(params);
 
 //        try {
