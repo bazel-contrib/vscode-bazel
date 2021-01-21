@@ -43,7 +43,7 @@ then
         
         # Move the language server into the client bin (for development purposes).
         echo "Migrating server jar..."
-        mkdir bin 2> /dev/null || true
+        mkdir -p client_vscode/bin 2> /dev/null || true
         cp bazel-bin/server/bazel_ls_deploy.jar client_vscode/bin/bazel_ls_deploy.jar
  
         echo "Building client..."
