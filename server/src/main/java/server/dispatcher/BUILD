@@ -6,6 +6,7 @@ java_library(
     name = "dispatcher",
     srcs = [
         "CommandDispatcher.java",
+        "CommandOutput.java",
         "ICommand.java",
         "SyncPipe.java",
     ],

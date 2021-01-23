@@ -3,27 +3,24 @@ package server.dispatcher;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
+import java.util.Optional;
 
 public class CommandDispatcher {
-    private ByteArrayOutputStream errorOutput;
     private OS_TYPE osType = null;
-    private ByteArrayOutputStream standardOutput;
     private String uniqueIdentifier;
 
     private CommandDispatcher(String uniqueIdentifier) {
         this.uniqueIdentifier = uniqueIdentifier;
         getOperatingSystem();
-        standardOutput = new ByteArrayOutputStream();
-        errorOutput = new ByteArrayOutputStream();
     }
 
     public static CommandDispatcher create(String uniqueIdentifier) {
         return new CommandDispatcher(uniqueIdentifier);
     }
 
-    public boolean dispatch(ICommand command) {
-        int returnCode = 0;
+    public Optional<CommandOutput> dispatch(ICommand command) throws InterruptedException {
+        ByteArrayOutputStream standardOutput = new ByteArrayOutputStream();
+        ByteArrayOutputStream errorOutput = new ByteArrayOutputStream();
         try {
             Process process = Runtime.getRuntime().exec(getShell());
             new Thread(new SyncPipe(process.getErrorStream(), errorOutput)).start();
@@ -31,19 +28,15 @@ public class CommandDispatcher {
             PrintWriter stdin = new PrintWriter(process.getOutputStream());
             command.dispatch(stdin);
             stdin.close();
-            returnCode = process.waitFor();
-        } catch (IOException | InterruptedException e) {
+            int returnCode = process.waitFor();
+            return Optional.of(new CommandOutput(standardOutput, errorOutput, returnCode));
+        } catch (IOException e) {
             e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            throw e;
         }
-        return returnCode == 0;
-    }
-
-    public String getErrorOutput() throws UnsupportedEncodingException {
-        return errorOutput.toString("UTF-8");
-    }
-
-    public String getStandardOutput() throws UnsupportedEncodingException {
-        return standardOutput.toString("UTF-8");
+        return Optional.empty();
     }
 
     public String getUniqueIdentifier() {

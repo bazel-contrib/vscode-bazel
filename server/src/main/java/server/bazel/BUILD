@@ -8,6 +8,7 @@ java_library(
         "AbstractBazelCommand.java",
         "Bazel.java",
         "BazelServerException.java",
+        "QueryCommand.java",
     ],
     deps = [
         "//server/src/main/java/server/dispatcher",
