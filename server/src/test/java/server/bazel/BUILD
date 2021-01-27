@@ -8,7 +8,7 @@ java_library(
         "BazelTest.java",
     ],
     deps = [
-        "//server/src/main/java/server/bazel",
+        "//server/src/main/java/server/bazel/cli:bazel_cli",
         "//server/src/main/java/server/utils",
         "//server/src/main/java/server/workspace",
         "//third_party/java:guava",
