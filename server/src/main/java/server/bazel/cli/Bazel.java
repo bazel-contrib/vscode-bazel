@@ -33,19 +33,4 @@ public final class Bazel {
             e.printStackTrace();
         }
     }
-
-    public static void getFileLocation(String filePath) {
-        try {
-            Optional<CommandOutput> output = dispatcher.dispatch(new QueryCommand("...", "label"));
-            if(output.isPresent()) {
-                if(output.get().didError()) {
-                    output.get().getErrorOutput().forEach(System.out::println);
-                } else {
-                    output.get().getStandardOutput().forEach(System.out::println);
-                }
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
 }
