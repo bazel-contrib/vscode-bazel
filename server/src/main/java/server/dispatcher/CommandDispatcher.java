@@ -5,6 +5,9 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Optional;
 
+/**
+ * A command dispatcher that will execute commands as if it were the terminal.
+ */
 public class CommandDispatcher {
     private OS_TYPE osType = null;
     private String uniqueIdentifier;
@@ -14,10 +17,22 @@ public class CommandDispatcher {
         getOperatingSystem();
     }
 
+    /**
+     * Creates a new instance of a CommandDispatcher
+     *
+     * @param uniqueIdentifier An identifier to uniquely identify a specific instance of a CommandDispatcher
+     */
     public static CommandDispatcher create(String uniqueIdentifier) {
         return new CommandDispatcher(uniqueIdentifier);
     }
 
+    /**
+     * Executes any command given on the command line.
+     *
+     * @param command The command to be executed
+     * @return An Optional that will contain a CommandOutput unless there was an error in thread execution
+     * @throws InterruptedException Thrown when a thread is interrupted
+     */
     public Optional<CommandOutput> dispatch(ICommand command) throws InterruptedException {
         ByteArrayOutputStream standardOutput = new ByteArrayOutputStream();
         ByteArrayOutputStream errorOutput = new ByteArrayOutputStream();
@@ -39,6 +54,9 @@ public class CommandDispatcher {
         return Optional.empty();
     }
 
+    /**
+     * @return Get the unique identifier for this CommandDispatcher
+     */
     public String getUniqueIdentifier() {
         return uniqueIdentifier;
     }

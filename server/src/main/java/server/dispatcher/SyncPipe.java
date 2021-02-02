@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+/**
+ * Runnable that acts as the command line.
+ */
 class SyncPipe implements Runnable {
     private final InputStream inputStream;
     private final OutputStream outputStream;
