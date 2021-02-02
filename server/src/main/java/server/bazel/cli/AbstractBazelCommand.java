@@ -7,7 +7,7 @@ public abstract class AbstractBazelCommand implements ICommand {
     private String command;
 
     protected AbstractBazelCommand(String command) {
-        this.command = String.format("pwd; bazel %s", command);
+        this.command = String.format("bazel %s", command);
     }
 
     @Override
