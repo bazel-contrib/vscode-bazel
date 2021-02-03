@@ -1,4 +1,4 @@
-package server.bazel;
+package server.bazel.cli;
 
 public class QueryCommand extends AbstractBazelCommand {
     protected QueryCommand(String target, String option) {

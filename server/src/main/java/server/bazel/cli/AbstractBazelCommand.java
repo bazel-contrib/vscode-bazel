@@ -1,4 +1,4 @@
-package server.bazel;
+package server.bazel.cli;
 
 import java.io.PrintWriter;
 import server.dispatcher.ICommand;

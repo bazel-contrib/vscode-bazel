@@ -1,4 +1,4 @@
-package server.bazel;
+package server.bazel.cli;
 
 public class BazelServerException extends Exception {
 }

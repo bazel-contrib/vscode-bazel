@@ -1,4 +1,4 @@
-package server.bazel;
+package server.bazel.cli;
 
 import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
@@ -24,9 +24,9 @@ public final class Bazel {
             Optional<CommandOutput> output = dispatcher.dispatch(new QueryCommand("...", "label"));
             if(output.isPresent()) {
                 if(output.get().didError()) {
-                    output.get().getErrorOutput().forEach(System.out::println);
+                    output.get().getErrorOutput().forEach(logger::info);
                 } else {
-                    output.get().getStandardOutput().forEach(System.out::println);
+                    output.get().getStandardOutput().forEach(logger::info);
                 }
             }
         } catch (InterruptedException e) {
