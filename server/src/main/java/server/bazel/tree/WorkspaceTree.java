@@ -5,40 +5,40 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-public class WorkspaceTree<T> {
-    private Node<T> root;
+public class WorkspaceTree {
+    private Node root;
 
-    public WorkspaceTree(T rootValue) {
-        this.root = new Node<>(rootValue, null);
+    public WorkspaceTree(Package rootPackage) {
+        this.root = new Node(rootPackage, null);
     }
 
-    public Node<T> getRoot() {
+    public Node getRoot() {
         return this.root;
     }
 
-    public static class Node<T> {
-        private Node<T> parent;
-        private T value;
-        private List<Node<T>> children;
+    public static class Node {
+        private Node parent;
+        private Package value;
+        private List<Node> children;
 
-        public Node(T value, Node<T> parent) {
+        public Node(Package value, Node parent) {
             this.parent = parent;
             this.value = value;
             this.children = new ArrayList<>();
         }
 
-        public T getValue() {
+        public Package getValue() {
             return value;
         }
 
-        public Node<T> addChild(T value) {
-            Node<T> child = new Node<>(value, this);
+        public Node addChild(Package value) {
+            Node child = new Node(value, this);
             this.children.add(child);
             return child;
         }
 
-        public Optional<Node<T>> getChild(T childValue) {
-            for(Node<T> node : children) {
+        public Optional<Node> getChild(Package childValue) {
+            for(Node node : children) {
                 if(node.equals(childValue)) {
                     return Optional.of(node);
                 }
@@ -58,7 +58,7 @@ public class WorkspaceTree<T> {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            Node<?> node = (Node<?>) o;
+            Node node = (Node) o;
             return Objects.equals(value, node.value);
         }
 
