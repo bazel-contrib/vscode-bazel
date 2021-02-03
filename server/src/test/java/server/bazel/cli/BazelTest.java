@@ -1,4 +1,4 @@
-package server.bazel;
+package server.bazel.cli;
 
 import org.junit.Test;
 

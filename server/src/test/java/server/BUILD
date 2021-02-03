@@ -24,7 +24,7 @@ java_library(
     deps = [
         ":server",
         "//server/src/test/java/server/analysis",
-        "//server/src/test/java/server/bazel",
+        "//server/src/test/java/server/bazel/cli:bazel_cli",
         "//server/src/test/java/server/buildifier",
         "//server/src/test/java/server/utils",
         "//third_party/java:junit",
