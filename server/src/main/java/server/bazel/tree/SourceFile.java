@@ -8,7 +8,7 @@ public class SourceFile {
     private String fileExtension;
 
     public SourceFile(String fileName, Path path) {
-        String[] parts = fileName.split(".");
+        String[] parts = fileName.split("\\.");
         this.fileName = parts[0];
         if(parts.length > 1) {
             this.fileExtension = parts[1];
