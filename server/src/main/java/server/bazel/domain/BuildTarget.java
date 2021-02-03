@@ -1,4 +1,4 @@
-package server.cache;
+package server.bazel.domain;
 
 import java.nio.file.Path;
 
