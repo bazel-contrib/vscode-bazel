@@ -4,6 +4,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
+import server.bazel.cli.BazelTest;
 import server.buildifier.BuildifierTest;
 import server.utils.DocumentTrackerTest;
 import server.utils.NullabilityTest;
@@ -17,5 +18,6 @@ import server.utils.NullabilityTest;
         BuildifierTest.class,
         DocumentTrackerTest.class,
         NullabilityTest.class,
+        BazelTest.class
 })
 public class AllServerTests {}
