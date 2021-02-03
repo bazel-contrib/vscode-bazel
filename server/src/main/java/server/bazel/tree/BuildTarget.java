@@ -24,4 +24,8 @@ public class BuildTarget {
     public String getKind() {
         return kind;
     }
+
+    public String getPathWithTarget() {
+        return String.format("%s:%s", path.toString(), label);
+    }
 }
