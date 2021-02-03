@@ -1,4 +1,4 @@
-package server.bazel.domain;
+package server.bazel.tree;
 
 import java.nio.file.Path;
 

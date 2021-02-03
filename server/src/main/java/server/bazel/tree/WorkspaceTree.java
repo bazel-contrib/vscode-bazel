@@ -1,4 +1,4 @@
-package server.bazel;
+package server.bazel.tree;
 
 import java.util.ArrayList;
 import java.util.List;
