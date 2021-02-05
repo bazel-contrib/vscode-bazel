@@ -1,11 +1,15 @@
 package server.bazel.tree;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 public class WorkspaceTree {
+    private static final Logger logger = LogManager.getLogger(WorkspaceTree.class);
     private Node root;
 
     public WorkspaceTree(Package rootPackage) {
@@ -14,6 +18,13 @@ public class WorkspaceTree {
 
     public Node getRoot() {
         return this.root;
+    }
+
+    @Override
+    public String toString() {
+        return "WorkspaceTree{" +
+                "root=" + root +
+                '}';
     }
 
     public static class Node {
@@ -37,9 +48,9 @@ public class WorkspaceTree {
             return child;
         }
 
-        public Optional<Node> getChild(Package childValue) {
+        public Optional<Node> getChild(String childPath) {
             for(Node node : children) {
-                if(node.equals(childValue)) {
+                if(node.value.getPackageName().equals(childPath)) {
                     return Optional.of(node);
                 }
             }
@@ -65,6 +76,14 @@ public class WorkspaceTree {
         @Override
         public int hashCode() {
             return Objects.hash(parent, value, children);
+        }
+
+        @Override
+        public String toString() {
+            return "Node{" +
+                    "value=" + value +
+                    ", children=" + children +
+                    '}';
         }
     }
 }

@@ -11,6 +11,7 @@ java_library(
         "QueryCommand.java",
     ],
     deps = [
+        "//server/src/main/java/server/bazel/tree",
         "//server/src/main/java/server/dispatcher",
         "//third_party/java:guava",
         "//third_party/java:log4j",

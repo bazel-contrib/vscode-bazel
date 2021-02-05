@@ -36,4 +36,13 @@ public class SourceFile {
         }
         return String.format("%s.%s", fileName, fileExtension);
     }
+
+    @Override
+    public String toString() {
+        return "SourceFile{" +
+                "path=" + path +
+                ", fileName='" + fileName + '\'' +
+                ", fileExtension='" + fileExtension + '\'' +
+                '}';
+    }
 }
