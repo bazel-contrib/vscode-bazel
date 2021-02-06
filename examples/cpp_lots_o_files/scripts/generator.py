@@ -34,10 +34,6 @@ print(f'- packages_per_level={arg_packages_per_level}')
 print('')
 print('RUNNING GENERATOR...')
 
-class Node:
-    def __init__():
-        self.deps = []
-
 def log_info(msg):
     print(f'[Info]: {msg}')
 
@@ -107,8 +103,8 @@ def create_fsnode_list(deps, level, dir_name, abs_dir_name):
 
     for i in range(arg_packages_per_level):
         pkg_name = f'level{level}_package{i}'
-        pkg_dir_name = f'{dir_name}/{pkg_name}' if dir_name != '' else pkg_name
-        pkg_abs_dir_name = f'{abs_dir_name}/{pkg_name}'
+        pkg_dir_name = f'{dir_name}/{pkg_name}' if len(dir_name) > 0 else pkg_name
+        pkg_abs_dir_name = f'{abs_dir_name}/{pkg_name}' if len(abs_dir_name) > 0 else pkg_name
 
         node = FSNode()
         node.build_name = pkg_name
@@ -119,8 +115,11 @@ def create_fsnode_list(deps, level, dir_name, abs_dir_name):
         
         for j in range(arg_packages_per_level):
             next_pkg_name = f'level{next_level}_package{j}'
-            next_pkg_dir_name = f'{pkg_dir_name}/{next_pkg_name}'
+            next_pkg_dir_name = f'{pkg_dir_name}/{next_pkg_name}' if len(pkg_dir_name) > 0 else next_pkg_name
             if next_level < arg_level_count:
+                # path = f'{next_pkg_dir_name}:{next_pkg_name}'
+                # while len(path) > 0 and path[0] == '/':
+                #     path = path[1:]
                 node.build_deps.append(f'//{next_pkg_dir_name}:{next_pkg_name}')
                 node.cc_includes.append(f'{next_pkg_dir_name}/{next_pkg_name}.hh')
                 node.cc_function_calls.append(f'{next_pkg_name}();')
@@ -130,8 +129,8 @@ def create_fsnode_list(deps, level, dir_name, abs_dir_name):
     if next_level < arg_level_count:
         for i in range(arg_packages_per_level):
             pkg_name = f'level{level}_package{i}'
-            pkg_dir_name = f'{dir_name}/{pkg_name}'
-            pkg_abs_dir_name = f'{abs_dir_name}/{pkg_name}'
+            pkg_dir_name = f'{dir_name}/{pkg_name}' if len(dir_name) > 0 else pkg_name
+            pkg_abs_dir_name = f'{abs_dir_name}/{pkg_name}' if len(abs_dir_name) > 0 else pkg_name
             create_fsnode_list(deps, next_level, pkg_dir_name, pkg_abs_dir_name)
 
 log_info('Cleaning up old files...')

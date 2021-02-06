@@ -8,7 +8,7 @@ java_library(
         "BazelServicesTest.java",
     ],
     deps = [
-        "//server/src/main/java/server:server",
+        "//server/src/main/java/server",
         "//third_party/java:guava",
         "//third_party/java:junit",
         "//third_party/java:lsp4j",
@@ -23,9 +23,10 @@ java_library(
     ],
     deps = [
         ":server",
-        "//server/src/test/java/server/analysis:analysis",
-        "//server/src/test/java/server/buildifier:buildifier",
-        "//server/src/test/java/server/utils:utils",
+        "//server/src/test/java/server/analysis",
+        "//server/src/test/java/server/bazel/cli:bazel_cli",
+        "//server/src/test/java/server/buildifier",
+        "//server/src/test/java/server/utils",
         "//third_party/java:junit",
     ],
 )
