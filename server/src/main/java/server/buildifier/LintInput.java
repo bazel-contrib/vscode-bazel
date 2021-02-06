@@ -3,23 +3,28 @@ package server.buildifier;
 import java.nio.file.Path;
 
 /**
- * Arguments passed into the buildifier's file formatting tool.
+ * Arguments passed into the buildifier's linter.
  */
-public final class BuildifierFormatArgs {
+public final class LintInput {
     /**
-     * The bazel file content to process.
+     * The bazel file content to be processed.
      */
     private String content;
 
     /**
-     * Indicates which type of formatting should be appled to the file content.
+     * The type of file to be linted.
      */
     private BuildifierFileType type;
 
     /**
-     * Whether lint warnings with automatic fixes will be fixed as well.
+     * Boolean to indicate whether linter should apply fixes.
      */
     private boolean shouldApplyLintFixes;
+
+    /**
+     * Boolean to indicate whether linter should show warnings.
+     */
+    private boolean shouldApplyLintWarnings;
 
     public String getContent() {
         return content;
@@ -43,5 +48,13 @@ public final class BuildifierFormatArgs {
 
     public void setShouldApplyLintFixes(boolean shouldApplyLintFixes) {
         this.shouldApplyLintFixes = shouldApplyLintFixes;
+    }
+
+    public boolean getShouldApplyLintWarnings() {
+        return shouldApplyLintWarnings;
+    }
+
+    public void setShouldApplyLintWarnings(boolean shouldApplyLintWarnings) {
+        this.shouldApplyLintWarnings = shouldApplyLintWarnings;
     }
 }

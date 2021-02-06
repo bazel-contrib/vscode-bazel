@@ -15,5 +15,6 @@ java_library(
         "//third_party/java:jmifs",
         "//third_party/java:junit",
         "//third_party/java:mockito",
+        "@maven//:com_google_code_gson_gson",
     ],
 )

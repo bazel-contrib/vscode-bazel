@@ -13,4 +13,5 @@ cc_binary(
         ":hello_greet",
         "//lib:hello_time",
     ],
+    bad
 )
