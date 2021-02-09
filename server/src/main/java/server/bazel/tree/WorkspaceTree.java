@@ -1,5 +1,6 @@
 package server.bazel.tree;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -37,9 +38,26 @@ public class WorkspaceTree {
             return child;
         }
 
+        public List<Package> getAllPackagesOfChildren(){
+            ArrayList<Package> childPackages = new ArrayList<>();
+            for(Node node : children){
+                childPackages.add(node.getValue());
+            }
+            return childPackages;
+        }
+
         public Optional<Node> getChild(Package childValue) {
             for(Node node : children) {
                 if(node.equals(childValue)) {
+                    return Optional.of(node);
+                }
+            }
+            return Optional.empty();
+        }
+
+        public Optional<Node> getChild(String packageName) {
+            for(Node node : children) {
+                if(node.getValue().getPackageName().equals(packageName)) {
                     return Optional.of(node);
                 }
             }
