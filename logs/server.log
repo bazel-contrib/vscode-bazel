@@ -1,0 +1,5 @@
+16:46:00.650 [main] INFO  server.bazel.interp.Main - Hello world
+16:46:00.812 [main] INFO  server.bazel.interp.Main - Successfully got path: /root/.cache/bazel/_bazel_root/b6c461a968fec2e46e36e50e9d835b1e
+16:46:00.816 [main] INFO  server.bazel.interp.Main - Performing fetch
+16:46:18.351 [main] INFO  server.bazel.interp.Main - Fetch was successful
+16:46:18.355 [main] INFO  server.bazel.interp.Main - Goodbye world
