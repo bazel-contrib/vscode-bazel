@@ -21,3 +21,4 @@
 
 # Ignore the relevant out files
 /out
+/logs
