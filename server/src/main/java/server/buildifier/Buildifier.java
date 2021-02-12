@@ -3,6 +3,10 @@ package server.buildifier;
 import com.google.common.base.Preconditions;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import server.bazel.cli.AbstractBuildifierCommand;
+import server.dispatcher.CommandDispatcher;
+import server.dispatcher.CommandOutput;
 import server.utils.FileRepository;
 import server.utils.Nullability;
 import server.workspace.Workspace;
@@ -12,6 +16,7 @@ import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import com.google.gson.*;
 
 /**
@@ -109,7 +114,7 @@ public final class Buildifier {
         Preconditions.checkNotNull(lintInput.getContent());
         Preconditions.checkNotNull(lintInput.getType());
 
-        final RunnerInput input = new RunnerInput();
+        //final RunnerInput input = new RunnerInput();
 
         //Set up command line arguments
         final List<String> cmdArgs = new ArrayList<>();
@@ -131,24 +136,37 @@ public final class Buildifier {
         logger.info(String.format("Linting content \"%s\".", lintInput.getContent()));
 
         // Run buildifier
-        input.setContent(lintInput.getContent());
-        input.setFlags(cmdArgs.toArray(new String[0]));
-        input.setExecutable(locateExecutable());
-        final RunnerOutput output = getEffectiveRunner().run(input);
+        //input.setContent(lintInput.getContent());
+        //input.setFlags(cmdArgs.toArray(new String[0]));
+        //input.setExecutable(locateExecutable());
+        //final RunnerOutput output = getEffectiveRunner().run(input);
 
-        // Return the linted contents if returned with a valid exit code.
-        if(output.getExitCode() == 0) {
-            logger.info(String.format("Successfully linted content: \"%s\"",
-                    output.getRawOutput()));
-            Gson gson = new Gson();
-            LintOutput lintOutput = gson.fromJson(output.getRawOutput(), LintOutput.class);
-            return lintOutput;
+        String input = convertListToCommandString(cmdArgs);
+
+        CommandDispatcher dispatcher = CommandDispatcher.create("buildifier-command-dispatcher");
+        try {
+            Optional<CommandOutput> output = dispatcher.dispatch(new AbstractBuildifierCommand(input));
+        
+            // Return the linted contents if returned with a valid exit code.
+            if(!output.isPresent()) {
+                logger.warn("No output was returned from buildifier lint command");
+                throw new BuildifierException();
+            }
+            if(!output.get().didError()) {
+                logger.info(String.format("Successfully linted content: \"%s\"",
+                        output.get().getRawStandardOutput()));
+                Gson gson = new Gson();
+                LintOutput lintOutput = gson.fromJson(output.get().getRawStandardOutput(), LintOutput.class);
+                return lintOutput;
+            }
+
+            logger.warn(String.format("Failed to lint with exit code %d. Error output is \"%s\"",
+            output.get().errorCode(),
+            output.get().getRawErrorOutput()));
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
-
-        logger.warn(String.format("Failed to lint with exit code %d. Error output is \"%s\"",
-            output.getExitCode(),
-            output.getRawError()));
-
+        
         throw new BuildifierException();
     }
 
@@ -240,5 +258,13 @@ public final class Buildifier {
 
     void setRunner(Runner runner) {
         this.runner = runner;
+    }
+
+    private String convertListToCommandString(List<String> list) {
+        StringBuilder output = new StringBuilder();
+        for(String s : list) {
+            output.append(String.format(" %s", s));
+        }
+        return output.toString();
     }
 }

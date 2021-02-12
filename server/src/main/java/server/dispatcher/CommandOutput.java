@@ -9,9 +9,11 @@ import java.util.List;
  * Represents the output of the command line. Contains the error output, standard output, and a flag if there was an error.
  */
 public class CommandOutput {
-    private boolean error;
-    private List<String> errorOutput;
     private List<String> standardOutput;
+    private List<String> errorOutput;
+    private String rawStandardOutput;
+    private String rawErrorOutput;
+    private int error;
 
     /**
      * @param standardOutput ByteArrayOutputStream that holds the standard output.
@@ -20,9 +22,11 @@ public class CommandOutput {
      * @throws UnsupportedEncodingException Thrown when 'standardOutput' or 'errorOutput' is not in UTF-8 format
      */
     public CommandOutput(ByteArrayOutputStream standardOutput, ByteArrayOutputStream errorOutput, int returnCode) throws UnsupportedEncodingException {
-        this.standardOutput = Arrays.asList(standardOutput.toString("UTF-8").split("\n"));
-        this.errorOutput = Arrays.asList(errorOutput.toString("UTF-8").split("\n"));
-        this.error = returnCode != 0;
+        this.rawStandardOutput = standardOutput.toString("UTF-8");
+        this.rawErrorOutput = errorOutput.toString("UTF-8");
+        this.standardOutput = Arrays.asList(rawStandardOutput.split("\n"));
+        this.errorOutput = Arrays.asList(rawErrorOutput.split("\n"));
+        this.error = returnCode;
     }
 
     /**
@@ -44,11 +48,37 @@ public class CommandOutput {
     }
 
     /**
+     * Return the raw standard output of the command as a string
+     * 
+     * @return A String containing the standard output
+     */
+    public String getRawStandardOutput() {
+        return rawStandardOutput;
+    }
+
+    /**
+     * Returns the raw error output of the command as a string
+     * 
+     * @return A String containing the error output
+     */
+    public String getRawErrorOutput() {
+        return rawErrorOutput;
+    }
+
+    /**
      * Returns whether the command line encountered an error when running a command.
      *
      * @return True if there was an error encountered.
      */
     public boolean didError() {
+        return error != 0;
+    }
+
+    /**
+     * Returns the error code in the form of an integer.
+     * @return Integer representing error code
+     */
+    public int errorCode() {
         return error;
     }
 }

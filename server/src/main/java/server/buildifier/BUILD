@@ -24,6 +24,8 @@ java_library(
     deps = [
         "//server/src/main/java/server/utils:utils",
         "//server/src/main/java/server/workspace:workspace",
+        "//server/src/main/java/server/bazel/cli:bazel_cli",
+        "//server/src/main/java/server/dispatcher:dispatcher",
         "//third_party/java:guava",
         "//third_party/java:log4j",
         "@maven//:com_google_code_gson_gson",
