@@ -6,6 +6,7 @@ import org.apache.logging.log4j.Logger;
 
 import server.dispatcher.CommandDispatcher;
 import server.dispatcher.CommandOutput;
+import server.dispatcher.Executable;
 import server.utils.FileRepository;
 import server.utils.Nullability;
 import server.workspace.Workspace;
@@ -16,6 +17,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
 import com.google.gson.Gson;
 
 /**
@@ -24,15 +26,17 @@ import com.google.gson.Gson;
  */
 public final class Buildifier {
     private static final Logger logger = LogManager.getLogger(Buildifier.class);
-    private static final CommandDispatcher dispatcher = CommandDispatcher.create("buildifier-command-dispatcher");
+    private static final CommandDispatcher fallbackDispatcher = CommandDispatcher.create("buildifier");
 
     private FileRepository fileRepository;
+    private CommandDispatcher dispatcher;
 
     /**
      * Creates an instance of a buildifier.
      */
     public Buildifier() {
         fileRepository = null;
+        dispatcher = null;
     }
 
     /**
@@ -52,119 +56,115 @@ public final class Buildifier {
     /**
      * Invokes the buildifier in format mode.
      *
-     * @param args The arguments to run the buildifier with.
+     * @param input The arguments to run the buildifier with.
      * @return The formatted content.
      * @throws BuildifierException If the buildifier fails to execute.
      */
-    public FormatOutput format(final FormatInput args) throws BuildifierException {
-        Preconditions.checkNotNull(args);
-        Preconditions.checkNotNull(args.getContent());
-        Preconditions.checkNotNull(args.getType());
-
-        final RunnerInput input = new RunnerInput();
+    public FormatOutput format(final FormatInput input) throws BuildifierException {
+        Preconditions.checkNotNull(input);
+        Preconditions.checkNotNull(input.getContent());
+        Preconditions.checkNotNull(input.getType());
 
         // Build the command line args.
-        final List<String> cmdArgs = new ArrayList<>();
+        String[] cmdArgs;
         {
-            cmdArgs.add("--mode=fix");
-            cmdArgs.add(String.format("--type=%s", args.getType().toCLI()));
+            final List<String> cmdArgsList = new ArrayList<>();
 
-            if (args.getShouldApplyLintFixes()) {
-                cmdArgs.add("--lint=fix");
+            cmdArgsList.add(locateInvokableExecutable());
+            cmdArgsList.add("--mode=fix");
+            cmdArgsList.add(String.format("--type=%s", input.getType().toCLI()));
+
+            if (input.getShouldApplyLintFixes()) {
+                cmdArgsList.add("--lint=fix");
             }
+
+            cmdArgs = cmdArgsList.toArray(new String[0]);
         }
 
-        logger.info(String.format("Formatting content \"%s\".", args.getContent()));
+        logger.info(String.format("Formatting content \"%s\".", input.getContent()));
 
         // Run the buildifier.
-        input.setContent(args.getContent());
-        input.setFlags(cmdArgs.toArray(new String[0]));
-        input.setExecutable(locateExecutable());
-        final RunnerOutput output = getEffectiveRunner().run(input);
+        final BuildifierCommand command = new BuildifierCommand();
+        command.setContent(input.getContent());
+        command.setExecutable(Executable.fromCmds(cmdArgs));
+        final CommandOutput output = runCommand(command);
 
-        // Return the successfully formated contents if the exit code indicated a valid
-        // format result.
-        if (output.getExitCode() == 0) {
-            logger.info(String.format(
-                    "Successfully formatted content: \"%s\"",
-                    output.getRawOutput()));
-            return new FormatOutput(output.getRawOutput());
+        // Return the successfully formated contents if the exit code indicated a valid format result.
+        if (output.getReturnCode() == 0) {
+            logger.info(String.format("Successfully formatted content: \"%s\"", output.getRawStandardOutput()));
+            return new FormatOutput(output.getRawStandardOutput());
         }
 
         // TODO: Handle errors more appropriately with more information.
         logger.warn(String.format(
                 "Failed to format with exit code %d. Error output is \"%s\"",
-                output.getExitCode(),
-                output.getRawError()));
+                output.getReturnCode(),
+                output.getRawErrorOutput()));
 
         throw new BuildifierException();
     }
 
     /**
      * Calls the buildifier linter to check for warnings and provide fixes.
-     * @param lintInput A LintInput object that contains the details of how the file should be linted.
+     *
+     * @param input A LintInput object that contains the details of how the file should be linted.
      * @return LintOutput object.
      * @throws BuildifierException If the buildifier fails to execute
      */
-    public LintOutput lint(LintInput lintInput) throws BuildifierException {
-        Preconditions.checkNotNull(lintInput);
-        Preconditions.checkNotNull(lintInput.getContent());
-        Preconditions.checkNotNull(lintInput.getType());
+    public LintOutput lint(LintInput input) throws BuildifierException {
+        Preconditions.checkNotNull(input);
+        Preconditions.checkNotNull(input.getContent());
+        Preconditions.checkNotNull(input.getType());
 
-        //final RunnerInput input = new RunnerInput();
-
-        //Set up command line arguments
-        final List<String> cmdArgs = new ArrayList<>();
+        // Set up command line arguments
+        String[] cmdArgs;
         {
-            cmdArgs.add(String.format("--type=%s", lintInput.getType().toCLI()));
-            cmdArgs.add("--format=json");
+            final List<String> cmdArgsList = new ArrayList<>();
 
-            if(lintInput.getShouldApplyLintWarnings()) {
-                cmdArgs.add("--mode=check");
-                cmdArgs.add("--lint=warn");
+            cmdArgsList.add(locateInvokableExecutable());
+
+            cmdArgsList.add(String.format("--type=%s", input.getType().toCLI()));
+            cmdArgsList.add("--format=json");
+
+            if (input.getShouldApplyLintWarnings()) {
+                cmdArgsList.add("--mode=check");
+                cmdArgsList.add("--lint=warn");
             }
 
-            if(lintInput.getShouldApplyLintFixes()) {
-                cmdArgs.add("--mode=fix");
-                cmdArgs.add("--lint=fix");
+            if (input.getShouldApplyLintFixes()) {
+                cmdArgsList.add("--mode=fix");
+                cmdArgsList.add("--lint=fix");
             }
+
+            cmdArgs = cmdArgsList.toArray(new String[0]);
         }
 
-        logger.info(String.format("Linting content \"%s\".", lintInput.getContent()));
+        logger.info(String.format("Linting content \"%s\".", input.getContent()));
 
         // Run buildifier
-        //input.setContent(lintInput.getContent());
-        //input.setFlags(cmdArgs.toArray(new String[0]));
-        //input.setExecutable(locateExecutable());
-        //final RunnerOutput output = getEffectiveRunner().run(input);
+        final BuildifierCommand command = new BuildifierCommand();
+        command.setContent(input.getContent());
+        command.setExecutable(Executable.fromCmds(cmdArgs));
+        final CommandOutput output = runCommand(command);
 
-        String input = convertListToCommandString(cmdArgs);
-
-        CommandDispatcher dispatcher = CommandDispatcher.create("buildifier-command-dispatcher");
-        try {
-            Optional<CommandOutput> output = dispatcher.dispatch(new AbstractBuildifierCommand(input));
-        
-            // Return the linted contents if returned with a valid exit code.
-            if(!output.isPresent()) {
-                logger.warn("No output was returned from buildifier lint command");
-                throw new BuildifierException();
-            }
-            if(!output.get().didError()) {
-                logger.info(String.format("Successfully linted content: \"%s\"",
-                        output.get().getRawStandardOutput()));
-                Gson gson = new Gson();
-                LintOutput lintOutput = gson.fromJson(output.get().getRawStandardOutput(), LintOutput.class);
-                return lintOutput;
-            }
-
-            logger.warn(String.format("Failed to lint with exit code %d. Error output is \"%s\"",
-            output.get().errorCode(),
-            output.get().getRawErrorOutput()));
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        if (output.didSucceed()) {
+            logger.info(String.format("Successfully linted content: \"%s\"", output.getRawStandardOutput()));
+            return new Gson().fromJson(output.getRawStandardOutput(), LintOutput.class);
         }
-        
+
+        logger.warn(String.format("Failed to lint with exit code %d. Error output is \"%s\"",
+                output.getReturnCode(), output.getRawErrorOutput()));
         throw new BuildifierException();
+    }
+
+    /**
+     * Gets a string representation of an invokable buildifier binary.
+     *
+     * @return The invokable buildifier binary.
+     * @throws BuildifierNotFoundException If the buildifier couldn't be found.
+     */
+    private String locateInvokableExecutable() throws BuildifierNotFoundException {
+        return locateExecutable().toAbsolutePath().toUri().toString();
     }
 
     /**
@@ -223,22 +223,28 @@ public final class Buildifier {
         return "buildifier";
     }
 
-    /**
-     * Gets the effective file repository used for accessing files.
-     *
-     * @return The effective file repository.
-     */
     private FileRepository getEffectiveFileRepository() {
         return getFileRepository() == null ? FileRepository.getDefault() : getFileRepository();
     }
 
-    /**
-     * Gets the effective runner used for running a buildifier.
-     *
-     * @return The effective runner.
-     */
-    private Runner getEffectiveRunner() {
-        return getRunner() == null ? FALLBACK_RUNNER : getRunner();
+    private CommandDispatcher getEffectiveDispatcher() {
+        return dispatcher != null ? dispatcher : fallbackDispatcher;
+    }
+
+    private CommandOutput runCommand(BuildifierCommand cmd) throws BuildifierException {
+        try {
+            Optional<CommandOutput> output = getEffectiveDispatcher().dispatch(cmd);
+
+            if (!output.isPresent()) {
+                logger.warn("No output was returned from buildifier lint command");
+                throw new BuildifierException();
+            }
+
+            return output.get();
+        } catch (InterruptedException e) {
+            logger.error(e);
+            throw new BuildifierException();
+        }
     }
 
     FileRepository getFileRepository() {
@@ -249,19 +255,11 @@ public final class Buildifier {
         this.fileRepository = fileRepository;
     }
 
-    Runner getRunner() {
-        return runner;
+    CommandDispatcher getDispatcher() {
+        return dispatcher;
     }
 
-    void setRunner(Runner runner) {
-        this.runner = runner;
-    }
-
-    private String convertListToCommandString(List<String> list) {
-        StringBuilder output = new StringBuilder();
-        for(String s : list) {
-            output.append(String.format(" %s", s));
-        }
-        return output.toString();
+    void setDispatcher(CommandDispatcher dispatcher) {
+        this.dispatcher = dispatcher;
     }
 }

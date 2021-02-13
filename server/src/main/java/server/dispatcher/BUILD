@@ -7,6 +7,7 @@ java_library(
     srcs = [
         "CommandDispatcher.java",
         "CommandOutput.java",
+        "Executable.java",
         "ICommand.java",
         "SyncPipe.java",
     ],

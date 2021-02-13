@@ -13,20 +13,21 @@ public class CommandOutput {
     private List<String> errorOutput;
     private String rawStandardOutput;
     private String rawErrorOutput;
-    private int error;
+    private int returnCode;
 
     /**
      * @param standardOutput ByteArrayOutputStream that holds the standard output.
      * @param errorOutput ByteArrayOutputStream that holds the error output.
-     * @param returnCode Return code from the command line
+     * @param exitCode Return code from the command line
      * @throws UnsupportedEncodingException Thrown when 'standardOutput' or 'errorOutput' is not in UTF-8 format
      */
-    public CommandOutput(ByteArrayOutputStream standardOutput, ByteArrayOutputStream errorOutput, int returnCode) throws UnsupportedEncodingException {
+    public CommandOutput(ByteArrayOutputStream standardOutput, ByteArrayOutputStream errorOutput,
+                         int exitCode) throws UnsupportedEncodingException {
         this.rawStandardOutput = standardOutput.toString("UTF-8");
         this.rawErrorOutput = errorOutput.toString("UTF-8");
         this.standardOutput = Arrays.asList(rawStandardOutput.split("\n"));
         this.errorOutput = Arrays.asList(rawErrorOutput.split("\n"));
-        this.error = returnCode;
+        this.returnCode = exitCode;
     }
 
     /**
@@ -71,14 +72,23 @@ public class CommandOutput {
      * @return True if there was an error encountered.
      */
     public boolean didError() {
-        return error != 0;
+        return returnCode != 0;
+    }
+
+    /**
+     * Returns whether the command line succeeded when running a command.
+     *
+     * @return True if successful.
+     */
+    public boolean didSucceed() {
+        return !didError();
     }
 
     /**
      * Returns the error code in the form of an integer.
      * @return Integer representing error code
      */
-    public int errorCode() {
-        return error;
+    public int getReturnCode() {
+        return returnCode;
     }
 }

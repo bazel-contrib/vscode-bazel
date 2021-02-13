@@ -5,12 +5,11 @@ package(default_visibility = ["//visibility:public"])
 java_library(
     name = "buildifier",
     srcs = [
-        "AbstractBuildifierCommand.java",
         "Buildifier.java",
+        "BuildifierCommand.java",
         "BuildifierException.java",
         "BuildifierFileType.java",
         "BuildifierNotFoundException.java",
-        "FallbackRunner.java",
         "FormatInput.java",
         "FormatOutput.java",
         "LintFile.java",
