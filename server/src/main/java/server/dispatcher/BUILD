@@ -12,6 +12,7 @@ java_library(
         "SyncPipe.java",
     ],
     deps = [
+        "//server/src/main/java/server/utils",
         "//third_party/java:guava",
         "//third_party/java:log4j",
     ],

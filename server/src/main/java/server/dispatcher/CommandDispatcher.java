@@ -1,6 +1,9 @@
 package server.dispatcher;
 
 import com.google.common.base.Preconditions;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import server.utils.Logging;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -11,6 +14,8 @@ import java.util.Optional;
  * A command dispatcher that will execute commands as if it were the terminal.
  */
 public class CommandDispatcher {
+    private static final Logger logger = LogManager.getLogger(CommandDispatcher.class);
+
     private String uniqueIdentifier;
 
     private CommandDispatcher(String uniqueIdentifier) {
@@ -54,9 +59,9 @@ public class CommandDispatcher {
             int returnCode = process.waitFor();
             return Optional.of(new CommandOutput(standardOutput, errorOutput, returnCode));
         } catch (IOException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), Logging.stackTraceToString(e));
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            logger.error(e.getMessage(), Logging.stackTraceToString(e));
             throw e;
         }
 

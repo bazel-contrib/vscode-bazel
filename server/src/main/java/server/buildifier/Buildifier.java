@@ -164,7 +164,7 @@ public final class Buildifier {
      * @throws BuildifierNotFoundException If the buildifier couldn't be found.
      */
     private String locateInvokableExecutable() throws BuildifierNotFoundException {
-        return locateExecutable().toAbsolutePath().toUri().toString();
+        return locateExecutable().toAbsolutePath().toString();
     }
 
     /**
@@ -185,10 +185,10 @@ public final class Buildifier {
                     getBazel().getBuildifier().getExecutable());
             executablePathStr = executablePathStr == null ? "" : executablePathStr;
 
-            final Path executablePath = fileRepository.getFileSystem().getPath(executablePathStr);
+            final Path executablePath = getEffectiveFileRepository().getFileSystem().getPath(executablePathStr);
             if (!executablePathStr.isEmpty() &&
                     Files.exists(executablePath, LinkOption.NOFOLLOW_LINKS) &&
-                    fileRepository.isExecutable(executablePath)
+                    getEffectiveFileRepository().isExecutable(executablePath)
             ) {
                 logger.info("Buildifer was located from the configuration settings.");
                 return executablePath;
@@ -201,7 +201,7 @@ public final class Buildifier {
             final Path path = getEffectiveFileRepository().searchPATH(buildifierName);
             if (path != null &&
                     Files.exists(path, LinkOption.NOFOLLOW_LINKS) &&
-                    fileRepository.isExecutable(path)
+                    getEffectiveFileRepository().isExecutable(path)
             ) {
                 logger.info("Buildifier was located from the system PATH.");
                 return path;
@@ -236,7 +236,7 @@ public final class Buildifier {
             Optional<CommandOutput> output = getEffectiveDispatcher().dispatch(cmd);
 
             if (!output.isPresent()) {
-                logger.warn("No output was returned from buildifier lint command");
+                logger.warn("No output was returned from buildifier.");
                 throw new BuildifierException();
             }
 
