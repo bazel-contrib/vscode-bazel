@@ -1,9 +1,10 @@
-package server.bazel.cli;
+package server.buildifier;
 
 import java.io.PrintWriter;
+
 import server.dispatcher.ICommand;
 
-public class AbstractBuildifierCommand implements ICommand {
+class AbstractBuildifierCommand implements ICommand {
     private String command;
 
     public AbstractBuildifierCommand(String command) {

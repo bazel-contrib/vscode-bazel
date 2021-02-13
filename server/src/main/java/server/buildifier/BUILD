@@ -5,6 +5,7 @@ package(default_visibility = ["//visibility:public"])
 java_library(
     name = "buildifier",
     srcs = [
+        "AbstractBuildifierCommand.java",
         "Buildifier.java",
         "BuildifierException.java",
         "BuildifierFileType.java",
@@ -17,17 +18,13 @@ java_library(
         "LintOutput.java",
         "LintWarning.java",
         "LintWarningPosition.java",
-        "Runner.java",
-        "RunnerInput.java",
-        "RunnerOutput.java",
     ],
     deps = [
-        "//server/src/main/java/server/utils:utils",
-        "//server/src/main/java/server/workspace:workspace",
-        "//server/src/main/java/server/bazel/cli:bazel_cli",
-        "//server/src/main/java/server/dispatcher:dispatcher",
+        "//server/src/main/java/server/utils",
+        "//server/src/main/java/server/workspace",
+        "//server/src/main/java/server/dispatcher",
+        "//third_party/java:gson",
         "//third_party/java:guava",
         "//third_party/java:log4j",
-        "@maven//:com_google_code_gson_gson",
     ],
 )

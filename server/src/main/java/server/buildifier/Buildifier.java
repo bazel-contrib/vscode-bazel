@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import server.bazel.cli.AbstractBuildifierCommand;
 import server.dispatcher.CommandDispatcher;
 import server.dispatcher.CommandOutput;
 import server.utils.FileRepository;
@@ -17,25 +16,23 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import com.google.gson.*;
+import com.google.gson.Gson;
 
 /**
  * A wrapper around the buildifier CLI. This allows callers to invoke buildifier commands which
  * format documents, check linting, etc.
  */
 public final class Buildifier {
-    private static final Runner FALLBACK_RUNNER = new FallbackRunner();
     private static final Logger logger = LogManager.getLogger(Buildifier.class);
+    private static final CommandDispatcher dispatcher = CommandDispatcher.create("buildifier-command-dispatcher");
 
     private FileRepository fileRepository;
-    private Runner runner;
 
     /**
      * Creates an instance of a buildifier.
      */
     public Buildifier() {
         fileRepository = null;
-        runner = null;
     }
 
     /**
