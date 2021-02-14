@@ -9,7 +9,6 @@ java_library(
     ],
     deps = [
         "//server/src/main/java/server/bazel/bazelWorkspaceAPI",
-        "//server/src/main/java/server/utils",
         "//server/src/main/java/server/bazel/tree",
         "//third_party/java:guava",
         "//third_party/java:jmifs",

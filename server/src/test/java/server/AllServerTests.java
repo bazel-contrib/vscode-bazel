@@ -8,6 +8,7 @@ import server.bazel.cli.BazelTest;
 import server.buildifier.BuildifierTest;
 import server.utils.DocumentTrackerTest;
 import server.utils.NullabilityTest;
+import server.bazel.bazelWorkspaceAPI.*;
 
 // [TODO] 
 // Create an automated test runner so we don't have to explicitly define tests here.
@@ -18,6 +19,7 @@ import server.utils.NullabilityTest;
         BuildifierTest.class,
         DocumentTrackerTest.class,
         NullabilityTest.class,
-        BazelTest.class
+        BazelTest.class,
+        APITests.class
 })
 public class AllServerTests {}

@@ -54,8 +54,8 @@ public class WorkspaceAPI {
 
         for(Package childPackage: allPossiblePackages){
             // I might need to change the / to change based on the Operating system?
-            String sb = currentPath + "/" +
-                    childPackage.getPackageName();
+            String sb = currentPath +
+                    childPackage.getPackageName() + "/";
             allPossiblePaths.add(sb);
         }
         return allPossiblePaths;
@@ -142,29 +142,30 @@ public class WorkspaceAPI {
      * @throws WorkspaceAPIException
      */
     private Node findNodeOfGivenPackagePath(PathType type,String path) throws WorkspaceAPIException {
-        Optional<Node> lastNode;
+        Node lastNode;
 
-        lastNode = Optional.of(workspaceTree.getRoot());
-        // assert that we are starting the traversal the root package of the workspace tree
+        lastNode = workspaceTree.getRoot();
         String[] packages = getPackageAsAnArray(type, path);
-        assert lastNode.get().getValue().getPackageName().equals(packages[0]);
 
         for(int i = 1; i < packages.length; i ++){
-            lastNode = lastNode.get().getChild(packages[i]);
-            if(lastNode.isEmpty()){
-                throw new WorkspaceAPIException("Path is not contained in given Workspace Tree");
-            }
+            lastNode = lastNode.getChild(packages[i]).get();
         }
 
-        return lastNode.get();
+        return lastNode;
     }
 
     private String[] getPackageAsAnArray(PathType type, String givenPath){
         // Assert that the root path was passed, may need to be variable based on operating system.
-        assert givenPath.length() > 2;
+        assert givenPath.length() >= 2;
         assert givenPath.charAt(0) == '/';
         assert givenPath.charAt(1) == '/';
-        String[] packages = givenPath.substring(2).split("/");
+        String[] packages;
+        if(givenPath.length() == 2){
+            packages = new String[]{"/"};
+        } else {
+            packages = givenPath.substring(1).split("/");
+            packages[0] = "/";
+        }
         int lastIndex = packages.length-1;
         switch (type){
             case TargetPath: {
