@@ -11,16 +11,21 @@ import static org.mockito.Mockito.*;
 
 import server.bazel.tree.BuildTarget;
 import server.bazel.tree.Package;
+import server.bazel.tree.SourceFile;
 import server.bazel.tree.WorkspaceTree;
 
 public class APITests {
 
     WorkspaceTree simpleWorkSpaceTree;
-    WorkspaceTree complex;
 
     Path package1Mock = mock(Path.class);
     Path package2Mock = mock(Path.class);
     Path package6Mock = mock(Path.class);
+    Path source1Mock = mock(Path.class);
+    Path source2Mock = mock(Path.class);
+    Path source3Mock = mock(Path.class);
+    Path source4Mock = mock(Path.class);
+    Path source5Mock = mock(Path.class);
 
     @Before
     public void setup() {
@@ -35,6 +40,12 @@ public class APITests {
         when(package2Mock.toString()).thenReturn("//lib");
         when(package1Mock.toString()).thenReturn("//main");
         when(package6Mock.toString()).thenReturn("//lib/bazelLib/bazelLib1/bazelLib2/bazelLib3");
+
+        when(source1Mock.toString()).thenReturn("//main/main.java");
+        when(source2Mock.toString()).thenReturn("//main/file2.java");
+        when(source3Mock.toString()).thenReturn("//main/file3.java");
+        when(source4Mock.toString()).thenReturn("//lib/bazelLib/bazelLib1/bazelLib2/bazelLib3/file4.java");
+        when(source5Mock.toString()).thenReturn("//lib/bazelLib/bazelLib1/bazelLib2/bazelLib3/file5.java");
 
         simpleWorkSpaceTree = new WorkspaceTree(workspaceRoot);
 
@@ -61,6 +72,22 @@ public class APITests {
 
         simpleWorkSpaceTree.getRoot().getChild("lib").get().getChild("bazelLib").get().getChild("bazelLib1").get()
                 .getChild("bazelLib2").get().getChild("bazelLib3").get().getValue().addBuildTarget(buildTargetP2_4);
+
+        SourceFile sourceFile1 = new SourceFile("main.java",source1Mock);
+        SourceFile sourceFile2 = new SourceFile("file2.java",source2Mock);
+        SourceFile sourceFile3 = new SourceFile("file3.java",source3Mock);
+        simpleWorkSpaceTree.getRoot().getChild("main").get().getValue().addSourceFile(sourceFile1);
+        simpleWorkSpaceTree.getRoot().getChild("main").get().getValue().addSourceFile(sourceFile2);
+        simpleWorkSpaceTree.getRoot().getChild("main").get().getValue().addSourceFile(sourceFile3);
+
+        SourceFile sourceFile4 = new SourceFile("file4.java",source4Mock);
+        SourceFile sourceFile5 = new SourceFile("file5.java",source5Mock);
+
+        simpleWorkSpaceTree.getRoot().getChild("lib").get().getChild("bazelLib").get().getChild("bazelLib1").get()
+                .getChild("bazelLib2").get().getChild("bazelLib3").get().getValue().addSourceFile(sourceFile4);
+
+        simpleWorkSpaceTree.getRoot().getChild("lib").get().getChild("bazelLib").get().getChild("bazelLib1").get()
+                .getChild("bazelLib2").get().getChild("bazelLib3").get().getValue().addSourceFile(sourceFile5);
     }
 
     @Test
@@ -208,6 +235,70 @@ public class APITests {
 
             isValid = workspaceAPI.isValidTarget("//lib/bazelLib/bazelLib1/bazelLib2:fake");
             Assert.assertFalse(isValid);
+
+        } catch (Exception e){
+            Assert.fail();
+        }
+    }
+
+    @Test
+    public void validSources_should_returnTrue_With_longPackage () {
+        try{
+            boolean isValid;
+
+            WorkspaceAPI workspaceAPI = new WorkspaceAPI(simpleWorkSpaceTree);
+
+            isValid = workspaceAPI.isSourceFileInPackage("//main/main.java");
+            Assert.assertTrue(isValid);
+
+            isValid = workspaceAPI.isSourceFileInPackage("//main/file2.java");
+            Assert.assertTrue(isValid);
+
+            isValid = workspaceAPI.isSourceFileInPackage("//main/file3.java");
+            Assert.assertTrue(isValid);
+
+            isValid = workspaceAPI.isSourceFileInPackage("//lib/bazelLib/bazelLib1/bazelLib2/bazelLib3/file4.java");
+            Assert.assertTrue(isValid);
+
+            isValid = workspaceAPI.isSourceFileInPackage("//lib/bazelLib/bazelLib1/bazelLib2/bazelLib3/file5.java");
+            Assert.assertTrue(isValid);
+
+        } catch (Exception e){
+            Assert.fail();
+        }
+    }
+
+    @Test
+    public void invalidSources_should_returnFalse_With_longPackage () {
+        try{
+            boolean isValid;
+
+            WorkspaceAPI workspaceAPI = new WorkspaceAPI(simpleWorkSpaceTree);
+
+            isValid = workspaceAPI.isSourceFileInPackage("//main/fake.java");
+            Assert.assertFalse(isValid);
+
+            isValid = workspaceAPI.isSourceFileInPackage("//main/fake.");
+            Assert.assertFalse(isValid);
+
+            isValid = workspaceAPI.isSourceFileInPackage("//main/fake");
+            Assert.assertFalse(isValid);
+
+            isValid = workspaceAPI.isSourceFileInPackage("//main/");
+            Assert.assertFalse(isValid);
+
+            isValid = workspaceAPI.isSourceFileInPackage("//");
+            Assert.assertFalse(isValid);
+
+            isValid = workspaceAPI.isSourceFileInPackage("");
+            Assert.assertFalse(isValid);
+
+            isValid = workspaceAPI.isSourceFileInPackage(null);
+            Assert.assertFalse(isValid);
+
+            isValid = workspaceAPI.isSourceFileInPackage("//lib/file1.java");
+            Assert.assertFalse(isValid);
+
 
         } catch (Exception e){
             Assert.fail();

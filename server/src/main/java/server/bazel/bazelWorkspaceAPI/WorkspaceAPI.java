@@ -116,7 +116,8 @@ public class WorkspaceAPI {
         }
         List<SourceFile> sourceFiles = packageFromPath.getSourceFiles();
         for(SourceFile target: sourceFiles){
-            if(target.getPath().equals(targetPath)){
+            String sourcePath = target.getPath().toString();
+            if(sourcePath.equals(targetPath)){
                 return true;
             }
         }
@@ -162,8 +163,13 @@ public class WorkspaceAPI {
 
     private String[] getPackageAsAnArray(PathType type, String givenPath) throws WorkspaceAPIException {
         // Assert that the root path was passed, may need to be variable based on operating system.
-        if(givenPath.length() < 2 |
-                givenPath.charAt(0) != '/' |
+        if (givenPath == null){
+            throw new WorkspaceAPIException("Given File Path is null");
+        }
+        if (givenPath.length() < 2){
+            throw new WorkspaceAPIException("Given File Path does not start at Root");
+        }
+        if(givenPath.charAt(0) != '/' |
                 givenPath.charAt(1) != '/') {
             throw  new WorkspaceAPIException("Given File Path does not start at Root");
         }
@@ -191,7 +197,9 @@ public class WorkspaceAPI {
                 return packages;
             }
             case FilePath:{
-                assert packages[lastIndex].contains(".");
+                if(!packages[lastIndex].contains(".")){
+                    throw new WorkspaceAPIException("No file specified in given path");
+                }
                 return Arrays.copyOfRange(packages,0,lastIndex);
             }
 
