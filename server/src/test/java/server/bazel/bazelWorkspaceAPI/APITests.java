@@ -54,8 +54,8 @@ public class APITests {
             WorkspaceAPI workspaceAPI = new WorkspaceAPI(simpleWorkSpaceTree);
             paths = workspaceAPI.findPossibleCompletionsForPath("//");
             System.out.println(paths);
-            Assert.assertTrue(paths.contains("//main/"));
-            Assert.assertTrue(paths.contains("//lib/"));
+            Assert.assertTrue(paths.contains("//main"));
+            Assert.assertTrue(paths.contains("//lib"));
         } catch (Exception e){
             Assert.assertTrue(false);
         }
@@ -69,24 +69,24 @@ public class APITests {
             WorkspaceAPI workspaceAPI = new WorkspaceAPI(simpleWorkSpaceTree);
             paths = workspaceAPI.findPossibleCompletionsForPath("//");
             Assert.assertEquals(2, paths.size());
-            Assert.assertTrue(paths.contains("//main/"));
-            Assert.assertTrue(paths.contains("//lib/"));
+            Assert.assertTrue(paths.contains("//main"));
+            Assert.assertTrue(paths.contains("//lib"));
 
             paths = workspaceAPI.findPossibleCompletionsForPath("//lib/");
             Assert.assertEquals(1, paths.size());
-            Assert.assertTrue(paths.contains("//lib/bazelLib/"));
+            Assert.assertTrue(paths.contains("//lib/bazelLib"));
 
             paths = workspaceAPI.findPossibleCompletionsForPath("//lib/bazelLib/");
             Assert.assertEquals(1, paths.size());
-            Assert.assertTrue(paths.contains("//lib/bazelLib/bazelLib1/"));
+            Assert.assertTrue(paths.contains("//lib/bazelLib/bazelLib1"));
 
             paths = workspaceAPI.findPossibleCompletionsForPath("//lib/bazelLib/bazelLib1/");
             Assert.assertEquals(1, paths.size());
-            Assert.assertTrue(paths.contains("//lib/bazelLib/bazelLib1/bazelLib2/"));
+            Assert.assertTrue(paths.contains("//lib/bazelLib/bazelLib1/bazelLib2"));
 
             paths = workspaceAPI.findPossibleCompletionsForPath("//lib/bazelLib/bazelLib1/bazelLib2/");
             Assert.assertEquals(1, paths.size());
-            Assert.assertTrue(paths.contains("//lib/bazelLib/bazelLib1/bazelLib2/bazelLib3/"));
+            Assert.assertTrue(paths.contains("//lib/bazelLib/bazelLib1/bazelLib2/bazelLib3"));
 
             paths = workspaceAPI.findPossibleCompletionsForPath("//lib/bazelLib/bazelLib1/bazelLib2/bazelLib3/");
             Assert.assertEquals(0, paths.size());

@@ -55,7 +55,7 @@ public class WorkspaceAPI {
         for(Package childPackage: allPossiblePackages){
             // I might need to change the / to change based on the Operating system?
             String sb = currentPath +
-                    childPackage.getPackageName() + "/";
+                    childPackage.getPackageName();
             allPossiblePaths.add(sb);
         }
         return allPossiblePaths;
