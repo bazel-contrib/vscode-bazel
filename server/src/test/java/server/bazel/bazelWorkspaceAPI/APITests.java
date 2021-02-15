@@ -97,12 +97,6 @@ public class APITests {
         } catch (WorkspaceAPIException e) {
             Assert.assertTrue(false);
         }
-
-        try {
-            WorkspaceAPI workspaceAPI = new WorkspaceAPI(null);
-        } catch (WorkspaceAPIException e) {
-            Assert.assertTrue(true);
-        }
     }
 
     @Test
