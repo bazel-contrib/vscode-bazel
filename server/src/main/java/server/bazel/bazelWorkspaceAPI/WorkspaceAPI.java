@@ -93,7 +93,8 @@ public class WorkspaceAPI {
         }
         List<BuildTarget> buildTargets = packageFromPath.getBuildTargets();
         for(BuildTarget target: buildTargets){
-            if(target.getPath().equals(targetPath)){
+            String buildTargetPath = target.getPathWithTarget();
+            if(buildTargetPath.equals(targetPath)){
                 return true;
             }
         }
@@ -148,17 +149,24 @@ public class WorkspaceAPI {
         String[] packages = getPackageAsAnArray(type, path);
 
         for(int i = 1; i < packages.length; i ++){
-            lastNode = lastNode.getChild(packages[i]).get();
+            Optional<WorkspaceTree.Node> potentialNode = lastNode.getChild(packages[i]);
+            if(potentialNode.isEmpty()){
+                throw new WorkspaceAPIException("Invalid Path");
+            } else {
+                lastNode = lastNode.getChild(packages[i]).get();
+            }
         }
 
         return lastNode;
     }
 
-    private String[] getPackageAsAnArray(PathType type, String givenPath){
+    private String[] getPackageAsAnArray(PathType type, String givenPath) throws WorkspaceAPIException {
         // Assert that the root path was passed, may need to be variable based on operating system.
-        assert givenPath.length() >= 2;
-        assert givenPath.charAt(0) == '/';
-        assert givenPath.charAt(1) == '/';
+        if(givenPath.length() < 2 |
+                givenPath.charAt(0) != '/' |
+                givenPath.charAt(1) != '/') {
+            throw  new WorkspaceAPIException("Given File Path does not start at Root");
+        }
         String[] packages;
         if(givenPath.length() == 2){
             packages = new String[]{"/"};
@@ -169,7 +177,9 @@ public class WorkspaceAPI {
         int lastIndex = packages.length-1;
         switch (type){
             case TargetPath: {
-                assert packages[lastIndex].contains(":");
+                if(!packages[lastIndex].contains(":")){
+                    throw new WorkspaceAPIException("No build target specified in given path");
+                }
                 String[] clean = packages[lastIndex].split(":");
                 if(clean.length == 0){
                     return Arrays.copyOfRange(packages,0,lastIndex);

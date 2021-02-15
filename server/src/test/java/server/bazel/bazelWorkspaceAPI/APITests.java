@@ -154,4 +154,64 @@ public class APITests {
         }
     }
 
+    @Test
+    public void validTargets_should_returnTrue_With_longPackage () {
+        try{
+            boolean isValid;
+
+            WorkspaceAPI workspaceAPI = new WorkspaceAPI(simpleWorkSpaceTree);
+
+            isValid = workspaceAPI.isValidTarget("//lib:java_build_target");
+            Assert.assertTrue(isValid);
+
+            isValid = workspaceAPI.isValidTarget("//lib:java_build_target_2");
+            Assert.assertTrue(isValid);
+
+            isValid = workspaceAPI.isValidTarget("//lib/bazelLib/bazelLib1/bazelLib2/bazelLib3:java_build_target_3");
+            Assert.assertTrue(isValid);
+
+            isValid = workspaceAPI.isValidTarget("//lib/bazelLib/bazelLib1/bazelLib2/bazelLib3:java_build_target_4");
+            Assert.assertTrue(isValid);
+
+        } catch (Exception e){
+            Assert.fail();
+        }
+    }
+
+    @Test
+    public void invalidTargets_should_returnFalse_With_longPackage () {
+        try{
+            boolean isValid;
+
+            WorkspaceAPI workspaceAPI = new WorkspaceAPI(simpleWorkSpaceTree);
+
+            isValid = workspaceAPI.isValidTarget("//lib:java_build_target_3");
+            Assert.assertFalse(isValid);
+
+            isValid = workspaceAPI.isValidTarget("//lib:java_build_target_4");
+            Assert.assertFalse(isValid);
+
+            isValid = workspaceAPI.isValidTarget("//lib/bazelLib/bazelLib1/bazelLib2/bazelLib3:java_build_target_1");
+            Assert.assertFalse(isValid);
+
+            isValid = workspaceAPI.isValidTarget("//lib/bazelLib/bazelLib1/bazelLib2/bazelLib3:java_build_target_2");
+            Assert.assertFalse(isValid);
+
+            isValid = workspaceAPI.isValidTarget("//lib/lib:build");
+            Assert.assertFalse(isValid);
+
+            isValid = workspaceAPI.isValidTarget("lib/lib:build");
+            Assert.assertFalse(isValid);
+
+            isValid = workspaceAPI.isValidTarget("//lib");
+            Assert.assertFalse(isValid);
+
+            isValid = workspaceAPI.isValidTarget("//lib/bazelLib/bazelLib1/bazelLib2:fake");
+            Assert.assertFalse(isValid);
+
+        } catch (Exception e){
+            Assert.fail();
+        }
+    }
+
 }
