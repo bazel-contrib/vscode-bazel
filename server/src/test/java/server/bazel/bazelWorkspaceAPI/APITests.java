@@ -95,7 +95,13 @@ public class APITests {
         try {
             WorkspaceAPI workspaceAPI = new WorkspaceAPI(simpleWorkSpaceTree);
         } catch (WorkspaceAPIException e) {
-            assert false;
+            Assert.assertTrue(false);
+        }
+
+        try {
+            WorkspaceAPI workspaceAPI = new WorkspaceAPI(null);
+        } catch (WorkspaceAPIException e) {
+            Assert.assertTrue(true);
         }
     }
 
