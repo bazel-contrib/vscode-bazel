@@ -8,6 +8,7 @@ java_library(
         "FormattingProvider.java",
     ],
     deps = [
+        "//server/src/main/java/server/buildifier",
         "//third_party/java:guava",
         "//third_party/java:log4j",
     ],
