@@ -13,6 +13,7 @@ java_library(
         "//server/src/main/java/server/bazel/tree",
         "//server/src/main/java/server/buildifier",
         "//server/src/main/java/server/completion",
+        "//server/src/main/java/server/formatting",
         "//server/src/main/java/server/highlighting",
         "//server/src/main/java/server/starlark",
         "//server/src/main/java/server/utils",
