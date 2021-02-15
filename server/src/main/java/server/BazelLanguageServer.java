@@ -57,6 +57,8 @@ public class BazelLanguageServer implements LanguageServer, LanguageClientAware 
             final CompletionOptions completionOptions = new CompletionOptions(true, Arrays.asList(":", "/"));
             serverCapabilities.setCompletionProvider(completionOptions);
 
+            serverCapabilities.setDocumentFormattingProvider(true);
+
             logger.info(String.format("Declared server capabilities: \"%s\"", serverCapabilities));
         }
 

@@ -11,6 +11,7 @@ import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
 import server.completion.CompletionProvider;
+import server.formatting.FormattingProvider;
 import server.utils.DocumentTracker;
 import server.workspace.ExtensionConfig;
 import server.workspace.ProjectFolder;
@@ -207,5 +208,10 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
     @Override
     public CompletableFuture<CompletionItem> resolveCompletionItem(CompletionItem unresolved) {
         return CompletableFuture.completedFuture(unresolved);
+    }
+
+    @Override
+    public CompletableFuture<List<TextEdit>> formatting(DocumentFormattingParams params) {
+        return FormattingProvider.getDocumentFormatting(params);
     }
 }
