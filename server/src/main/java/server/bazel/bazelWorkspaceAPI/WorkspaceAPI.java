@@ -170,7 +170,12 @@ public class WorkspaceAPI {
         switch (type){
             case TargetPath: {
                 assert packages[lastIndex].contains(":");
-                return Arrays.copyOfRange(packages,0,lastIndex);
+                String[] clean = packages[lastIndex].split(":");
+                if(clean.length == 0){
+                    return Arrays.copyOfRange(packages,0,lastIndex);
+                }
+                packages[lastIndex] = clean[0];
+                return packages;
             }
             case OpenPath:{
                 return packages;
