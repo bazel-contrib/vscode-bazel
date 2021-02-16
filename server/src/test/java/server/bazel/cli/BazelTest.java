@@ -6,6 +6,10 @@ public class BazelTest {
 
     @Test
     public void getBuildTargets() {
-        Bazel.getBuildTargets();
+        try {
+            Bazel.getBuildTargets();
+        } catch (BazelServerException e) {
+            System.out.println(e.getMessage());
+        }
     }
 }

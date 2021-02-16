@@ -28,4 +28,13 @@ public class BuildTarget {
     public String getPathWithTarget() {
         return String.format("%s:%s", path.toString(), label);
     }
+
+    @Override
+    public String toString() {
+        return "BuildTarget{" +
+                "path=" + path +
+                ", label='" + label + '\'' +
+                ", kind='" + kind + '\'' +
+                '}';
+    }
 }
