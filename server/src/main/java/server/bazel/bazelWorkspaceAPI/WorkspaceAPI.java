@@ -6,6 +6,7 @@ import server.bazel.tree.BuildTarget;
 import server.bazel.tree.WorkspaceTree.Node;
 import server.bazel.tree.Package;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -39,21 +40,25 @@ public class WorkspaceAPI {
     /**
      *
      * @param currentPath The pathway represented as a String to the package where you want to look for other possible packages
-     *          expected format "//path/to/"
-     * @return A list of possible paths as Strings
-     *          expected output: list = {//path/to/available, ...}
+     *          expected format: Path object with format ("/path/to/lastPackage")
+     * @return A list of possible paths as Path objects
+     *          expected output: list = {/path/to/available/package, ...}
      * @throws WorkspaceAPIException if path is invalid
      */
-    public List<String> findPossibleCompletionsForPath(String currentPath) throws WorkspaceAPIException {
-        ArrayList<String> allPossiblePaths = new ArrayList<>();
-        // This will throw an exception if the path is invalid
-        List<Package> allPossiblePackages = findNodeOfGivenPackagePath(PathType.PACKAGE_PATH, currentPath).getAllPackagesOfChildren();
-
+    public List<Path> findPossibleCompletionsForPath(Path currentPath) throws WorkspaceAPIException {
+        ArrayList<Path> allPossiblePaths = new ArrayList<>();
+        List<Package> allPossiblePackages = findNodeOfGivenPackagePath(currentPath).getAllPackagesOfChildren();
         for(Package childPackage: allPossiblePackages){
-            // I might need to change the / to change based on the Operating system?
-            String sb = currentPath +
-                    childPackage.getPackageName();
-            allPossiblePaths.add(sb);
+            String sb;
+            if(currentPath.getNameCount() == 0){
+                sb = currentPath +
+                        childPackage.getPackageName();
+            } else {
+                sb = currentPath + "/" +
+                        childPackage.getPackageName();
+            }
+
+            allPossiblePaths.add(Path.of(sb));
         }
         return allPossiblePaths;
     }
@@ -61,39 +66,39 @@ public class WorkspaceAPI {
     /**
      *
      * @param pathToPackage The path represented as a string to the package that contains possible Build Targets
-     *          expected format "//path/to:"
+     *          expected format: BuildTarget Object where path is "Path.of(//path/to)" and label is null
      *
      * @return A List of Paths, represented by a string, of each possible build target
-     *          expected output: list = {//path/to/target:target, ....}
+     *          expected output: list = {BuildTarget(Path.of(//path/to), "targetName", "kindValue)}
      * @throws WorkspaceAPIException if the pathToPackage is an invalid path within the given Workspace
      */
-    public List<String> findPossibleTargetsForPath(String pathToPackage) throws WorkspaceAPIException {
-        ArrayList<String> allPossibleTargets = new ArrayList<>();
+    public List<BuildTarget> findPossibleTargetsForPath(BuildTarget pathToPackage) throws WorkspaceAPIException {
+        ArrayList<BuildTarget> allPossibleTargets = new ArrayList<>();
 
-        Package packageFromPath =  findNodeOfGivenPackagePath(PathType.BUILT_TARGET_PATH,pathToPackage).getValue();
-        for(BuildTarget targets: packageFromPath.getBuildTargets()){
-            allPossibleTargets.add(targets.getPathWithTarget());
+        Package packageFromPath =  findNodeOfGivenPackagePath(pathToPackage.getPath()).getValue();
+        for(BuildTarget target: packageFromPath.getBuildTargets()){
+            allPossibleTargets.add(new BuildTarget(target.getPath(),target.getLabel(), target.getKind()));
         }
         return  allPossibleTargets;
     }
 
     /**
      *
-     * @param targetPath The path, represented by a String, to the given build target
-     *          expected format "//path/to:targetA"
+     * @param targetToCheck The path, represented by a String, to the given build target
+     *          expected format: BuildTarget(Path.of(//path/to), "targetA", "kindValue")
      * @return true if the build target is stored in the workspace tree
      */
-    public boolean isValidTarget(String targetPath){
+    public boolean isValidTarget(BuildTarget targetToCheck){
         Package packageFromPath;
         try {
-            packageFromPath =  findNodeOfGivenPackagePath(PathType.BUILT_TARGET_PATH,targetPath).getValue();
+            packageFromPath =  findNodeOfGivenPackagePath(targetToCheck.getPath()).getValue();
         } catch (WorkspaceAPIException e) {
             return false;
         }
         List<BuildTarget> buildTargets = packageFromPath.getBuildTargets();
         for(BuildTarget target: buildTargets){
             String buildTargetPath = target.getPathWithTarget();
-            if(buildTargetPath.equals(targetPath)){
+            if(buildTargetPath.equals(targetToCheck.getPathWithTarget())){
                 return true;
             }
         }
@@ -102,112 +107,73 @@ public class WorkspaceAPI {
 
     /**
      *
-     * @param targetPath The path, represented by a String, to the given build target
-     *          expected format "//path/to/file.java"
+     * @param sourceFile The path, represented by a String, to the given build target
+     *          expected format: SourceFile object SourceFile("file.java", Path.of(//path/to/file.java))
      * @return true if the sourcefile is stored in the workspace tree at targetPath location
      */
-    public boolean isSourceFileInPackage(String targetPath){
+    public boolean isSourceFileInPackage(SourceFile sourceFile){
         Package packageFromPath;
         try {
-            packageFromPath =  findNodeOfGivenPackagePath(PathType.FILE_PATH,targetPath).getValue();
+            packageFromPath = findNodeOfGivenPackagePath(sourceFile.getPath()).getValue();
         } catch (WorkspaceAPIException e) {
             return false;
         }
         List<SourceFile> sourceFiles = packageFromPath.getSourceFiles();
         for(SourceFile target: sourceFiles){
             String sourcePath = target.getPath().toString();
-            if(sourcePath.equals(targetPath)){
+            if(sourcePath.equals(sourceFile.getPath().toString())){
                 return true;
             }
         }
         return false;
     }
 
+    /**
+     *
+     * @param file represents the file that is being searched for
+     * @return a Path object that represents Path.of(//path/to/BUILD)
+     * @throws WorkspaceAPIException If the source file does not exist on the worktree, this exception is thrown
+     */
+    public Path findPathToBUILDFromSourceFile(SourceFile file) throws WorkspaceAPIException {
+        StringBuilder buildPathString = new StringBuilder();
+        if(!isSourceFileInPackage(file)){
+            throw new WorkspaceAPIException("Source File does not exist in workTree");
+        } else {
+            for(int i = 0; i < file.getPath().getNameCount() - 1; i++){
+                buildPathString.append("/").append(file.getPath().getName(i));
+            }
+            buildPathString.append("/BUILD");
+        }
+        return Path.of(buildPathString.toString());
+
+    }
+
     // Private methods to be used by the the API
 
     /**
      *
-     * @param path Accepts a path in the given format "//path/to/package"
+     * @param path Accepts a path in the given format Path.of("//path/to/package")
      * @return the WorkspaceTree node that represents the given package
      * @throws WorkspaceAPIException if path is not in given workspace tree
      */
-    private Node findNodeOfGivenPackagePath(PathType type,String path) throws WorkspaceAPIException {
+    private Node findNodeOfGivenPackagePath(Path path) throws WorkspaceAPIException {
         Node lastNode;
 
         lastNode = workspaceTree.getRoot();
-        String[] packages = getPackageAsAnArray(type, path);
 
-        for(int i = 1; i < packages.length; i ++){
-            Optional<WorkspaceTree.Node> potentialNode = lastNode.getChild(packages[i]);
-            if(potentialNode.isEmpty()){
-                throw new WorkspaceAPIException("Invalid Path");
-            } else {
-                lastNode = lastNode.getChild(packages[i]).get();
+        for(int i = 0; i < path.getNameCount(); i++){
+            String pathSection = path.getName(i).toString();
+            if(!pathSection.contains(".")){
+                Optional<Node> potentialNode = lastNode.getChild(pathSection);
+                if (potentialNode.isEmpty()) {
+                    throw new WorkspaceAPIException("Invalid Path");
+                } else {
+                    lastNode = potentialNode.get();
+                }
             }
         }
-
         return lastNode;
     }
 
-    /**
-     *
-     * @param type an enumerator to represent TargetPath, OpenPath, FilePath
-     * @param givenPath The path to the given target, package, or file
-     *          expected format "//path/to:target" or "//path/to/package" or "//path/to/file.java"
-     * @return An Array of strings representing the package
-     *          expected format ["path", "to", "package"]
-     *          TargetPaths and filePath returns will not contain the file.java or :target int he return array
-     * @throws WorkspaceAPIException If filepath is bad, does not start at root, or doesn't match given type
-     */
-    private String[] getPackageAsAnArray(PathType type, String givenPath) throws WorkspaceAPIException {
-        // Assert that the root path was passed, may need to be variable based on operating system.
-        if (givenPath == null){
-            throw new WorkspaceAPIException("Given File Path is null");
-        }
-        if (givenPath.length() < 2){
-            throw new WorkspaceAPIException("Given File Path does not start at Root");
-        }
-        if(givenPath.charAt(0) != '/' |
-                givenPath.charAt(1) != '/') {
-            throw  new WorkspaceAPIException("Given File Path does not start at Root");
-        }
-        String[] packages;
-        if(givenPath.length() == 2){
-            packages = new String[]{"/"};
-        } else {
-            packages = givenPath.substring(1).split("/");
-            packages[0] = "/";
-        }
-        int lastIndex = packages.length-1;
-        switch (type){
-            case BUILT_TARGET_PATH: {
-                if(!packages[lastIndex].contains(":")){
-                    throw new WorkspaceAPIException("No build target specified in given path");
-                }
-                String[] clean = packages[lastIndex].split(":");
-                if(clean.length == 0){
-                    return Arrays.copyOfRange(packages,0,lastIndex);
-                }
-                packages[lastIndex] = clean[0];
-                return packages;
-            }
-            case PACKAGE_PATH:{
-                return packages;
-            }
-            case FILE_PATH:{
-                if(!packages[lastIndex].contains(".")){
-                    throw new WorkspaceAPIException("No file specified in given path");
-                }
-                return Arrays.copyOfRange(packages,0,lastIndex);
-            }
-
-        }
-        return packages;
-    }
-
-    enum PathType
-    {
-        BUILT_TARGET_PATH, PACKAGE_PATH, FILE_PATH
-    }
-
 }
+

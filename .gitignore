@@ -15,6 +15,7 @@
 /**/.ijwb/
 /**/.project
 /**/.settings
+/**/.iml
 
 # Ignore mac related files.
 /**/.DS_Store
