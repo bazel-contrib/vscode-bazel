@@ -91,15 +91,6 @@ public class WorkspaceTree {
             return Optional.empty();
         }
 
-        public Optional<Node> getChild(String packageName) {
-            for(Node node : children) {
-                if(node.getValue().getPackageName().equals(packageName)) {
-                    return Optional.of(node);
-                }
-            }
-            return Optional.empty();
-        }
-
         public boolean isRoot() {
             return this.parent == null;
         }

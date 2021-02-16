@@ -21,7 +21,7 @@ import server.bazel.bazelWorkspaceAPI.*;
         DocumentTrackerTest.class,
         NullabilityTest.class,
         BazelTest.class,
-        WorkspaceTest.class
+        WorkspaceTest.class,
         APITests.class
 })
 public class AllServerTests {}
