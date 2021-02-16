@@ -3,6 +3,7 @@ package server.bazel.tree;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -71,6 +72,14 @@ public class WorkspaceTree {
             Node child = new Node(value, this);
             this.children.add(child);
             return child;
+        }
+        
+        public List<Package> getAllPackagesOfChildren(){
+            ArrayList<Package> childPackages = new ArrayList<>();
+            for(Node node : children){
+                childPackages.add(node.getValue());
+            }
+            return childPackages;
         }
 
         public Optional<Node> getChild(String childPath) {
