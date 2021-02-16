@@ -8,6 +8,7 @@ java_library(
         "Callbacks.java",
         "DocumentTracker.java",
         "FileRepository.java",
+        "Logging.java",
         "Nullability.java",
         "Observatory.java",
         "Positions.java",

@@ -8,13 +8,14 @@ java_library(
         "BuildifierTest.java",
     ],
     deps = [
-        "//server/src/main/java/server/buildifier:buildifier",
-        "//server/src/main/java/server/utils:utils",
-        "//server/src/main/java/server/workspace:workspace",
+        "//server/src/main/java/server/buildifier",
+        "//server/src/main/java/server/dispatcher",
+        "//server/src/main/java/server/utils",
+        "//server/src/main/java/server/workspace",
+        "//third_party/java:gson",
         "//third_party/java:guava",
         "//third_party/java:jmifs",
         "//third_party/java:junit",
         "//third_party/java:mockito",
-        "@maven//:com_google_code_gson_gson",
     ],
 )
