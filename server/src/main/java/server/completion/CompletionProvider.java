@@ -25,6 +25,8 @@ import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import server.utils.DocumentTracker;
 
+import server.utils.Logging;
+
 public class CompletionProvider {
     private static final Logger logger = LogManager.getLogger(CompletionProvider.class);
 
@@ -57,8 +59,12 @@ public class CompletionProvider {
             }
 
         } catch (IOException e) {
-            logger.info("Hit exception");
-            e.printStackTrace();
+            logger.error("Hit exception");
+            logger.error(Logging.stackTraceToString(e));
+        } catch (Exception e) {
+            // TODO: Find the cause of the completion null pointer exception and error check accordingly
+            logger.error("Hit the catch for generic exceptions");
+            logger.error(Logging.stackTraceToString(e));
         }
 
         logger.info(completionItems);

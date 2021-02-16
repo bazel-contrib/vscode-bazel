@@ -11,7 +11,8 @@ RUN apt install -y git && \
 
 # Install node
 RUN curl -sL https://deb.nodesource.com/setup_15.x | bash && \
-    apt-get install -y nodejs
+    apt-get install -y nodejs && \
+    npm install -g vsce
 
 # Install python (and pip)
 RUN apt install -y python3.7 && \
