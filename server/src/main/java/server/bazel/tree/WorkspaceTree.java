@@ -27,6 +27,26 @@ public class WorkspaceTree {
                 '}';
     }
 
+    public void clearBelowPath(String path) {
+        if(path.length() == 1 && path.charAt(0) == '/') {
+            root.children = new ArrayList<>();
+            return;
+        }
+        String[] parts = path.split("/");
+        Node node = root;
+        for (int i = 0; i < parts.length; i++) {
+            Optional<Node> child = node.getChild(parts[i]);
+            if (child.isPresent()) {
+                node = child.get();
+            } else {
+                throw new IllegalStateException("Package does not exist");
+            }
+            if(i == parts.length - 1 && parts[parts.length - 1].equals(node.getValue().getPackageName())) {
+                node.children = new ArrayList<>();
+            }
+        }
+    }
+
     public static class Node {
         private Node parent;
         private Package value;
@@ -84,6 +104,10 @@ public class WorkspaceTree {
                     "value=" + value +
                     ", children=" + children +
                     '}';
+        }
+
+        public List<Node> getChildren() {
+            return children;
         }
     }
 }

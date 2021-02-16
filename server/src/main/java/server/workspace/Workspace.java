@@ -7,6 +7,7 @@ import server.bazel.cli.Bazel;
 import server.bazel.cli.BazelServerException;
 import server.bazel.tree.BuildTarget;
 import server.bazel.tree.Package;
+import server.bazel.tree.SourceFile;
 import server.bazel.tree.WorkspaceTree;
 
 import java.util.*;
@@ -18,6 +19,11 @@ public class Workspace {
     private ExtensionConfig extensionConfig;
     private ProjectFolder rootFolder;
     private Set<ProjectFolder> workspaceFolders;
+
+    public WorkspaceTree getWorkspaceTree() {
+        return workspaceTree;
+    }
+
     private WorkspaceTree workspaceTree = new WorkspaceTree(new Package("/"));
 
     private Workspace() {
@@ -62,12 +68,23 @@ public class Workspace {
 
     public void initializeWorkspace() {
         List<BuildTarget> buildTargets;
+        List<SourceFile> sourceFiles;
         try {
-            buildTargets = Bazel.getBuildTargets();
+            buildTargets = getBuildTargets();
+            sourceFiles = getSourceFiles();
             buildTargets.forEach(this::addTargetToTree);
+            sourceFiles.forEach(this::addSourceToTree);
         } catch (BazelServerException e) {
             logger.info(e.getMessage());
         }
+    }
+
+    public List<SourceFile> getSourceFiles() throws BazelServerException {
+        return Bazel.getSourceFiles();
+    }
+
+    public List<BuildTarget> getBuildTargets() throws BazelServerException {
+        return Bazel.getBuildTargets();
     }
 
     private void addTargetToTree(BuildTarget target) {
@@ -85,5 +102,22 @@ public class Workspace {
             }
         }
         node.getValue().addBuildTarget(target);
+    }
+
+    private void addSourceToTree(SourceFile source) {
+        String[] pathParts = source.getPath().toString().split("/");
+        WorkspaceTree.Node node = workspaceTree.getRoot();
+        for (String part : pathParts) {
+            if (!part.isEmpty()) {
+                Optional<WorkspaceTree.Node> child = node.getChild(part);
+                if (child.isPresent()) {
+                    node = child.get();
+                } else {
+                    WorkspaceTree.Node childNode = node.addChild(new Package(part));
+                    node = childNode;
+                }
+            }
+        }
+        node.getValue().addSourceFile(source);
     }
 }

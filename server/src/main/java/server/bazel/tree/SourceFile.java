@@ -13,7 +13,7 @@ public class SourceFile {
         if(parts.length > 1) {
             this.fileExtension = parts[1];
         } else {
-            this.fileExtension = null;
+            this.fileExtension = "";
         }
         this.path = path;
     }
