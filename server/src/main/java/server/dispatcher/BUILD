@@ -7,10 +7,12 @@ java_library(
     srcs = [
         "CommandDispatcher.java",
         "CommandOutput.java",
+        "Executable.java",
         "ICommand.java",
         "SyncPipe.java",
     ],
     deps = [
+        "//server/src/main/java/server/utils",
         "//third_party/java:guava",
         "//third_party/java:log4j",
     ],
