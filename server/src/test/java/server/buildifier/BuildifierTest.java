@@ -2,6 +2,7 @@ package server.buildifier;
 
 import com.google.common.jimfs.Configuration;
 import com.google.common.jimfs.Jimfs;
+import com.google.gson.*;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -12,7 +13,7 @@ import server.utils.FileRepository;
 import server.workspace.ExtensionConfig;
 import server.workspace.Workspace;
 
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,6 +29,15 @@ public class BuildifierTest {
             "Not formatted content.";
     final String BUILDIFIER_FORMATTED_CONTENT =
             "Formatted content.";
+    final String BUILDIFIER_FILE_WITH_BAD_SYNTAX = "load(\"@rules_cc//cc:defs.bzl\", \"cc_binary\", \"cc_library\")"
+                    + "cc_library(name = \"hello_greet\", srcs = [\"hello_greet.cc\"], hdrs = [\"hello_greet.h\"],)"
+                    + "cc_binary(name = \"hello_world\", srcs = [\"hello_world.cc\"], deps = [\":hello_greet\","
+                    + "\"//lib:hello_time\",],bad)";
+    final String BUILDIFIER_CONTENT_WITH_WARNINGS = "{\"success\": false,\"files\": [{\"filename\": \"BUILD\","
+                    + "\"formatted\": false, \"valid\": true, \"warnings\": [{\"start\": {\"line\": 16, \"column\": 5"
+                    + "}, \"end\": { \"line\": 16, \"column\": 8}, \"category\": \"positional-args\", \"actionable\": true,"
+                    + "\"message\": \"All calls to rules or macros should pass arguments by keyword (arg_name=value) syntax.\","
+                    + "\"url\": \"https://github.com/bazelbuild/buildtools/blob/master/WARNINGS.md#positional-args\"}]}]}";
 
     private FileSystem fileSystemJimf;
     private FileRepository fileRepositoryMock;
@@ -62,7 +72,7 @@ public class BuildifierTest {
     public void test_format_success() throws Exception {
         putBuildifierInPATH();
 
-        final BuildifierFormatArgs args = new BuildifierFormatArgs();
+        final FormatInput args = new FormatInput();
         {
             args.setContent(BUILDIFIER_UNFORMATTED_CONTENT);
             args.setShouldApplyLintFixes(true);
@@ -71,21 +81,21 @@ public class BuildifierTest {
 
         // Mimic the expected buildifier process output.
         {
-            fakeRunner.targetOutput = BUILDIFIER_FORMATTED_CONTENT;
+            fakeRunner.targetOutput = (new FormatOutput(BUILDIFIER_FORMATTED_CONTENT)).getResult();
             fakeRunner.targetError = "";
             fakeRunner.targetExitCode = 0;
         }
 
-        String output = buildifier.format(args);
+        FormatOutput output = buildifier.format(args);
 
-        Assert.assertEquals(BUILDIFIER_FORMATTED_CONTENT, output);
+        Assert.assertEquals(BUILDIFIER_FORMATTED_CONTENT, output.getResult());
     }
 
     @Test(expected = BuildifierException.class)
     public void test_format_failure() throws Exception {
         putBuildifierInPATH();
 
-        final BuildifierFormatArgs args = new BuildifierFormatArgs();
+        final FormatInput args = new FormatInput();
         {
             args.setContent(BUILDIFIER_UNFORMATTED_CONTENT);
             args.setShouldApplyLintFixes(true);
@@ -99,7 +109,37 @@ public class BuildifierTest {
             fakeRunner.targetExitCode = 5;
         }
 
-        String output = buildifier.format(args);
+        FormatOutput output = buildifier.format(args);
+    }
+
+    @Test
+    public void test_lint_warnings() throws Exception {
+        putBuildifierInPATH();
+        Gson gson = new Gson();
+
+        final LintInput input = new LintInput();
+        {
+            input.setContent(BUILDIFIER_FILE_WITH_BAD_SYNTAX);
+            input.setShouldApplyLintWarnings(true);
+            input.setShouldApplyLintFixes(false);
+            input.setType(BuildifierFileType.BUILD);
+        }
+        LintOutput out;
+        {
+            out = gson.fromJson(BUILDIFIER_CONTENT_WITH_WARNINGS, LintOutput.class);
+            fakeRunner.targetOutput = BUILDIFIER_CONTENT_WITH_WARNINGS;
+            fakeRunner.targetError = "";
+            fakeRunner.targetExitCode = 0;
+        }
+
+        LintOutput result = buildifier.lint(input);
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals(out.getSuccess(), result.getSuccess());
+        Assert.assertEquals(out.getFiles().size(), result.getFiles().size());
+        String outStr = gson.toJson(out);
+        String resultStr = gson.toJson(result);
+        Assert.assertEquals(outStr, resultStr);
     }
 
     @Test

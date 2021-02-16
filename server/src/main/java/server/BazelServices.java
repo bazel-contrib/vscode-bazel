@@ -117,7 +117,7 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
 //            final URI uri = URI.create(params.getTextDocument().getUri());
 //            final String content = new String(Files.readAllBytes(Paths.get(uri)));
 //
-//            final BuildifierFormatArgs args = new BuildifierFormatArgs();
+//            final FormatInput args = new FormatInput();
 //            {
 //                args.setContent(content);
 //                args.setShouldApplyLintFixes(true);
