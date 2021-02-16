@@ -27,6 +27,11 @@ public class WorkspaceTree {
                 '}';
     }
 
+    /**
+     * Given a path to a package, the children of that package will be removed. Does not clear the BuildTargets and SourceFiles of the Package specified by the path.
+     *
+     * @param path The path from the workspace root to the package that will have its children cleared.
+     */
     public void clearBelowPath(String path) {
         if(path.length() == 1 && path.charAt(0) == '/') {
             root.children = new ArrayList<>();
