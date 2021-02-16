@@ -3,18 +3,17 @@ load("@rules_java//java:defs.bzl", "java_library")
 package(default_visibility = ["//visibility:public"])
 
 java_library(
-    name = "workspace",
+    name = "bazel_workspace_test",
     srcs = [
-        "ExtensionConfig.java",
-        "ProjectFolder.java",
-        "Workspace.java",
+        "WorkspaceTest.java",
     ],
     deps = [
         "//server/src/main/java/server/bazel/cli:bazel_cli",
         "//server/src/main/java/server/bazel/tree",
-        "//server/src/main/java/server/utils",
+        "//server/src/main/java/server/workspace",
         "//third_party/java:guava",
-        "//third_party/java:log4j",
-        "//third_party/java:lsp4j",
+        "//third_party/java:jmifs",
+        "//third_party/java:junit",
+        "//third_party/java:mockito",
     ],
 )

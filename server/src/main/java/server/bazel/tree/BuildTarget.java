@@ -47,4 +47,13 @@ public class BuildTarget {
                 && getKind().equals(c.getKind())
                 && getLabel().equals(c.getLabel());
     }
+
+    @Override
+    public String toString() {
+        return "BuildTarget{" +
+                "path=" + path +
+                ", label='" + label + '\'' +
+                ", kind='" + kind + '\'' +
+                '}';
+    }
 }

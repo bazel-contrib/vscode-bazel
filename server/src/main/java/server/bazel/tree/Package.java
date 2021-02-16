@@ -37,4 +37,13 @@ public class Package {
     public boolean hasBuildFile() {
         return !this.buildTargets.isEmpty();
     }
+
+    @Override
+    public String toString() {
+        return "Package{" +
+                "packageName='" + packageName + '\'' +
+                ", buildTargets=" + buildTargets +
+                ", sourceFiles=" + sourceFiles +
+                '}';
+    }
 }
