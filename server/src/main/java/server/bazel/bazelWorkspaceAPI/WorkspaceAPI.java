@@ -1,5 +1,6 @@
 package server.bazel.bazelWorkspaceAPI;
 
+import com.google.common.base.Preconditions;
 import server.bazel.tree.SourceFile;
 import server.bazel.tree.WorkspaceTree;
 import server.bazel.tree.BuildTarget;
@@ -15,11 +16,8 @@ import java.util.Optional;
 public class WorkspaceAPI {
     private WorkspaceTree workspaceTree;
 
-    public WorkspaceAPI(WorkspaceTree workspaceTree) throws WorkspaceAPIException {
-        if (workspaceTree.getRoot() == null){
-            throw new WorkspaceAPIException("Workspace root cannot be null");
-        }
-        this.workspaceTree = workspaceTree;
+    public WorkspaceAPI(WorkspaceTree workspaceTree) {
+        setWorkspace(workspaceTree);
     }
 
     /**
@@ -28,10 +26,8 @@ public class WorkspaceAPI {
      * @return The current WorkspaceAPI object with the newly set workspaceTree
      * @throws WorkspaceAPIException if WorkspaceTree has no root
      */
-    public WorkspaceAPI setWorkspace(WorkspaceTree workspaceTree) throws WorkspaceAPIException {
-        if (workspaceTree.getRoot() == null){
-            throw new WorkspaceAPIException("Workspace root cannot be null");
-        }
+    public WorkspaceAPI setWorkspace(WorkspaceTree workspaceTree) {
+        Preconditions.checkNotNull(workspaceTree);
         this.workspaceTree = workspaceTree;
         return this;
     }

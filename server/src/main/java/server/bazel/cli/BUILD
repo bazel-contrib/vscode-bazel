@@ -2,8 +2,13 @@ load("@rules_java//java:defs.bzl", "java_library")
 
 package(default_visibility = ["//visibility:public"])
 
-java_library(
+alias(
     name = "bazel_cli",
+    actual = "cli",
+)
+
+java_library(
+    name = "cli",
     srcs = [
         "AbstractBazelCommand.java",
         "Bazel.java",

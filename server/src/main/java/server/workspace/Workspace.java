@@ -3,6 +3,7 @@ package server.workspace;
 import com.google.common.base.Preconditions;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import server.bazel.bazelWorkspaceAPI.WorkspaceAPI;
 import server.bazel.cli.Bazel;
 import server.bazel.cli.BazelServerException;
 import server.bazel.tree.BuildTarget;
@@ -19,21 +20,21 @@ public class Workspace {
     private ExtensionConfig extensionConfig;
     private ProjectFolder rootFolder;
     private Set<ProjectFolder> workspaceFolders;
-
-    public WorkspaceTree getWorkspaceTree() {
-        return workspaceTree;
-    }
-
-    private WorkspaceTree workspaceTree = new WorkspaceTree(new Package("/"));
+    private WorkspaceTree workspaceTree;
 
     private Workspace() {
         extensionConfig = null;
         rootFolder = null;
         workspaceFolders = new HashSet<>();
+        workspaceTree = new WorkspaceTree(new Package("/"));
     }
 
     public static Workspace getInstance() {
         return instance;
+    }
+
+    public WorkspaceTree getWorkspaceTree() {
+        return workspaceTree;
     }
 
     public ExtensionConfig getExtensionConfig() {

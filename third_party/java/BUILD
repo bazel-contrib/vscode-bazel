@@ -69,14 +69,9 @@ java_library(
 )
 
 # LICENSE: Apache License 2.0
-# The Starlark API will be wrapped in a facade. Only expose this
-# package to those that absolutely need it for defining a facade.
 java_import(
     name = "starlark",
     jars = [
         "starlark/starlark_api_deploy.jar",
-    ],
-    visibility = [
-        "//server/src/main/java/server/starlark:__subpackages__",
     ],
 )
