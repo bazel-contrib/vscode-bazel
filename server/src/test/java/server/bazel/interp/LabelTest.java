@@ -4,8 +4,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class LabelTest {
-
-
   @Test
   public void NoWorkSpace() throws LabelSyntaxException {
     String value = "//path/to:target";

@@ -1,5 +1,7 @@
 package server.bazel.interp;
 
+import server.utils.Nullability;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -69,11 +71,10 @@ public class Label {
         // 1: workspace name (can be empty)
         // 2: path (can be empty)
         // 3: name of rule (can be empty)
-
         if (matcher.find()) {
-            String workspaceName = (matcher.group(1) == null) ? "" : matcher.group(1);
-            String path = (matcher.group(2) == null) ? "" : matcher.group(2);
-            String ruleName = (matcher.group(3) == null) ? "" : matcher.group(3);
+            String workspaceName = Nullability.nullableOr("", () -> matcher.group(1));
+            String path = Nullability.nullableOr("", () -> matcher.group(2));
+            String ruleName = Nullability.nullableOr("", () -> matcher.group(3));
             return new Label(workspaceName, path, ruleName);
         }
 
