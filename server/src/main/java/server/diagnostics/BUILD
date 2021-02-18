@@ -5,6 +5,7 @@ package(default_visibility = ["//visibility:public"])
 java_library(
     name = "diagnostics",
     srcs = [
+        "DiagnosticCodes.java",
         "DiagnosticParams.java",
         "DiagnosticsProvider.java",
     ],

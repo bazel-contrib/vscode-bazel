@@ -4,9 +4,7 @@ import com.google.common.base.Preconditions;
 import net.starlark.java.syntax.*;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.eclipse.lsp4j.Diagnostic;
-import org.eclipse.lsp4j.DiagnosticSeverity;
-import org.eclipse.lsp4j.PublishDiagnosticsParams;
+import org.eclipse.lsp4j.*;
 import server.bazel.bazelWorkspaceAPI.WorkspaceAPI;
 import server.bazel.interp.Label;
 import server.bazel.tree.BuildTarget;
@@ -48,7 +46,19 @@ public class DiagnosticsProvider {
             final StarlarkFile file = StarlarkFile.parse(input);
 
             // Go through all errors
+            for (final SyntaxError err : file.errors()) {
+                final Diagnostic diagnostic = new Diagnostic();
+                diagnostic.setSeverity(DiagnosticSeverity.Error);
+                diagnostic.setCode(DiagnosticCodes.SYNTAX_ERROR);
+                diagnostic.setMessage(err.message());
 
+                final Range range = new Range();
+                range.setStart(new Position(err.location().line(), err.location().column()));
+                range.setEnd(new Position(err.location().line(), 999));
+
+                diagnostic.setRange(range);
+                diagnostics.add(diagnostic);
+            }
 
             // Go through all statements
             for (final Statement stmt : file.getStatements()) {
@@ -93,10 +103,14 @@ public class DiagnosticsProvider {
                     }
                 }
             }
-
         } catch (Error | RuntimeException e) {
             logger.error("Parsing failed for an unknown reason!");
             logger.error(Logging.stackTraceToString(e));
         }
+
+        final PublishDiagnosticsParams diagnosticsParams = new PublishDiagnosticsParams();
+        diagnosticsParams.setUri(params.getUri().toString());
+        diagnosticsParams.setDiagnostics(diagnostics);
+        params.getClient().publishDiagnostics(diagnosticsParams);
     }
 }
