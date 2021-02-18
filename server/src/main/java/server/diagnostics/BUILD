@@ -10,6 +10,7 @@ java_library(
     ],
     deps = [
         "//server/src/main/java/server/bazel/bazelWorkspaceAPI",
+        "//server/src/main/java/server/bazel/interp",
         "//server/src/main/java/server/bazel/tree",
         "//server/src/main/java/server/utils",
         "//server/src/main/java/server/workspace",
