@@ -55,22 +55,18 @@ public class Label {
      * @throws LabelSyntaxException If the string is not parsable.
      */
     public static Label parse(String value) throws LabelSyntaxException {
-        // The regex isn't perfect yet, but prolly good enough. The last case matches when it shouldn't, if you could
-        // fix that, that would be awesome
-        // TODO(jarenm): use regex from this link: https://regex101.com/r/7LYFhk/1 to parse a label object
-        // TODO(jarenm): write test cases to make sure this parse function works, should work as stated in doc above
-        // https://regex101.com/r/CSXyZo/1
-        // new regex: /^(?:(?:@([a-zA-Z0-9_-]+)\/\/)|(?:\/\/)|(?:))([a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)*)?(?:(?::([a-zA-Z0-9_-]+))|(?:))?$/gm
-        // 0: workspace name (can be empty)
-        String regex = "^(?:(?:@([a-zA-Z0-9_-]+)\\/\\/)|(?:\\/\\/)|(?:))([a-zA-Z0-9_-]+(?:\\/[a-zA-Z0-9_-]+)*)?(?:(?::([a-zA-Z0-9_-]+))|(?:))?$";
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(value);
+        final String workspaceRegex = "(?:(?:@([a-zA-Z0-9_-]+)//)|(?://))";
+        final String pathRegex = "([a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_-]+)*)";
+        final String nameRegex = "(?::([a-zA-Z0-9_-]+))";
+        final String fullRegex = String.format("^%s?%s?%s?$", workspaceRegex, pathRegex, nameRegex);
 
         // Capturing Groups:
-        // 0: whole value string
-        // 1: workspace name (can be empty)
-        // 2: path (can be empty)
-        // 3: name of rule (can be empty)
+        // 0: Whole value string
+        // 1: WORKSPACE name (can be empty)
+        // 2: Path (can be empty)
+        // 3: Name of rule (can be empty)
+        Pattern pattern = Pattern.compile(fullRegex);
+        Matcher matcher = pattern.matcher(value);
         if (matcher.find()) {
             String workspaceName = Nullability.nullableOr("", () -> matcher.group(1));
             String path = Nullability.nullableOr("", () -> matcher.group(2));
@@ -94,7 +90,8 @@ public class Label {
     }
 
     /**
-     * Converts this label into its string literal form.
+     * Converts this label into its string literal form. An example of a string literal form
+     * would be `@maven//path/to:package`.
      *
      * @return A string literal label value.
      */
