@@ -47,6 +47,9 @@ public class DiagnosticsProvider {
             final ParserInput input = ParserInput.fromString(textDocContent, textDocURI.toString());
             final StarlarkFile file = StarlarkFile.parse(input);
 
+            // Go through all errors
+
+
             // Go through all statements
             for (final Statement stmt : file.getStatements()) {
                 if (stmt.kind() == Statement.Kind.EXPRESSION) {
@@ -71,9 +74,10 @@ public class DiagnosticsProvider {
                                     // Go through each string element
                                     for (final Expression argElement : listExpr.getElements()) {
                                         if (argElement.kind() == Expression.Kind.STRING_LITERAL) {
-                                            final StringLiteral literalStr = (StringLiteral) argElement;
+                                            // This is a dep or src label
+                                            final StringLiteral labelString = (StringLiteral) argElement;
 
-//                                            Label.parse(literalStr);
+                                            // Label.parse(literalStr);
 
                                             Diagnostic d = new Diagnostic();
 
