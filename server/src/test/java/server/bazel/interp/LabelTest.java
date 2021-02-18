@@ -27,4 +27,15 @@ public class LabelTest {
     // might not work yet
     //Assert.assertEquals(value, l.value());
   }
+
+  @Test
+  public void ThrowsException() {
+    try {
+      String value = "//path/to/:invalid";
+      Label l = Label.parse(value);
+      Assert.assertTrue(false);
+    } catch (LabelSyntaxException ls) {
+      Assert.assertTrue(true);
+    }
+  }
 }
