@@ -9,6 +9,7 @@ java_library(
     ],
     deps = [
         "//server/src/test/java/server/bazel/cli",
+        "//server/src/test/java/server/bazel/interp",
         "//server/src/test/java/server/buildifier",
         "//server/src/test/java/server/utils",
         "//server/src/test/java/server/bazel/bazelWorkspaceAPI:bazel_workspace_api",
