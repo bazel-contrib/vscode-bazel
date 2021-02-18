@@ -31,17 +31,25 @@ const ext: IExtensionVars = {
 export function activate(context: vscode.ExtensionContext): void {
   ext.context = context;
 
+  console.log("got to activate() function... but this should work so no surprise here");
+
   vscode.workspace.onDidChangeConfiguration(onDidChangeConfiguration);
+
+  console.log("got to before registering restart server command");
 
   vscode.commands.registerCommand(
     WorkspaceUtils.COMMANDS.bazel.restartServer,
     restartServer,
   );
 
+  console.log("got to after registering restart server");
+
   vscode.commands.registerCommand(
     WorkspaceUtils.COMMANDS.bazel.openAssociatedBuildFile,
     restartServer,
   );
+
+  console.log("just about to start the server.");
 
   startServer();
 }
@@ -93,6 +101,8 @@ function restartServer(): void {
 function startServer(): void {
   const javaPath = JavaUtils.getJavaExecPath();
 
+  console.log("Got inside of startServer() function");
+
   vscode.window.withProgress(
     { location: vscode.ProgressLocation.Window },
     (progress) => {
@@ -117,7 +127,7 @@ function startServer(): void {
           }
           return;
         }
-
+        console.log("Somehow inside of the vscode window with progress thing");
         // The pre-conditions were satisfied, inform the user that we've
         // started initializing the server.
         progress.report({ message: MESSAGES.init });

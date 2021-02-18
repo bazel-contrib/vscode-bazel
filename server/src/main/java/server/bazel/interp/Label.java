@@ -1,5 +1,8 @@
 package server.bazel.interp;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * Represents a Bazel target label. E.g. `@maven//some/other:package_name`.
  */
@@ -28,7 +31,7 @@ public class Label {
      */
     final String workspace;
 
-    private Label(String name, String workspace, String path) {
+    private Label(String workspace, String path, String name) {
         this.name = name;
         this.workspace = workspace;
         this.path = path;
@@ -55,6 +58,25 @@ public class Label {
         // TODO(jarenm): use regex from this link: https://regex101.com/r/7LYFhk/1 to parse a label object
         // TODO(jarenm): write test cases to make sure this parse function works, should work as stated in doc above
         // https://regex101.com/r/CSXyZo/1
+        // new regex: /^(?:(?:@([a-zA-Z0-9_-]+)\/\/)|(?:\/\/)|(?:))([a-zA-Z0-9_-]+(?:\/[a-zA-Z0-9_-]+)*)?(?:(?::([a-zA-Z0-9_-]+))|(?:))?$/gm
+        // 0: workspace name (can be empty)
+        String regex = "^(?:(?:@([a-zA-Z0-9_-]+)\\/\\/)|(?:\\/\\/)|(?:))([a-zA-Z0-9_-]+(?:\\/[a-zA-Z0-9_-]+)*)?(?:(?::([a-zA-Z0-9_-]+))|(?:))?$";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(value);
+
+        // Capturing Groups:
+        // 0: whole value string
+        // 1: workspace name (can be empty)
+        // 2: path (can be empty)
+        // 3: name of rule (can be empty)
+
+        if (matcher.find()) {
+            String workspaceName = (matcher.group(1) == null) ? "" : matcher.group(1);
+            String path = (matcher.group(2) == null) ? "" : matcher.group(2);
+            String ruleName = (matcher.group(3) == null) ? "" : matcher.group(3);
+            return new Label(workspaceName, path, ruleName);
+        }
+
         throw new LabelSyntaxException();
     }
 
@@ -71,7 +93,7 @@ public class Label {
     }
 
     /**
-     * Converts this label into it's string literal form.
+     * Converts this label into its string literal form.
      *
      * @return A string literal label value.
      */
