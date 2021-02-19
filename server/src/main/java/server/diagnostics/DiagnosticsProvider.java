@@ -6,7 +6,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.lsp4j.*;
 import server.bazel.bazelWorkspaceAPI.WorkspaceAPI;
+import server.bazel.interp.CompatabilityUtility;
 import server.bazel.interp.Label;
+import server.bazel.interp.LabelSyntaxException;
 import server.bazel.tree.BuildTarget;
 import server.bazel.tree.WorkspaceTree;
 import server.utils.DocumentTracker;
@@ -14,6 +16,7 @@ import server.utils.Logging;
 import server.workspace.Workspace;
 
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -36,6 +39,7 @@ public class DiagnosticsProvider {
         final WorkspaceAPI api = new WorkspaceAPI(tree);
 
         final URI textDocURI = params.getUri();
+        final Path textDocPath = Path.of(textDocURI);
         final String textDocContent = DocumentTracker.getInstance().getContents(textDocURI);
 
         final List<Diagnostic> diagnostics = new ArrayList<>();
@@ -60,7 +64,7 @@ public class DiagnosticsProvider {
                 diagnostics.add(diagnostic);
             }
 
-            // Go through all statements
+            // Go through all statements. Literally the best code EVAR. +100 points for cleanliness.
             for (final Statement stmt : file.getStatements()) {
                 if (stmt.kind() == Statement.Kind.EXPRESSION) {
                     final Expression expr = ((ExpressionStatement) stmt).getExpression();
@@ -73,8 +77,8 @@ public class DiagnosticsProvider {
                                 continue;
                             }
 
-                            // If this is the srcs or deps attribute
-                            if (arg.getName().equals("srcs") || arg.getName().equals("deps")) {
+                            // If this is the deps attribute
+                            if (arg.getName().equals("deps")) {
                                 final Expression argExpr = arg.getValue();
 
                                 // If this is a list (should usually be a list)
@@ -86,15 +90,48 @@ public class DiagnosticsProvider {
                                         if (argElement.kind() == Expression.Kind.STRING_LITERAL) {
                                             // This is a dep or src label
                                             final StringLiteral labelString = (StringLiteral) argElement;
+                                            final int line = labelString.getLocation().line();
+                                            final int colstart = labelString.getLocation().column() +
+                                                    labelString.getStartOffset();
+                                            final int colend = labelString.getLocation().column() +
+                                                    labelString.getEndOffset();
 
-                                            // Label.parse(literalStr);
+                                            try {
+                                                final Label label = Label.parse(labelString.getValue());
 
-                                            Diagnostic d = new Diagnostic();
+                                                // Convert the label to a target. Get the parent of the text doc
+                                                // because we don't want the BUILD file.
+                                                final BuildTarget target = CompatabilityUtility.labelToBuildTarget(
+                                                        label, textDocPath.getParent());
 
-//                                            BuildTarget targ = new BuildTarget(
-//                                            boolean isValid = api.isValidTarget(
-//                                            d.setSeverity(DiagnosticSeverity.Error
-//                                            diagnostics.add(
+                                                logger.info("Validating package: " + label.value());
+                                                logger.info("Path: " + target.getPath());
+                                                logger.info("Name: " + target.getLabel());
+                                                logger.info("PathwTarg: " + target.getPathWithTarget());
+
+                                                // If target is invalid, say its invalid.
+                                                if (!api.isValidTarget(target)) {
+                                                    Diagnostic diag = new Diagnostic();
+                                                    diag.setSeverity(DiagnosticSeverity.Error);
+                                                    diag.setCode(DiagnosticCodes.INVALID_TARGET);
+                                                    diag.setMessage(String.format("Target '%s' does not exist.",
+                                                            labelString.getValue()));
+                                                    diag.setRange(new Range(new Position(line, colstart),
+                                                            new Position(line, colend)));
+                                                    logger.info(labelString.getValue() + " does not exist.");
+                                                    diagnostics.add(diag);
+                                                }
+                                            } catch (LabelSyntaxException e) {
+                                                // If syntax is invalid, say its invalid.
+                                                Diagnostic diag = new Diagnostic();
+                                                diag.setSeverity(DiagnosticSeverity.Error);
+                                                diag.setMessage("Invalid label syntax.");
+                                                diag.setCode(DiagnosticCodes.INVALID_TARGET);
+                                                diag.setRange(new Range(new Position(line, colstart),
+                                                        new Position(line, colend)));
+                                                logger.info(labelString.getValue() + " has invalid syntax.");
+                                                diagnostics.add(diag);
+                                            }
                                         }
                                     }
                                 }

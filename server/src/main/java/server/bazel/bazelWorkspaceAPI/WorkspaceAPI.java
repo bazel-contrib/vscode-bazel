@@ -1,6 +1,8 @@
 package server.bazel.bazelWorkspaceAPI;
 
 import com.google.common.base.Preconditions;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import server.bazel.tree.SourceFile;
 import server.bazel.tree.WorkspaceTree;
 import server.bazel.tree.BuildTarget;
@@ -9,11 +11,12 @@ import server.bazel.tree.Package;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 public class WorkspaceAPI {
+    private static final Logger logger = LogManager.getLogger(WorkspaceAPI.class);
+
     private WorkspaceTree workspaceTree;
 
     public WorkspaceAPI(WorkspaceTree workspaceTree) {
@@ -24,7 +27,6 @@ public class WorkspaceAPI {
      *
      * @param workspaceTree an initialized workspace Tree object
      * @return The current WorkspaceAPI object with the newly set workspaceTree
-     * @throws WorkspaceAPIException if WorkspaceTree has no root
      */
     public WorkspaceAPI setWorkspace(WorkspaceTree workspaceTree) {
         Preconditions.checkNotNull(workspaceTree);
@@ -85,19 +87,24 @@ public class WorkspaceAPI {
      * @return true if the build target is stored in the workspace tree
      */
     public boolean isValidTarget(BuildTarget targetToCheck){
+        logger.info(String.format("Checking if '%s' target is valid.", targetToCheck.toString()));
         Package packageFromPath;
         try {
             packageFromPath =  findNodeOfGivenPackagePath(targetToCheck.getPath()).getValue();
         } catch (WorkspaceAPIException e) {
+            logger.info(String.format("Package for target '%s' not present.", targetToCheck.toString()));
             return false;
         }
         List<BuildTarget> buildTargets = packageFromPath.getBuildTargets();
         for(BuildTarget target: buildTargets){
             String buildTargetPath = target.getPathWithTarget();
             if(buildTargetPath.equals(targetToCheck.getPathWithTarget())){
+                logger.info(String.format("Package for target '%s' found in package '%s.",
+                        targetToCheck.toString(), target.toString()));
                 return true;
             }
         }
+        logger.info(String.format("Target '%s' is not valid.", targetToCheck.toString()));
         return false;
     }
 
