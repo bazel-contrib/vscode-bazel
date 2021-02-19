@@ -17,5 +17,6 @@ java_library(
     ],
     visibility = [
         "//server/src/main/java/server/diagnostics:__subpackages__",
+        "//server/src/test/java/server/bazel/interp:__subpackages__",
     ]
 )
