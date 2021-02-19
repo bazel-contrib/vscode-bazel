@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+// TODO: This should be the analysis stuff.
 public class DiagnosticsProvider {
     private static final Logger logger = LogManager.getLogger(DiagnosticsProvider.class);
 
@@ -56,15 +57,16 @@ public class DiagnosticsProvider {
                 diagnostic.setCode(DiagnosticCodes.SYNTAX_ERROR);
                 diagnostic.setMessage(err.message());
 
+                // TODO: All positions in the parser are off by one! Fix this generally in the AST.
                 final Range range = new Range();
-                range.setStart(new Position(err.location().line(), err.location().column()));
-                range.setEnd(new Position(err.location().line(), 999));
+                range.setStart(new Position(err.location().line() - 1, err.location().column()));
+                range.setEnd(new Position(err.location().line() - 1, 9999));
 
                 diagnostic.setRange(range);
                 diagnostics.add(diagnostic);
             }
 
-            // Go through all statements. Literally the best code EVAR. +100 points for cleanliness.
+            // Go through all statements. Literally the best code EVAR. We get +100 points for cleanliness.
             for (final Statement stmt : file.getStatements()) {
                 if (stmt.kind() == Statement.Kind.EXPRESSION) {
                     final Expression expr = ((ExpressionStatement) stmt).getExpression();
@@ -75,6 +77,10 @@ public class DiagnosticsProvider {
                         for (final Argument arg : call.getArguments()) {
                             if (arg.getName() == null) {
                                 continue;
+                            }
+
+                            if (arg.getName().equals("srcs")) {
+                                // TODO(jarenm): Add support for sources.
                             }
 
                             // If this is the deps attribute
@@ -90,11 +96,9 @@ public class DiagnosticsProvider {
                                         if (argElement.kind() == Expression.Kind.STRING_LITERAL) {
                                             // This is a dep or src label
                                             final StringLiteral labelString = (StringLiteral) argElement;
-                                            final int line = labelString.getLocation().line();
-                                            final int colstart = labelString.getLocation().column() +
-                                                    labelString.getStartOffset();
-                                            final int colend = labelString.getLocation().column() +
-                                                    labelString.getEndOffset();
+                                            final int line = labelString.getLocation().line() - 1;
+                                            final int colstart = labelString.getLocation().column();
+                                            final int colend = colstart + labelString.getValue().length();
 
                                             try {
                                                 final Label label = Label.parse(labelString.getValue());

@@ -177,6 +177,11 @@ public class Label {
         return String.format("//%s:%s", path(), name());
     }
 
+    // TODO(josiahsrc): Create a way to map from any label to a label's full path.
+    // public String absolute() {
+    //    given :something, return @full//path/to:something
+    // }
+
     @Override
     public String toString() {
         return value();
