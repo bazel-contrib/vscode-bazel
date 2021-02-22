@@ -1,5 +1,6 @@
 package server.bazel.interp;
 
+import com.google.common.base.Preconditions;
 import server.utils.Nullability;
 
 import java.util.regex.Matcher;
@@ -9,14 +10,21 @@ import java.util.regex.Pattern;
  * Represents a Bazel target label. E.g. `@maven//some/other:package_name`.
  */
 public class Label {
-    private final String name;
-    private final String pkg;
     private final String workspace;
+    private final String root;
+    private final String pkg;
+    private final String name;
 
-    private Label(String workspace, String pkg, String name) {
-        this.name = name;
+    private Label(String workspace, String root, String pkg, String name) {
+        Preconditions.checkNotNull(workspace);
+        Preconditions.checkNotNull(root);
+        Preconditions.checkNotNull(pkg);
+        Preconditions.checkNotNull(name);
+
         this.workspace = workspace;
+        this.root = root;
         this.pkg = pkg;
+        this.name = name;
     }
 
     /**
@@ -35,14 +43,16 @@ public class Label {
      * @throws LabelSyntaxException If the string is not parsable.
      */
     public static Label parse(String value) throws LabelSyntaxException {
-        final String workspaceRegex = "(?:(?:@([a-zA-Z0-9_-]+)//)|(?://))";
-        final String pkgRegex = "([a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_-]+)*)";
-        final String nameRegex = "(?::([a-zA-Z0-9_-]+))";
-        final String fullRegex = String.format("^%s?%s?%s?$", workspaceRegex, pkgRegex, nameRegex);
+        final String workspaceRegex = "(?:@([a-zA-Z0-9._-]+))";
+        final String rootRegex = "(//)?";
+        final String pkgRegex = "([a-zA-Z0-9._-]+(?:/[a-zA-Z0-9._-]+)*)";
+        final String nameRegex = "(?::([a-zA-Z0-9._-]+))";
+        final String fullRegex = String.format("^%s?%s?%s?%s?$", workspaceRegex, rootRegex, pkgRegex, nameRegex);
 
         // Capturing Groups:
         // 0: Whole value string
-        // 1: WORKSPACE name (can be empty)
+        // 1: Workspace name (can be empty)
+        // 1: Root which represents "//" (can be empty)
         // 2: Package (can be empty)
         // 3: Name of rule (can be empty)
         final Pattern pattern = Pattern.compile(fullRegex);
@@ -52,16 +62,21 @@ public class Label {
         Label label;
         if (matcher.find()) {
             String workspaceName = Nullability.nullableOr("", () -> matcher.group(1));
-            String pkgName = Nullability.nullableOr("", () -> matcher.group(2));
-            String ruleName = Nullability.nullableOr("", () -> matcher.group(3));
-            label = new Label(workspaceName, pkgName, ruleName);
+            String rootName = Nullability.nullableOr("", () -> matcher.group(2));
+            String pkgName = Nullability.nullableOr("", () -> matcher.group(3));
+            String ruleName = Nullability.nullableOr("", () -> matcher.group(4));
+            label = new Label(workspaceName, rootName, pkgName, ruleName);
         } else {
             throw new LabelSyntaxException();
         }
 
         // A label in the shape of `@//:` is not supported.
-        if (label.workspace().isEmpty() && label.pkg().isEmpty() && label.name().isEmpty()) {
+        if (!label.hasWorkspace() && !label.hasPkg() && !label.hasName()) {
             throw new LabelSyntaxException();
+        }
+
+        if (!label.hasWorkspace() && label.hasPkg() && !label.hasName()) {
+
         }
 
         return label;
@@ -77,6 +92,21 @@ public class Label {
      */
     public boolean isLocal() {
         return !hasWorkspace() && !hasPkg();
+    }
+
+    /**
+     * @return
+     */
+    public boolean isSourceFile() {
+        if (!hasPkg()) {
+            return false;
+        }
+
+        if (hasWorkspace() || hasName()) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -168,6 +198,7 @@ public class Label {
             return String.format(":%s", name());
         }
 
+        // TODO: If it's a source file, don't append.
         // A local label with the name implied from the package.
         if (!hasName()) {
             return String.format("//%s", pkg());
@@ -186,4 +217,10 @@ public class Label {
     public String toString() {
         return value();
     }
+
+
+//    /**
+//     * something/asfsdf/asdfasdf/hello.dart
+//     */
+//    private static boolean isSource
 }
