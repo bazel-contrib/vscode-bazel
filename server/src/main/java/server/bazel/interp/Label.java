@@ -44,39 +44,50 @@ public class Label {
      */
     public static Label parse(String value) throws LabelSyntaxException {
         final String workspaceRegex = "(?:@([a-zA-Z0-9._-]+))";
-        final String rootRegex = "(//)?";
+        final String rootRegex = "(//)";
         final String pkgRegex = "([a-zA-Z0-9._-]+(?:/[a-zA-Z0-9._-]+)*)";
         final String nameRegex = "(?::([a-zA-Z0-9._-]+))";
         final String fullRegex = String.format("^%s?%s?%s?%s?$", workspaceRegex, rootRegex, pkgRegex, nameRegex);
 
         // Capturing Groups:
-        // 0: Whole value string
-        // 1: Workspace name (can be empty)
-        // 1: Root which represents "//" (can be empty)
-        // 2: Package (can be empty)
-        // 3: Name of rule (can be empty)
+        // 0: Entire label string value.
+        // 1: Workspace name (can be empty).
+        // 1: Root which represents "//" (can be empty).
+        // 2: Package (can be empty).
+        // 3: Name of rule (can be empty).
         final Pattern pattern = Pattern.compile(fullRegex);
         final Matcher matcher = pattern.matcher(value);
 
         // Construct a label from the capturing groups.
         Label label;
         if (matcher.find()) {
-            String workspaceName = Nullability.nullableOr("", () -> matcher.group(1));
-            String rootName = Nullability.nullableOr("", () -> matcher.group(2));
-            String pkgName = Nullability.nullableOr("", () -> matcher.group(3));
-            String ruleName = Nullability.nullableOr("", () -> matcher.group(4));
-            label = new Label(workspaceName, rootName, pkgName, ruleName);
+            String workspaceValue = Nullability.nullableOr("", () -> matcher.group(1));
+            String rootValue = Nullability.nullableOr("", () -> matcher.group(2));
+            String pkgValue = Nullability.nullableOr("", () -> matcher.group(3));
+            String ruleValue = Nullability.nullableOr("", () -> matcher.group(4));
+            label = new Label(workspaceValue, rootValue, pkgValue, ruleValue);
         } else {
             throw new LabelSyntaxException();
         }
 
         // A label in the shape of `@//:` is not supported.
         if (!label.hasWorkspace() && !label.hasPkg() && !label.hasName()) {
-            throw new LabelSyntaxException();
+            throw new LabelSyntaxException("A label may not be empty.");
         }
 
-        if (!label.hasWorkspace() && label.hasPkg() && !label.hasName()) {
+        // A label with a workspace reference but no root reference is not valid. This
+        // case is possible based on the regex if the user enters in a value such as
+        // `@workspace/invalid/path`. In which case there is no root, but there is a
+        // workspace, which is invalid.
+        if (label.hasWorkspace() && !label.hasRoot()) {
+            throw new LabelSyntaxException("A label that references a named workspace must have a root.");
+        }
 
+        // Labels that don't have a root could be source file. A source file is valid
+        // iff it is referencing a file relative to wherever its declaration is in the
+        // file tree. Referencing sub files within that directory is not valid.
+        if (!label.hasWorkspace() && !label.hasRoot() && !label.hasName() && !label.pkg().contains("/")) {
+            throw new LabelSyntaxException("A source file may not contain any \"/\" characters.");
         }
 
         return label;
@@ -95,18 +106,14 @@ public class Label {
     }
 
     /**
-     * @return
+     * Returns whether or not this is a source file reference. A label may only be a
+     * source file if it does not have a root, a workspace, or a name. The source file
+     * value will effectively be the of the package value (pkg).
+     *
+     * @return Whether this label represents a source file.
      */
     public boolean isSourceFile() {
-        if (!hasPkg()) {
-            return false;
-        }
-
-        if (hasWorkspace() || hasName()) {
-            return false;
-        }
-
-        return true;
+        return !hasRoot() && !hasWorkspace() && !hasName();
     }
 
     /**
@@ -127,6 +134,24 @@ public class Label {
      */
     public boolean hasWorkspace() {
         return !workspace().isEmpty();
+    }
+
+    /**
+     * The root value. This will be the the `//` immediately following a workspace
+     * or an implied workspace name. This may be left out, in which case this label
+     * could represent a source file or local rull dependency.
+     *
+     * @return The root.
+     */
+    public String root() {
+        return root;
+    }
+
+    /**
+     * @return Whether the root field is declared in this label.
+     */
+    public boolean hasRoot() {
+        return !root().isEmpty();
     }
 
     /**
@@ -217,10 +242,4 @@ public class Label {
     public String toString() {
         return value();
     }
-
-
-//    /**
-//     * something/asfsdf/asdfasdf/hello.dart
-//     */
-//    private static boolean isSource
 }
