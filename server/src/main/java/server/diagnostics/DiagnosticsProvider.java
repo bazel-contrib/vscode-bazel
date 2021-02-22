@@ -81,6 +81,56 @@ public class DiagnosticsProvider {
 
                             if (arg.getName().equals("srcs")) {
                                 // TODO(jarenm): Add support for sources.
+                                final Expression argExpr = arg.getValue();
+
+                                if (argExpr.kind() == Expression.Kind.LIST_EXPR) {
+                                    final ListExpression listExpr = (ListExpression) argExpr;
+
+                                    for (final Expression argElement : listExpr.getElements()) {
+                                        final StringLiteral labelString = (StringLiteral) argElement;
+                                        final int line = labelString.getLocation().line() - 1;
+                                        final int colstart = labelString.getLocation().column();
+                                        final int colend = colstart + labelString.getValue().length();
+
+                                        try {
+                                            final Label label = Label.parse(labelString.getValue());
+
+                                            // Convert the label to a target. Get the parent of the text doc
+                                            // because we don't want the BUILD file.
+                                            final BuildTarget target = CompatabilityUtility.labelToBuildTarget(
+                                                    label, textDocPath.getParent());
+
+                                            logger.info("Validating package: " + label.value());
+                                            logger.info("Path: " + target.getPath());
+                                            logger.info("Name: " + target.getLabel());
+                                            logger.info("PathwTarg: " + target.getPathWithTarget());
+
+                                            // If target is invalid, say its invalid.
+                                            if (!api.isValidTarget(target)) {
+                                                Diagnostic diag = new Diagnostic();
+                                                diag.setSeverity(DiagnosticSeverity.Error);
+                                                diag.setCode(DiagnosticCodes.INVALID_TARGET);
+                                                diag.setMessage(String.format("Target from src '%s' does not exist.",
+                                                        labelString.getValue()));
+                                                diag.setRange(new Range(new Position(line, colstart),
+                                                        new Position(line, colend)));
+                                                logger.info(labelString.getValue() + " does not exist.");
+                                                diagnostics.add(diag);
+                                            }
+                                        } catch (LabelSyntaxException e) {
+                                            Diagnostic diag = new Diagnostic();
+                                            diag.setSeverity(DiagnosticSeverity.Error);
+                                            diag.setMessage("Invalid label syntax.");
+                                            diag.setCode(DiagnosticCodes.INVALID_TARGET);
+                                            diag.setRange(new Range(new Position(line, colstart),
+                                                    new Position(line, colend)));
+                                            logger.info(labelString.getValue() + " has invalid syntax.");
+                                            diagnostics.add(diag);
+                                        }
+                                    }
+                                }
+
+
                             }
 
                             // If this is the deps attribute
