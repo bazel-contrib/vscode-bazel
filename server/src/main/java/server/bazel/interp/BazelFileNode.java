@@ -1,4 +1,4 @@
 package server.bazel.interp;
 
-public class BazelFile {
+public class BazelFileNode {
 }

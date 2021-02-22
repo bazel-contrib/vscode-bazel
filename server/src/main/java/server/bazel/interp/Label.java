@@ -198,43 +198,33 @@ public class Label {
      * @return A string literal label value.
      */
     public String value() {
+        final StringBuilder builder = new StringBuilder();
+
+        // Append the "@workspace" if specified.
         if (hasWorkspace()) {
-            // A full workspace label.
-            if (hasPkg() && hasName()) {
-                return String.format("@%s//%s:%s", workspace(), pkg(), name());
-            }
-
-            // A label with the name implied from the package.
-            if (!hasName()) {
-                return String.format("@%s//%s", workspace(), pkg());
-            }
-
-            // A label at the root level of workspace with some id.
-            if (!hasPkg()) {
-                return String.format("@%s//:%s", workspace(), name());
-            }
-
-            // A label with the name and package implied from the workspace.
-            return String.format("@%s", workspace());
+            builder.append(String.format("@%s", workspace()));
         }
 
-        // A local file label.
-        if (!hasPkg()) {
-            return String.format(":%s", name());
+        // Append the "//" if specified.
+        if (hasRoot()) {
+            builder.append(root());
         }
 
-        // TODO: If it's a source file, don't append.
-        // A local label with the name implied from the package.
-        if (!hasName()) {
-            return String.format("//%s", pkg());
+        // Append the "path/to/package" if specified.
+        if (hasPkg()) {
+            builder.append(pkg());
         }
 
-        // A full local workspace label.
-        return String.format("//%s:%s", pkg(), name());
+        // Append the ":name_of_package" if specified.
+        if (hasName()) {
+            builder.append(String.format(":%s", name()));
+        }
+
+        return builder.toString();
     }
 
-    // TODO(josiahsrc): Create a way to map from any label to a label's full path.
-    // public String absolute() {
+    // TODO(josiah): Create a way to map from any label to a label's full path.
+    // public String absolute(RepositoryMapping mapping) {
     //    given :something, return @full//path/to:something
     // }
 
