@@ -20,8 +20,6 @@ public class CompatabilityUtility {
     /**
      * Converts a label to a build target.
      *
-     * TODO(josiahsrc): This behavior should be implied by interp.
-     *
      * @param label The label to convert.
      * @param path  The path to the file in which the label is declared. Only used if the label is local.
      * @return The build target.
@@ -35,21 +33,22 @@ public class CompatabilityUtility {
             return new BuildTarget(Path.of("//" + path), label.name(), null);
         }
 
-        if (label.hasPath() && label.hasName()) {
-            return new BuildTarget(Path.of("//" + label.path()), label.name(), null);
+        if (label.hasPkg() && label.hasName()) {
+            return new BuildTarget(Path.of("//" + label.pkg()), label.name(), null);
         }
 
         if (!label.hasName()) {
             // Handle implied packages.
-            final String[] parts = label.path().split("/");
+            final String[] parts = label.pkg().split("/");
             final String lastPackageName = parts[parts.length - 1];
-            return new BuildTarget(Path.of("//" + label.path()), lastPackageName, null);
+            return new BuildTarget(Path.of("//" + label.pkg()), lastPackageName, null);
         }
 
         // It only has the name.
         return new BuildTarget(Path.of("//"), label.name(), null);
     }
 
+    // TODO(josiahsrc): This behavior should be implied by interp.
     private static Path toWorkspaceLocal(Path path) {
         Preconditions.checkNotNull(path);
 

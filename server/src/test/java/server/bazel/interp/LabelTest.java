@@ -10,7 +10,7 @@ public class LabelTest {
     Label l = Label.parse(value);
 
     Assert.assertEquals("", l.workspace());
-    Assert.assertEquals("path/to", l.path());
+    Assert.assertEquals("path/to", l.pkg());
     Assert.assertEquals("target", l.name());
     // might not work yet
     //Assert.assertEquals(value, l.value());
@@ -22,7 +22,7 @@ public class LabelTest {
     Label l = Label.parse(value);
 
     Assert.assertEquals("", l.workspace());
-    Assert.assertEquals("", l.path());
+    Assert.assertEquals("", l.pkg());
     Assert.assertEquals("something", l.name());
     // might not work yet
     //Assert.assertEquals(value, l.value());
