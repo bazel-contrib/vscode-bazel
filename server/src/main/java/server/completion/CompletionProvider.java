@@ -23,9 +23,13 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
+import server.bazel.bazelWorkspaceAPI.WorkspaceAPI;
+import server.bazel.bazelWorkspaceAPI.WorkspaceAPIException;
+import server.bazel.tree.BuildTarget;
 import server.utils.DocumentTracker;
 
 import server.utils.Logging;
+import server.workspace.Workspace;
 
 public class CompletionProvider {
     private static final Logger logger = LogManager.getLogger(CompletionProvider.class);
@@ -42,20 +46,20 @@ public class CompletionProvider {
     public static CompletableFuture<Either<List<CompletionItem>, CompletionList>> getCompletion(
             Path workspaceRoot, CompletionParams completionParams) {
 
-        logger.info("Workspace Path: " + workspaceRoot.toString());
+        logger.info("Workspace Path: {}", workspaceRoot.toString());
         List<CompletionItem> completionItems = new ArrayList<>();
         try {
-            logger.info("URI: " + completionParams.getTextDocument().getUri().substring(7));
+            logger.info("URI: {}", completionParams.getTextDocument().getUri().substring(7));
             List<String> lines = Arrays.asList(DocumentTracker.getInstance().getContents(URI.create(completionParams.getTextDocument().getUri())).split("\n"));
             String line = lines.get(completionParams.getPosition().getLine());
 
-            logger.info("Working line: " + line);
-            logger.info("Trigger Character: " + completionParams.getContext().getTriggerCharacter());
+            logger.info("Working line: {}", line);
+            logger.info("Trigger Character: {}", completionParams.getContext().getTriggerCharacter());
             String triggerCharacter = completionParams.getContext().getTriggerCharacter();
             if (triggerCharacter.equals("/")) {
                 getPathItems(line, workspaceRoot, completionParams, completionItems);
             } else if (triggerCharacter.equals(":")) {
-                getBuildItems(line, workspaceRoot, completionParams, completionItems);
+                getBuildTargets(line, workspaceRoot, completionParams, completionItems);
             }
 
         } catch (IOException e) {
@@ -72,76 +76,35 @@ public class CompletionProvider {
 
     }
 
-    private static void getBuildItems(String line, Path workspaceRoot, CompletionParams completionParams, List<CompletionItem> completionItems) {
-        String path = getPath(line, completionParams.getPosition());
-        path = path.substring(0, path.length() - 1);
-        Path completePath = workspaceRoot.resolve(path + "/BUILD");
-
-        logger.info(completePath.toString());
-
-        if (Files.exists(completePath)) {
-            logger.info("Found BUILD file");
-            getBuildTargets(completePath, completionItems, completionParams);
-        } else {
-            logger.info("No BUILD file");
-        }
+    private static void getBuildTargets(String line, Path workspaceRoot, CompletionParams completionParams, List<CompletionItem> completionItems) throws WorkspaceAPIException {
+        String newPath = getPath(line, completionParams.getPosition());
+        newPath = newPath.substring(0, newPath.length() - 1);
+        logger.info("New path: {}", newPath);
+        WorkspaceAPI workspaceAPI = new WorkspaceAPI(Workspace.getInstance().getWorkspaceTree());
+        List<BuildTarget> paths = workspaceAPI.findPossibleTargetsForPath(Path.of(newPath));
+        paths.parallelStream().forEach(item -> {
+            CompletionItem completionItem = new CompletionItem(item.getLabel());
+            completionItem.setKind(CompletionItemKind.Value);
+            completionItem.setInsertText(item.getLabel());
+            completionItem.setTextEdit(new TextEdit(new Range(completionParams.getPosition(), new Position(completionParams.getPosition().getLine(), completionParams.getPosition().getCharacter())), item.getLabel()));
+            logger.info("Added item: {}", completionItem);
+            completionItems.add(completionItem);
+        });
     }
 
-    private static void getBuildTargets(Path completePath, List<CompletionItem> completionItems, CompletionParams completionParams) {
-        try {
-            List<String> lines = Files.readAllLines(completePath);
-            lines.parallelStream().map(String::stripLeading).filter(line -> {
-                return line.startsWith("name");
-            }).map(line -> {
-                Pattern p = Pattern.compile("\"([^\"]*)\"");
-                Matcher m = p.matcher(line);
-                m.find();
-                String name = m.group();
-                return name.substring(1, name.length() - 1);
-            }).forEach(name -> {
-                CompletionItem completionItem = new CompletionItem(name);
-                completionItem.setKind(CompletionItemKind.Value);
-                completionItem.setInsertText(name);
-                completionItem.setTextEdit(new TextEdit(new Range(completionParams.getPosition(), new Position(completionParams.getPosition().getLine(), completionParams.getPosition().getCharacter())), name));
-                logger.info("Added item: " + completionItem);
-                completionItems.add(completionItem);
-            });
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void getPathItems(String line, Path workspaceRoot, CompletionParams completionParams, List<CompletionItem> completionItems) throws IOException {
-        char characterBefore = line.charAt(completionParams.getPosition().getCharacter() - 2);
-        logger.info("Character before: " + characterBefore);
-        if (characterBefore == '/') {
-            logger.info("GET ROOT ITEMS");
-            getFolders(workspaceRoot, completionParams, completionItems);
-        } else if (Character.isAlphabetic(characterBefore) || Character.isDigit(characterBefore)) {
-            logger.info("Found AlphaNum");
-            String path = getPath(line, completionParams.getPosition());
-            logger.info("Path: " + path);
-            Path completePath = workspaceRoot.resolve(path);
-            getFolders(completePath, completionParams, completionItems);
-        }
-    }
-
-    private static void getFolders(Path path, CompletionParams completionParams, List<CompletionItem> completionItems) throws IOException {
-        logger.info("Completed Path: " + path.toString());
-        if (Files.exists(path)) {
-            logger.info("Path exists");
-            Files.list(path).parallel()
-                    .filter(f -> f.toFile().isDirectory())
-                    .map(f -> f.getFileName().toString())
-                    .forEach(item -> {
-                        CompletionItem completionItem = new CompletionItem(item);
-                        completionItem.setKind(CompletionItemKind.Folder);
-                        completionItem.setInsertText(item);
-                        completionItem.setTextEdit(new TextEdit(new Range(completionParams.getPosition(), new Position(completionParams.getPosition().getLine(), completionParams.getPosition().getCharacter())), item));
-                        logger.info("Added item: " + completionItem);
-                        completionItems.add(completionItem);
-                    });
-        }
+    private static void getPathItems(String line, Path workspaceRoot, CompletionParams completionParams, List<CompletionItem> completionItems) throws IOException, WorkspaceAPIException {
+        String newPath = getPath(line, completionParams.getPosition());
+        logger.info("New path: {}", newPath);
+        WorkspaceAPI workspaceAPI = new WorkspaceAPI(Workspace.getInstance().getWorkspaceTree());
+        List<Path> paths = workspaceAPI.findPossibleCompletionsForPath(Path.of(newPath));
+        paths.parallelStream().forEach(item -> {
+            CompletionItem completionItem = new CompletionItem(item.toString());
+            completionItem.setKind(CompletionItemKind.Folder);
+            completionItem.setInsertText(item.toString());
+            completionItem.setTextEdit(new TextEdit(new Range(completionParams.getPosition(), new Position(completionParams.getPosition().getLine(), completionParams.getPosition().getCharacter())), item.toString()));
+            logger.info("Added item: {}", completionItem);
+            completionItems.add(completionItem);
+        });
     }
 
     private static String getPath(String line, Position position) {
@@ -151,7 +114,6 @@ public class CompletionProvider {
             path.append(line.charAt(index));
             index--;
         }
-        path.delete(path.length() - 2, path.length()); // Trim double slash off of the front
         return path.reverse().toString();
     }
 

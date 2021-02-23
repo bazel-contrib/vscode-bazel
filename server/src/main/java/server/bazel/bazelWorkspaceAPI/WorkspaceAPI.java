@@ -1,18 +1,20 @@
 package server.bazel.bazelWorkspaceAPI;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import server.bazel.tree.BuildTarget;
+import server.bazel.tree.Package;
 import server.bazel.tree.SourceFile;
 import server.bazel.tree.WorkspaceTree;
-import server.bazel.tree.BuildTarget;
 import server.bazel.tree.WorkspaceTree.Node;
-import server.bazel.tree.Package;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 public class WorkspaceAPI {
+    private static final Logger logger = LogManager.getLogger(WorkspaceAPI.class);
     private WorkspaceTree workspaceTree;
 
     public WorkspaceAPI(WorkspaceTree workspaceTree) throws WorkspaceAPIException {
@@ -46,6 +48,7 @@ public class WorkspaceAPI {
      * @throws WorkspaceAPIException if path is invalid
      */
     public List<Path> findPossibleCompletionsForPath(Path currentPath) throws WorkspaceAPIException {
+        logger.info("Given Path: {}", currentPath.toString());
         ArrayList<Path> allPossiblePaths = new ArrayList<>();
         List<Package> allPossiblePackages = findNodeOfGivenPackagePath(currentPath).getAllPackagesOfChildren();
         for(Package childPackage: allPossiblePackages){
@@ -72,10 +75,10 @@ public class WorkspaceAPI {
      *          expected output: list = {BuildTarget(Path.of(//path/to), "targetName", "kindValue)}
      * @throws WorkspaceAPIException if the pathToPackage is an invalid path within the given Workspace
      */
-    public List<BuildTarget> findPossibleTargetsForPath(BuildTarget pathToPackage) throws WorkspaceAPIException {
+    public List<BuildTarget> findPossibleTargetsForPath(Path pathToPackage) throws WorkspaceAPIException {
         ArrayList<BuildTarget> allPossibleTargets = new ArrayList<>();
 
-        Package packageFromPath =  findNodeOfGivenPackagePath(pathToPackage.getPath()).getValue();
+        Package packageFromPath =  findNodeOfGivenPackagePath(pathToPackage).getValue();
         for(BuildTarget target: packageFromPath.getBuildTargets()){
             allPossibleTargets.add(new BuildTarget(target.getPath(),target.getLabel(), target.getKind()));
         }
@@ -160,9 +163,11 @@ public class WorkspaceAPI {
         Node lastNode;
 
         lastNode = workspaceTree.getRoot();
+        logger.info("Path count: {}", path.getNameCount());
 
         for(int i = 0; i < path.getNameCount(); i++){
             String pathSection = path.getName(i).toString();
+            logger.info("pathSection: {}", pathSection);
             if(!pathSection.contains(".")){
                 Optional<Node> potentialNode = lastNode.getChild(pathSection);
                 if (potentialNode.isEmpty()) {
