@@ -16,7 +16,9 @@ import server.utils.Logging;
 import server.workspace.Workspace;
 
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -106,17 +108,20 @@ public class DiagnosticsProvider {
                                             logger.info("PathwTarg: " + target.getPathWithTarget());
 
                                             // If target is invalid, say its invalid.
-                                            if (!api.isValidTarget(target)) {
-                                                Diagnostic diag = new Diagnostic();
-                                                diag.setSeverity(DiagnosticSeverity.Error);
-                                                diag.setCode(DiagnosticCodes.INVALID_TARGET);
-                                                diag.setMessage(String.format("Target from src '%s' does not exist.",
-                                                        labelString.getValue()));
-                                                diag.setRange(new Range(new Position(line, colstart),
-                                                        new Position(line, colend)));
-                                                logger.info(labelString.getValue() + " does not exist.");
-                                                diagnostics.add(diag);
+                                            if (label.isSourceFile()) {
+                                                if (!Files.exists(Paths.get(label.pkg()))) {
+                                                    Diagnostic diag = new Diagnostic();
+                                                    diag.setSeverity(DiagnosticSeverity.Error);
+                                                    diag.setMessage("Invalid label syntax.");
+                                                    diag.setCode(DiagnosticCodes.INVALID_SOURCE);
+                                                    diag.setRange(new Range(new Position(line, colstart),
+                                                            new Position(line, colend)));
+                                                    logger.info(labelString.getValue() + " is not a valid source file.");
+                                                    diagnostics.add(diag);
+                                                }
                                             }
+
+
                                         } catch (LabelSyntaxException e) {
                                             Diagnostic diag = new Diagnostic();
                                             diag.setSeverity(DiagnosticSeverity.Error);
@@ -129,8 +134,6 @@ public class DiagnosticsProvider {
                                         }
                                     }
                                 }
-
-
                             }
 
                             // If this is the deps attribute
