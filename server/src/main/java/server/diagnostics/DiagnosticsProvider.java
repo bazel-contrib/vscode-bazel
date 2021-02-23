@@ -23,6 +23,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 // TODO: This should be the analysis stuff.
+
+/**
+ * Provides diagnostics for a given bazel file. Note, this class is purely a prototype.
+ * This class will be overruled when we figure out how to do generic Bazel interpretting.
+ */
 public class DiagnosticsProvider {
     private static final Logger logger = LogManager.getLogger(DiagnosticsProvider.class);
 
@@ -68,7 +73,7 @@ public class DiagnosticsProvider {
                 diagnostics.add(diagnostic);
             }
 
-            // Go through all statements. Literally the best code EVAR. We get +100 points for cleanliness.
+            // Go through all statements and determinal all diagnostics.
             for (final Statement stmt : file.getStatements()) {
                 if (stmt.kind() == Statement.Kind.EXPRESSION) {
                     final Expression expr = ((ExpressionStatement) stmt).getExpression();
@@ -81,63 +86,8 @@ public class DiagnosticsProvider {
                                 continue;
                             }
 
-                            if (arg.getName().equals("srcs")) {
-                                // TODO(jarenm): Add support for sources.
-                                final Expression argExpr = arg.getValue();
-
-                                if (argExpr.kind() == Expression.Kind.LIST_EXPR) {
-                                    final ListExpression listExpr = (ListExpression) argExpr;
-
-                                    for (final Expression argElement : listExpr.getElements()) {
-                                        final StringLiteral labelString = (StringLiteral) argElement;
-                                        final int line = labelString.getLocation().line() - 1;
-                                        final int colstart = labelString.getLocation().column();
-                                        final int colend = colstart + labelString.getValue().length();
-
-                                        try {
-                                            final Label label = Label.parse(labelString.getValue());
-
-                                            // Convert the label to a target. Get the parent of the text doc
-                                            // because we don't want the BUILD file.
-                                            final BuildTarget target = CompatabilityUtility.labelToBuildTarget(
-                                                    label, textDocPath.getParent());
-
-                                            logger.info("Validating package: " + label.value());
-                                            logger.info("Path: " + target.getPath());
-                                            logger.info("Name: " + target.getLabel());
-                                            logger.info("PathwTarg: " + target.getPathWithTarget());
-
-                                            // If target is invalid, say its invalid.
-                                            if (label.isSourceFile()) {
-                                                if (!Files.exists(Paths.get(label.pkg()))) {
-                                                    Diagnostic diag = new Diagnostic();
-                                                    diag.setSeverity(DiagnosticSeverity.Error);
-                                                    diag.setMessage("Invalid label syntax.");
-                                                    diag.setCode(DiagnosticCodes.INVALID_SOURCE);
-                                                    diag.setRange(new Range(new Position(line, colstart),
-                                                            new Position(line, colend)));
-                                                    logger.info(labelString.getValue() + " is not a valid source file.");
-                                                    diagnostics.add(diag);
-                                                }
-                                            }
-
-
-                                        } catch (LabelSyntaxException e) {
-                                            Diagnostic diag = new Diagnostic();
-                                            diag.setSeverity(DiagnosticSeverity.Error);
-                                            diag.setMessage("Invalid label syntax.");
-                                            diag.setCode(DiagnosticCodes.INVALID_TARGET);
-                                            diag.setRange(new Range(new Position(line, colstart),
-                                                    new Position(line, colend)));
-                                            logger.info(labelString.getValue() + " has invalid syntax.");
-                                            diagnostics.add(diag);
-                                        }
-                                    }
-                                }
-                            }
-
-                            // If this is the deps attribute
-                            if (arg.getName().equals("deps")) {
+                            // If this is the deps attribute or sources attribute.
+                            if (arg.getName().equals("deps") || arg.getName().equals("srcs")) {
                                 final Expression argExpr = arg.getValue();
 
                                 // If this is a list (should usually be a list)
@@ -166,8 +116,24 @@ public class DiagnosticsProvider {
                                                 logger.info("Name: " + target.getLabel());
                                                 logger.info("PathwTarg: " + target.getPathWithTarget());
 
+                                                // If source file is invalid, say its invalid.
+                                                if (label.isSourceFile()) {
+                                                    Path srcFilePath = Paths.get(label.pkg());
+                                                    Path parent = textDocPath.getParent();
+                                                    Path absSrcFilePath = parent.resolve(srcFilePath).toAbsolutePath();
+                                                    if (!Files.exists(absSrcFilePath)) {
+                                                        Diagnostic diag = new Diagnostic();
+                                                        diag.setSeverity(DiagnosticSeverity.Error);
+                                                        diag.setMessage("Source file does not exist.");
+                                                        diag.setCode(DiagnosticCodes.INVALID_SOURCE);
+                                                        diag.setRange(new Range(new Position(line, colstart),
+                                                                new Position(line, colend)));
+                                                        logger.info(labelString.getValue() + " is not a valid source file.");
+                                                        diagnostics.add(diag);
+                                                    }
+                                                }
                                                 // If target is invalid, say its invalid.
-                                                if (!api.isValidTarget(target)) {
+                                                else if (!api.isValidTarget(target)) {
                                                     Diagnostic diag = new Diagnostic();
                                                     diag.setSeverity(DiagnosticSeverity.Error);
                                                     diag.setCode(DiagnosticCodes.INVALID_TARGET);
