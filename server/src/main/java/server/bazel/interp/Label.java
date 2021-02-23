@@ -75,18 +75,10 @@ public class Label {
             throw new LabelSyntaxException("A label may not be empty.");
         }
 
-        // A label with a workspace reference but no root reference is not valid. This
-        // case is possible based on the regex if the user enters in a value such as
-        // `@workspace/invalid/path`. In which case there is no root, but there is a
-        // workspace, which is invalid.
-        if (label.hasWorkspace() && !label.hasRoot()) {
-            throw new LabelSyntaxException("A label that references a named workspace must have a root.");
-        }
-
         // Labels that don't have a root could be source file. A source file is valid
         // iff it is referencing a file relative to wherever its declaration is in the
         // file tree. Referencing sub files within that directory is not valid.
-        if (!label.hasWorkspace() && !label.hasRoot() && !label.hasName() && !label.pkg().contains("/")) {
+        if (!label.hasWorkspace() && !label.hasRoot() && !label.hasName() && label.pkg().contains("/")) {
             throw new LabelSyntaxException("A source file may not contain any \"/\" characters.");
         }
 
