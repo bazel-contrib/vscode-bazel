@@ -23,6 +23,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 // TODO: This should be the analysis stuff.
+
+/**
+ * Provides diagnostics for a given bazel file. Note, this class is purely a prototype.
+ * This class will be overruled when we figure out how to do generic Bazel interpretting.
+ */
 public class DiagnosticsProvider {
     private static final Logger logger = LogManager.getLogger(DiagnosticsProvider.class);
 
@@ -68,7 +73,7 @@ public class DiagnosticsProvider {
                 diagnostics.add(diagnostic);
             }
 
-            // Go through all statements. Literally the best code EVAR. We get +100 points for cleanliness.
+            // Go through all statements and determinal all diagnostics.
             for (final Statement stmt : file.getStatements()) {
                 if (stmt.kind() == Statement.Kind.EXPRESSION) {
                     final Expression expr = ((ExpressionStatement) stmt).getExpression();
