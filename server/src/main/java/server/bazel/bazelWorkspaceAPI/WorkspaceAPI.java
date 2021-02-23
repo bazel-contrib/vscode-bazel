@@ -1,7 +1,5 @@
 package server.bazel.bazelWorkspaceAPI;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import server.bazel.tree.BuildTarget;
 import server.bazel.tree.Package;
 import server.bazel.tree.SourceFile;
@@ -14,7 +12,6 @@ import java.util.List;
 import java.util.Optional;
 
 public class WorkspaceAPI {
-    private static final Logger logger = LogManager.getLogger(WorkspaceAPI.class);
     private WorkspaceTree workspaceTree;
 
     public WorkspaceAPI(WorkspaceTree workspaceTree) throws WorkspaceAPIException {
@@ -48,7 +45,6 @@ public class WorkspaceAPI {
      * @throws WorkspaceAPIException if path is invalid
      */
     public List<Path> findPossibleCompletionsForPath(Path currentPath) throws WorkspaceAPIException {
-        logger.info("Given Path: {}", currentPath.toString());
         ArrayList<Path> allPossiblePaths = new ArrayList<>();
         List<Package> allPossiblePackages = findNodeOfGivenPackagePath(currentPath).getAllPackagesOfChildren();
         for(Package childPackage: allPossiblePackages){
@@ -163,11 +159,9 @@ public class WorkspaceAPI {
         Node lastNode;
 
         lastNode = workspaceTree.getRoot();
-        logger.info("Path count: {}", path.getNameCount());
 
         for(int i = 0; i < path.getNameCount(); i++){
             String pathSection = path.getName(i).toString();
-            logger.info("pathSection: {}", pathSection);
             if(!pathSection.contains(".")){
                 Optional<Node> potentialNode = lastNode.getChild(pathSection);
                 if (potentialNode.isEmpty()) {

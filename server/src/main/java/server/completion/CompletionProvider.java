@@ -34,6 +34,8 @@ import server.workspace.Workspace;
 public class CompletionProvider {
     private static final Logger logger = LogManager.getLogger(CompletionProvider.class);
 
+    private CompletionProvider() {}
+
     /**
      * This method takes the completionParams and determines enough context to give a list of
      * potential completionItems. These items will appear as autocomplete options for the user.
@@ -44,42 +46,31 @@ public class CompletionProvider {
      * @return A list of CompletionItems that can be used for autocomplete options for the user.
      */
     public static CompletableFuture<Either<List<CompletionItem>, CompletionList>> getCompletion(
-            Path workspaceRoot, CompletionParams completionParams) {
+            CompletionParams completionParams) {
 
-        logger.info("Workspace Path: {}", workspaceRoot.toString());
         List<CompletionItem> completionItems = new ArrayList<>();
         try {
-            logger.info("URI: {}", completionParams.getTextDocument().getUri().substring(7));
             List<String> lines = Arrays.asList(DocumentTracker.getInstance().getContents(URI.create(completionParams.getTextDocument().getUri())).split("\n"));
             String line = lines.get(completionParams.getPosition().getLine());
 
-            logger.info("Working line: {}", line);
-            logger.info("Trigger Character: {}", completionParams.getContext().getTriggerCharacter());
             String triggerCharacter = completionParams.getContext().getTriggerCharacter();
             if (triggerCharacter.equals("/")) {
-                getPathItems(line, workspaceRoot, completionParams, completionItems);
+                getPathItems(line, completionParams, completionItems);
             } else if (triggerCharacter.equals(":")) {
-                getBuildTargets(line, workspaceRoot, completionParams, completionItems);
+                getBuildTargets(line, completionParams, completionItems);
             }
 
-        } catch (IOException e) {
-            logger.error("Hit exception");
-            logger.error(Logging.stackTraceToString(e));
         } catch (Exception e) {
-            // TODO: Find the cause of the completion null pointer exception and error check accordingly
-            logger.error("Hit the catch for generic exceptions");
             logger.error(Logging.stackTraceToString(e));
-        }
-
-        logger.info(completionItems);
+        }// TODO: Find the cause of the completion null pointer exception and error check accordingly
+        
         return CompletableFuture.completedFuture(Either.forRight(new CompletionList(completionItems)));
 
     }
 
-    private static void getBuildTargets(String line, Path workspaceRoot, CompletionParams completionParams, List<CompletionItem> completionItems) throws WorkspaceAPIException {
+    private static void getBuildTargets(String line, CompletionParams completionParams, List<CompletionItem> completionItems) throws WorkspaceAPIException {
         String newPath = getPath(line, completionParams.getPosition());
         newPath = newPath.substring(0, newPath.length() - 1);
-        logger.info("New path: {}", newPath);
         WorkspaceAPI workspaceAPI = new WorkspaceAPI(Workspace.getInstance().getWorkspaceTree());
         List<BuildTarget> paths = workspaceAPI.findPossibleTargetsForPath(Path.of(newPath));
         paths.parallelStream().forEach(item -> {
@@ -87,14 +78,12 @@ public class CompletionProvider {
             completionItem.setKind(CompletionItemKind.Value);
             completionItem.setInsertText(item.getLabel());
             completionItem.setTextEdit(new TextEdit(new Range(completionParams.getPosition(), new Position(completionParams.getPosition().getLine(), completionParams.getPosition().getCharacter())), item.getLabel()));
-            logger.info("Added item: {}", completionItem);
             completionItems.add(completionItem);
         });
     }
 
-    private static void getPathItems(String line, Path workspaceRoot, CompletionParams completionParams, List<CompletionItem> completionItems) throws IOException, WorkspaceAPIException {
+    private static void getPathItems(String line, CompletionParams completionParams, List<CompletionItem> completionItems) throws IOException, WorkspaceAPIException {
         String newPath = getPath(line, completionParams.getPosition());
-        logger.info("New path: {}", newPath);
         WorkspaceAPI workspaceAPI = new WorkspaceAPI(Workspace.getInstance().getWorkspaceTree());
         List<Path> paths = workspaceAPI.findPossibleCompletionsForPath(Path.of(newPath));
         paths.parallelStream().forEach(item -> {
@@ -102,7 +91,6 @@ public class CompletionProvider {
             completionItem.setKind(CompletionItemKind.Folder);
             completionItem.setInsertText(item.toString());
             completionItem.setTextEdit(new TextEdit(new Range(completionParams.getPosition(), new Position(completionParams.getPosition().getLine(), completionParams.getPosition().getCharacter())), item.toString()));
-            logger.info("Added item: {}", completionItem);
             completionItems.add(completionItem);
         });
     }
