@@ -70,7 +70,7 @@ public class Label {
             throw new LabelSyntaxException();
         }
 
-        // A label in the shape of `@//:` is not supported.
+        // Labels in the shape of `@//:` or `@:` are not supported.
         if (!label.hasWorkspace() && !label.hasPkg() && !label.hasName()) {
             throw new LabelSyntaxException("A label may not be empty.");
         }
@@ -102,7 +102,7 @@ public class Label {
      * @return Whether this label is a local reference.
      */
     public boolean isLocal() {
-        return !hasWorkspace() && !hasPkg();
+        return !hasWorkspace() && !hasRoot() && !hasPkg();
     }
 
     /**
@@ -193,7 +193,8 @@ public class Label {
 
     /**
      * Converts this label into its string literal form. An example of a string
-     * literal form would be `@maven//path/to:package`.
+     * literal form would be `@maven//path/to:package`. Assumes that this label
+     * has been correctly instantiated.
      *
      * @return A string literal label value.
      */

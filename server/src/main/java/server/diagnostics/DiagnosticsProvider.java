@@ -120,8 +120,6 @@ public class DiagnosticsProvider {
                                                     diagnostics.add(diag);
                                                 }
                                             }
-
-
                                         } catch (LabelSyntaxException e) {
                                             Diagnostic diag = new Diagnostic();
                                             diag.setSeverity(DiagnosticSeverity.Error);
