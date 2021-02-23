@@ -11,5 +11,6 @@ java_library(
         "//server/src/main/java/server/buildifier",
         "//third_party/java:guava",
         "//third_party/java:log4j",
+        "//third_party/java:lsp4j",
     ],
 )
