@@ -3,17 +3,15 @@ load("@rules_java//java:defs.bzl", "java_library")
 package(default_visibility = ["//visibility:public"])
 
 java_library(
-    name = "dispatcher",
+    name = "bazelWorkspaceAPI",
     srcs = [
-        "CommandDispatcher.java",
-        "CommandOutput.java",
-        "Executable.java",
-        "ICommand.java",
-        "SyncPipe.java",
+        "WorkspaceAPI.java",
+        "WorkspaceAPIException.java",
     ],
     deps = [
-        "//server/src/main/java/server/utils",
+        "//server/src/main/java/server/bazel/tree:tree",
         "//third_party/java:guava",
         "//third_party/java:log4j",
+        "//third_party/java:lsp4j",
     ],
 )

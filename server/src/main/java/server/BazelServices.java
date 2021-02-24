@@ -188,20 +188,8 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
         languageClient = client;
     }
 
-    private List<CompletionItem> completionItems = new ArrayList<>();
-
     @Override
     public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(CompletionParams completionParams) {
-//        String item = "THIS IS MY FAKE ITEM 2";
-//
-//        CompletionItem completionItem = new CompletionItem(item);
-//        completionItem.setKind(CompletionItemKind.Folder);
-//        completionItem.setInsertText(item);
-//        completionItem.setTextEdit(new TextEdit(new Range(completionParams.getPosition(), new Position(completionParams.getPosition().getLine(), completionParams.getPosition().getCharacter() + item.length())), item));
-//        logger.info("Added item: " + completionItem);
-//        completionItems.add(completionItem);
-//
-//        return CompletableFuture.completedFuture(Either.forRight(new CompletionList(completionItems)));
         return CompletionProvider.getCompletion(Workspace.getInstance().getRootFolder().getPath(), completionParams);
     }
 

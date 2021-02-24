@@ -12,4 +12,11 @@ public interface ICommand {
      * @param stdin Writer to command line.
      */
     void dispatch(PrintWriter stdin);
+
+    /**
+     * Gets an executable to use to run this command.
+     *
+     * @return The executable to use in the CommandDispatcher.
+     */
+    Executable getExecutable();
 }

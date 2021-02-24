@@ -4,11 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.lsp4j.*;
 import org.eclipse.lsp4j.jsonrpc.Launcher;
-import org.eclipse.lsp4j.services.LanguageClient;
-import org.eclipse.lsp4j.services.LanguageClientAware;
-import org.eclipse.lsp4j.services.LanguageServer;
-import org.eclipse.lsp4j.services.TextDocumentService;
-import org.eclipse.lsp4j.services.WorkspaceService;
+import org.eclipse.lsp4j.services.*;
 import server.workspace.ProjectFolder;
 import server.workspace.Workspace;
 
@@ -39,31 +35,35 @@ public class BazelLanguageServer implements LanguageServer, LanguageClientAware 
     public CompletableFuture<InitializeResult> initialize(InitializeParams params) {
         logger.info(String.format("Starting up bazel language server with params: \"%s\"", params));
 
-        // Initialize the workspace root folder.
-        {
-            final ProjectFolder folder = ProjectFolder.fromURI(params.getRootUri());
-            Workspace.getInstance().setRootFolder(folder);
+        initializeWorkspaceRoot(params);
+        Workspace.getInstance().initializeWorkspace();
 
-            logger.info(String.format("Declared root folder: \"%s\"", Workspace.getInstance().getRootFolder()));
-        }
+        return CompletableFuture.completedFuture(specifyServerCapabilities());
+    }
 
-        // Specify capabilities for the server.
-        ServerCapabilities serverCapabilities;
-        {
-            serverCapabilities = new ServerCapabilities();
+    private InitializeResult specifyServerCapabilities() {
+        ServerCapabilities serverCapabilities = new ServerCapabilities();
 
-            serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full);
+        serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full);
+        serverCapabilities.setCompletionProvider(new CompletionOptions(true, Arrays.asList(":", "/")));
 
-            final CompletionOptions completionOptions = new CompletionOptions(true, Arrays.asList(":", "/"));
-            serverCapabilities.setCompletionProvider(completionOptions);
+        logger.info(String.format("Declared server capabilities: \"%s\"", serverCapabilities));
 
+        return new InitializeResult(serverCapabilities);
+    }
+
+<<<<<<< HEAD
             serverCapabilities.setDocumentFormattingProvider(true);
 
             logger.info(String.format("Declared server capabilities: \"%s\"", serverCapabilities));
         }
+=======
+    private void initializeWorkspaceRoot(InitializeParams params) {
+        final ProjectFolder folder = ProjectFolder.fromURI(params.getRootUri());
+        Workspace.getInstance().setRootFolder(folder);
+>>>>>>> develop
 
-        final InitializeResult initializeResult = new InitializeResult(serverCapabilities);
-        return CompletableFuture.completedFuture(initializeResult);
+        logger.info(String.format("Declared root folder: \"%s\"", Workspace.getInstance().getRootFolder()));
     }
 
     @Override

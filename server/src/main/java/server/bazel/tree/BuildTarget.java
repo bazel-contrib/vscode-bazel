@@ -1,6 +1,7 @@
 package server.bazel.tree;
 
 import java.nio.file.Path;
+import java.util.Objects;
 
 public class BuildTarget {
     private Path path;
@@ -27,5 +28,32 @@ public class BuildTarget {
 
     public String getPathWithTarget() {
         return String.format("%s:%s", path.toString(), label);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(kind, label, path);
+    }
+    @Override
+    public boolean equals(Object o) {
+        if( o == this){
+            return true;
+        }else if (!(o instanceof BuildTarget)) {
+            return false;
+        }
+
+        BuildTarget c = (BuildTarget) o;
+        return getPath().toString().equals(c.getPath().toString())
+                && getKind().equals(c.getKind())
+                && getLabel().equals(c.getLabel());
+    }
+
+    @Override
+    public String toString() {
+        return "BuildTarget{" +
+                "path=" + path +
+                ", label='" + label + '\'' +
+                ", kind='" + kind + '\'' +
+                '}';
     }
 }

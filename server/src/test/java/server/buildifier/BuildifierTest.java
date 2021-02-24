@@ -9,6 +9,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import server.dispatcher.CommandDispatcher;
+import server.dispatcher.CommandOutput;
 import server.utils.FileRepository;
 import server.workspace.ExtensionConfig;
 import server.workspace.Workspace;
@@ -17,6 +19,7 @@ import java.io.*;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 
 public class BuildifierTest {
     private static final String BUILDIFIER_CONFIG_PATH =
@@ -30,18 +33,18 @@ public class BuildifierTest {
     final String BUILDIFIER_FORMATTED_CONTENT =
             "Formatted content.";
     final String BUILDIFIER_FILE_WITH_BAD_SYNTAX = "load(\"@rules_cc//cc:defs.bzl\", \"cc_binary\", \"cc_library\")"
-                    + "cc_library(name = \"hello_greet\", srcs = [\"hello_greet.cc\"], hdrs = [\"hello_greet.h\"],)"
-                    + "cc_binary(name = \"hello_world\", srcs = [\"hello_world.cc\"], deps = [\":hello_greet\","
-                    + "\"//lib:hello_time\",],bad)";
+            + "cc_library(name = \"hello_greet\", srcs = [\"hello_greet.cc\"], hdrs = [\"hello_greet.h\"],)"
+            + "cc_binary(name = \"hello_world\", srcs = [\"hello_world.cc\"], deps = [\":hello_greet\","
+            + "\"//lib:hello_time\",],bad)";
     final String BUILDIFIER_CONTENT_WITH_WARNINGS = "{\"success\": false,\"files\": [{\"filename\": \"BUILD\","
-                    + "\"formatted\": false, \"valid\": true, \"warnings\": [{\"start\": {\"line\": 16, \"column\": 5"
-                    + "}, \"end\": { \"line\": 16, \"column\": 8}, \"category\": \"positional-args\", \"actionable\": true,"
-                    + "\"message\": \"All calls to rules or macros should pass arguments by keyword (arg_name=value) syntax.\","
-                    + "\"url\": \"https://github.com/bazelbuild/buildtools/blob/master/WARNINGS.md#positional-args\"}]}]}";
+            + "\"formatted\": false, \"valid\": true, \"warnings\": [{\"start\": {\"line\": 16, \"column\": 5"
+            + "}, \"end\": { \"line\": 16, \"column\": 8}, \"category\": \"positional-args\", \"actionable\": true,"
+            + "\"message\": \"All calls to rules or macros should pass arguments by keyword (arg_name=value) syntax.\","
+            + "\"url\": \"https://github.com/bazelbuild/buildtools/blob/master/WARNINGS.md#positional-args\"}]}]}";
 
     private FileSystem fileSystemJimf;
     private FileRepository fileRepositoryMock;
-    private FakeRunner fakeRunner;
+    private CommandDispatcher dispatcherMock;
     private Buildifier buildifier;
 
     @Before
@@ -51,11 +54,11 @@ public class BuildifierTest {
         fileRepositoryMock = Mockito.mock(FileRepository.class);
         Mockito.when(fileRepositoryMock.getFileSystem()).thenReturn(fileSystemJimf);
 
-        fakeRunner = new FakeRunner();
+        dispatcherMock = Mockito.mock(CommandDispatcher.class);
 
         buildifier = new Buildifier();
         buildifier.setFileRepository(fileRepositoryMock);
-        buildifier.setRunner(fakeRunner);
+        buildifier.setDispatcher(dispatcherMock);
     }
 
     @After
@@ -64,7 +67,7 @@ public class BuildifierTest {
 
         fileSystemJimf = null;
         fileRepositoryMock = null;
-        fakeRunner = null;
+        dispatcherMock = null;
         buildifier = null;
     }
 
@@ -81,9 +84,13 @@ public class BuildifierTest {
 
         // Mimic the expected buildifier process output.
         {
-            fakeRunner.targetOutput = (new FormatOutput(BUILDIFIER_FORMATTED_CONTENT)).getResult();
-            fakeRunner.targetError = "";
-            fakeRunner.targetExitCode = 0;
+            final CommandOutput mockOut = new CommandOutput(
+                    byteArrayOutputStreamFromString(BUILDIFIER_FORMATTED_CONTENT),
+                    byteArrayOutputStreamFromString(""),
+                    0
+            );
+
+            Mockito.when(dispatcherMock.dispatch(Mockito.any())).thenReturn(Optional.of(mockOut));
         }
 
         FormatOutput output = buildifier.format(args);
@@ -104,9 +111,13 @@ public class BuildifierTest {
 
         // Mimic the expected buildifier process output.
         {
-            fakeRunner.targetOutput = "";
-            fakeRunner.targetError = "Failed to format content.";
-            fakeRunner.targetExitCode = 5;
+            final CommandOutput mockOut = new CommandOutput(
+                    byteArrayOutputStreamFromString(""),
+                    byteArrayOutputStreamFromString("Failed to format content."),
+                    5
+            );
+
+            Mockito.when(dispatcherMock.dispatch(Mockito.any())).thenReturn(Optional.of(mockOut));
         }
 
         FormatOutput output = buildifier.format(args);
@@ -124,22 +135,29 @@ public class BuildifierTest {
             input.setShouldApplyLintFixes(false);
             input.setType(BuildifierFileType.BUILD);
         }
-        LintOutput out;
+
+
+        // Mimic the dispatcher.
         {
-            out = gson.fromJson(BUILDIFIER_CONTENT_WITH_WARNINGS, LintOutput.class);
-            fakeRunner.targetOutput = BUILDIFIER_CONTENT_WITH_WARNINGS;
-            fakeRunner.targetError = "";
-            fakeRunner.targetExitCode = 0;
+            final CommandOutput mockOut = new CommandOutput(
+                    byteArrayOutputStreamFromString(BUILDIFIER_CONTENT_WITH_WARNINGS),
+                    byteArrayOutputStreamFromString(""),
+                    0
+            );
+
+            Mockito.when(dispatcherMock.dispatch(Mockito.any())).thenReturn(Optional.of(mockOut));
         }
 
-        LintOutput result = buildifier.lint(input);
+        LintOutput expected = gson.fromJson(BUILDIFIER_CONTENT_WITH_WARNINGS, LintOutput.class);
+        LintOutput actual = buildifier.lint(input);
 
-        Assert.assertNotNull(result);
-        Assert.assertEquals(out.getSuccess(), result.getSuccess());
-        Assert.assertEquals(out.getFiles().size(), result.getFiles().size());
-        String outStr = gson.toJson(out);
-        String resultStr = gson.toJson(result);
-        Assert.assertEquals(outStr, resultStr);
+        Assert.assertNotNull(actual);
+        Assert.assertEquals(expected.getSuccess(), actual.getSuccess());
+        Assert.assertEquals(expected.getFiles().size(), actual.getFiles().size());
+
+        String expectedJson = gson.toJson(expected);
+        String actualJson = gson.toJson(actual);
+        Assert.assertEquals(expectedJson, actualJson);
     }
 
     @Test
@@ -211,24 +229,9 @@ public class BuildifierTest {
         Workspace.getInstance().setExtensionConfig(config);
     }
 
-    private static final class FakeRunner implements Runner {
-        int targetExitCode = 0;
-        String targetError = "";
-        String targetOutput = "";
-        RunnerInput input;
-
-        @Override
-        public RunnerOutput run(RunnerInput input) throws BuildifierException {
-            this.input = input;
-
-            final RunnerOutput output = new RunnerOutput();
-            {
-                output.setExitCode(targetExitCode);
-                output.setRawError(targetError);
-                output.setRawOutput(targetOutput);
-            }
-
-            return output;
-        }
+    private ByteArrayOutputStream byteArrayOutputStreamFromString(String msg) throws IOException {
+        ByteArrayOutputStream res = new ByteArrayOutputStream();
+        res.write(msg.getBytes());
+        return res;
     }
 }

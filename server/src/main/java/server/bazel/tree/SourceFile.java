@@ -13,7 +13,7 @@ public class SourceFile {
         if(parts.length > 1) {
             this.fileExtension = parts[1];
         } else {
-            this.fileExtension = null;
+            this.fileExtension = "";
         }
         this.path = path;
     }
@@ -35,5 +35,14 @@ public class SourceFile {
             return getFileName();
         }
         return String.format("%s.%s", fileName, fileExtension);
+    }
+
+    @Override
+    public String toString() {
+        return "SourceFile{" +
+                "path=" + path +
+                ", fileName='" + fileName + '\'' +
+                ", fileExtension='" + fileExtension + '\'' +
+                '}';
     }
 }
