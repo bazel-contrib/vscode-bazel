@@ -5,6 +5,7 @@ import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
 import server.bazel.cli.BazelTest;
+import server.bazel.interp.LabelTest;
 import server.buildifier.BuildifierTest;
 import server.utils.DocumentTrackerTest;
 import server.utils.NullabilityTest;
@@ -16,12 +17,12 @@ import server.bazel.bazelWorkspaceAPI.*;
 // https://stackoverflow.com/questions/46365464/how-to-run-all-tests-in-bazel-from-a-single-java-test-rule
 @RunWith(Suite.class)
 @SuiteClasses({
-        BazelServicesTest.class,
         BuildifierTest.class,
         DocumentTrackerTest.class,
         NullabilityTest.class,
         BazelTest.class,
         WorkspaceTest.class,
-        APITests.class
+        APITests.class,
+        LabelTest.class
 })
 public class AllServerTests {}

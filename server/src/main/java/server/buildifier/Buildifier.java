@@ -181,7 +181,7 @@ public final class Buildifier {
         // The extension config path will take priority over the inferred paths. Try
         // to load the buildifier from the extension configuration.
         {
-            String executablePathStr = Nullability.access(() -> Workspace.getInstance().getExtensionConfig().
+            String executablePathStr = Nullability.nullable(() -> Workspace.getInstance().getExtensionConfig().
                     getBazel().getBuildifier().getExecutable());
             executablePathStr = executablePathStr == null ? "" : executablePathStr;
 
