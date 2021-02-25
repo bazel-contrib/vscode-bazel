@@ -57,7 +57,7 @@ public class FormattingProvider {
         formatInput.setContent(content);
         formatInput.setShouldApplyLintFixes(true);
 
-        Buildifier buildifier = new Buildifier();
+        Buildifier buildifier = getBuildifier();
         FormatOutput formatOutput = null;
         try {
             formatOutput = buildifier.format(formatInput);
@@ -75,7 +75,7 @@ public class FormattingProvider {
         return CompletableFuture.completedFuture(results);
     }
 
-    private static File getFileFromUriString(String uriString) {
+    static File getFileFromUriString(String uriString) {
         try {
             URI uri = new URI(uriString);
             File file = new File(uri);
@@ -103,5 +103,9 @@ public class FormattingProvider {
         int charPosition = lines[linePosition].length();
 
         return new Position(linePosition, charPosition);
+    }
+
+    static Buildifier getBuildifier() {
+        return new Buildifier();
     }
 }
