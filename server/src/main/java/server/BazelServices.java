@@ -199,7 +199,8 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
     }
 
     @Override
-    public CompletableFuture<List<TextEdit>> formatting(DocumentFormattingParams params) {
+    public CompletableFuture<List<? extends TextEdit>> formatting(DocumentFormattingParams params) {
+        logger.info("Formatting request received");
         return FormattingProvider.getDocumentFormatting(params);
     }
 }

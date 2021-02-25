@@ -4,6 +4,7 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import org.apache.logging.log4j.LogManager;
@@ -14,6 +15,7 @@ import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextEdit;
 
 import server.buildifier.Buildifier;
+import server.buildifier.BuildifierException;
 import server.buildifier.BuildifierFileType;
 import server.buildifier.FormatInput;
 import server.buildifier.FormatOutput;
@@ -24,12 +26,12 @@ public class FormattingProvider {
     private static final Logger logger = LogManager.getLogger(FormattingProvider.class);
 
 
-    public static CompletableFuture<List<TextEdit>> getDocumentFormatting(DocumentFormattingParams params) {
+    public static CompletableFuture<List<? extends TextEdit>> getDocumentFormatting(DocumentFormattingParams params) {
         logger.info("Invoked FormattingProvider");
 
         DocumentTracker documentTracker = DocumentTracker.getInstance();
         FormatInput formatInput = new FormatInput();
-        String stringUri = params.getTextDocument.getUri();
+        String stringUri = params.getTextDocument().getUri();
         logger.info("Formatting file from: " + stringUri);
         File file = getFileFromUriString(stringUri);
 
@@ -56,7 +58,13 @@ public class FormattingProvider {
         formatInput.setShouldApplyLintFixes(true);
 
         Buildifier buildifier = new Buildifier();
-        FormatOutput formatOutput = buildifier.format(formatInput);
+        FormatOutput formatOutput = null;
+        try {
+            formatOutput = buildifier.format(formatInput);
+        } catch(BuildifierException exception) {
+            logger.error(exception);
+            return CompletableFuture.completedFuture(new ArrayList<TextEdit>());
+        }
         logger.info("File formatted");
 
         TextEdit result = makeTextEditFromChanges(content, formatOutput.getResult());
@@ -91,8 +99,8 @@ public class FormattingProvider {
     private static Position getLastPosition(String contents) {
         // Is this safe? Only in a Linux environment?
         String[] lines = contents.split("\n");
-        int linePosition = lines.length - 1;
-        int charPosition = lines[linePosition].length() - 1;
+        int linePosition = lines.length;
+        int charPosition = lines[linePosition].length();
 
         return new Position(linePosition, charPosition);
     }
