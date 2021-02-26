@@ -7,6 +7,7 @@ import org.junit.runners.Suite.SuiteClasses;
 import server.bazel.cli.BazelTest;
 import server.buildifier.BuildifierTest;
 import server.utils.DocumentTrackerTest;
+import server.formatting.FormattingProviderTest;
 import server.utils.NullabilityTest;
 import server.workspace.WorkspaceTest;
 import server.bazel.bazelWorkspaceAPI.*;
@@ -19,6 +20,7 @@ import server.bazel.bazelWorkspaceAPI.*;
         BazelServicesTest.class,
         BuildifierTest.class,
         DocumentTrackerTest.class,
+        FormattingProviderTest.class,
         NullabilityTest.class,
         BazelTest.class,
         WorkspaceTest.class,

@@ -99,7 +99,7 @@ public class FormattingProvider {
     private static Position getLastPosition(String contents) {
         // Is this safe? Only in a Linux environment?
         String[] lines = contents.split("\n");
-        int linePosition = lines.length;
+        int linePosition = lines.length -1;
         int charPosition = lines[linePosition].length();
 
         return new Position(linePosition, charPosition);

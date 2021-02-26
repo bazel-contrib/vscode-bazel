@@ -8,6 +8,7 @@ java_library(
         "FormattingProviderTest.java",
     ],
     deps = [
+        "//server/src/main/java/server/buildifier",
         "//server/src/main/java/server/formatting",
         "//server/src/main/java/server/utils",
         "//third_party/java:junit",
