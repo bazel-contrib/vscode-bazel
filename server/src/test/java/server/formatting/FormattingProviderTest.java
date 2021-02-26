@@ -31,14 +31,12 @@ public class FormattingProviderTest {
 
     @Before
     public void setUp() {
-        formattingProvider = Mockito.spy(FormattingProvider.class);
         buildifier = Mockito.mock(Buildifier.class);
         documentTracker = Mockito.mock(DocumentTracker.class);
+        FormattingProvider concreteFormattingProvider = new FormattingProvider(documentTracker, buildifier);
+        formattingProvider = Mockito.spy(concreteFormattingProvider);
         file = Mockito.mock(File.class);
 
-        //Mockito.when(formattingProvider.getBuildifier()).thenReturn(buildifier);
-        Mockito.doReturn(buildifier).when(formattingProvider).getBuildifier();
-        //Mockito.when(formattingProvider.getFileFromUriString(Mockito.any())).thenReturn(file);
         Mockito.doReturn(file).when(formattingProvider).getFileFromUriString(Mockito.any());
         Mockito.when(file.getName()).thenReturn("BUILD");
         Mockito.when(file.toURI()).thenReturn(null);

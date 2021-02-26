@@ -24,12 +24,18 @@ import server.utils.DocumentTracker;
 public class FormattingProvider {
 
     private static final Logger logger = LogManager.getLogger(FormattingProvider.class);
+    private DocumentTracker documentTracker;
+    private Buildifier buildifier;
+
+    public FormattingProvider(DocumentTracker documentTracker, Buildifier buildifier) {
+        this.documentTracker = documentTracker;
+        this.buildifier = buildifier;
+    }
 
 
-    public static CompletableFuture<List<? extends TextEdit>> getDocumentFormatting(DocumentFormattingParams params) {
+    public CompletableFuture<List<? extends TextEdit>> getDocumentFormatting(DocumentFormattingParams params) {
         logger.info("Invoked FormattingProvider");
 
-        DocumentTracker documentTracker = DocumentTracker.getInstance();
         FormatInput formatInput = new FormatInput();
         String stringUri = params.getTextDocument().getUri();
         logger.info("Formatting file from: " + stringUri);
@@ -57,7 +63,6 @@ public class FormattingProvider {
         formatInput.setContent(content);
         formatInput.setShouldApplyLintFixes(true);
 
-        Buildifier buildifier = getBuildifier();
         FormatOutput formatOutput = null;
         try {
             formatOutput = buildifier.format(formatInput);
@@ -75,7 +80,7 @@ public class FormattingProvider {
         return CompletableFuture.completedFuture(results);
     }
 
-    static File getFileFromUriString(String uriString) {
+    File getFileFromUriString(String uriString) {
         try {
             URI uri = new URI(uriString);
             File file = new File(uri);
@@ -86,7 +91,7 @@ public class FormattingProvider {
         }
     }
 
-    private static TextEdit makeTextEditFromChanges(String oldContents, String newContents) {
+    private TextEdit makeTextEditFromChanges(String oldContents, String newContents) {
         Position start = new Position(0, 0);
         Position end = getLastPosition(oldContents);
 
@@ -96,16 +101,12 @@ public class FormattingProvider {
 
     }
 
-    private static Position getLastPosition(String contents) {
+    private Position getLastPosition(String contents) {
         // Is this safe? Only in a Linux environment?
         String[] lines = contents.split("\n");
         int linePosition = lines.length -1;
         int charPosition = lines[linePosition].length();
 
         return new Position(linePosition, charPosition);
-    }
-
-    static Buildifier getBuildifier() {
-        return new Buildifier();
     }
 }

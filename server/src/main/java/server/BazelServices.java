@@ -10,6 +10,7 @@ import org.eclipse.lsp4j.services.LanguageClientAware;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
+import server.buildifier.Buildifier;
 import server.completion.CompletionProvider;
 import server.formatting.FormattingProvider;
 import server.utils.DocumentTracker;
@@ -201,6 +202,7 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
     @Override
     public CompletableFuture<List<? extends TextEdit>> formatting(DocumentFormattingParams params) {
         logger.info("Formatting request received");
-        return FormattingProvider.getDocumentFormatting(params);
+        FormattingProvider formattingProvider = new FormattingProvider(DocumentTracker.getInstance(), new Buildifier());
+        return formattingProvider.getDocumentFormatting(params);
     }
 }
