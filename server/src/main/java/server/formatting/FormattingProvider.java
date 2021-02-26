@@ -70,12 +70,12 @@ public class FormattingProvider {
             logger.error(exception);
             return CompletableFuture.completedFuture(new ArrayList<TextEdit>());
         }
-        logger.info("File formatted");
 
         TextEdit result = makeTextEditFromChanges(content, formatOutput.getResult());
         List<TextEdit> results = new ArrayList<>();
         results.add(result);
 
+        logger.info("File formatted");
 
         return CompletableFuture.completedFuture(results);
     }
@@ -102,11 +102,16 @@ public class FormattingProvider {
     }
 
     private Position getLastPosition(String contents) {
-        // Is this safe? Only in a Linux environment?
-        String[] lines = contents.split("\n");
-        int linePosition = lines.length -1;
-        int charPosition = lines[linePosition].length();
+        // Assuming a UNIX based operating system
+        int numLines = 0;
+        for(char c : contents.toCharArray()) {
+            if(c == '\n') numLines++;
+        }
+        int lastLineLength = 0;
+        for(int i = contents.length() - 1; i != '\n'; i--) {
+            lastLineLength++;
+        }
 
-        return new Position(linePosition, charPosition);
+        return new Position(numLines, lastLineLength);
     }
 }
