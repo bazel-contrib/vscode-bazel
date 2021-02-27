@@ -114,7 +114,7 @@ public class FormattingProviderTest {
 
         BuildifierFileType type = captor.getValue().getType();
 
-        Assert.assertEquals(BuildifierFileType.WORKSAPCE, type);
+        Assert.assertEquals(BuildifierFileType.WORKSPACE, type);
     }
 
     @Test

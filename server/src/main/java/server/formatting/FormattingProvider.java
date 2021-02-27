@@ -42,7 +42,6 @@ public class FormattingProvider {
         File file = getFileFromUriString(stringUri);
 
         if (file == null) {
-            // TODO: handle this problem
             logger.info("Could not find file");
             return CompletableFuture.completedFuture(new ArrayList<TextEdit>());
         }
@@ -53,10 +52,12 @@ public class FormattingProvider {
         if (name.equals("BUILD")) {
             formatInput.setType(BuildifierFileType.BUILD);
         } else if (name.equals("WORKSPACE")) {
-            formatInput.setType(BuildifierFileType.WORKSAPCE);
-        } else {
-            // This assumes that this code will not be called on any incompatible file types
+            formatInput.setType(BuildifierFileType.WORKSPACE);
+        } else if (name.substring(name.length() - 4, name.length()).equals(".bzl")) {
             formatInput.setType(BuildifierFileType.BZL);
+        } else {
+            logger.info("Could not format this type of file: " + name);
+            return CompletableFuture.completedFuture(new ArrayList<TextEdit>());
         }
 
         String content = documentTracker.getContents(file.toURI());

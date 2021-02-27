@@ -106,7 +106,7 @@ public class BuildifierTest {
         {
             args.setContent(BUILDIFIER_UNFORMATTED_CONTENT);
             args.setShouldApplyLintFixes(true);
-            args.setType(BuildifierFileType.WORKSAPCE);
+            args.setType(BuildifierFileType.WORKSPACE);
         }
 
         // Mimic the expected buildifier process output.
