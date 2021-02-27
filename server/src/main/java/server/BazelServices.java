@@ -10,9 +10,11 @@ import org.eclipse.lsp4j.services.LanguageClientAware;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
+import server.buildifier.Buildifier;
 import server.completion.CompletionProvider;
 import server.diagnostics.DiagnosticParams;
 import server.diagnostics.DiagnosticsProvider;
+import server.formatting.FormattingProvider;
 import server.utils.DocumentTracker;
 import server.workspace.ExtensionConfig;
 import server.workspace.ProjectFolder;
@@ -21,6 +23,7 @@ import server.workspace.Workspace;
 import java.net.URI;
 import java.util.Collection;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -186,5 +189,20 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
     @Override
     public CompletableFuture<CompletionItem> resolveCompletionItem(CompletionItem unresolved) {
         return CompletableFuture.completedFuture(unresolved);
+    }
+
+    @Override
+    public CompletableFuture<List<? extends TextEdit>> formatting(DocumentFormattingParams params) {
+        logger.info("Formatting request received");
+        Buildifier buildifier = new Buildifier();
+        // Formatting is done through the buildifier. We must verify that the client has buildifier installed.
+        if (buildifier.exists()) {
+            FormattingProvider formattingProvider = new FormattingProvider(DocumentTracker.getInstance(), buildifier);
+            return formattingProvider.getDocumentFormatting(params);
+        } else {
+            // Display a popup indicating the client does not have buildifier installed.
+            languageClient.showMessage(new MessageParams(MessageType.Info, "Buildifier executable not found.\nPlease install buildifier to enable file formatting."));
+            return CompletableFuture.completedFuture(new ArrayList<TextEdit>());
+        }
     }
 }

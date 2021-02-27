@@ -46,11 +46,14 @@ public class BazelLanguageServer implements LanguageServer, LanguageClientAware 
 
         serverCapabilities.setTextDocumentSync(TextDocumentSyncKind.Full);
         serverCapabilities.setCompletionProvider(new CompletionOptions(true, Arrays.asList(":", "/")));
+        serverCapabilities.setDocumentFormattingProvider(true);
+        logger.info("Server capabilities set, especially the formatting provider.");
 
         logger.info(String.format("Declared server capabilities: \"%s\"", serverCapabilities));
         return new InitializeResult(serverCapabilities);
     }
 
+            
     private void initializeWorkspaceRoot(InitializeParams params) {
         final ProjectFolder folder = ProjectFolder.fromURI(params.getRootUri());
         Workspace.getInstance().setRootFolder(folder);
