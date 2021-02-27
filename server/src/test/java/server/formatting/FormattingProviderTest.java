@@ -59,7 +59,7 @@ public class FormattingProviderTest {
     }
 
     @Test
-    public void FormattingProviderReturnsBuildifierOutputAsResult() throws Exception {
+    public void formattingProviderReturnsBuildifierOutputAsResult() throws Exception {
         FormatOutput testOutput = new FormatOutput("The Framework Works!");
         Mockito.when(buildifier.format(Mockito.any())).thenReturn(testOutput);
 
@@ -72,7 +72,7 @@ public class FormattingProviderTest {
     }
 
     @Test
-    public void FormattingProviderReturnsCorrectRangeForSingleLineFile() throws Exception {
+    public void formattingProviderReturnsCorrectRangeForSingleLineFile() throws Exception {
         Mockito.when(documentTracker.getContents(Mockito.any())).thenReturn("A single line string");
 
         output = formattingProvider.getDocumentFormatting(params);
@@ -83,7 +83,7 @@ public class FormattingProviderTest {
     }
 
     @Test
-    public void FormattingProviderReturnsCorrectRangeForMultiLineFile() throws Exception {
+    public void formattingProviderReturnsCorrectRangeForMultiLineFile() throws Exception {
         String multiLineString = "This string\nhas three lines\nand a trailing newline character\n";
         Mockito.when(documentTracker.getContents(Mockito.any())).thenReturn(multiLineString);
     
@@ -94,7 +94,7 @@ public class FormattingProviderTest {
     }
 
     @Test
-    public void FormattingProviderPassesBUILDTypeToBuildifierWhenFileNameIsBUILD() throws Exception {
+    public void formattingProviderPassesBUILDTypeToBuildifierWhenFileNameIsBUILD() throws Exception {
         Mockito.when(file.getName()).thenReturn("BUILD");
         
         output = formattingProvider.getDocumentFormatting(params);
@@ -106,7 +106,7 @@ public class FormattingProviderTest {
     }
 
     @Test
-    public void FormattingProviderPassesWORKSPACETypeToBuildifierWhenFileNameIsWORKSPACE() throws Exception {
+    public void formattingProviderPassesWORKSPACETypeToBuildifierWhenFileNameIsWORKSPACE() throws Exception {
         Mockito.when(file.getName()).thenReturn("WORKSPACE");
         
         output = formattingProvider.getDocumentFormatting(params);
@@ -118,7 +118,7 @@ public class FormattingProviderTest {
     }
 
     @Test
-    public void FormattingProviderPassesBZLTypeToBuildifierWhenFileHasExtensionBzl() throws Exception {
+    public void formattingProviderPassesBZLTypeToBuildifierWhenFileHasExtensionBzl() throws Exception {
         Mockito.when(file.getName()).thenReturn("File.bzl");
         
         output = formattingProvider.getDocumentFormatting(params);
@@ -130,7 +130,7 @@ public class FormattingProviderTest {
     }
 
     @Test 
-    public void FormattingProviderPassesContentsStringToBuildifierFromFile() throws Exception {
+    public void formattingProviderPassesContentsStringToBuildifierFromFile() throws Exception {
         String contentsString = "This is the contents\nof the string!\n";
         Mockito.when(documentTracker.getContents(Mockito.any())).thenReturn(contentsString);
 
