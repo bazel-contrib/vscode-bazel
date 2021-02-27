@@ -46,8 +46,8 @@ export function activate(context: vscode.ExtensionContext): void {
       let buildPath = currentlyOpenTabfilePath.substr(0,currentlyOpenTabfilePath.length-currentlyOpenTabfileName.length);
 
       buildPath = buildPath + "BUILD"
-      vscode.window.showTextDocument(vscode.Uri.file(buildPath))
-      // vscode.commands.executeCommand('workbench.action.quickOpen',buildPath);
+      // vscode.window.showTextDocument(vscode.Uri.file(buildPath))
+      vscode.commands.executeCommand('workbench.action.quickOpen',buildPath);
       } 
       else {
         let message = "YOUR-EXTENSION: Working folder not found, open a folder an try again" ;
