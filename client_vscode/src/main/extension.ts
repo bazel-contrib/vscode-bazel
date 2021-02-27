@@ -34,36 +34,27 @@ export function activate(context: vscode.ExtensionContext): void {
   vscode.workspace.onDidChangeConfiguration(onDidChangeConfiguration);
 
   vscode.commands.registerCommand(
-    //workbench.action.quickOpen
     WorkspaceUtils.COMMANDS.bazel.restartServer,
     restartServer,
   );
 
   vscode.commands.registerCommand(WorkspaceUtils.COMMANDS.bazel.openAssociatedBuildFile, () => {
-    let message
+    
     if(vscode.workspace.workspaceFolders !== undefined) {
       let currentlyOpenTabfilePath = vscode.window.activeTextEditor.document.fileName;
       let currentlyOpenTabfileName = path.basename(currentlyOpenTabfilePath);
+      let buildPath = currentlyOpenTabfilePath.substr(0,currentlyOpenTabfilePath.length-currentlyOpenTabfileName.length);
 
-      let filenameLength = currentlyOpenTabfileName.length;
-      let buildPath = currentlyOpenTabfilePath.substr(0,currentlyOpenTabfilePath.length-filenameLength);
       buildPath = buildPath + "BUILD"
-
-      
 
       vscode.commands.executeCommand('workbench.action.quickOpen',buildPath);
       } 
       else {
-          message = "YOUR-EXTENSION: Working folder not found, open a folder an try again" ;
-      
-          vscode.window.showErrorMessage(message);
+        let message = "YOUR-EXTENSION: Working folder not found, open a folder an try again" ;
+        vscode.window.showErrorMessage(message);
       }
     
   });
-  // vscode.commands.registerCommand(
-  //   WorkspaceUtils.COMMANDS.bazel.openAssociatedBuildFile,
-  //   navigateToFile,
-  // );
 
   startServer();
 }
