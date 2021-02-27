@@ -7,7 +7,7 @@ package server.buildifier;
 public enum BuildifierFileType {
     BUILD,
     BZL,
-    WORKSAPCE;
+    WORKSPACE;
 
     /**
      * Converts the current value to a recognizable buildifier CLI file type.
@@ -19,7 +19,7 @@ public enum BuildifierFileType {
                 return "build";
             case BZL:
                 return "bzl";
-            case WORKSAPCE:
+            case WORKSPACE:
                 return "workspace";
         }
 

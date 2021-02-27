@@ -131,7 +131,6 @@ function startServer(): void {
           }
           return;
         }
-
         // The pre-conditions were satisfied, inform the user that we've
         // started initializing the server.
         progress.report({ message: MESSAGES.init });

@@ -29,6 +29,7 @@ if [[ "$name" == "server" ]]
 then
     (
         bazel build //server:server_deploy.jar
+        exit $?
     )
 elif [[ "$name" == "client_vscode" ]]
 then
@@ -36,10 +37,15 @@ then
         # Remove the old server if it exists.
         echo "Removing old server code..."
         rm -rf client_vscode/bin/* 2> /dev/null || true
-        
+
         # Build the server with dependencies.
         echo "Building server jar..."
         ./scripts/build.sh -n server
+        SERVER_EXIT_CODE=$?
+        if [[ $SERVER_EXIT_CODE != 0 ]]
+        then
+            exit $SERVER_EXIT_CODE
+        fi
         
         # Move the language server into the client bin (for development purposes).
         echo "Migrating server jar..."
@@ -50,9 +56,9 @@ then
         cd client_vscode
         npm i
         npm run compile
+        exit $?
     )
 else
     echo "The name must be one of the provided targets.";
     usage
 fi
-
