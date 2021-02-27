@@ -7,7 +7,8 @@
             "request": "launch",
             "runtimeExecutable": "${execPath}",
             "args": [
-                "/workspaces/dev/playground",
+                // You can change this to configure which example project you want to develop in.
+                "/workspaces/dev/playground/examples/cpp_hello_world/stage_3",
                 "--extensionDevelopmentPath=${workspaceRoot}/client_vscode",
             ],
             "stopOnEntry": false,

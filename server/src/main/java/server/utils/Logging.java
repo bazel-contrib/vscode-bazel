@@ -17,7 +17,7 @@ public final class Logging {
      * @param e The error to use.
      * @return The stack trace formatted as a string.
      */
-    public static String stackTraceToString(Exception e) {
+    public static String stackTraceToString(Throwable e) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         e.printStackTrace(pw);

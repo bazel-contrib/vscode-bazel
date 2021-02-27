@@ -27,18 +27,20 @@ public class BuildTarget {
     }
 
     public String getPathWithTarget() {
-        return String.format("%s:%s", path.toString(), label);
+        // Path truncates the first "/".
+        return String.format("/%s:%s", path.toString(), label);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(kind, label, path);
     }
+
     @Override
     public boolean equals(Object o) {
-        if( o == this){
+        if (o == this) {
             return true;
-        }else if (!(o instanceof BuildTarget)) {
+        } else if (!(o instanceof BuildTarget)) {
             return false;
         }
 
