@@ -9,9 +9,9 @@ java_library(
         "BazelServices.java",
     ],
     deps = [
-        "//server/src/main/java/server/analysis",
         "//server/src/main/java/server/buildifier",
         "//server/src/main/java/server/completion",
+        "//server/src/main/java/server/diagnostics",
         "//server/src/main/java/server/formatting",
         "//server/src/main/java/server/highlighting",
         "//server/src/main/java/server/starlark",

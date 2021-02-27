@@ -3,10 +3,12 @@ package server.bazel.bazelWorkspaceAPI;
 import java.util.ArrayList;
 import java.util.List;
 import java.nio.file.Path;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
 import static org.mockito.Mockito.*;
 
 import server.bazel.tree.BuildTarget;
@@ -59,30 +61,26 @@ public class APITests {
 
     @Test
     public void doesSettingAndCreatingAPIWork() {
-        try {
-            WorkspaceAPI workspaceAPI = new WorkspaceAPI(simpleWorkSpaceTree);
-        } catch (WorkspaceAPIException e) {
-            assert false;
-        }
+        WorkspaceAPI workspaceAPI = new WorkspaceAPI(simpleWorkSpaceTree);
     }
 
     @Test
-    public void should_returnStringList_With_correctChildPackageValues () {
-        try{
+    public void should_returnStringList_With_correctChildPackageValues() {
+        try {
             List<Path> paths = new ArrayList<>();
             WorkspaceAPI workspaceAPI = new WorkspaceAPI(simpleWorkSpaceTree);
 
             paths = workspaceAPI.findPossibleCompletionsForPath(Path.of("//"));
             Assert.assertTrue(paths.contains(Path.of("/main")));
             Assert.assertTrue(paths.contains(Path.of("/lib")));
-        } catch (Exception e){
+        } catch (Exception e) {
             Assert.assertTrue(false);
         }
     }
 
     @Test
-    public void should_returnCorrectStrings_With_longPackage () {
-        try{
+    public void should_returnCorrectStrings_With_longPackage() {
+        try {
             List<Path> paths = new ArrayList<>();
 
             WorkspaceAPI workspaceAPI = new WorkspaceAPI(simpleWorkSpaceTree);
@@ -110,14 +108,14 @@ public class APITests {
             paths = workspaceAPI.findPossibleCompletionsForPath(Path.of("//lib/bazelLib/bazelLib1/bazelLib2/bazelLib3/"));
             Assert.assertEquals(0, paths.size());
 
-        } catch (Exception e){
+        } catch (Exception e) {
             Assert.fail();
         }
     }
 
     @Test
-    public void should_returnBuildTargetStrings_With_longPackage () {
-        try{
+    public void should_returnBuildTargetStrings_With_longPackage() {
+        try {
             List<BuildTarget> buildTargets = new ArrayList<>();
 
             WorkspaceAPI workspaceAPI = new WorkspaceAPI(simpleWorkSpaceTree);
@@ -151,85 +149,85 @@ public class APITests {
             Assert.assertTrue(buildTargets.contains(new BuildTarget(Path.of("/lib/bazelLib/bazelLib1/bazelLib2/bazelLib3"), "java_build_target_3", "kind")));
             Assert.assertTrue(buildTargets.contains(new BuildTarget(Path.of("/lib/bazelLib/bazelLib1/bazelLib2/bazelLib3"), "java_build_target_4", "kind")));
 
-        } catch (Exception e){
+        } catch (Exception e) {
             Assert.fail();
         }
     }
 
     @Test
-    public void validTargets_should_returnTrue_With_longPackage () {
-        try{
+    public void validTargets_should_returnTrue_With_longPackage() {
+        try {
             boolean isValid;
 
             WorkspaceAPI workspaceAPI = new WorkspaceAPI(simpleWorkSpaceTree);
-            BuildTarget build1 = new BuildTarget(Path.of("//lib"),"java_build_target", "kind");
+            BuildTarget build1 = new BuildTarget(Path.of("//lib"), "java_build_target", "kind");
             isValid = workspaceAPI.isValidTarget(build1);
             Assert.assertTrue(isValid);
 
-            BuildTarget build2 = new BuildTarget(Path.of("//lib"),"java_build_target_2", "kind");
+            BuildTarget build2 = new BuildTarget(Path.of("//lib"), "java_build_target_2", "kind");
             isValid = workspaceAPI.isValidTarget(build2);
             Assert.assertTrue(isValid);
 
-            BuildTarget build3 = new BuildTarget(Path.of("//lib/bazelLib/bazelLib1/bazelLib2/bazelLib3"),"java_build_target_3", "kind");
+            BuildTarget build3 = new BuildTarget(Path.of("//lib/bazelLib/bazelLib1/bazelLib2/bazelLib3"), "java_build_target_3", "kind");
             isValid = workspaceAPI.isValidTarget(build3);
             Assert.assertTrue(isValid);
 
-            BuildTarget build4 = new BuildTarget(Path.of("//lib/bazelLib/bazelLib1/bazelLib2/bazelLib3"),"java_build_target_4", "kind");
+            BuildTarget build4 = new BuildTarget(Path.of("//lib/bazelLib/bazelLib1/bazelLib2/bazelLib3"), "java_build_target_4", "kind");
             isValid = workspaceAPI.isValidTarget(build4);
             Assert.assertTrue(isValid);
 
-        } catch (Exception e){
+        } catch (Exception e) {
             Assert.fail();
         }
     }
 
     @Test
-    public void invalidTargets_should_returnFalse_With_longPackage () {
-        try{
+    public void invalidTargets_should_returnFalse_With_longPackage() {
+        try {
             boolean isValid;
 
             WorkspaceAPI workspaceAPI = new WorkspaceAPI(simpleWorkSpaceTree);
 
-            BuildTarget build1 = new BuildTarget(Path.of("//lib"),"java_build_target_3", "kind");
+            BuildTarget build1 = new BuildTarget(Path.of("//lib"), "java_build_target_3", "kind");
             isValid = workspaceAPI.isValidTarget(build1);
             Assert.assertFalse(isValid);
 
-            BuildTarget build2 = new BuildTarget(Path.of("//lib"),"java_build_target_4", "kind");
+            BuildTarget build2 = new BuildTarget(Path.of("//lib"), "java_build_target_4", "kind");
             isValid = workspaceAPI.isValidTarget(build2);
             Assert.assertFalse(isValid);
 
-            BuildTarget build3 = new BuildTarget(Path.of("//lib/bazelLib/bazelLib1/bazelLib2/bazelLib3"),"java_build_target_1", "kind");
+            BuildTarget build3 = new BuildTarget(Path.of("//lib/bazelLib/bazelLib1/bazelLib2/bazelLib3"), "java_build_target_1", "kind");
             isValid = workspaceAPI.isValidTarget(build3);
             Assert.assertFalse(isValid);
 
-            BuildTarget build4 = new BuildTarget(Path.of("//lib/bazelLib/bazelLib1/bazelLib2/bazelLib3"),"java_build_target_2", "kind");
+            BuildTarget build4 = new BuildTarget(Path.of("//lib/bazelLib/bazelLib1/bazelLib2/bazelLib3"), "java_build_target_2", "kind");
             isValid = workspaceAPI.isValidTarget(build4);
             Assert.assertFalse(isValid);
 
-            BuildTarget build5 = new BuildTarget(Path.of("//lib/lib"),"build", "kind");
+            BuildTarget build5 = new BuildTarget(Path.of("//lib/lib"), "build", "kind");
             isValid = workspaceAPI.isValidTarget(build5);
             Assert.assertFalse(isValid);
 
-            BuildTarget build6 = new BuildTarget(Path.of("lib/lib"),"build", "kind");
+            BuildTarget build6 = new BuildTarget(Path.of("lib/lib"), "build", "kind");
             isValid = workspaceAPI.isValidTarget(build6);
             Assert.assertFalse(isValid);
 
-            BuildTarget build7 = new BuildTarget(Path.of("//lib"),null, "kind");
+            BuildTarget build7 = new BuildTarget(Path.of("//lib"), null, "kind");
             isValid = workspaceAPI.isValidTarget(build7);
             Assert.assertFalse(isValid);
 
-            BuildTarget build8 = new BuildTarget(Path.of("//lib/bazelLib/bazelLib1/bazelLib2"),"fake", "kind");
+            BuildTarget build8 = new BuildTarget(Path.of("//lib/bazelLib/bazelLib1/bazelLib2"), "fake", "kind");
             isValid = workspaceAPI.isValidTarget(build8);
             Assert.assertFalse(isValid);
 
-        } catch (Exception e){
+        } catch (Exception e) {
             Assert.fail();
         }
     }
 
     @Test
-    public void validSources_should_returnTrue_With_longPackage () {
-        try{
+    public void validSources_should_returnTrue_With_longPackage() {
+        try {
             boolean isValid;
 
             WorkspaceAPI workspaceAPI = new WorkspaceAPI(simpleWorkSpaceTree);
@@ -253,14 +251,14 @@ public class APITests {
             isValid = workspaceAPI.isSourceFileInPackage(file5);
             Assert.assertTrue(isValid);
 
-        } catch (Exception e){
+        } catch (Exception e) {
             Assert.fail();
         }
     }
 
     @Test
-    public void invalidSources_should_returnFalse_With_longPackage () {
-        try{
+    public void invalidSources_should_returnFalse_With_longPackage() {
+        try {
             boolean isValid;
 
             WorkspaceAPI workspaceAPI = new WorkspaceAPI(simpleWorkSpaceTree);
@@ -294,14 +292,13 @@ public class APITests {
             Assert.assertFalse(isValid);
 
 
-        } catch (Exception e){
+        } catch (Exception e) {
             Assert.fail();
         }
     }
 
 
-
-    public WorkspaceTree initializeSimpleWorkSpaceTree(){
+    public WorkspaceTree initializeSimpleWorkSpaceTree() {
         Package currentWorkspaceRoot = new Package("/");
         WorkspaceTree workspaceTreeInConstruction = new WorkspaceTree(currentWorkspaceRoot);
 
@@ -314,11 +311,11 @@ public class APITests {
         workspaceTreeInConstruction.getRoot().getChild("lib").get().getChild("bazelLib").get().getChild("bazelLib1").get()
                 .getChild("bazelLib2").get().addChild(package6);
 
-        BuildTarget buildTargetP2_1 = new BuildTarget(package2Mock,"java_build_target", "kind");
-        BuildTarget buildTargetP2_2 = new BuildTarget(package2Mock,"java_build_target_2", "kind");
+        BuildTarget buildTargetP2_1 = new BuildTarget(package2Mock, "java_build_target", "kind");
+        BuildTarget buildTargetP2_2 = new BuildTarget(package2Mock, "java_build_target_2", "kind");
 
-        BuildTarget buildTargetP2_3 = new BuildTarget(package6Mock,"java_build_target_3", "kind");
-        BuildTarget buildTargetP2_4 = new BuildTarget(package6Mock,"java_build_target_4", "kind");
+        BuildTarget buildTargetP2_3 = new BuildTarget(package6Mock, "java_build_target_3", "kind");
+        BuildTarget buildTargetP2_4 = new BuildTarget(package6Mock, "java_build_target_4", "kind");
 
         workspaceTreeInConstruction.getRoot().getChild("lib").get().getValue().addBuildTarget(buildTargetP2_1);
         workspaceTreeInConstruction.getRoot().getChild("lib").get().getValue().addBuildTarget(buildTargetP2_2);
@@ -329,15 +326,15 @@ public class APITests {
         workspaceTreeInConstruction.getRoot().getChild("lib").get().getChild("bazelLib").get().getChild("bazelLib1").get()
                 .getChild("bazelLib2").get().getChild("bazelLib3").get().getValue().addBuildTarget(buildTargetP2_4);
 
-        SourceFile sourceFile1 = new SourceFile("main.java",source1Mock);
-        SourceFile sourceFile2 = new SourceFile("file2.java",source2Mock);
-        SourceFile sourceFile3 = new SourceFile("file3.java",source3Mock);
+        SourceFile sourceFile1 = new SourceFile("main.java", source1Mock);
+        SourceFile sourceFile2 = new SourceFile("file2.java", source2Mock);
+        SourceFile sourceFile3 = new SourceFile("file3.java", source3Mock);
         workspaceTreeInConstruction.getRoot().getChild("main").get().getValue().addSourceFile(sourceFile1);
         workspaceTreeInConstruction.getRoot().getChild("main").get().getValue().addSourceFile(sourceFile2);
         workspaceTreeInConstruction.getRoot().getChild("main").get().getValue().addSourceFile(sourceFile3);
 
-        SourceFile sourceFile4 = new SourceFile("file4.java",source4Mock);
-        SourceFile sourceFile5 = new SourceFile("file5.java",source5Mock);
+        SourceFile sourceFile4 = new SourceFile("file4.java", source4Mock);
+        SourceFile sourceFile5 = new SourceFile("file5.java", source5Mock);
 
         workspaceTreeInConstruction.getRoot().getChild("lib").get().getChild("bazelLib").get().getChild("bazelLib1").get()
                 .getChild("bazelLib2").get().getChild("bazelLib3").get().getValue().addSourceFile(sourceFile4);
@@ -349,7 +346,7 @@ public class APITests {
     }
 
     @Test
-    public void returnsBuildTargetCorrectly () {
+    public void returnsBuildTargetCorrectly() {
         try {
             Path buildPath;
             WorkspaceAPI workspaceAPI = new WorkspaceAPI(simpleWorkSpaceTree);
@@ -373,12 +370,12 @@ public class APITests {
             SourceFile file5 = new SourceFile("file5.java", Path.of("//lib/bazelLib/bazelLib1/bazelLib2/bazelLib3/file5.java"));
             buildPath = workspaceAPI.findPathToBUILDFromSourceFile(file5);
             Assert.assertEquals(Path.of("//lib/bazelLib/bazelLib1/bazelLib2/bazelLib3/BUILD"), buildPath);
-        } catch (WorkspaceAPIException e){
+        } catch (WorkspaceAPIException e) {
             Assert.fail();
         }
     }
 
-    public WorkspaceTree initializeSimpleRemoteWorkSpaceTree(){
+    public WorkspaceTree initializeSimpleRemoteWorkSpaceTree() {
         Package remoteWorkspace2 = new Package("@remote2");
         WorkspaceTree treeInConstruction = new WorkspaceTree(remoteWorkspace2);
 //
