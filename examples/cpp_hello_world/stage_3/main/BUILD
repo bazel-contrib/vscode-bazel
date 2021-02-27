@@ -14,4 +14,3 @@ cc_binary(
         "//lib:hello_time",
     ],
 )
-

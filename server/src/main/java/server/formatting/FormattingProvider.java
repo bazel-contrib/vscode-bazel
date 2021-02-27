@@ -108,7 +108,8 @@ public class FormattingProvider {
             if(c == '\n') numLines++;
         }
         int lastLineLength = 0;
-        for(int i = contents.length() - 1; i != '\n'; i--) {
+        for(int i = contents.length() - 1; i != 0; i--) {
+            if(contents.charAt(i) == '\n') break;
             lastLineLength++;
         }
 

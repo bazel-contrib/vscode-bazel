@@ -202,7 +202,15 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
     @Override
     public CompletableFuture<List<? extends TextEdit>> formatting(DocumentFormattingParams params) {
         logger.info("Formatting request received");
-        FormattingProvider formattingProvider = new FormattingProvider(DocumentTracker.getInstance(), new Buildifier());
-        return formattingProvider.getDocumentFormatting(params);
+        Buildifier buildifier = new Buildifier();
+        // Formatting is done through the buildifier. We must verify that the client has buildifier installed.
+        if (buildifier.exists()) {
+            FormattingProvider formattingProvider = new FormattingProvider(DocumentTracker.getInstance(), buildifier);
+            return formattingProvider.getDocumentFormatting(params);
+        } else {
+            // Display a popup indicating the client does not have buildifier installed.
+            languageClient.showMessage(new MessageParams(MessageType.Info, "Buildifier executable not found.\nPlease install buildifier to enable file formatting."));
+            return CompletableFuture.completedFuture(new ArrayList<TextEdit>());
+        }
     }
 }

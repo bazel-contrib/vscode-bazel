@@ -1,20 +1,20 @@
 workspace(name = "bazel_language_server")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 #########################
 ## JAVA MAVEN EXTERNAL ##
 #########################
 
 RULES_JVM_EXTERNAL_TAG = "3.3"
+
 RULES_JVM_EXTERNAL_SHA = "d85951a92c0908c80bd8551002d66cb23c3434409c814179c0ff026b53544dab"
 
 # Download the jvm rules.
 http_archive(
     name = "rules_jvm_external",
-    strip_prefix = "rules_jvm_external-%s" % RULES_JVM_EXTERNAL_TAG,
     sha256 = RULES_JVM_EXTERNAL_SHA,
+    strip_prefix = "rules_jvm_external-%s" % RULES_JVM_EXTERNAL_TAG,
     url = "https://github.com/bazelbuild/rules_jvm_external/archive/%s.zip" % RULES_JVM_EXTERNAL_TAG,
 )
 
@@ -58,13 +58,12 @@ load("@rules_java//java:repositories.bzl", "rules_java_dependencies", "rules_jav
 
 # Declare indirect dependencies and register toolchains.
 rules_java_dependencies()
+
 rules_java_toolchains()
 
 ##############
 ## PROTOBUF ##
 ##############
-
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 # Download the protobuf rules.
 http_archive(
@@ -82,4 +81,5 @@ load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_
 
 # Declare indirect dependencies and register toolchains.
 rules_proto_dependencies()
+
 rules_proto_toolchains()

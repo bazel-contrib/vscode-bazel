@@ -14,7 +14,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 
 import server.buildifier.Buildifier;
 import server.buildifier.BuildifierException;
@@ -33,16 +35,20 @@ public class FormattingProviderTest {
     File file;
     DocumentFormattingParams params;
 
+    @Captor
+    ArgumentCaptor<FormatInput> captor;
+
     CompletableFuture<List<? extends TextEdit>> output;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         buildifier = Mockito.mock(Buildifier.class);
         documentTracker = Mockito.mock(DocumentTracker.class);
         FormattingProvider concreteFormattingProvider = new FormattingProvider(documentTracker, buildifier);
         formattingProvider = Mockito.spy(concreteFormattingProvider);
         file = Mockito.mock(File.class);
         params = new DocumentFormattingParams(new TextDocumentIdentifier("DummyUriString"), new FormattingOptions());
+        captor = ArgumentCaptor.forClass(FormatInput.class);
         output = null;
 
         Mockito.doReturn(file).when(formattingProvider).getFileFromUriString(Mockito.any());
@@ -66,18 +72,18 @@ public class FormattingProviderTest {
     }
 
     @Test
-    public void FormattingProviderReturnsCorrectRangeForSingleLineFile() {
-        Mockito.when(documentTracker.getContents(Mockito.any())).thenReturn("A single line string\n");
+    public void FormattingProviderReturnsCorrectRangeForSingleLineFile() throws Exception {
+        Mockito.when(documentTracker.getContents(Mockito.any())).thenReturn("A single line string");
 
         output = formattingProvider.getDocumentFormatting(params);
         Range result = output.get().get(0).getRange();
-        Range expected = new Range(new Position(0, 0), new Position(0, 21));
+        Range expected = new Range(new Position(0, 0), new Position(0, 19));
 
         Assert.assertEquals(expected, result);
     }
 
     @Test
-    public void FormattingProviderReturnsCorrectRangeForMultiLineFile() {
+    public void FormattingProviderReturnsCorrectRangeForMultiLineFile() throws Exception {
         String multiLineString = "This string\nhas three lines\nand a trailing newline character\n";
         Mockito.when(documentTracker.getContents(Mockito.any())).thenReturn(multiLineString);
     
@@ -88,12 +94,11 @@ public class FormattingProviderTest {
     }
 
     @Test
-    public void FormattingProviderPassesBUILDTypeToBuildifierWhenFileNameIsBUILD() {
+    public void FormattingProviderPassesBUILDTypeToBuildifierWhenFileNameIsBUILD() throws Exception {
         Mockito.when(file.getName()).thenReturn("BUILD");
         
-        ArgumentCaptor<FormatInput> captor;
         output = formattingProvider.getDocumentFormatting(params);
-        Mocktio.verify(buildifier).format(captor.capture());
+        Mockito.verify(buildifier).format(captor.capture());
 
         BuildifierFileType type = captor.getValue().getType();
 
@@ -101,12 +106,11 @@ public class FormattingProviderTest {
     }
 
     @Test
-    public void FormattingProviderPassesWORKSPACETypeToBuildifierWhenFileNameIsWORKSPACE() {
+    public void FormattingProviderPassesWORKSPACETypeToBuildifierWhenFileNameIsWORKSPACE() throws Exception {
         Mockito.when(file.getName()).thenReturn("WORKSPACE");
         
-        ArgumentCaptor<FormatInput> captor;
         output = formattingProvider.getDocumentFormatting(params);
-        Mocktio.verify(buildifier).format(captor.capture());
+        Mockito.verify(buildifier).format(captor.capture());
 
         BuildifierFileType type = captor.getValue().getType();
 
@@ -114,12 +118,11 @@ public class FormattingProviderTest {
     }
 
     @Test
-    public void FormattingProviderPassesBZLTypeToBuildifierWhenFileHasExtensionBzl() {
+    public void FormattingProviderPassesBZLTypeToBuildifierWhenFileHasExtensionBzl() throws Exception {
         Mockito.when(file.getName()).thenReturn("File.bzl");
         
-        ArgumentCaptor<FormatInput> captor;
         output = formattingProvider.getDocumentFormatting(params);
-        Mocktio.verify(buildifier).format(captor.capture());
+        Mockito.verify(buildifier).format(captor.capture());
 
         BuildifierFileType type = captor.getValue().getType();
 
@@ -127,11 +130,10 @@ public class FormattingProviderTest {
     }
 
     @Test 
-    public void FormattingProviderPassesContentsStringToBuildifierFromFile() {
+    public void FormattingProviderPassesContentsStringToBuildifierFromFile() throws Exception {
         String contentsString = "This is the contents\nof the string!\n";
         Mockito.when(documentTracker.getContents(Mockito.any())).thenReturn(contentsString);
 
-        ArgumentCaptor<FormatInput> captor;
         output = formattingProvider.getDocumentFormatting(params);
         Mockito.verify(buildifier).format(captor.capture());
 
