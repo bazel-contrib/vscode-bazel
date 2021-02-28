@@ -20,6 +20,7 @@
         "onLanguage:starlark",
         "onView:bazelWorkspace",
         "onCommand:bazel.refreshBazelBuildTargets",
+        "onCommand:bazel.openAssociatedBuildFile",
         "onCommand:bazel.restartServer"
     ],
     "main": "./out/src/main/extension",
@@ -167,6 +168,13 @@
                         ]
                     }
                 }
+            }
+        ],
+        "keybindings": [
+            {
+                "key": "alt+s",
+                "command": "bazel.openAssociatedBuildFile",
+                "mac": "alt+s"
             }
         ],
         "grammars": [
