@@ -1,7 +1,6 @@
 workspace(name = "bazel_language_server")
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 #########################
 ## JAVA MAVEN EXTERNAL ##
@@ -68,8 +67,6 @@ rules_java_toolchains()
 ##############
 ## PROTOBUF ##
 ##############
-
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 # Download the protobuf rules.
 http_archive(

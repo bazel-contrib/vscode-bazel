@@ -10,15 +10,20 @@ import org.eclipse.lsp4j.services.LanguageClientAware;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
+import server.buildifier.Buildifier;
 import server.completion.CompletionProvider;
+import server.diagnostics.DiagnosticParams;
+import server.diagnostics.DiagnosticsProvider;
+import server.formatting.FormattingProvider;
 import server.utils.DocumentTracker;
 import server.workspace.ExtensionConfig;
 import server.workspace.ProjectFolder;
 import server.workspace.Workspace;
 
-import java.util.ArrayList;
+import java.net.URI;
 import java.util.Collection;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -26,34 +31,18 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
     private static final Logger logger = LogManager.getLogger(BazelServices.class);
 
     private LanguageClient languageClient;
+    private DiagnosticsProvider diagnosticsProvider;
+
+    public BazelServices() {
+        languageClient = null;
+        diagnosticsProvider = new DiagnosticsProvider();
+    }
 
     @Override
     public void didOpen(DidOpenTextDocumentParams params) {
         logger.info("Did Open");
         logger.info(params.toString());
         DocumentTracker.getInstance().didOpen(params);
-
-//        documentTracker.didOpen(params);
-
-//        try {
-//            ConfigurationParams p = new ConfigurationParams();
-//            List<ConfigurationItem> configItems = new ArrayList<>();
-//
-//            ConfigurationItem item = new ConfigurationItem();
-//            item.setSection("Bazel");
-//            item.setScopeUri("bazel.java.home");
-//            configItems.add(item);
-//
-//            p.setItems(configItems);
-//
-//            CompletableFuture<List<Object>> fut = languageClient.configuration(p);
-//            List<Object> configObjs = fut.get(5000, TimeUnit.MILLISECONDS);
-//            for (Object obj : configObjs) {
-//                logger.info(obj);
-//            }
-//        } catch(Exception e) {
-//            logger.error(e);
-//        }
     }
 
     @Override
@@ -61,6 +50,15 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
         logger.info("Did Change");
         logger.info(params.toString());
         DocumentTracker.getInstance().didChange(params);
+
+        // Handle diagnostics.
+        {
+            final DiagnosticParams diagnosticParams = new DiagnosticParams();
+            diagnosticParams.setClient(languageClient);
+            diagnosticParams.setTracker(DocumentTracker.getInstance());
+            diagnosticParams.setUri(URI.create(params.getTextDocument().getUri()));
+            diagnosticsProvider.handleDiagnostics(diagnosticParams);
+        }
 
         {
 //        PublishDiagnosticsParams diagnostics = new PublishDiagnosticsParams();
@@ -148,12 +146,10 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
         logger.info(params.toString());
 
         // Update extension configuration.
-        {
-            final Gson gson = new Gson();
-            final String json = gson.toJson(params.getSettings());
-            final ExtensionConfig config = gson.fromJson(json, ExtensionConfig.class);
-            Workspace.getInstance().setExtensionConfig(config);
-        }
+        final Gson gson = new Gson();
+        final String json = gson.toJson(params.getSettings());
+        final ExtensionConfig config = gson.fromJson(json, ExtensionConfig.class);
+        Workspace.getInstance().setExtensionConfig(config);
     }
 
     @Override
@@ -167,19 +163,17 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
         logger.info("Did Change Workspace Folders");
         logger.info(params.toString());
 
+        final Collection<ProjectFolder> foldersToAdd = params.getEvent().getAdded().stream()
+                .map(e -> ProjectFolder.fromURI(e.getUri()))
+                .collect(Collectors.toList());
+
+        final Collection<ProjectFolder> foldersToRemove = params.getEvent().getRemoved().stream()
+                .map(e -> ProjectFolder.fromURI(e.getUri()))
+                .collect(Collectors.toList());
+
         // Update workspace folders.
-        {
-            final Collection<ProjectFolder> foldersToAdd = params.getEvent().getAdded().stream()
-                    .map(e -> ProjectFolder.fromURI(e.getUri()))
-                    .collect(Collectors.toList());
-
-            final Collection<ProjectFolder> foldersToRemove = params.getEvent().getRemoved().stream()
-                    .map(e -> ProjectFolder.fromURI(e.getUri()))
-                    .collect(Collectors.toList());
-
-            Workspace.getInstance().removeWorkspaceFolders(foldersToRemove);
-            Workspace.getInstance().addWorkspaceFolders(foldersToAdd);
-        }
+        Workspace.getInstance().removeWorkspaceFolders(foldersToRemove);
+        Workspace.getInstance().addWorkspaceFolders(foldersToAdd);
     }
 
     @Override
@@ -195,5 +189,20 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
     @Override
     public CompletableFuture<CompletionItem> resolveCompletionItem(CompletionItem unresolved) {
         return CompletableFuture.completedFuture(unresolved);
+    }
+
+    @Override
+    public CompletableFuture<List<? extends TextEdit>> formatting(DocumentFormattingParams params) {
+        logger.info("Formatting request received");
+        Buildifier buildifier = new Buildifier();
+        // Formatting is done through the buildifier. We must verify that the client has buildifier installed.
+        if (buildifier.exists()) {
+            FormattingProvider formattingProvider = new FormattingProvider(DocumentTracker.getInstance(), buildifier);
+            return formattingProvider.getDocumentFormatting(params);
+        } else {
+            // Display a popup indicating the client does not have buildifier installed.
+            languageClient.showMessage(new MessageParams(MessageType.Info, "Buildifier executable not found.\nPlease install buildifier to enable file formatting."));
+            return CompletableFuture.completedFuture(new ArrayList<TextEdit>());
+        }
     }
 }

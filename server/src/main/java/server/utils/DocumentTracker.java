@@ -15,14 +15,20 @@ import java.util.Map;
 import java.util.Set;
 
 public class DocumentTracker {
-
     private Map<URI, String> openFiles = new HashMap<>();
     private Set<URI> changedFiles = new HashSet<>();
 
     private static final Logger logger = LogManager.getLogger(DocumentTracker.class);
     private static final DocumentTracker instance = new DocumentTracker();
 
-    private DocumentTracker() {}
+    /**
+     * Creates an instance of a DocumentTracker. This class can either function
+     * as a singleton, keeping track of files on the root level, or as a separate
+     * instance.
+     */
+    public DocumentTracker() {
+
+    }
 
     public static DocumentTracker getInstance() {
         return instance;
@@ -32,7 +38,7 @@ public class DocumentTracker {
         return openFiles.keySet();
     }
 
-    public Set<URI>  getChangedURIs() {
+    public Set<URI> getChangedURIs() {
         return changedFiles;
     }
 
@@ -60,9 +66,11 @@ public class DocumentTracker {
             logger.error("Attempted to change unopened document: " + uri);
             return;
         }
+
         String oldText = openFiles.get(uri);
         TextDocumentContentChangeEvent change = params.getContentChanges().get(0);
         Range range = change.getRange();
+
         if (range == null) {
             openFiles.put(uri, change.getText());
         } else {
@@ -74,6 +82,7 @@ public class DocumentTracker {
             builder.append(oldText.substring(offsetEnd));
             openFiles.put(uri, builder.toString());
         }
+
         changedFiles.add(uri);
     }
 
@@ -86,13 +95,16 @@ public class DocumentTracker {
     public String getContents(URI uri) {
         if (!openFiles.containsKey(uri)) {
             BufferedReader reader = null;
+
             try {
                 reader = Files.newBufferedReader(Paths.get(uri));
                 StringBuilder builder = new StringBuilder();
+
                 int next = -1;
                 while ((next = reader.read()) != -1) {
                     builder.append((char) next);
                 }
+
                 return builder.toString();
             } catch (IOException e) {
                 return null;
@@ -106,6 +118,7 @@ public class DocumentTracker {
                 }
             }
         }
+
         return openFiles.get(uri);
     }
 
