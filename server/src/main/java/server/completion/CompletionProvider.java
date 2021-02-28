@@ -11,7 +11,6 @@ import server.utils.DocumentTracker;
 import server.utils.Logging;
 import server.workspace.Workspace;
 
-import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -21,9 +20,8 @@ import java.util.concurrent.CompletableFuture;
 
 public class CompletionProvider {
     private static final Logger logger = LogManager.getLogger(CompletionProvider.class);
-    private static CompletionProvider instance;
 
-    private CompletionProvider() {}
+    public CompletionProvider() {}
 
     private static String getPath(String line, Position position) {
         StringBuilder path = new StringBuilder();
@@ -33,13 +31,6 @@ public class CompletionProvider {
             index--;
         }
         return path.reverse().toString();
-    }
-
-    public static CompletionProvider getInstance() {
-        if(instance == null) {
-            instance = new CompletionProvider();
-        }
-        return instance;
     }
 
     /**
@@ -59,8 +50,11 @@ public class CompletionProvider {
             String line = lines.get(completionParams.getPosition().getLine());
 
             String triggerCharacter = completionParams.getContext().getTriggerCharacter();
+            Character characterBefore = line.charAt(completionParams.getPosition().getCharacter() - 2);
             if (triggerCharacter.equals("/")) {
-                getPathItems(line, completionParams, completionItems);
+                if(characterBefore.equals('/') || Character.isLetterOrDigit(characterBefore)) {
+                    getPathItems(line, completionParams, completionItems);
+                }
             } else if (triggerCharacter.equals(":")) {
                 getBuildTargets(line, completionParams, completionItems);
             }

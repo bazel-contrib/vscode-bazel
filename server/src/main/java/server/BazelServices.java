@@ -183,7 +183,7 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
 
     @Override
     public CompletableFuture<Either<List<CompletionItem>, CompletionList>> completion(CompletionParams completionParams) {
-        return CompletionProvider.getInstance().getCompletion(completionParams);
+        return new CompletionProvider().getCompletion(completionParams);
     }
 
     @Override

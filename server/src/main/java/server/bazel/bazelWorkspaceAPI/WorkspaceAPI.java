@@ -47,16 +47,7 @@ public class WorkspaceAPI {
         ArrayList<Path> allPossiblePaths = new ArrayList<>();
         List<Package> allPossiblePackages = findNodeOfGivenPackagePath(currentPath).getAllPackagesOfChildren();
         for(Package childPackage: allPossiblePackages){
-            String sb;
-            if(currentPath.getNameCount() == 0){
-                sb = currentPath +
-                        childPackage.getPackageName();
-            } else {
-                sb = currentPath + "/" +
-                        childPackage.getPackageName();
-            }
-
-            allPossiblePaths.add(Path.of(sb));
+            allPossiblePaths.add(Path.of(childPackage.getPackageName()));
         }
         return allPossiblePaths;
     }
