@@ -8,13 +8,14 @@ load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 #########################
 
 RULES_JVM_EXTERNAL_TAG = "3.3"
+
 RULES_JVM_EXTERNAL_SHA = "d85951a92c0908c80bd8551002d66cb23c3434409c814179c0ff026b53544dab"
 
 # Download the jvm rules.
 http_archive(
     name = "rules_jvm_external",
-    strip_prefix = "rules_jvm_external-%s" % RULES_JVM_EXTERNAL_TAG,
     sha256 = RULES_JVM_EXTERNAL_SHA,
+    strip_prefix = "rules_jvm_external-%s" % RULES_JVM_EXTERNAL_TAG,
     url = "https://github.com/bazelbuild/rules_jvm_external/archive/%s.zip" % RULES_JVM_EXTERNAL_TAG,
 )
 
@@ -34,6 +35,9 @@ maven_install(
         "org.eclipse.lsp4j:org.eclipse.lsp4j:0.10.0",
         "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.10.0",
         "org.mockito:mockito-core:3.5.15",
+        "org.powermock:powermock-module-junit4:2.0.9",
+        "org.powermock:powermock-api-mockito2:2.0.9",
+        "org.powermock:powermock-core:2.0.9",
     ],
     repositories = [
         "https://repo1.maven.org/maven2",
@@ -58,6 +62,7 @@ load("@rules_java//java:repositories.bzl", "rules_java_dependencies", "rules_jav
 
 # Declare indirect dependencies and register toolchains.
 rules_java_dependencies()
+
 rules_java_toolchains()
 
 ##############
@@ -82,4 +87,5 @@ load("@rules_proto//proto:repositories.bzl", "rules_proto_dependencies", "rules_
 
 # Declare indirect dependencies and register toolchains.
 rules_proto_dependencies()
+
 rules_proto_toolchains()

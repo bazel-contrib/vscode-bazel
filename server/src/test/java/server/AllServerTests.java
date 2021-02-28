@@ -6,6 +6,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 import server.bazel.cli.BazelTest;
 import server.buildifier.BuildifierTest;
+import server.completion.CompletionProviderTest;
 import server.utils.DocumentTrackerTest;
 import server.utils.NullabilityTest;
 import server.workspace.WorkspaceTest;
@@ -22,6 +23,7 @@ import server.bazel.bazelWorkspaceAPI.*;
         NullabilityTest.class,
         BazelTest.class,
         WorkspaceTest.class,
-        APITests.class
+        APITests.class,
+        CompletionProviderTest.class
 })
 public class AllServerTests {}
