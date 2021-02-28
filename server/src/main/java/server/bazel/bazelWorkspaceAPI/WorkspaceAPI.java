@@ -1,13 +1,13 @@
 package server.bazel.bazelWorkspaceAPI;
 
+import server.bazel.tree.BuildTarget;
+import server.bazel.tree.Package;
 import com.google.common.base.Preconditions;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import server.bazel.tree.SourceFile;
 import server.bazel.tree.WorkspaceTree;
-import server.bazel.tree.BuildTarget;
 import server.bazel.tree.WorkspaceTree.Node;
-import server.bazel.tree.Package;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -47,16 +47,7 @@ public class WorkspaceAPI {
         ArrayList<Path> allPossiblePaths = new ArrayList<>();
         List<Package> allPossiblePackages = findNodeOfGivenPackagePath(currentPath).getAllPackagesOfChildren();
         for(Package childPackage: allPossiblePackages){
-            String sb;
-            if(currentPath.getNameCount() == 0){
-                sb = currentPath +
-                        childPackage.getPackageName();
-            } else {
-                sb = currentPath + "/" +
-                        childPackage.getPackageName();
-            }
-
-            allPossiblePaths.add(Path.of(sb));
+            allPossiblePaths.add(Path.of(childPackage.getPackageName()));
         }
         return allPossiblePaths;
     }
@@ -70,10 +61,10 @@ public class WorkspaceAPI {
      *          expected output: list = {BuildTarget(Path.of(//path/to), "targetName", "kindValue)}
      * @throws WorkspaceAPIException if the pathToPackage is an invalid path within the given Workspace
      */
-    public List<BuildTarget> findPossibleTargetsForPath(BuildTarget pathToPackage) throws WorkspaceAPIException {
+    public List<BuildTarget> findPossibleTargetsForPath(Path pathToPackage) throws WorkspaceAPIException {
         ArrayList<BuildTarget> allPossibleTargets = new ArrayList<>();
 
-        Package packageFromPath =  findNodeOfGivenPackagePath(pathToPackage.getPath()).getValue();
+        Package packageFromPath =  findNodeOfGivenPackagePath(pathToPackage).getValue();
         for(BuildTarget target: packageFromPath.getBuildTargets()){
             allPossibleTargets.add(new BuildTarget(target.getPath(),target.getLabel(), target.getKind()));
         }

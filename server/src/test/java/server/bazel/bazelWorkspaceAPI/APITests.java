@@ -1,5 +1,8 @@
 package server.bazel.bazelWorkspaceAPI;
 
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.nio.file.Path;
@@ -15,6 +18,13 @@ import server.bazel.tree.BuildTarget;
 import server.bazel.tree.Package;
 import server.bazel.tree.SourceFile;
 import server.bazel.tree.WorkspaceTree;
+
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class APITests {
 
@@ -71,8 +81,8 @@ public class APITests {
             WorkspaceAPI workspaceAPI = new WorkspaceAPI(simpleWorkSpaceTree);
 
             paths = workspaceAPI.findPossibleCompletionsForPath(Path.of("//"));
-            Assert.assertTrue(paths.contains(Path.of("/main")));
-            Assert.assertTrue(paths.contains(Path.of("/lib")));
+            Assert.assertTrue(paths.contains(Path.of("main")));
+            Assert.assertTrue(paths.contains(Path.of("lib")));
         } catch (Exception e) {
             Assert.assertTrue(false);
         }
@@ -86,24 +96,24 @@ public class APITests {
             WorkspaceAPI workspaceAPI = new WorkspaceAPI(simpleWorkSpaceTree);
             paths = workspaceAPI.findPossibleCompletionsForPath(Path.of("//"));
             Assert.assertEquals(2, paths.size());
-            Assert.assertTrue(paths.contains(Path.of("/main")));
-            Assert.assertTrue(paths.contains(Path.of("/lib")));
+            Assert.assertTrue(paths.contains(Path.of("main")));
+            Assert.assertTrue(paths.contains(Path.of("lib")));
 
             paths = workspaceAPI.findPossibleCompletionsForPath(Path.of("//lib/"));
             Assert.assertEquals(1, paths.size());
-            Assert.assertTrue(paths.contains(Path.of("/lib/bazelLib")));
+            Assert.assertTrue(paths.contains(Path.of("bazelLib")));
 
             paths = workspaceAPI.findPossibleCompletionsForPath(Path.of("//lib/bazelLib/"));
             Assert.assertEquals(1, paths.size());
-            Assert.assertTrue(paths.contains(Path.of("/lib/bazelLib/bazelLib1")));
+            Assert.assertTrue(paths.contains(Path.of("bazelLib1")));
 
             paths = workspaceAPI.findPossibleCompletionsForPath(Path.of("//lib/bazelLib/bazelLib1/"));
             Assert.assertEquals(1, paths.size());
-            Assert.assertTrue(paths.contains(Path.of("/lib/bazelLib/bazelLib1/bazelLib2")));
+            Assert.assertTrue(paths.contains(Path.of("bazelLib2")));
 
             paths = workspaceAPI.findPossibleCompletionsForPath(Path.of("//lib/bazelLib/bazelLib1/bazelLib2/"));
             Assert.assertEquals(1, paths.size());
-            Assert.assertTrue(paths.contains(Path.of("/lib/bazelLib/bazelLib1/bazelLib2/bazelLib3")));
+            Assert.assertTrue(paths.contains(Path.of("bazelLib3")));
 
             paths = workspaceAPI.findPossibleCompletionsForPath(Path.of("//lib/bazelLib/bazelLib1/bazelLib2/bazelLib3/"));
             Assert.assertEquals(0, paths.size());
@@ -120,11 +130,11 @@ public class APITests {
 
             WorkspaceAPI workspaceAPI = new WorkspaceAPI(simpleWorkSpaceTree);
             BuildTarget rootTargets = new BuildTarget(Path.of("//"), null, "kind");
-            buildTargets = workspaceAPI.findPossibleTargetsForPath(rootTargets);
+            buildTargets = workspaceAPI.findPossibleTargetsForPath(rootTargets.getPath());
             Assert.assertEquals(0, buildTargets.size());
 
             BuildTarget libTargets = new BuildTarget(Path.of("//lib"), null, "kind");
-            buildTargets = workspaceAPI.findPossibleTargetsForPath(libTargets);
+            buildTargets = workspaceAPI.findPossibleTargetsForPath(libTargets.getPath());
             Assert.assertEquals(2, buildTargets.size());
             BuildTarget correctTarget1 = new BuildTarget(Path.of("//lib"), "java_build_target", "kind");
             BuildTarget correctTarget2 = new BuildTarget(Path.of("//lib"), "java_build_target_2", "kind");
@@ -132,19 +142,19 @@ public class APITests {
             Assert.assertTrue(buildTargets.contains(correctTarget2));
 
             BuildTarget bazelLibTargets = new BuildTarget(Path.of("//lib/bazelLib"), null, "kind");
-            buildTargets = workspaceAPI.findPossibleTargetsForPath(bazelLibTargets);
+            buildTargets = workspaceAPI.findPossibleTargetsForPath(bazelLibTargets.getPath());
             Assert.assertEquals(0, buildTargets.size());
 
             BuildTarget bazelLib1Targets = new BuildTarget(Path.of("//lib/bazelLib/bazelLib1"), null, "kind");
-            buildTargets = workspaceAPI.findPossibleTargetsForPath(bazelLibTargets);
+            buildTargets = workspaceAPI.findPossibleTargetsForPath(bazelLibTargets.getPath());
             Assert.assertEquals(0, buildTargets.size());
 
             BuildTarget bazelLib2Targets = new BuildTarget(Path.of("//lib/bazelLib/bazelLib1/bazelLib2"), null, "kind");
-            buildTargets = workspaceAPI.findPossibleTargetsForPath(bazelLib2Targets);
+            buildTargets = workspaceAPI.findPossibleTargetsForPath(bazelLib2Targets.getPath());
             Assert.assertEquals(0, buildTargets.size());
 
             BuildTarget bazelLib3Targets = new BuildTarget(Path.of("//lib/bazelLib/bazelLib1/bazelLib2/bazelLib3"), null, "kind");
-            buildTargets = workspaceAPI.findPossibleTargetsForPath(bazelLib3Targets);
+            buildTargets = workspaceAPI.findPossibleTargetsForPath(bazelLib3Targets.getPath());
             Assert.assertEquals(2, buildTargets.size());
             Assert.assertTrue(buildTargets.contains(new BuildTarget(Path.of("/lib/bazelLib/bazelLib1/bazelLib2/bazelLib3"), "java_build_target_3", "kind")));
             Assert.assertTrue(buildTargets.contains(new BuildTarget(Path.of("/lib/bazelLib/bazelLib1/bazelLib2/bazelLib3"), "java_build_target_4", "kind")));

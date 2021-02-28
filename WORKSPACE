@@ -34,6 +34,9 @@ maven_install(
         "org.eclipse.lsp4j:org.eclipse.lsp4j:0.10.0",
         "org.eclipse.lsp4j:org.eclipse.lsp4j.jsonrpc:0.10.0",
         "org.mockito:mockito-core:3.5.15",
+        "org.powermock:powermock-module-junit4:2.0.9",
+        "org.powermock:powermock-api-mockito2:2.0.9",
+        "org.powermock:powermock-core:2.0.9",
     ],
     repositories = [
         "https://repo1.maven.org/maven2",

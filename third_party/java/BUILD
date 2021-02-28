@@ -38,8 +38,8 @@ java_library(
 java_library(
     name = "log4j",
     exports = [
-        "@maven//:org_apache_logging_log4j_log4j_core",
         "@maven//:org_apache_logging_log4j_log4j_api",
+        "@maven//:org_apache_logging_log4j_log4j_core",
     ],
 )
 
@@ -57,6 +57,30 @@ java_library(
     name = "mockito",
     exports = [
         "@maven//:org_mockito_mockito_core",
+    ],
+)
+
+# LICENSE:Apache License 2.0
+java_library(
+    name = "powermock-junit",
+    exports = [
+        "@maven//:org_powermock_powermock_module_junit4",
+    ],
+)
+
+# LICENSE:Apache License 2.0
+java_library(
+    name = "powermock-mockito",
+    exports = [
+        "@maven//:org_powermock_powermock_api_mockito2",
+    ],
+)
+
+# LICENSE:Apache License 2.0
+java_library(
+    name = "powermock",
+    exports = [
+        "@maven//:org_powermock_powermock_core",
     ],
 )
 
