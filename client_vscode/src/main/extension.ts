@@ -61,7 +61,7 @@ export function activate(context: vscode.ExtensionContext): void {
       // vscode.window.showTextDocument(vscode.Uri.file(buildPath))
       vscode.commands.executeCommand("workbench.action.quickOpen", buildPath);
     } else {
-      const message = "YOUR-EXTENSION: Working folder not found, open a folder an try again";
+      const message = "Bazel-Plugin: Working folder not found, open a folder an try again";
       vscode.window.showErrorMessage(message);
     }
   });
