@@ -14,6 +14,7 @@ import server.bazel.tree.WorkspaceTree;
 import server.utils.DocumentTracker;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -28,23 +29,23 @@ public class CompletionProviderTest {
         tree = new WorkspaceTree(new Package("/"));
 
         Package main = new Package("main");
-        main.addBuildTarget(new BuildTarget(Path.of("/main"), "main_Target", "test"));
+        main.addBuildTarget(new BuildTarget(Paths.get("/main"), "main_Target", "test"));
 
         Package lib = new Package("lib");
-        lib.addBuildTarget(new BuildTarget(Path.of("/lib"), "lib_Target", "test"));
+        lib.addBuildTarget(new BuildTarget(Paths.get("/lib"), "lib_Target", "test"));
 
         Package main_1 = new Package("main_1");
-        main_1.addBuildTarget(new BuildTarget(Path.of("/main/main_1"), "main_1_Target", "test"));
-        main_1.addBuildTarget(new BuildTarget(Path.of("/main/main_1"), "main_1_1_Target", "test"));
+        main_1.addBuildTarget(new BuildTarget(Paths.get("/main/main_1"), "main_1_Target", "test"));
+        main_1.addBuildTarget(new BuildTarget(Paths.get("/main/main_1"), "main_1_1_Target", "test"));
 
         Package main_2 = new Package("main_2");
-        main_2.addBuildTarget(new BuildTarget(Path.of("/main/main_2"), "main_2_Target", "test"));
+        main_2.addBuildTarget(new BuildTarget(Paths.get("/main/main_2"), "main_2_Target", "test"));
 
         Package lib_1 = new Package("lib_1");
-        lib_1.addBuildTarget(new BuildTarget(Path.of("/lib/lib_1"), "lib_1_Target", "test"));
+        lib_1.addBuildTarget(new BuildTarget(Paths.get("/lib/lib_1"), "lib_1_Target", "test"));
 
         Package lib_2 = new Package("lib_2");
-        lib_2.addBuildTarget(new BuildTarget(Path.of("/lib/lib_2"), "lib_2_Target", "test"));
+        lib_2.addBuildTarget(new BuildTarget(Paths.get("/lib/lib_2"), "lib_2_Target", "test"));
 
         WorkspaceTree.Node node = tree.getRoot().addChild(main);
         node.addChild(main_1);

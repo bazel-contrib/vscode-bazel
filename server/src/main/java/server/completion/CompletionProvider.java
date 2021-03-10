@@ -13,6 +13,7 @@ import server.workspace.Workspace;
 
 import java.net.URI;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -75,7 +76,7 @@ public class CompletionProvider {
         String newPath = getPath(line, completionParams.getPosition());
         newPath = newPath.substring(0, newPath.length() - 1);
         WorkspaceAPI workspaceAPI = getWorkspaceAPI();
-        List<BuildTarget> paths = workspaceAPI.findPossibleTargetsForPath(Path.of(newPath));
+        List<BuildTarget> paths = workspaceAPI.findPossibleTargetsForPath(Paths.get(newPath));
         paths.parallelStream().forEach(item -> {
             CompletionItem completionItem = new CompletionItem(item.getLabel());
             completionItem.setKind(CompletionItemKind.Value);
@@ -88,7 +89,7 @@ public class CompletionProvider {
     private void getPathItems(String line, CompletionParams completionParams, List<CompletionItem> completionItems) throws WorkspaceAPIException {
         String newPath = getPath(line, completionParams.getPosition());
         WorkspaceAPI workspaceAPI = getWorkspaceAPI();
-        List<Path> paths = workspaceAPI.findPossibleCompletionsForPath(Path.of(newPath));
+        List<Path> paths = workspaceAPI.findPossibleCompletionsForPath(Paths.get(newPath));
         paths.parallelStream().forEach(item -> {
             CompletionItem completionItem = new CompletionItem(item.toString());
             completionItem.setKind(CompletionItemKind.Folder);
