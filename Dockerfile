@@ -36,7 +36,7 @@ RUN curl -sL https://dl.google.com/go/go1.15.6.linux-amd64.tar.gz | tar -C /usr/
     go get -v github.com/stamblerre/gocode
 
 # Install java
-RUN apt install -y openjdk-11-jdk
+RUN apt update && apt install -y openjdk-8-jdk --fix-missing
     
 # Install bazel
 RUN (curl -fsSL https://bazel.build/bazel-release.pub.gpg | gpg --dearmor > /etc/apt/trusted.gpg.d/bazel.gpg) && \

@@ -47,7 +47,7 @@ public class DiagnosticsProvider {
         final WorkspaceAPI api = new WorkspaceAPI(tree);
 
         final URI textDocURI = params.getUri();
-        final Path textDocPath = Path.of(textDocURI);
+        final Path textDocPath = Paths.get(textDocURI);
         final String textDocContent = DocumentTracker.getInstance().getContents(textDocURI);
 
         final List<Diagnostic> diagnostics = new ArrayList<>();
@@ -118,7 +118,7 @@ public class DiagnosticsProvider {
 
                                                 // If source file is invalid, say its invalid.
                                                 if (label.isSourceFile()) {
-                                                    Path srcFilePath = Paths.get(label.pkg());
+                                                    Path srcFilePath = Paths.get(label.pkg().value());
                                                     Path parent = textDocPath.getParent();
                                                     Path absSrcFilePath = parent.resolve(srcFilePath).toAbsolutePath();
                                                     if (!Files.exists(absSrcFilePath)) {

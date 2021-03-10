@@ -5,6 +5,7 @@ import server.bazel.tree.BuildTarget;
 import server.workspace.Workspace;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * A compatability utilty to help bridge compatability between this package and
@@ -28,24 +29,24 @@ public class CompatabilityUtility {
         // Handle local imports differently because the bazel our CLI doesn't support querying for local rules.
         if (label.isLocal()) {
             Preconditions.checkNotNull(path);
-            Preconditions.checkArgument(label.hasName());
+            Preconditions.checkArgument(label.hasTarget());
             path = toWorkspaceLocal(path);
-            return new BuildTarget(Path.of("//" + path), label.name(), null);
+            return new BuildTarget(Paths.get("//" + path), label.target().value(), null);
         }
 
-        if (label.hasPkg() && label.hasName()) {
-            return new BuildTarget(Path.of("//" + label.pkg()), label.name(), null);
+        if (label.hasPkg() && label.hasTarget()) {
+            return new BuildTarget(Paths.get("//" + label.pkg().value()), label.target().value(), null);
         }
 
-        if (!label.hasName()) {
+        if (!label.hasTarget()) {
             // Handle implied packages.
-            final String[] parts = label.pkg().split("/");
+            final String[] parts = label.pkg().value().split("/");
             final String lastPackageName = parts[parts.length - 1];
-            return new BuildTarget(Path.of("//" + label.pkg()), lastPackageName, null);
+            return new BuildTarget(Paths.get("//" + label.pkg()), lastPackageName, null);
         }
 
         // It only has the name.
-        return new BuildTarget(Path.of("//"), label.name(), null);
+        return new BuildTarget(Paths.get("//"), label.target().value(), null);
     }
 
     // TODO(josiahsrc): This behavior should be implied by interp.
@@ -69,6 +70,6 @@ public class CompatabilityUtility {
             }
         }
 
-        return Path.of(builder.toString());
+        return Paths.get(builder.toString());
     }
 }
