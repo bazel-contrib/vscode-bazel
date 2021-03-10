@@ -45,18 +45,19 @@ export function activate(context: vscode.ExtensionContext): void {
       const currentlyOpenTabfileName = path.basename(currentlyOpenTabfilePath);
       let buildPath = currentlyOpenTabfilePath.substr(0, currentlyOpenTabfilePath.length - (currentlyOpenTabfileName.length + 1));
       let pathParts = buildPath.split("/");
+      let bazelExtensionOptions: string[] = ['.bazel', '', '.bzl'];
 
-      for(let i = pathParts.length-1; i >= 0; i--){
-        if (fs.existsSync(buildPath + "/BUILD")) {
-          buildPath = buildPath + "/BUILD";
-          break
+      loop1:
+        for(let i = pathParts.length-1; i >= 0; i--){
+            for( let j in bazelExtensionOptions){
+              let extension = "/BUILD" + bazelExtensionOptions[j];
+              if (fs.existsSync(buildPath + extension)) {
+                buildPath = buildPath + extension;
+                break loop1;
+              }
+            }
+          buildPath = buildPath.substr(0, buildPath.length - (pathParts[i].length) -1);
         }
-        if (fs.existsSync(buildPath + "/BUILD.bazel")) {
-          buildPath = buildPath + "/BUILD.bazel";
-          break
-        }
-        buildPath = buildPath.substr(0, buildPath.length - (pathParts[i].length) -1);
-      }
       // vscode.window.showTextDocument(vscode.Uri.file(buildPath))
       vscode.commands.executeCommand("workbench.action.quickOpen", buildPath);
       } else {
