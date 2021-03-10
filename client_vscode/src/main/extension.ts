@@ -1,7 +1,7 @@
+import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
 import * as vscodelc from "vscode-languageclient";
-import * as fs from 'fs';
 
 import { JavaUtils, WorkspaceUtils } from "./utils";
 
@@ -38,32 +38,32 @@ export function activate(context: vscode.ExtensionContext): void {
     WorkspaceUtils.COMMANDS.bazel.restartServer,
     restartServer,
   );
-  
+
   vscode.commands.registerCommand(WorkspaceUtils.COMMANDS.bazel.openAssociatedBuildFile, () => {
     if (vscode.workspace.workspaceFolders !== undefined) {
       const currentlyOpenTabfilePath = vscode.window.activeTextEditor.document.fileName;
       const currentlyOpenTabfileName = path.basename(currentlyOpenTabfilePath);
       let buildPath = currentlyOpenTabfilePath.substr(0, currentlyOpenTabfilePath.length - (currentlyOpenTabfileName.length + 1));
-      let pathParts = buildPath.split("/");
-      let bazelExtensionOptions: string[] = ['.bazel', '', '.bzl'];
+      const pathParts = buildPath.split("/");
+      const bazelExtensionOptions: string[] = [".bazel", "", ".bzl"];
 
       loop1:
-        for(let i = pathParts.length-1; i >= 0; i--){
-            for( let j in bazelExtensionOptions){
-              let extension = "/BUILD" + bazelExtensionOptions[j];
-              if (fs.existsSync(buildPath + extension)) {
-                buildPath = buildPath + extension;
-                break loop1;
-              }
-            }
-          buildPath = buildPath.substr(0, buildPath.length - (pathParts[i].length) -1);
+      for (let i = pathParts.length - 1; i >= 0; i--) {
+        for (const extensionOption of bazelExtensionOptions) {
+          const extension = "/BUILD" + extensionOption;
+          if (fs.existsSync(buildPath + extension)) {
+            buildPath = buildPath + extension;
+            break loop1;
+          }
         }
+        buildPath = buildPath.substr(0, buildPath.length - (pathParts[i].length) - 1);
+      }
       // vscode.window.showTextDocument(vscode.Uri.file(buildPath))
       vscode.commands.executeCommand("workbench.action.quickOpen", buildPath);
-      } else {
-        const message = "YOUR-EXTENSION: Working folder not found, open a folder an try again";
-        vscode.window.showErrorMessage(message);
-      }
+    } else {
+      const message = "YOUR-EXTENSION: Working folder not found, open a folder an try again";
+      vscode.window.showErrorMessage(message);
+    }
   });
   startServer();
 }
