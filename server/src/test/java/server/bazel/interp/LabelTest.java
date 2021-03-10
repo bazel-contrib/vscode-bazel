@@ -5,6 +5,17 @@ import org.junit.Test;
 
 public class LabelTest {
   @Test
+  public void test_parse_onlyWorkspaceValue() throws LabelSyntaxException {
+    String value = "@workspace";
+    Label l = Label.parse(value);
+
+    Assert.assertTrue(l.hasWorkspace());
+    Assert.assertEquals(WorkspaceID.fromRaw("workspace"), l.workspace());
+    Assert.assertFalse(l.hasPkg());
+    Assert.assertFalse(l.hasTarget());
+  }
+
+  @Test
   public void test_parse_withNoWorkspace() throws LabelSyntaxException {
     String value = "//path/to:target";
     Label l = Label.parse(value);
