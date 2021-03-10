@@ -1,6 +1,7 @@
 import * as path from "path";
 import * as vscode from "vscode";
 import * as vscodelc from "vscode-languageclient";
+import * as fs from 'fs';
 
 import { JavaUtils, WorkspaceUtils } from "./utils";
 
@@ -37,14 +38,25 @@ export function activate(context: vscode.ExtensionContext): void {
     WorkspaceUtils.COMMANDS.bazel.restartServer,
     restartServer,
   );
-
+  
   vscode.commands.registerCommand(WorkspaceUtils.COMMANDS.bazel.openAssociatedBuildFile, () => {
     if (vscode.workspace.workspaceFolders !== undefined) {
       const currentlyOpenTabfilePath = vscode.window.activeTextEditor.document.fileName;
       const currentlyOpenTabfileName = path.basename(currentlyOpenTabfilePath);
-      let buildPath = currentlyOpenTabfilePath.substr(0, currentlyOpenTabfilePath.length - currentlyOpenTabfileName.length);
+      let buildPath = currentlyOpenTabfilePath.substr(0, currentlyOpenTabfilePath.length - (currentlyOpenTabfileName.length + 1));
+      let pathParts = buildPath.split("/");
 
-      buildPath = buildPath + "BUILD";
+      for(let i = pathParts.length-1; i >= 0; i--){
+        if (fs.existsSync(buildPath + "/BUILD")) {
+          buildPath = buildPath + "/BUILD";
+          break
+        }
+        if (fs.existsSync(buildPath + "/BUILD.bazel")) {
+          buildPath = buildPath + "/BUILD.bazel";
+          break
+        }
+        buildPath = buildPath.substr(0, buildPath.length - (pathParts[i].length) -1);
+      }
       // vscode.window.showTextDocument(vscode.Uri.file(buildPath))
       vscode.commands.executeCommand("workbench.action.quickOpen", buildPath);
       } else {
