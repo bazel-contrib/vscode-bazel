@@ -35,6 +35,7 @@ public class DiagnosticsProvider {
 
     }
 
+    // TODO: Cleanup
     public void handleDiagnostics(DiagnosticParams params) {
         logger.info(String.format("Handling diagnostics for params:\n%s", params));
 
@@ -105,6 +106,10 @@ public class DiagnosticsProvider {
 
                                             try {
                                                 final Label label = Label.parse(labelString.getValue());
+                                                if (label.hasWorkspace()) {
+                                                    // TODO: Handle workspaces.
+                                                    continue;
+                                                }
 
                                                 // Convert the label to a target. Get the parent of the text doc
                                                 // because we don't want the BUILD file.
@@ -116,24 +121,22 @@ public class DiagnosticsProvider {
                                                 logger.info("Name: " + target.getLabel());
                                                 logger.info("PathwTarg: " + target.getPathWithTarget());
 
-                                                // If source file is invalid, say its invalid.
-                                                if (label.isSourceFile()) {
-                                                    Path srcFilePath = Paths.get(label.pkg().value());
-                                                    Path parent = textDocPath.getParent();
-                                                    Path absSrcFilePath = parent.resolve(srcFilePath).toAbsolutePath();
-                                                    if (!Files.exists(absSrcFilePath)) {
-                                                        Diagnostic diag = new Diagnostic();
-                                                        diag.setSeverity(DiagnosticSeverity.Error);
-                                                        diag.setMessage("Source file does not exist.");
-                                                        diag.setCode(DiagnosticCodes.INVALID_SOURCE);
-                                                        diag.setRange(new Range(new Position(line, colstart),
-                                                                new Position(line, colend)));
-                                                        logger.info(labelString.getValue() + " is not a valid source file.");
-                                                        diagnostics.add(diag);
-                                                    }
+                                                boolean fileExists = false;
+                                                Path rootPath = Workspace.getInstance().getRootFolder().getPath();
+                                                if (label.hasPkg() && label.hasTarget()) {
+                                                    Path pkgPath = Paths.get(label.pkg().value());
+                                                    Path targetPath = Paths.get(label.target().value());
+                                                    Path absPath = rootPath.resolve(pkgPath).resolve(targetPath);
+                                                    fileExists = Files.exists(absPath);
+                                                } else if (!label.hasPkg() && label.hasTarget()) {
+                                                    Path pkgPath = textDocPath.getParent();
+                                                    Path targetPath = Paths.get(label.target().value());
+                                                    Path absPath = rootPath.resolve(pkgPath).resolve(targetPath);
+                                                    fileExists = Files.exists(absPath);
                                                 }
-                                                // If target is invalid, say its invalid.
-                                                else if (!api.isValidTarget(target)) {
+
+                                                boolean targetExists = api.isValidTarget(target);
+                                                if (!fileExists && !targetExists) {
                                                     Diagnostic diag = new Diagnostic();
                                                     diag.setSeverity(DiagnosticSeverity.Error);
                                                     diag.setCode(DiagnosticCodes.INVALID_TARGET);
