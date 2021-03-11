@@ -1,6 +1,6 @@
 package server.bazel.cli;
 
-import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -60,7 +60,7 @@ public final class Bazel {
             logger.info(line);
             List<String> parts = Arrays.asList(line.split("\\s+"));
             List<String> ruleSplit = parsePath(parts.get(2));
-            buildTargets.add(new BuildTarget(Path.of(ruleSplit.get(0).substring(1)), ruleSplit.get(1), parts.get(0)));
+            buildTargets.add(new BuildTarget(Paths.get(ruleSplit.get(0).substring(1)), ruleSplit.get(1), parts.get(0)));
         });
         return buildTargets;
     }
@@ -93,7 +93,7 @@ public final class Bazel {
             logger.info(line);
             List<String> parts = Arrays.asList(line.split("\\s+"));
             List<String> ruleSplit = parsePath(parts.get(2));
-            sourceFiles.add(new SourceFile(ruleSplit.get(1), Path.of(ruleSplit.get(0))));
+            sourceFiles.add(new SourceFile(ruleSplit.get(1), Paths.get(ruleSplit.get(0))));
         });
         return sourceFiles;
     }

@@ -1,19 +1,15 @@
-load("@rules_java//java:defs.bzl", "java_library")
+load("@rules_java//java:defs.bzl", "java_library", "java_binary")
 
 java_library(
     name = "interp",
-    srcs = [
-        "CompatabilityUtility.java",
-        "InterpException.java",
-        "Label.java",
-        "LabelSyntaxException.java",
-    ],
+    srcs = glob(["*.java"]),
     deps = [
         "//server/src/main/java/server/bazel/tree",
         "//server/src/main/java/server/utils",
         "//server/src/main/java/server/workspace",
         "//third_party/java:guava",
         "//third_party/java:log4j",
+        "//third_party/java:starlark",
     ],
     visibility = [
         "//server/src/main/java/server/diagnostics:__subpackages__",
