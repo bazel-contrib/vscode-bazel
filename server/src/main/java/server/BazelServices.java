@@ -43,6 +43,13 @@ public class BazelServices implements TextDocumentService, WorkspaceService, Lan
         logger.info("Did Open");
         logger.info(params.toString());
         DocumentTracker.getInstance().didOpen(params);
+        {
+            final DiagnosticParams diagnosticParams = new DiagnosticParams();
+            diagnosticParams.setClient(languageClient);
+            diagnosticParams.setTracker(DocumentTracker.getInstance());
+            diagnosticParams.setUri(URI.create(params.getTextDocument().getUri()));
+            diagnosticsProvider.handleDiagnostics(diagnosticParams);
+        }
     }
 
     @Override
