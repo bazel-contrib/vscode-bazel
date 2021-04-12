@@ -32,7 +32,7 @@
             {
                 "category": "Bazel",
                 "command": "bazel.buildTarget",
-                "title": "Build Target",
+                "title": "Build Target"
             },
             {
                 "category": "Bazel",
