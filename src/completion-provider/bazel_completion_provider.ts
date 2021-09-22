@@ -66,8 +66,7 @@ function getNextPackage(target: string) {
 }
 
 export class BazelCompletionItemProvider
-  implements vscode.CompletionItemProvider
-{
+  implements vscode.CompletionItemProvider {
   private targets: string[] = [];
 
   /**
