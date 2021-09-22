@@ -15,7 +15,7 @@
 import * as vscode from "vscode";
 import { queryQuickPickTargets } from "../bazel";
 
-function InsertCompletionItemIfUnique(
+function insertCompletionItemIfUnique(
   options: vscode.CompletionItem[],
   option: vscode.CompletionItem,
 ) {
@@ -28,10 +28,10 @@ function InsertCompletionItemIfUnique(
   }
 }
 
-function GetCandidateTargetFromDocumentPosition(
+function getCandidateTargetFromDocumentPosition(
   document: vscode.TextDocument,
   position: vscode.Position,
-) {
+): string | undefined {
   const linePrefix = document
     .lineAt(position)
     .text.substr(0, position.character);
@@ -42,7 +42,7 @@ function GetCandidateTargetFromDocumentPosition(
   return linePrefix.substring(index + 1);
 }
 
-function StripLastPackageOrTargetName(target: string) {
+function stripLastPackageOrTargetName(target: string) {
   const slashIndex = target.lastIndexOf("/");
   const colonIndex = target.lastIndexOf(":");
   const index = Math.max(slashIndex, colonIndex);
@@ -52,7 +52,7 @@ function StripLastPackageOrTargetName(target: string) {
   return target;
 }
 
-function GetNextPackage(target: string) {
+function getNextPackage(target: string) {
   const nextPackage = target.split("/", 2);
   if (nextPackage.length > 1) {
     return nextPackage[0];
@@ -66,20 +66,29 @@ function GetNextPackage(target: string) {
 }
 
 export class BazelCompletionItemProvider
-  implements vscode.CompletionItemProvider {
-  private targets: string[] | undefined;
+  implements vscode.CompletionItemProvider
+{
+  private targets: string[] = [];
 
+  /**
+   * Returns completion items matching the given prefix.
+   *
+   * Only label started with "//: is supported at the moment.
+   */
   public provideCompletionItems(
     document: vscode.TextDocument,
     position: vscode.Position,
   ) {
-    let candidateTarget = GetCandidateTargetFromDocumentPosition(
+    let candidateTarget = getCandidateTargetFromDocumentPosition(
       document,
       position,
     );
+    if (candidateTarget === undefined) {
+      return [];
+    }
 
     if (!candidateTarget.endsWith("/") && !candidateTarget.endsWith(":")) {
-      candidateTarget = StripLastPackageOrTargetName(candidateTarget);
+      candidateTarget = stripLastPackageOrTargetName(candidateTarget);
     }
 
     const completionItems = new Array<vscode.CompletionItem>();
@@ -90,12 +99,12 @@ export class BazelCompletionItemProvider
       const sufix = target.replace(candidateTarget, "");
 
       let completionKind = vscode.CompletionItemKind.Folder;
-      let label = GetNextPackage(sufix);
+      let label = getNextPackage(sufix);
       if (label === undefined) {
         completionKind = vscode.CompletionItemKind.Field;
         label = sufix;
       }
-      InsertCompletionItemIfUnique(
+      insertCompletionItemIfUnique(
         completionItems,
         new vscode.CompletionItem(label, completionKind),
       );
@@ -103,6 +112,10 @@ export class BazelCompletionItemProvider
     return completionItems;
   }
 
+  /**
+   * Runs a bazel query command to acquire labels of all the targets in the
+   * workspace.
+   */
   public async refresh() {
     const queryTargets = await queryQuickPickTargets("kind('.* rule', ...)");
     if (queryTargets.length !== 0) {
