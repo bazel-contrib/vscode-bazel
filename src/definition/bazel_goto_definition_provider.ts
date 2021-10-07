@@ -22,11 +22,10 @@ import {
   TextDocument,
   Uri,
 } from "vscode";
+import { Utils } from "vscode-uri";
 import { BazelQuery, BazelWorkspaceInfo, QueryLocation } from "../bazel";
 import { getDefaultBazelExecutablePath } from "../extension/configuration";
-import { Utils } from "vscode-uri";
 
-// adapted from https://github.com/bazelbuild/buildtools/blob/d6daef01a1a2f41a4143a314bf1996bf351caa30/build/rewrite.go#L183
 // LABEL_REGEX matches label strings, e.g. @r//x/y/z:abc
 const LABEL_REGEX = /"((?:@\w+)?\/\/|(?:.+\/)?[^:]*(?::[^:]+)?)"/;
 
@@ -34,7 +33,7 @@ export class BazelGotoDefinitionProvider implements DefinitionProvider {
   public async provideDefinition(
     document: TextDocument,
     position: Position,
-    _token: CancellationToken,
+    token: CancellationToken,
   ): Promise<Definition | DefinitionLink[]> {
     const workspaceInfo = BazelWorkspaceInfo.fromDocument(document);
     if (workspaceInfo === undefined) {
