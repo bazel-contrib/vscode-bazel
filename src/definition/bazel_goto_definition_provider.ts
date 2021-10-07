@@ -28,7 +28,6 @@ import { Utils } from "vscode-uri";
 
 // adapted from https://github.com/bazelbuild/buildtools/blob/d6daef01a1a2f41a4143a314bf1996bf351caa30/build/rewrite.go#L183
 // LABEL_REGEX matches label strings, e.g. @r//x/y/z:abc
-// where $2 is @r//x/y/z, $3 is @r//, $4 is r, $5 is x/y/z, $6 is z, $7 is abc.
 const LABEL_REGEX = /"((?:@\w+)?\/\/|(?:.+\/)?[^:]*(?::[^:]+)?)"/;
 
 export class BazelGotoDefinitionProvider implements DefinitionProvider {
