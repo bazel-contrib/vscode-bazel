@@ -32,6 +32,7 @@ import {
   checkBuildifierIsAvailable,
 } from "../buildifier";
 import { BazelBuildCodeLensProvider } from "../codelens";
+import { BazelGotoDefinitionProvider } from "../definition/bazel_goto_definition_provider";
 import { BazelTargetSymbolProvider } from "../symbols";
 import { BazelWorkspaceTreeProvider } from "../workspace-tree";
 import { getDefaultBazelExecutablePath } from "./configuration";
@@ -101,6 +102,11 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.languages.registerDocumentSymbolProvider(
       [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
       new BazelTargetSymbolProvider(),
+    ),
+    // Goto definition for BUILD files
+    vscode.languages.registerDefinitionProvider(
+      [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
+      new BazelGotoDefinitionProvider(),
     ),
     // Task events.
     vscode.tasks.onDidStartTask(onTaskStart),
@@ -173,7 +179,8 @@ async function bazelBuildTargetWithDebugging(
     }
     return;
   }
-  const bazelConfigCmdLine = vscode.workspace.getConfiguration("bazel.commandLine");
+  const bazelConfigCmdLine =
+    vscode.workspace.getConfiguration("bazel.commandLine");
   const startupOptions = bazelConfigCmdLine.get<string[]>("startupOptions");
   const commandArgs = bazelConfigCmdLine.get<string[]>("commandArgs");
 
@@ -412,9 +419,7 @@ function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
     } else {
       const timeInSeconds = measurePerformance(bazelTaskInfo.startTime);
       vscode.window.showInformationMessage(
-        `Bazel ${
-          bazelTaskInfo.command
-        } completed successfully in ${timeInSeconds} seconds.`,
+        `Bazel ${bazelTaskInfo.command} completed successfully in ${timeInSeconds} seconds.`,
       );
     }
   }
