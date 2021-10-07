@@ -48,6 +48,7 @@ export class BazelGotoDefinitionProvider implements DefinitionProvider {
     const match = LABEL_REGEX.exec(targetText);
 
     const targetName = match[1];
+    // don't try to process visibility targets.
     if (targetName.startsWith("//visibility")) {
       return null;
     }
@@ -55,7 +56,7 @@ export class BazelGotoDefinitionProvider implements DefinitionProvider {
     const queryResult = await new BazelQuery(
       getDefaultBazelExecutablePath(),
       Utils.dirname(document.uri).fsPath,
-      `kind(rule, "${match[1]}")`,
+      `kind(rule, "${targetName}")`,
       [],
     ).queryTargets();
 
