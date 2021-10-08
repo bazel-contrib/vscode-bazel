@@ -49,7 +49,7 @@ export async function getTargetsForBuildFile(
     workspace,
     `kind(rule, ${pkg}:all)`,
     [],
-  ).queryTargets();
+  ).queryTargets([], /* sortByRuleName: */ true);
 
   return queryResult;
 }

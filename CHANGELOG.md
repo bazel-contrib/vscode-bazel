@@ -1,5 +1,11 @@
 # Change Log
 
+## Version 0.4.1 (April 14, 2021)
+
+### Bug Fixes
+
+- Fix CVE-2021-22539: Malicious project can cause vscode-bazel to run arbitrary executable when linting a \*.bzl file.
+
 ## Version 0.4.0 (August 21, 2020)
 
 ### New Features
