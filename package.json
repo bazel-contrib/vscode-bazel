@@ -2,7 +2,7 @@
     "name": "vscode-bazel",
     "displayName": "Bazel",
     "description": "Bazel BUILD integration",
-    "version": "0.4.0",
+    "version": "0.4.1",
     "publisher": "BazelBuild",
     "license": "Apache-2.0",
     "repository": {
@@ -91,12 +91,14 @@
                 "bazel.executable": {
                     "type": "string",
                     "default": "",
-                    "description": "The name of the Bazel executable. This may be an absolute path, or a simple name that will be searched for on the system path. If empty, \"bazel\" on the system path will be used."
+                    "description": "The name of the Bazel executable. This may be an absolute path, or a simple name that will be searched for on the system path. If empty, \"bazel\" on the system path will be used.",
+                    "scope": "machine"
                 },
                 "bazel.buildifierExecutable": {
                     "type": "string",
                     "default": "",
-                    "markdownDescription": "The name of the Buildifier executable. This may be an absolute path, or a simple name that will be searched for on the system path. If empty, \"buildifier\" on the system path will be used.\n\nBuildifier can be downloaded from https://github.com/bazelbuild/buildtools/releases."
+                    "markdownDescription": "The name of the Buildifier executable. This may be an absolute path, or a simple name that will be searched for on the system path. If empty, \"buildifier\" on the system path will be used.\n\nBuildifier can be downloaded from https://github.com/bazelbuild/buildtools/releases.",
+                    "scope": "machine"
                 },
                 "bazel.buildifierFixOnFormat": {
                     "type": "boolean",
