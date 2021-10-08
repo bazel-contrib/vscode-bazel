@@ -32,6 +32,7 @@ import {
   checkBuildifierIsAvailable,
 } from "../buildifier";
 import { BazelBuildCodeLensProvider } from "../codelens";
+import { BazelCompletionItemProvider } from "../completion-provider";
 import { BazelTargetSymbolProvider } from "../symbols";
 import { BazelWorkspaceTreeProvider } from "../workspace-tree";
 import { getDefaultBazelExecutablePath } from "./configuration";
@@ -46,8 +47,17 @@ export function activate(context: vscode.ExtensionContext) {
   const workspaceTreeProvider = new BazelWorkspaceTreeProvider(context);
   const codeLensProvider = new BazelBuildCodeLensProvider(context);
   const buildifierDiagnostics = new BuildifierDiagnosticsManager();
+  const completionItemProvider = new BazelCompletionItemProvider();
+
+  completionItemProvider.refresh();
 
   context.subscriptions.push(
+    vscode.languages.registerCompletionItemProvider(
+      [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
+      completionItemProvider,
+      "/",
+      ":",
+    ),
     vscode.window.registerTreeDataProvider(
       "bazelWorkspace",
       workspaceTreeProvider,
@@ -71,6 +81,7 @@ export function activate(context: vscode.ExtensionContext) {
     ),
     vscode.commands.registerCommand("bazel.clean", bazelClean),
     vscode.commands.registerCommand("bazel.refreshBazelBuildTargets", () => {
+      completionItemProvider.refresh();
       workspaceTreeProvider.refresh();
     }),
     vscode.commands.registerCommand(
@@ -173,7 +184,9 @@ async function bazelBuildTargetWithDebugging(
     }
     return;
   }
-  const bazelConfigCmdLine = vscode.workspace.getConfiguration("bazel.commandLine");
+  const bazelConfigCmdLine = vscode.workspace.getConfiguration(
+    "bazel.commandLine",
+  );
   const startupOptions = bazelConfigCmdLine.get<string[]>("startupOptions");
   const commandArgs = bazelConfigCmdLine.get<string[]>("commandArgs");
 
@@ -412,9 +425,7 @@ function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
     } else {
       const timeInSeconds = measurePerformance(bazelTaskInfo.startTime);
       vscode.window.showInformationMessage(
-        `Bazel ${
-          bazelTaskInfo.command
-        } completed successfully in ${timeInSeconds} seconds.`,
+        `Bazel ${bazelTaskInfo.command} completed successfully in ${timeInSeconds} seconds.`,
       );
     }
   }
