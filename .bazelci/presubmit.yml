@@ -2,6 +2,8 @@
 tasks:
   ubuntu1804:
     shell_commands:
+      # Install Node.js and NPM
+      - "curl -fsSL https://deb.nodesource.com/setup_14.x | sudo -E bash - && sudo apt -y install nodejs && sudo npm install -g npm@latest"
       # Buildkite expects to be able to build at least one target, so we create
       # a dummy workspace here.
       - echo 'workspace(name = "build_bazel_vscode_bazel_dummy")' > WORKSPACE
