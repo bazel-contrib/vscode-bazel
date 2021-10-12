@@ -40,6 +40,8 @@ export async function getTargetsForBuildFile(
   if (relDirWithDoc === ".") {
     relDirWithDoc = "";
   }
+  // Change \ (backslash) to / (forward slash) when on Windows
+  relDirWithDoc = relDirWithDoc.replace(/\\/g, "/");
   // Turn the relative path into a package label
   const pkg = `//${relDirWithDoc}`;
   const queryResult = await new BazelQuery(
@@ -71,7 +73,8 @@ function shouldIgnorePath(fsPath: string): boolean {
       }
     } catch (err) {
       vscode.window.showErrorMessage(
-        "pathsToIgnore value isn't a valid regex: " + escape(pathRegex));
+        "pathsToIgnore value isn't a valid regex: " + escape(pathRegex),
+      );
     }
   }
   return false;

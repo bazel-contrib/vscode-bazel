@@ -97,6 +97,7 @@ export class BazelQuery extends BazelCommand {
     const result = buffer
       .toString("utf-8")
       .trim()
+      .replace(/\r\n|\r/g, "\n")
       .split("\n")
       .sort();
     return result;
