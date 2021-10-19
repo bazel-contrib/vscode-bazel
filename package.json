@@ -357,7 +357,7 @@
         }
     },
     "scripts": {
-        "check-lint": "tslint -t stylish 'src/**/*.ts' --exclude 'src/**/*.d.ts'",
+        "check-lint": "tslint --project tsconfig.json -t stylish 'src/**/*.ts' --exclude 'src/**/*.d.ts'",
         "compile": "./scripts/build.sh",
         "vscode:prepublish": "./scripts/build.sh",
         "watch": "./scripts/build.sh -watch"

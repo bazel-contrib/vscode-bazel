@@ -50,6 +50,7 @@ export function activate(context: vscode.ExtensionContext) {
   const buildifierDiagnostics = new BuildifierDiagnosticsManager();
   const completionItemProvider = new BazelCompletionItemProvider();
 
+  // tslint:disable-next-line:no-floating-promises
   completionItemProvider.refresh();
 
   context.subscriptions.push(
@@ -82,6 +83,7 @@ export function activate(context: vscode.ExtensionContext) {
     ),
     vscode.commands.registerCommand("bazel.clean", bazelClean),
     vscode.commands.registerCommand("bazel.refreshBazelBuildTargets", () => {
+      // tslint:disable-next-line:no-floating-promises
       completionItemProvider.refresh();
       workspaceTreeProvider.refresh();
     }),
@@ -155,7 +157,7 @@ async function bazelBuildTarget(adapter: IBazelCommandAdapter | undefined) {
     // If the result was undefined, the user cancelled the quick pick, so don't
     // try again.
     if (quickPick) {
-      bazelBuildTarget(quickPick);
+      await bazelBuildTarget(quickPick);
     }
     return;
   }
@@ -186,13 +188,12 @@ async function bazelBuildTargetWithDebugging(
     // If the result was undefined, the user cancelled the quick pick, so don't
     // try again.
     if (quickPick) {
-      bazelBuildTargetWithDebugging(quickPick);
+      await bazelBuildTargetWithDebugging(quickPick);
     }
     return;
   }
-  const bazelConfigCmdLine = vscode.workspace.getConfiguration(
-    "bazel.commandLine",
-  );
+  const bazelConfigCmdLine =
+    vscode.workspace.getConfiguration("bazel.commandLine");
   const startupOptions = bazelConfigCmdLine.get<string[]>("startupOptions");
   const commandArgs = bazelConfigCmdLine.get<string[]>("commandArgs");
 
@@ -221,7 +222,7 @@ async function bazelBuildTargetWithDebugging(
  *     which the command's arguments will be determined.
  */
 async function bazelbuildAll(adapter: IBazelCommandAdapter | undefined) {
-  buildPackage(":all", adapter);
+  await buildPackage(":all", adapter);
 }
 
 /**
@@ -233,7 +234,7 @@ async function bazelbuildAll(adapter: IBazelCommandAdapter | undefined) {
 async function bazelbuildAllRecursive(
   adapter: IBazelCommandAdapter | undefined,
 ) {
-  buildPackage("/...", adapter);
+  await buildPackage("/...", adapter);
 }
 
 async function buildPackage(
@@ -253,7 +254,7 @@ async function buildPackage(
     // If the result was undefined, the user cancelled the quick pick, so don't
     // try again.
     if (quickPick) {
-      buildPackage(suffix, quickPick);
+      await buildPackage(suffix, quickPick);
     }
     return;
   }
@@ -287,7 +288,7 @@ async function bazelTestTarget(adapter: IBazelCommandAdapter | undefined) {
     // If the result was undefined, the user cancelled the quick pick, so don't
     // try again.
     if (quickPick) {
-      bazelTestTarget(quickPick);
+      await bazelTestTarget(quickPick);
     }
     return;
   }
@@ -303,7 +304,7 @@ async function bazelTestTarget(adapter: IBazelCommandAdapter | undefined) {
  *     which the command's arguments will be determined.
  */
 async function bazelTestAll(adapter: IBazelCommandAdapter | undefined) {
-  testPackage(":all", adapter);
+  await testPackage(":all", adapter);
 }
 
 /**
@@ -315,7 +316,7 @@ async function bazelTestAll(adapter: IBazelCommandAdapter | undefined) {
 async function bazelTestAllRecursive(
   adapter: IBazelCommandAdapter | undefined,
 ) {
-  testPackage("/...", adapter);
+  await testPackage("/...", adapter);
 }
 
 async function testPackage(
@@ -335,7 +336,7 @@ async function testPackage(
     // If the result was undefined, the user cancelled the quick pick, so don't
     // try again.
     if (quickPick) {
-      testPackage(suffix, quickPick);
+      await testPackage(suffix, quickPick);
     }
     return;
   }

@@ -46,6 +46,7 @@ export class BuildifierDiagnosticsManager implements vscode.Disposable {
         clearTimeout(didChangeTextTimer);
       }
       didChangeTextTimer = setTimeout(() => {
+        // tslint:disable-next-line:no-floating-promises
         this.updateDiagnostics(e.document);
         didChangeTextTimer = null;
       }, DIAGNOSTICS_ON_TYPE_DELAY_MILLIS);
@@ -55,12 +56,14 @@ export class BuildifierDiagnosticsManager implements vscode.Disposable {
       if (!e) {
         return;
       }
+      // tslint:disable-next-line:no-floating-promises
       this.updateDiagnostics(e.document);
     });
 
     // If there is an active window at the time the manager is created, make
     // sure its diagnostics are computed.
     if (vscode.window.activeTextEditor) {
+      // tslint:disable-next-line:no-floating-promises
       this.updateDiagnostics(vscode.window.activeTextEditor.document);
     }
   }
