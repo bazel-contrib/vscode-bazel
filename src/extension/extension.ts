@@ -33,6 +33,7 @@ import {
 } from "../buildifier";
 import { BazelBuildCodeLensProvider } from "../codelens";
 import { BazelCompletionItemProvider } from "../completion-provider";
+import { BazelGotoDefinitionProvider } from "../definition/bazel_goto_definition_provider";
 import { BazelTargetSymbolProvider } from "../symbols";
 import { BazelWorkspaceTreeProvider } from "../workspace-tree";
 import { getDefaultBazelExecutablePath } from "./configuration";
@@ -114,6 +115,11 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.languages.registerDocumentSymbolProvider(
       [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
       new BazelTargetSymbolProvider(),
+    ),
+    // Goto definition for BUILD files
+    vscode.languages.registerDefinitionProvider(
+      [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
+      new BazelGotoDefinitionProvider(),
     ),
     // Task events.
     vscode.tasks.onDidStartTask(onTaskStart),
