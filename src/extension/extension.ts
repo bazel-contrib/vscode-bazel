@@ -49,6 +49,7 @@ export function activate(context: vscode.ExtensionContext) {
   const buildifierDiagnostics = new BuildifierDiagnosticsManager();
   const completionItemProvider = new BazelCompletionItemProvider();
 
+  // tslint:disable-next-line:no-floating-promises
   completionItemProvider.refresh();
 
   context.subscriptions.push(
@@ -81,6 +82,7 @@ export function activate(context: vscode.ExtensionContext) {
     ),
     vscode.commands.registerCommand("bazel.clean", bazelClean),
     vscode.commands.registerCommand("bazel.refreshBazelBuildTargets", () => {
+      // tslint:disable-next-line:no-floating-promises
       completionItemProvider.refresh();
       workspaceTreeProvider.refresh();
     }),
@@ -184,9 +186,8 @@ async function bazelBuildTargetWithDebugging(
     }
     return;
   }
-  const bazelConfigCmdLine = vscode.workspace.getConfiguration(
-    "bazel.commandLine",
-  );
+  const bazelConfigCmdLine =
+    vscode.workspace.getConfiguration("bazel.commandLine");
   const startupOptions = bazelConfigCmdLine.get<string[]>("startupOptions");
   const commandArgs = bazelConfigCmdLine.get<string[]>("commandArgs");
 
