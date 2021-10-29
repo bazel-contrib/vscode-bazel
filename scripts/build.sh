@@ -20,8 +20,8 @@ set -eu
 cd "$(dirname "${BASH_SOURCE[0]}")/.." > /dev/null
 
 readonly TSC=./node_modules/.bin/tsc
-readonly PBJS=./node_modules/protobufjs/bin/pbjs
-readonly PBTS=./node_modules/protobufjs/bin/pbts
+readonly PBJS=./node_modules/protobufjs/cli/bin/pbjs
+readonly PBTS=./node_modules/protobufjs/cli/bin/pbts
 
 # Only regenerate the .js and .t.ds file if the protos have changed (i.e.,
 # it's a fresh checkout or update_protos.sh has been executed again and
