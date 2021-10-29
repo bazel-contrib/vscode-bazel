@@ -1,5 +1,22 @@
 # Change Log
 
+## Version 0.5.0 (October 29, 2021)
+
+### New Features
+
+- Implemented IntelliSense code completion for targets and packages in BUILD files.
+- Added rudimentary goto definition handling for BUILD files.
+
+### Bug Fixes
+
+- Fixed problems with CodeLens on Windows.
+- Added support for "no-floating-promises" lint check and fixed violations.
+- Made sure that multiple targets in CodeLens are sorted.
+
+### Contributors
+
+We would like to thank Alex Frasson, Chi Wang, ericisko, hensom, Jonathan Dierksen and Neil Ding for their great contributions.
+
 ## Version 0.4.1 (April 14, 2021)
 
 ### Bug Fixes
