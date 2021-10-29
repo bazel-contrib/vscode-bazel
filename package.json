@@ -371,6 +371,8 @@
     },
     "dependencies": {
         "protobufjs": "^6.8.0",
+        "tmp": "^0.2.1",
+        "uglify-js": "^3.14.2",
         "vscode-debugadapter": "^1.37.1",
         "vscode-debugprotocol": "^1.37.0",
         "vscode-uri": "^3.0.2",
