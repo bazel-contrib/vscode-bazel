@@ -29,10 +29,10 @@ readonly PBTS=./node_modules/protobufjs/cli/bin/pbts
 # extension's build time.
 if [[ ! -f src/protos/protos.js ]] ; then
   sed -e "s#^#src/protos/#" src/protos/protos_list.txt | \
-      xargs $PBJS -t static-module -o src/protos/protos.js
+      xargs node $PBJS -t static-module -o src/protos/protos.js
 fi
 if [[ ! -f src/protos/protos.d.ts ]] ; then
-  $PBTS -o src/protos/protos.d.ts src/protos/protos.js
+  node $PBTS -o src/protos/protos.d.ts src/protos/protos.js
 fi
 
 # Compile the rest of the project.
