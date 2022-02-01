@@ -28,10 +28,12 @@ readonly PBTS=./node_modules/protobufjs/cli/bin/pbts
 # deleted the old generated files). This shaves several seconds off the
 # extension's build time.
 if [[ ! -f src/protos/protos.js ]] ; then
+  chmod +x $PBJS
   sed -e "s#^#src/protos/#" src/protos/protos_list.txt | \
       xargs $PBJS -t static-module -o src/protos/protos.js
 fi
 if [[ ! -f src/protos/protos.d.ts ]] ; then
+  chmod +x $PBTS
   $PBTS -o src/protos/protos.d.ts src/protos/protos.js
 fi
 
