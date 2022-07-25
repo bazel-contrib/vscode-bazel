@@ -6,6 +6,7 @@ This extension provides support for Bazel in Visual Studio.
 
 ## Features
 
+- Syntax highlighting
 - **Bazel Build Targets** tree displays the build packages/targets in your
   workspace
 - **CodeLens** links in BUILD files to directly launch a build or test by simply
