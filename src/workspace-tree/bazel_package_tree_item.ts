@@ -56,10 +56,10 @@ export class BazelPackageTreeItem
     const queryResult = await new BazelQuery(
       getDefaultBazelExecutablePath(),
       this.workspaceInfo.bazelWorkspacePath,
-      `//${this.packagePath}:all`,
-      [],
-      true,
-    ).queryTargets([], /* sortByRuleName: */ true);
+    ).queryTargets(`//${this.packagePath}:all`, {
+      ignoresErrors: true,
+      sortByRuleName: true,
+    });
     const targets = queryResult.target.map((target: blaze_query.Target) => {
       return new BazelTargetTreeItem(this.workspaceInfo, target);
     });

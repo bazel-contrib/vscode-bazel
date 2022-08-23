@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as path from "path";
 import * as vscode from "vscode";
 
 import {
@@ -26,6 +27,8 @@ import {
   IBazelCommandAdapter,
   parseExitCode,
 } from "../bazel";
+import { BazelCQuery } from "../bazel/bazel_cquery";
+import { BazelInfo } from "../bazel/bazel_info";
 import {
   BuildifierDiagnosticsManager,
   BuildifierFormatProvider,
@@ -90,6 +93,10 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand(
       "bazel.copyTargetToClipboard",
       bazelCopyTargetToClipboard,
+    ),
+    vscode.commands.registerCommand(
+      "bazel.getTargetOutput",
+      bazelGetTargetOutput,
     ),
     // CodeLens provider for BUILD files
     vscode.languages.registerCodeLensProvider(
@@ -358,29 +365,17 @@ async function testPackage(
  * asking the user to choose one.
  */
 async function bazelClean() {
-  const workspaces = vscode.workspace.workspaceFolders;
-  let workspaceFolder: vscode.WorkspaceFolder;
-
-  switch (workspaces.length) {
-    case 0:
-      vscode.window.showInformationMessage(
-        "Please open a Bazel workspace folder to use this command.",
-      );
-      return;
-    case 1:
-      workspaceFolder = workspaces[0];
-      break;
-    default:
-      workspaceFolder = await vscode.window.showWorkspaceFolderPick();
-      if (workspaceFolder === undefined) {
-        return;
-      }
+  const workspaceInfo = await BazelWorkspaceInfo.fromWorkspaceFolders();
+  if (!workspaceInfo) {
+    vscode.window.showInformationMessage(
+      "Please open a Bazel workspace folder to use this command.",
+    );
+    return;
   }
-
   const task = createBazelTask("clean", {
     options: [],
     targets: [],
-    workspaceInfo: BazelWorkspaceInfo.fromWorkspaceFolder(workspaceFolder),
+    workspaceInfo,
   });
   vscode.tasks.executeTask(task);
 }
@@ -400,6 +395,60 @@ async function bazelCopyTargetToClipboard(
   // one of them.
   const target = adapter.getBazelCommandOptions().targets[0];
   vscode.env.clipboard.writeText(target);
+}
+
+/**
+ * Get the output of the given target.
+ *
+ * If there are multiple outputs, a quick-pick window will be opened asking the
+ * user to choose one.
+ *
+ * The `bazel.getTargetOutput` command can be used in launch configurations to
+ * obtain the path to an executable built by Bazel. For example, you can set the
+ * "program" attribute of a launch configuration to an input variable:
+ *
+ *     "program": "${input:binaryOutputLocation}"
+ *
+ * Then define a command input variable:
+ *
+ *     "inputs" [
+ *         {
+ *             "id": "binaryOutputLocation",
+ *             "type": "command",
+ *             "command": "bazel.getOutputTarget",
+ *             "args": ["//my/binary:target"],
+ *         }
+ *     ]
+ */
+async function bazelGetTargetOutput(
+  target: string,
+  options: string[] = [],
+): Promise<string> {
+  const workspaceInfo = await BazelWorkspaceInfo.fromWorkspaceFolders();
+  if (!workspaceInfo) {
+    vscode.window.showInformationMessage(
+      "Please open a Bazel workspace folder to use this command.",
+    );
+    return;
+  }
+  const outputPath = await new BazelInfo(
+    getDefaultBazelExecutablePath(),
+    workspaceInfo.bazelWorkspacePath,
+  ).run("output_path");
+  const outputs = await new BazelCQuery(
+    getDefaultBazelExecutablePath(),
+    workspaceInfo.bazelWorkspacePath,
+  ).queryOutputs(target, options);
+  switch (outputs.length) {
+    case 0:
+      throw new Error(`Target ${target} has no outputs.`);
+    case 1:
+      return path.join(outputPath, "..", outputs[0]);
+    default:
+      return await vscode.window.showQuickPick(outputs, {
+        placeHolder: `Pick an output of ${target}`,
+      });
+  }
 }
 
 function onTaskStart(event: vscode.TaskStartEvent) {

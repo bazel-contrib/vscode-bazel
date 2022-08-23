@@ -67,6 +67,29 @@ export class BazelWorkspaceInfo {
   }
 
   /**
+   * Returns a selected Bazel workspace from among the open VS workspace
+   * folders. If there is only a single workspace folder open, it will be used.
+   * If there are multiple workspace folders open, a quick-pick window will be
+   * opened asking the user to choose one.
+   */
+  public static async fromWorkspaceFolders(): Promise<
+    BazelWorkspaceInfo | undefined
+  > {
+    switch (vscode.workspace.workspaceFolders?.length) {
+      case undefined:
+      case 0:
+        return undefined;
+      case 1:
+        return this.fromWorkspaceFolder(vscode.workspace.workspaceFolders[0]);
+      default:
+        const workspaceFolder = await vscode.window.showWorkspaceFolderPick();
+        return workspaceFolder
+          ? this.fromWorkspaceFolder(workspaceFolder)
+          : undefined;
+    }
+  }
+
+  /**
    * Initializes a new workspace info object.
    *
    * @param bazelWorkspacePath The closest directory to a document that contains

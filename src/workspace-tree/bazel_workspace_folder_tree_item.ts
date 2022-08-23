@@ -160,9 +160,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     const packagePaths = await new BazelQuery(
       getDefaultBazelExecutablePath(),
       workspacePath,
-      "...:*",
-      [],
-    ).queryPackages();
+    ).queryPackages("...:*");
     const topLevelItems: BazelPackageTreeItem[] = [];
     this.buildPackageTree(
       packagePaths,
@@ -177,10 +175,10 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     const queryResult = await new BazelQuery(
       getDefaultBazelExecutablePath(),
       workspacePath,
-      `:all`,
-      [],
-      true,
-    ).queryTargets([], /* sortByRuleName: */ true);
+    ).queryTargets(`:all`, {
+      ignoresErrors: true,
+      sortByRuleName: true,
+    });
     const targets = queryResult.target.map((target: blaze_query.Target) => {
       return new BazelTargetTreeItem(this.workspaceInfo, target);
     });

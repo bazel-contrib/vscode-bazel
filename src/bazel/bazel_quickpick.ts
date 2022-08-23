@@ -77,9 +77,7 @@ async function queryWorkspaceQuickPickTargets(
   const queryResult = await new BazelQuery(
     getDefaultBazelExecutablePath(),
     workspaceInfo.workspaceFolder.uri.fsPath,
-    query,
-    [],
-  ).queryTargets();
+  ).queryTargets(query);
   // Sort the labels so the QuickPick is ordered.
   const labels = queryResult.target.map((target) => target.rule.name);
   labels.sort();
@@ -101,9 +99,7 @@ async function queryWorkspaceQuickPickPackages(
   const packagePaths = await new BazelQuery(
     getDefaultBazelExecutablePath(),
     workspaceInfo.workspaceFolder.uri.fsPath,
-    "...:*",
-    [],
-  ).queryPackages();
+  ).queryPackages("...:*");
   const result: BazelTargetQuickPick[] = [];
   for (const target of packagePaths) {
     result.push(new BazelTargetQuickPick("//" + target, workspaceInfo));

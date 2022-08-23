@@ -25,42 +25,31 @@ import { getBazelWorkspaceFolder } from "./bazel_utils";
 /** Provides a promise-based API around a Bazel query. */
 export class BazelQuery extends BazelCommand {
   /**
-   * Initializes a new Bazel query.
-   *
-   * @param bazelExecutable The path to the Bazel executable.
-   * @param workingDirectory The path to the directory from which Bazel will be
-   *     spawned.
-   * @param query The query to execute.
-   * @param options Command line options that will be passed to Bazel (targets,
-   *     query strings, flags, etc.).
-   * @param ignoresErrors If true, a non-zero exit code for the child process is
-   *     ignored and the {@link #run} function's promise is resolved with the
-   *     empty string instead.
-   */
-  public constructor(
-    bazelExecutable: string,
-    workingDirectory: string,
-    query: string,
-    options: string[],
-    private readonly ignoresErrors: boolean = false,
-  ) {
-    super(bazelExecutable, workingDirectory, [query].concat(options));
-  }
-
-  /**
    * Runs the query and returns a {@code QueryResult} containing the targets
    * that match.
    *
+   * @param query The query to execute.
    * @param additionalOptions Additional command line options that should be
    *     passed just to this specific invocation of the query.
    * @returns A {@link QueryResult} object that contains structured information
    *     about the query results.
    */
   public async queryTargets(
-    additionalOptions: string[] = [],
-    sortByRuleName: boolean = false,
+    query: string,
+    {
+      additionalOptions = [],
+      sortByRuleName = false,
+      ignoresErrors = false,
+    }: {
+      additionalOptions?: string[];
+      sortByRuleName?: boolean;
+      ignoresErrors?: boolean;
+    } = {},
   ): Promise<blaze_query.QueryResult> {
-    const buffer = await this.run(additionalOptions.concat(["--output=proto"]));
+    const buffer = await this.run(
+      [query, ...additionalOptions, "--output=proto"],
+      { ignoresErrors },
+    );
     const result = blaze_query.QueryResult.decode(buffer);
     if (sortByRuleName) {
       const sorted = result.target.sort((t1, t2) => {
@@ -88,12 +77,8 @@ export class BazelQuery extends BazelCommand {
    * @returns An sorted array of package paths containing the targets that
    *     match.
    */
-  public async queryPackages(
-    additionalOptions: string[] = [],
-  ): Promise<string[]> {
-    const buffer = await this.run(
-      additionalOptions.concat(["--output=package"]),
-    );
+  public async queryPackages(query: string): Promise<string[]> {
+    const buffer = await this.run([query, "--output=package"]);
     const result = buffer
       .toString("utf-8")
       .trim()
@@ -116,7 +101,10 @@ export class BazelQuery extends BazelCommand {
    * @returns A promise that is resolved with the contents of the process's
    *     standard output, or rejected if the command fails.
    */
-  private run(additionalOptions: string[] = []): Promise<Buffer> {
+  protected run(
+    options: string[],
+    { ignoresErrors = false }: { ignoresErrors?: boolean } = {},
+  ): Promise<Buffer> {
     const bazelConfig = vscode.workspace.getConfiguration("bazel");
     const queriesShareServer = bazelConfig.get<boolean>("queriesShareServer");
     let additionalStartupOptions: string[] = [];
@@ -149,11 +137,11 @@ export class BazelQuery extends BazelCommand {
       };
       child_process.execFile(
         this.bazelExecutable,
-        this.execArgs(additionalOptions, additionalStartupOptions),
+        this.execArgs(options, additionalStartupOptions),
         execOptions,
         (error: Error, stdout: Buffer, stderr: Buffer) => {
           if (error) {
-            if (this.ignoresErrors) {
+            if (ignoresErrors) {
               resolve(new Buffer(0));
             } else {
               reject(error);
