@@ -131,8 +131,11 @@ export function getBuildifierFileType(fsPath: string): BuildifierFileType {
   if (parsedPath.ext === ".oss") {
     parsedPath = path.parse(parsedPath.name);
   }
-  if (parsedPath.ext === ".bzl") {
-    return "bzl";
+  switch (parsedPath.ext) {
+    case ".bzl":
+      return "bzl";
+    case ".sky":
+      return "default";
   }
   if (
     parsedPath.ext === ".build" ||
