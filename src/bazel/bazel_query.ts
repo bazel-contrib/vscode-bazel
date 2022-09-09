@@ -30,8 +30,8 @@ export class BazelQuery extends BazelCommand {
    *
    * @param query The query to execute.
    * @param options
-   * @param options.additionalOptions Additional command line options that should be
-   *     passed just to this specific invocation of the query.
+   * @param options.additionalOptions Additional command line options that
+   *     should be passed just to this specific invocation of the query.
    * @param options.sortByRuleName If `true`, the results from the query will
    *     be sorted by their name.
    * @param options.ignoresErrors `true` if errors from executing the query

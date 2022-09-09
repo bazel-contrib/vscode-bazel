@@ -19,7 +19,7 @@ export class BazelCQuery extends BazelQuery {
   /**
    * Constructs and executes a cquery command that obtains the output files of
    * a given target.
-   * 
+   *
    * @param target The target to query.
    * @param options Additional command line options that should be
    *     passed just to this specific invocation of the query.

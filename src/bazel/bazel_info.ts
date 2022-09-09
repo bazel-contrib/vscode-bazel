@@ -20,7 +20,7 @@ import { BazelCommand } from "./bazel_command";
 export class BazelInfo extends BazelCommand {
   /**
    * Runs `bazel info <key>` and returns the output.
-   * 
+   *
    * @param key The info key to query.
    * @returns The output of `bazel info <key>`.
    */
