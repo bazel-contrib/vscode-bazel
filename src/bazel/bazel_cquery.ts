@@ -14,7 +14,18 @@
 
 import { BazelQuery } from "./bazel_query";
 
+/** Provides a promise-based API around a Bazel cquery. */
 export class BazelCQuery extends BazelQuery {
+  /**
+   * Constructs and executes a cquery command that obtains the output files of
+   * a given target.
+   * 
+   * @param target The target to query.
+   * @param options Additional command line options that should be
+   *     passed just to this specific invocation of the query.
+   * @returns The files that are outputs of the given target, as paths relative
+   *     to the execution root.
+   */
   public async queryOutputs(
     target: string,
     options: string[] = [],

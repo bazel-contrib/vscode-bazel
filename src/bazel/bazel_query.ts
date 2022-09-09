@@ -29,8 +29,13 @@ export class BazelQuery extends BazelCommand {
    * that match.
    *
    * @param query The query to execute.
-   * @param additionalOptions Additional command line options that should be
+   * @param options
+   * @param options.additionalOptions Additional command line options that should be
    *     passed just to this specific invocation of the query.
+   * @param options.sortByRuleName If `true`, the results from the query will
+   *     be sorted by their name.
+   * @param options.ignoresErrors `true` if errors from executing the query
+   *     should be ignored.
    * @returns A {@link QueryResult} object that contains structured information
    *     about the query results.
    */
@@ -72,8 +77,7 @@ export class BazelQuery extends BazelCommand {
    * Runs the query and returns an array of package paths containing the targets
    * that match.
    *
-   * @param additionalOptions Additional command line options that should be
-   *     passed just to this specific invocation of the query.
+   * @param query The query to execute.
    * @returns An sorted array of package paths containing the targets that
    *     match.
    */
@@ -96,8 +100,10 @@ export class BazelQuery extends BazelCommand {
    * Executes the command and returns a promise for the binary contents of
    * standard output.
    *
-   * @param additionalOptions Additional command line options that apply only to
-   *     this particular invocation of the command.
+   * @param query The query to execute.
+   * @param options
+   * @param options.ignoresErrors `true` if errors from executing the query
+   *     should be ignored.
    * @returns A promise that is resolved with the contents of the process's
    *     standard output, or rejected if the command fails.
    */

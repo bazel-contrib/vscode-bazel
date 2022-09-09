@@ -16,7 +16,14 @@ import * as child_process from "child_process";
 
 import { BazelCommand } from "./bazel_command";
 
+/** Provides a promise-based API around the `bazel info` command. */
 export class BazelInfo extends BazelCommand {
+  /**
+   * Runs `bazel info <key>` and returns the output.
+   * 
+   * @param key The info key to query.
+   * @returns The output of `bazel info <key>`.
+   */
   public async run(key: string): Promise<string> {
     return new Promise((resolve, reject) => {
       child_process.execFile(
