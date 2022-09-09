@@ -21,7 +21,7 @@ import { IBuildifierResult, IBuildifierWarning } from "./buildifier_result";
 export type BuildifierLintMode = "fix" | "warn";
 
 /** The type of file that buildifier should interpret standard input as. */
-export type BuildifierFileType = "build" | "bzl" | "workspace";
+export type BuildifierFileType = "build" | "bzl" | "workspace" | "default";
 
 /**
  * Invokes buildifier in format mode.
@@ -131,8 +131,11 @@ export function getBuildifierFileType(fsPath: string): BuildifierFileType {
   if (parsedPath.ext === ".oss") {
     parsedPath = path.parse(parsedPath.name);
   }
-  if (parsedPath.ext === ".bzl" || parsedPath.ext === ".sky") {
-    return "bzl";
+  switch (parsedPath.ext) {
+    case ".bzl":
+      return "bzl";
+    case ".sky":
+      return "default";
   }
   if (
     parsedPath.ext === ".build" ||
@@ -148,7 +151,7 @@ export function getBuildifierFileType(fsPath: string): BuildifierFileType {
   ) {
     return "workspace";
   }
-  return "bzl";
+  return "default";
 }
 
 /**
