@@ -54,9 +54,7 @@ export class BazelGotoDefinitionProvider implements DefinitionProvider {
     const queryResult = await new BazelQuery(
       getDefaultBazelExecutablePath(),
       Utils.dirname(document.uri).fsPath,
-      `kind(rule, "${targetName}")`,
-      [],
-    ).queryTargets();
+    ).queryTargets(`kind(rule, "${targetName}")`);
 
     if (!queryResult.target.length) {
       return null;

@@ -19,7 +19,8 @@
     "activationEvents": [
         "onLanguage:starlark",
         "onView:bazelWorkspace",
-        "onCommand:bazel.refreshBazelBuildTargets"
+        "onCommand:bazel.refreshBazelBuildTargets",
+        "onCommand:bazel.getTargetOutput"
     ],
     "main": "./out/src/extension/extension",
     "contributes": {
@@ -82,6 +83,11 @@
                 "category": "Bazel",
                 "command": "bazel.copyTargetToClipboard",
                 "title": "Copy Label to Clipboard"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.getTargetOutput",
+                "title": "Get output path for the given target"
             }
         ],
         "configuration": {

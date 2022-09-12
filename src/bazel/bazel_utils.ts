@@ -47,9 +47,7 @@ export async function getTargetsForBuildFile(
   const queryResult = await new BazelQuery(
     bazelExecutable,
     workspace,
-    `kind(rule, ${pkg}:all)`,
-    [],
-  ).queryTargets([], /* sortByRuleName: */ true);
+  ).queryTargets(`kind(rule, ${pkg}:all)`, { sortByRuleName: true });
 
   return queryResult;
 }
