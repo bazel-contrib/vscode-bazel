@@ -12,11 +12,11 @@
 
   Then define a command input variable:
 
-      "inputs" [
+      "inputs": [
           {
               "id": "binaryOutputLocation",
               "type": "command",
-              "command": "bazel.getOutputTarget",
+              "command": "bazel.getTargetOutput",
               "args": ["//my/binary:target"],
           }
       ]
