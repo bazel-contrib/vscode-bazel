@@ -1,5 +1,30 @@
 # Change Log
 
+## Version 0.6.0 (September 14, 2022)
+
+### New Features
+
+- Add bazel.getTargetOutput command.
+  
+  This command can be used in launch configurations to obtain the path to an executable built by Bazel. For example, you can set the "program" attribute of a launch configuration to an input variable:
+
+      "program": "${input:binaryOutputLocation}"
+
+  Then define a command input variable:
+
+      "inputs" [
+          {
+              "id": "binaryOutputLocation",
+              "type": "command",
+              "command": "bazel.getOutputTarget",
+              "args": ["//my/binary:target"],
+          }
+      ]
+
+### Bug Fixes
+
+- return `default` for .sky files in getBuildifierFileType (@arahatashun)
+
 ## Version 0.5.0 (October 29, 2021)
 
 ### New Features
