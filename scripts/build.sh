@@ -19,23 +19,17 @@ set -eu
 # Move into the top-level directory of the project.
 cd "$(dirname "${BASH_SOURCE[0]}")/.." > /dev/null
 
-readonly TSC=./node_modules/.bin/tsc
-readonly PBJS=./node_modules/protobufjs/cli/bin/pbjs
-readonly PBTS=./node_modules/protobufjs/cli/bin/pbts
-
 # Only regenerate the .js and .t.ds file if the protos have changed (i.e.,
 # it's a fresh checkout or update_protos.sh has been executed again and
 # deleted the old generated files). This shaves several seconds off the
 # extension's build time.
 if [[ ! -f src/protos/protos.js ]] ; then
-  chmod +x $PBJS
   sed -e "s#^#src/protos/#" src/protos/protos_list.txt | \
-      xargs $PBJS -t static-module -o src/protos/protos.js
+      xargs pbjs -t static-module -o src/protos/protos.js
 fi
 if [[ ! -f src/protos/protos.d.ts ]] ; then
-  chmod +x $PBTS
-  $PBTS -o src/protos/protos.d.ts src/protos/protos.js
+  pbts -o src/protos/protos.d.ts src/protos/protos.js
 fi
 
 # Compile the rest of the project.
-$TSC "$@" -p ./
+tsc "$@" -p ./
