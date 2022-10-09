@@ -214,17 +214,16 @@
                     "Bazel"
                 ],
                 "extensions": [
+                    ".bazel",
                     ".BUILD",
-                    ".WORKSPACE",
                     ".bzl",
                     ".sky",
-                    ".star"
+                    ".star",
+                    ".WORKSPACE"
                 ],
                 "filenames": [
                     "BUILD",
-                    "BUILD.bazel",
-                    "WORKSPACE",
-                    "WORKSPACE.bazel"
+                    "WORKSPACE"
                 ],
                 "configuration": "./syntaxes/starlark.configuration.json"
             }

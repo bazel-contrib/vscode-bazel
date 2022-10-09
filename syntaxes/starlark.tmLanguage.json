@@ -2,14 +2,12 @@
     "name": "Starlark",
     "scopeName": "source.starlark",
     "fileTypes": [
+        "bazel",
         "BUILD",
-        "WORKSPACE",
         "bzl",
         "sky",
         "star",
-        "BUILD.bazel",
-        "WORKSPACE",
-        "WORKSPACE.bazel"
+        "WORKSPACE"
     ],
     "patterns": [
         {
@@ -920,7 +918,7 @@
                 }
             }
         },
-       "discouraged-semicolon": {
+        "discouraged-semicolon": {
             "patterns": [
                 {
                     "name": "invalid.deprecated.semicolon.starlark",
