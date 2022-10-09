@@ -2,12 +2,12 @@
     "name": "Starlark",
     "scopeName": "source.starlark",
     "fileTypes": [
-        "bazel",
         "BUILD",
+        "WORKSPACE",
+        "bazel",
         "bzl",
         "sky",
-        "star",
-        "WORKSPACE"
+        "star"
     ],
     "patterns": [
         {

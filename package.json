@@ -214,12 +214,12 @@
                     "Bazel"
                 ],
                 "extensions": [
-                    ".bazel",
                     ".BUILD",
+                    ".WORKSPACE",
+                    ".bazel",
                     ".bzl",
                     ".sky",
-                    ".star",
-                    ".WORKSPACE"
+                    ".star"
                 ],
                 "filenames": [
                     "BUILD",
