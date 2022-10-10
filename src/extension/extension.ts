@@ -108,9 +108,8 @@ export function activate(context: vscode.ExtensionContext) {
       [
         { language: "starlark" },
         { pattern: "**/BUILD" },
-        { pattern: "**/BUILD.bazel" },
+        { pattern: "**/*.bazel" },
         { pattern: "**/WORKSPACE" },
-        { pattern: "**/WORKSPACE.bazel" },
         { pattern: "**/*.BUILD" },
         { pattern: "**/*.bzl" },
         { pattern: "**/*.sky" },
