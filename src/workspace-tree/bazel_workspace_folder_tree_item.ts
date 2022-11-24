@@ -160,7 +160,9 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     const packagePaths = await new BazelQuery(
       getDefaultBazelExecutablePath(),
       workspacePath,
-    ).queryPackages("...:*");
+    ).queryPackages(
+      vscode.workspace.getConfiguration("bazel.commandLine").get("queryArg"),
+    );
     const topLevelItems: BazelPackageTreeItem[] = [];
     this.buildPackageTree(
       packagePaths,
