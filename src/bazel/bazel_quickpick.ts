@@ -25,8 +25,7 @@ import { BazelWorkspaceInfo } from "./bazel_workspace_info";
  * registered bazel commands.
  */
 export class BazelTargetQuickPick
-  implements IBazelCommandAdapter, vscode.QuickPickItem
-{
+  implements IBazelCommandAdapter, vscode.QuickPickItem {
   /** The fully qualified bazel target label. */
   private readonly targetLabel: string;
 
