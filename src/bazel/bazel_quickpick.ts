@@ -101,7 +101,9 @@ async function queryWorkspaceQuickPickPackages(
     getDefaultBazelExecutablePath(),
     workspaceInfo.workspaceFolder.uri.fsPath,
   ).queryPackages(
-    vscode.workspace.getConfiguration("bazel.commandLine").get("queryArg")
+    vscode.workspace
+      .getConfiguration("bazel.commandLine")
+      .get("queryExpression"),
   );
   const result: BazelTargetQuickPick[] = [];
   for (const target of packagePaths) {
