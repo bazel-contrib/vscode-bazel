@@ -418,11 +418,27 @@ async function bazelCopyTargetToClipboard(
  *             "args": ["//my/binary:target"],
  *         }
  *     ]
+ *
+ * Additional Bazel flags can be provided:
+ *
+ *     "inputs": [
+ *         {
+ *             "id": "debugOutputLocation",
+ *             "type": "command",
+ *             "command": "bazel.getTargetOutput",
+ *             "args": ["//my/binary:target", ["--compilation_mode", "dbg"]],
+ *         }
+ *     ]
  */
 async function bazelGetTargetOutput(
   target: string,
   options: string[] = [],
 ): Promise<string> {
+  // Workaround for https://github.com/microsoft/vscode/issues/167970
+  if (Array.isArray(target)) {
+    options = (target[1] || [] as any);
+    target = target[0];
+  }
   const workspaceInfo = await BazelWorkspaceInfo.fromWorkspaceFolders();
   if (!workspaceInfo) {
     vscode.window.showInformationMessage(
