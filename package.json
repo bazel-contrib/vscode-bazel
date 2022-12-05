@@ -98,13 +98,13 @@
                     "type": "string",
                     "default": "",
                     "description": "The name of the Bazel executable. This may be an absolute path, or a simple name that will be searched for on the system path. If empty, \"bazel\" on the system path will be used.",
-                    "scope": "machine"
+                    "scope": "machine-overridable"
                 },
                 "bazel.buildifierExecutable": {
                     "type": "string",
                     "default": "",
                     "markdownDescription": "The name of the Buildifier executable. This may be an absolute path, or a simple name that will be searched for on the system path. If empty, \"buildifier\" on the system path will be used.\n\nBuildifier can be downloaded from https://github.com/bazelbuild/buildtools/releases.",
-                    "scope": "machine"
+                    "scope": "machine-overridable"
                 },
                 "bazel.buildifierFixOnFormat": {
                     "type": "boolean",
