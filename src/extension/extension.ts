@@ -98,6 +98,18 @@ export function activate(context: vscode.ExtensionContext) {
       "bazel.getTargetOutput",
       bazelGetTargetOutput,
     ),
+    ...[
+      "bazel-bin",
+      "bazel-genfiles",
+      "bazel-testlogs",
+      "execution_root",
+      "output_base",
+      "output_path",
+    ].map((key) =>
+      vscode.commands.registerCommand(`bazel.info.${key}`, () =>
+        bazelInfo(key),
+      ),
+    ),
     // CodeLens provider for BUILD files
     vscode.languages.registerCodeLensProvider(
       [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
@@ -464,6 +476,26 @@ async function bazelGetTargetOutput(
         placeHolder: `Pick an output of ${target}`,
       });
   }
+}
+
+/**
+ * Get the output of `bazel info` for the given key.
+ *
+ * If there are multiple outputs, a quick-pick window will be opened asking the
+ * user to choose one.
+ */
+async function bazelInfo(key: string): Promise<string> {
+  const workspaceInfo = await BazelWorkspaceInfo.fromWorkspaceFolders();
+  if (!workspaceInfo) {
+    vscode.window.showInformationMessage(
+      "Please open a Bazel workspace folder to use this command.",
+    );
+    return;
+  }
+  return new BazelInfo(
+    getDefaultBazelExecutablePath(),
+    workspaceInfo.bazelWorkspacePath,
+  ).run(key);
 }
 
 function onTaskStart(event: vscode.TaskStartEvent) {
