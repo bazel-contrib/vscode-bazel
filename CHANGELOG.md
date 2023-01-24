@@ -1,5 +1,34 @@
 # Change Log
 
+## Version 0.7.0 (December 6, 2022)
+
+### New Features
+
+- Add bazel.commandLine.queryExpression configuration setting (@maximMalofeev)
+   
+  A [query language expression](https://bazel.build/query/language) which determines the packages displayed in the workspace tree and quick picker. The default inspects the entire workspace, but you could narrow it. For example: `//part/you/want/...:*`
+
+- Make executable and buildifierExecutable settings `machine-overridable` (@jfirebaugh)
+
+  This allows them to be set in workspace or folder settings.
+
+- Starlark syntax highlighting now applies to any file with a `.bazel` extension (@dierksen)
+
+### Bug Fixes
+
+- Fix and document providing flags to `getTargetOutput` (@jfirebaugh)
+
+  Additional Bazel flags can be provided to the `bazel.getTargetOutput` command:
+ 
+      "inputs": [
+          {
+              "id": "debugOutputLocation",
+              "type": "command",
+              "command": "bazel.getTargetOutput",
+              "args": ["//my/binary:target", ["--compilation_mode", "dbg"]],
+          }
+      ]
+
 ## Version 0.6.0 (September 14, 2022)
 
 ### New Features

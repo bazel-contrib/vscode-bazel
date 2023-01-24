@@ -98,6 +98,18 @@ export function activate(context: vscode.ExtensionContext) {
       "bazel.getTargetOutput",
       bazelGetTargetOutput,
     ),
+    ...[
+      "bazel-bin",
+      "bazel-genfiles",
+      "bazel-testlogs",
+      "execution_root",
+      "output_base",
+      "output_path",
+    ].map((key) =>
+      vscode.commands.registerCommand(`bazel.info.${key}`, () =>
+        bazelInfo(key),
+      ),
+    ),
     // CodeLens provider for BUILD files
     vscode.languages.registerCodeLensProvider(
       [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
@@ -108,9 +120,8 @@ export function activate(context: vscode.ExtensionContext) {
       [
         { language: "starlark" },
         { pattern: "**/BUILD" },
-        { pattern: "**/BUILD.bazel" },
+        { pattern: "**/*.bazel" },
         { pattern: "**/WORKSPACE" },
-        { pattern: "**/WORKSPACE.bazel" },
         { pattern: "**/*.BUILD" },
         { pattern: "**/*.bzl" },
         { pattern: "**/*.sky" },
@@ -419,11 +430,27 @@ async function bazelCopyTargetToClipboard(
  *             "args": ["//my/binary:target"],
  *         }
  *     ]
+ *
+ * Additional Bazel flags can be provided:
+ *
+ *     "inputs": [
+ *         {
+ *             "id": "debugOutputLocation",
+ *             "type": "command",
+ *             "command": "bazel.getTargetOutput",
+ *             "args": ["//my/binary:target", ["--compilation_mode", "dbg"]],
+ *         }
+ *     ]
  */
 async function bazelGetTargetOutput(
   target: string,
   options: string[] = [],
 ): Promise<string> {
+  // Workaround for https://github.com/microsoft/vscode/issues/167970
+  if (Array.isArray(target)) {
+    options = (target[1] || [] as any);
+    target = target[0];
+  }
   const workspaceInfo = await BazelWorkspaceInfo.fromWorkspaceFolders();
   if (!workspaceInfo) {
     vscode.window.showInformationMessage(
@@ -449,6 +476,26 @@ async function bazelGetTargetOutput(
         placeHolder: `Pick an output of ${target}`,
       });
   }
+}
+
+/**
+ * Get the output of `bazel info` for the given key.
+ *
+ * If there are multiple outputs, a quick-pick window will be opened asking the
+ * user to choose one.
+ */
+async function bazelInfo(key: string): Promise<string> {
+  const workspaceInfo = await BazelWorkspaceInfo.fromWorkspaceFolders();
+  if (!workspaceInfo) {
+    vscode.window.showInformationMessage(
+      "Please open a Bazel workspace folder to use this command.",
+    );
+    return;
+  }
+  return new BazelInfo(
+    getDefaultBazelExecutablePath(),
+    workspaceInfo.bazelWorkspacePath,
+  ).run(key);
 }
 
 function onTaskStart(event: vscode.TaskStartEvent) {
