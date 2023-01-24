@@ -128,8 +128,10 @@ export class BazelQuery extends BazelCommand {
       // the server is shared for all the queries.
       const ws = getBazelWorkspaceFolder(this.workingDirectory);
       const hash = crypto.createHash("md5").update(ws).digest("hex");
-      const queryOutputBaseConfigValue = bazelConfig.get<string>("queryOutputBase");
-      const queryOutputBase = path.join(queryOutputBaseConfigValue ?? os.tmpdir(), hash);
+      const queryOutputBaseConfigValue =
+          bazelConfig.get<string>("queryOutputBase");
+      const queryOutputBase =
+          path.join(queryOutputBaseConfigValue ?? os.tmpdir(), hash);
       additionalStartupOptions = additionalStartupOptions.concat([
         `--output_base=${queryOutputBase}`,
       ]);
