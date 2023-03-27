@@ -78,6 +78,7 @@ export function activate(context: vscode.ExtensionContext) {
       "bazel.buildAllRecursive",
       bazelbuildAllRecursive,
     ),
+    vscode.commands.registerCommand("bazel.runTarget", bazelRunTarget),
     vscode.commands.registerCommand("bazel.testTarget", bazelTestTarget),
     vscode.commands.registerCommand("bazel.testAll", bazelTestAll),
     vscode.commands.registerCommand(
@@ -287,6 +288,35 @@ async function buildPackage(
 }
 
 /**
+ * Runs a Bazel target and streams output to the terminal.
+ *
+ * @param adapter An object that implements {@link IBazelCommandAdapter} from
+ *     which the command's arguments will be determined.
+ */
+async function bazelRunTarget(adapter: IBazelCommandAdapter | undefined) {
+  if (adapter === undefined) {
+    // If the command adapter was unspecified, it means this command is being
+    // invoked via the command palatte. Provide quickpick test targets for
+    // the user to choose from.
+    const quickPick = await vscode.window.showQuickPick(
+      queryQuickPickTargets("kind('.* rule', ...)"),
+      {
+        canPickMany: false,
+      },
+    );
+    // If the result was undefined, the user cancelled the quick pick, so don't
+    // try again.
+    if (quickPick) {
+      await bazelRunTarget(quickPick);
+    }
+    return;
+  }
+  const commandOptions = adapter.getBazelCommandOptions();
+  const task = createBazelTask("run", commandOptions);
+  vscode.tasks.executeTask(task);
+}
+
+/**
  * Tests a Bazel target and streams output to the terminal.
  *
  * @param adapter An object that implements {@link IBazelCommandAdapter} from
@@ -448,7 +478,7 @@ async function bazelGetTargetOutput(
 ): Promise<string> {
   // Workaround for https://github.com/microsoft/vscode/issues/167970
   if (Array.isArray(target)) {
-    options = (target[1] || [] as any);
+    options = target[1] || ([] as any);
     target = target[0];
   }
   const workspaceInfo = await BazelWorkspaceInfo.fromWorkspaceFolders();
