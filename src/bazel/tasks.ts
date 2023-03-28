@@ -32,14 +32,16 @@ function quotedOption(option: string): vscode.ShellQuotedString {
  * @param options Describes the options used to launch Bazel.
  */
 export function createBazelTask(
-  command: "build" | "clean" | "test",
+  command: "build" | "clean" | "test" | "run",
   options: IBazelCommandOptions,
 ): vscode.Task {
-  const bazelConfigCmdLine = vscode.workspace.getConfiguration("bazel.commandLine");
+  const bazelConfigCmdLine =
+    vscode.workspace.getConfiguration("bazel.commandLine");
   const startupOptions = bazelConfigCmdLine.get<string[]>("startupOptions");
   const addCommandArgs = command === "build" || command === "test";
-  const commandArgs =
-    (addCommandArgs ? bazelConfigCmdLine.get<string[]>("commandArgs") : []);
+  const commandArgs = addCommandArgs
+    ? bazelConfigCmdLine.get<string[]>("commandArgs")
+    : [];
 
   const args = startupOptions
     .concat([command as string])

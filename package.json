@@ -53,6 +53,11 @@
             },
             {
                 "category": "Bazel",
+                "command": "bazel.runTarget",
+                "title": "Run Target"
+            },
+            {
+                "category": "Bazel",
                 "command": "bazel.buildAllRecursive",
                 "title": "Build Package Recursively"
             },
@@ -297,6 +302,10 @@
                     "when": "vscodeBazelHaveBazelWorkspace"
                 },
                 {
+                    "command": "bazel.runTarget",
+                    "when": "vscodeBazelHaveBazelWorkspace"
+                },
+                {
                     "command": "bazel.testTarget",
                     "when": "vscodeBazelHaveBazelWorkspace"
                 },
@@ -342,6 +351,11 @@
                 {
                     "command": "bazel.buildAllRecursive",
                     "when": "view == bazelWorkspace && viewItem == package",
+                    "group": "build"
+                },
+                {
+                    "command": "bazel.runTarget",
+                    "when": "view == bazelWorkspace && viewItem == rule",
                     "group": "build"
                 },
                 {
