@@ -122,6 +122,15 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
           title: `Test ${targetName}`,
           tooltip: `Test ${targetName}`,
         };
+      } else if (ruleClass.endsWith("_binary")) {
+        cmd = {
+          arguments: [
+            new CodeLensCommandAdapter(bazelWorkspaceInfo, [targetName]),
+          ],
+          command: "bazel.runTarget",
+          title: `Run ${targetName}`,
+          tooltip: `Run ${targetName}`,
+        };
       } else {
         cmd = {
           arguments: [
