@@ -100,7 +100,7 @@ function getRepositoryName(target: string): string {
   return endOfRepo <= 0 ? "" : target.substring(1, endOfRepo);
 }
 
-export class BazelCompletionItemProvider
+export class BazelTargetCompletionItemProvider
   implements vscode.CompletionItemProvider {
   private readonly targetsInRepo = new Map<string, Promise<string[]>>();
 

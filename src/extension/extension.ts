@@ -35,7 +35,10 @@ import {
   checkBuildifierIsAvailable,
 } from "../buildifier";
 import { BazelBuildCodeLensProvider } from "../codelens";
-import { BazelCompletionItemProvider } from "../completion-provider";
+import {
+  BazelRepositoryCompletionItemProvider,
+  BazelTargetCompletionItemProvider,
+} from "../completion-provider";
 import { BazelGotoDefinitionProvider } from "../definition/bazel_goto_definition_provider";
 import { BazelTargetSymbolProvider } from "../symbols";
 import { BazelWorkspaceTreeProvider } from "../workspace-tree";
@@ -51,15 +54,24 @@ export function activate(context: vscode.ExtensionContext) {
   const workspaceTreeProvider = new BazelWorkspaceTreeProvider(context);
   const codeLensProvider = new BazelBuildCodeLensProvider(context);
   const buildifierDiagnostics = new BuildifierDiagnosticsManager();
-  const completionItemProvider = new BazelCompletionItemProvider();
+  const repositoryCompletionItemProvider =
+    new BazelRepositoryCompletionItemProvider();
+  const targetCompletionItemProvider = new BazelTargetCompletionItemProvider();
 
   // tslint:disable-next-line:no-floating-promises
-  completionItemProvider.refresh();
+  repositoryCompletionItemProvider.refresh();
+  // tslint:disable-next-line:no-floating-promises
+  targetCompletionItemProvider.refresh();
 
   context.subscriptions.push(
     vscode.languages.registerCompletionItemProvider(
       [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
-      completionItemProvider,
+      repositoryCompletionItemProvider,
+      "@",
+    ),
+    vscode.languages.registerCompletionItemProvider(
+      [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
+      targetCompletionItemProvider,
       "/",
       ":",
     ),
@@ -88,7 +100,9 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand("bazel.clean", bazelClean),
     vscode.commands.registerCommand("bazel.refreshBazelBuildTargets", () => {
       // tslint:disable-next-line:no-floating-promises
-      completionItemProvider.refresh();
+      repositoryCompletionItemProvider.refresh();
+      // tslint:disable-next-line:no-floating-promises
+      targetCompletionItemProvider.refresh();
       workspaceTreeProvider.refresh();
     }),
     vscode.commands.registerCommand(
