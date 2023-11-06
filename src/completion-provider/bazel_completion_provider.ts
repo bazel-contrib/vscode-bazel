@@ -39,9 +39,15 @@ function getCandidateTargetFromDocumentPosition(
   const linePrefix = document
     .lineAt(position)
     .text.substring(0, position.character);
+  const atIndex = linePrefix.lastIndexOf("@");
   const doubleSlashIndex = linePrefix.lastIndexOf("//");
   const colonIndex = linePrefix.lastIndexOf(":");
-  const index = doubleSlashIndex !== -1 ? doubleSlashIndex : colonIndex;
+  const index =
+    atIndex !== -1
+      ? atIndex
+      : doubleSlashIndex !== -1
+      ? doubleSlashIndex
+      : colonIndex;
   if (index === -1) {
     return undefined;
   }
@@ -75,7 +81,7 @@ function getAbsoluteLabel(
   target: string,
   document: vscode.TextDocument,
 ): string {
-  if (target.startsWith("//")) {
+  if (target.startsWith("//") || target.startsWith("@")) {
     return target;
   }
   const workspace = BazelWorkspaceInfo.fromDocument(document);
@@ -89,16 +95,19 @@ function getAbsoluteLabel(
   return `${packageLabel}${target}`;
 }
 
+function getRepositoryName(target: string): string {
+  const endOfRepo = target.indexOf("//");
+  return endOfRepo <= 0 ? "" : target.substring(1, endOfRepo);
+}
+
 export class BazelCompletionItemProvider
   implements vscode.CompletionItemProvider {
-  private targets: string[] = [];
+  private readonly targetsInRepo = new Map<string, Promise<string[]>>();
 
   /**
    * Returns completion items matching the given prefix.
-   *
-   * Only label started with `//` or `:` is supported at the moment.
    */
-  public provideCompletionItems(
+  public async provideCompletionItems(
     document: vscode.TextDocument,
     position: vscode.Position,
   ) {
@@ -111,13 +120,14 @@ export class BazelCompletionItemProvider
     }
 
     candidateTarget = getAbsoluteLabel(candidateTarget, document);
-
     if (!candidateTarget.endsWith("/") && !candidateTarget.endsWith(":")) {
       candidateTarget = stripLastPackageOrTargetName(candidateTarget);
     }
 
+    const repo = getRepositoryName(candidateTarget);
+    const targets = await this.getTargetsDefinedInRepo(repo);
     const completionItems = new Array<vscode.CompletionItem>();
-    this.targets.forEach((target) => {
+    targets.forEach((target) => {
       if (!target.startsWith(candidateTarget)) {
         return;
       }
@@ -141,12 +151,27 @@ export class BazelCompletionItemProvider
    * Runs a bazel query command to acquire labels of all the targets in the
    * workspace.
    */
-  public async refresh() {
-    const queryTargets = await queryQuickPickTargets("kind('.* rule', ...)");
-    if (queryTargets.length !== 0) {
-      this.targets = queryTargets.map((queryTarget) => {
-        return queryTarget.label;
-      });
+  public async refresh(): Promise<void> {
+    this.targetsInRepo.clear();
+    await this.queryAndCacheTargets();
+  }
+
+  private async getTargetsDefinedInRepo(repository = ""): Promise<string[]> {
+    const deferred = this.targetsInRepo.get(repository);
+    if (deferred) {
+      return await deferred;
     }
+    return await this.queryAndCacheTargets(repository);
+  }
+
+  private async queryAndCacheTargets(repository = ""): Promise<string[]> {
+    const queryTargets = async () => {
+      const query = `kind('.* rule', @${repository}//...)`;
+      const targets = await queryQuickPickTargets(query);
+      return targets.map((target) => target.label);
+    };
+    const deferred = queryTargets();
+    this.targetsInRepo.set(repository, deferred);
+    return await deferred;
   }
 }
