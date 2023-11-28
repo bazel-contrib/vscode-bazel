@@ -38,9 +38,9 @@ import { Handles } from "./handles";
  * {@code Long}.
  *
  * @param value If a {@code number}, the value itself is returned; if it is a
- *     {@code Long}, its equivalent is returned.
+ * {@code Long}, its equivalent is returned.
  * @returns A {@code number} equivalent to the given {@code number} or
- *     {@code Long}.
+ * {@code Long}.
  */
 function number64(value: number | Long): number {
   if (value instanceof Number) {
@@ -140,10 +140,7 @@ class BazelDebugSession extends DebugSession {
 
   // Life-cycle requests
 
-  protected initializeRequest(
-    response: DebugProtocol.InitializeResponse,
-    args: DebugProtocol.InitializeRequestArguments,
-  ) {
+  protected initializeRequest(response: DebugProtocol.InitializeResponse) {
     response.body = response.body || {};
     response.body.supportsConfigurationDoneRequest = true;
     response.body.supportsConditionalBreakpoints = true;
@@ -153,7 +150,6 @@ class BazelDebugSession extends DebugSession {
 
   protected async configurationDoneRequest(
     response: DebugProtocol.ConfigurationDoneResponse,
-    args: DebugProtocol.ConfigurationDoneArguments,
   ) {
     await this.bazelConnection.sendRequest({
       startDebugging: skylark_debugging.StartDebuggingRequest.create(),
@@ -187,7 +183,7 @@ class BazelDebugSession extends DebugSession {
     this.bazelConnection = new BazelDebugConnection(
       "localhost",
       port,
-      this.debugLog,
+      (message, ...objects) => this.debugLog(message, objects),
     );
     this.bazelConnection.on("connect", () => {
       this.sendResponse(response);
@@ -195,14 +191,11 @@ class BazelDebugSession extends DebugSession {
     });
 
     this.bazelConnection.on("event", (event) => {
-      this.handleBazelEvent(event);
+      this.handleBazelEvent(event as skylark_debugging.DebugEvent);
     });
   }
 
-  protected disconnectRequest(
-    response: DebugProtocol.DisconnectResponse,
-    args: DebugProtocol.DisconnectArguments,
-  ) {
+  protected disconnectRequest(response: DebugProtocol.DisconnectResponse) {
     // Kill the spawned Bazel process on disconnect. The Bazel server will stay
     // up, but this should terminate processing of the invoked command.
     this.bazelProcess.kill("SIGKILL");
@@ -261,17 +254,19 @@ class BazelDebugSession extends DebugSession {
       }
     }
 
-    this.bazelConnection.sendRequest({
-      setBreakpoints: skylark_debugging.SetBreakpointsRequest.create({
-        breakpoint: bazelBreakpoints,
-      }),
-    }).catch((err) => this.debugLog("Error setting breakpoint: " + err));
+    this.bazelConnection
+      .sendRequest({
+        setBreakpoints: skylark_debugging.SetBreakpointsRequest.create({
+          breakpoint: bazelBreakpoints,
+        }),
+      })
+      .catch((err) => this.debugLog("Error setting breakpoint: " + err));
     this.sendResponse(response);
   }
 
   // Thread, stack frame, and variable requests
 
-  protected async threadsRequest(response: DebugProtocol.ThreadsResponse) {
+  protected threadsRequest(response: DebugProtocol.ThreadsResponse) {
     response.body = {
       threads: Array.from(this.pausedThreads.values()).map((bazelThread) => {
         return new Thread(number64(bazelThread.id), bazelThread.name);
@@ -360,12 +355,14 @@ class BazelDebugSession extends DebugSession {
       // If the reference is to a value, we need to send a request to Bazel to
       // get its child values.
       threadId = this.valueThreadIds.get(reference);
-      bazelValues = (await this.bazelConnection.sendRequest({
-        getChildren: skylark_debugging.GetChildrenRequest.create({
-          threadId,
-          valueId: (scopeOrParentValue as skylark_debugging.IValue).id,
-        }),
-      })).getChildren.children;
+      bazelValues = (
+        await this.bazelConnection.sendRequest({
+          getChildren: skylark_debugging.GetChildrenRequest.create({
+            threadId,
+            valueId: (scopeOrParentValue as skylark_debugging.IValue).id,
+          }),
+        })
+      ).getChildren.children;
     } else {
       bazelValues = [];
       threadId = 0;
@@ -401,12 +398,14 @@ class BazelDebugSession extends DebugSession {
   ) {
     const threadId = this.frameThreadIds.get(args.frameId);
 
-    const value = (await this.bazelConnection.sendRequest({
-      evaluate: skylark_debugging.EvaluateRequest.create({
-        statement: args.expression,
-        threadId,
-      }),
-    })).evaluate.result;
+    const value = (
+      await this.bazelConnection.sendRequest({
+        evaluate: skylark_debugging.EvaluateRequest.create({
+          statement: args.expression,
+          threadId,
+        }),
+      })
+    ).evaluate.result;
 
     let valueHandle: number;
     if (value.hasChildren && value.id) {
@@ -467,7 +466,7 @@ class BazelDebugSession extends DebugSession {
    *
    * @param threadId The identifier of the thread to continue.
    * @param stepping The stepping behavior of the request (OVER, INTO, OUT, or
-   *     NONE).
+   * NONE).
    */
   private sendControlFlowRequest(
     threadId: number,
@@ -480,12 +479,14 @@ class BazelDebugSession extends DebugSession {
     this.scopeThreadIds.clear();
     this.valueThreadIds.clear();
 
-    this.bazelConnection.sendRequest({
-      continueExecution: skylark_debugging.ContinueExecutionRequest.create({
-        stepping,
-        threadId,
-      }),
-    }).catch((err) => this.debugLog("Error continuing execution: " + err));
+    this.bazelConnection
+      .sendRequest({
+        continueExecution: skylark_debugging.ContinueExecutionRequest.create({
+          stepping,
+          threadId,
+        }),
+      })
+      .catch((err) => this.debugLog("Error continuing execution: " + err));
   }
 
   /**
@@ -552,7 +553,7 @@ class BazelDebugSession extends DebugSession {
         bazelExecutable,
         ["info"],
         execOptions,
-        (error: Error, stdout: string, stderr: string) => {
+        (error: Error, stdout: string) => {
           if (error) {
             reject(error);
           } else {
@@ -584,11 +585,11 @@ class BazelDebugSession extends DebugSession {
 
     this.bazelProcess = child_process
       .spawn(bazelExecutable, args, options)
-      .on("error", (error) => {
-        this.onBazelTerminated(error);
+      .on("error", () => {
+        this.onBazelTerminated();
       })
-      .on("exit", (code, signal) => {
-        this.onBazelTerminated({ code, signal });
+      .on("exit", () => {
+        this.onBazelTerminated();
       });
     this.isBazelRunning = true;
 
@@ -607,10 +608,10 @@ class BazelDebugSession extends DebugSession {
    * Called when the Bazel child process as terminated.
    *
    * @param result The outcome of the process; either an object containing the
-   *     exit code and signal by which it terminated, or an {@code Error}
-   *     describing an exceptional situation that occurred.
+   * exit code and signal by which it terminated, or an {@code Error}
+   * describing an exceptional situation that occurred.
    */
-  private onBazelTerminated(result: { code: number; signal: string } | Error) {
+  private onBazelTerminated() {
     // TODO(allevato): Handle abnormal termination.
     if (this.isBazelRunning) {
       this.isBazelRunning = false;

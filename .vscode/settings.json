@@ -8,7 +8,6 @@
         "editor.detectIndentation": false,
         "editor.rulers": [80]
     },
-    "prettier.tslintIntegration": true,
     "prettier.trailingComma": "all",
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "esbenp.prettier-vscode",

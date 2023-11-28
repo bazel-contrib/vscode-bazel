@@ -33,19 +33,19 @@ The best place to start is probably their
 
 Once somewhat familiar with the process, you just need to check out this
 project, do an `npm install` to get the required packages into the local
-checkout's *node_modules* and then open the directory in VS Code. There are
+checkout's _node_modules_ and then open the directory in VS Code. There are
 already tasks configured to build/debug the extension. Note: having the released
 version of this extension install what trying to work on it can some times
 confuse things, so it is usually best to not have the release version installed
 at the same time.
 
 To enforce a consistent code style through our code base, we have configured
-the project to use **prettier** and **tslint** to perform formatting and
+the project to use **prettier** and **eslint** to perform formatting and
 linting. We strongly recommend installing the following Visual Studio Code
 extensions to have these tools applied automatically as you develop:
 
 - [Prettier - Code Formatter](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
-- [TSLint](https://marketplace.visualstudio.com/items?itemName=ms-vscode.vscode-typescript-tslint-plugin)
+- [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
 
 ## Code reviews
 

@@ -63,16 +63,16 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
    * query.
    *
    * @param packagePaths The array of package paths that were found under the
-   *     folder in which the Bazel query was executed.
+   * folder in which the Bazel query was executed.
    * @param startIndex The starting index within the package paths where common
-   *     prefixes should be searched.
+   * prefixes should be searched.
    * @param endIndex The ending index (exclusive) within the package paths where
-   *     common prefixes should be searched.
+   * common prefixes should be searched.
    * @param treeItems An array into which the tree items created at this level
-   *     in the tree will be pushed.
+   * in the tree will be pushed.
    * @param parentPackagePath The parent package path of the items being created
-   *     by this call, which is used to trim the package prefix from labels in
-   *     the tree items.
+   * by this call, which is used to trim the package prefix from labels in
+   * the tree items.
    */
   private buildPackageTree(
     packagePaths: string[],
@@ -154,7 +154,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     // workspace without the performance penalty of querying the entire
     // workspace.
     if (!this.workspaceInfo) {
-      return Promise.resolve([]);
+      return Promise.resolve([] as IBazelTreeItem[]);
     }
     const workspacePath = this.workspaceInfo.workspaceFolder.uri.fsPath;
     const packagePaths = await new BazelQuery(
