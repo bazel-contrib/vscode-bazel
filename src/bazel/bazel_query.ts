@@ -22,6 +22,13 @@ import { blaze_query } from "../protos";
 import { BazelCommand } from "./bazel_command";
 import { getBazelWorkspaceFolder } from "./bazel_utils";
 
+const protoOutputOptions = [
+  "--proto:output_rule_attrs=''",
+  "--noproto:rule_inputs_and_outputs",
+  "--noproto:locations",
+  "--noproto:default_values",
+];
+
 /** Provides a promise-based API around a Bazel query. */
 export class BazelQuery extends BazelCommand {
   /**
@@ -52,7 +59,7 @@ export class BazelQuery extends BazelCommand {
     } = {},
   ): Promise<blaze_query.QueryResult> {
     const buffer = await this.run(
-      [query, ...additionalOptions, "--output=proto"],
+      [query, ...additionalOptions, "--output=proto", ...protoOutputOptions],
       { ignoresErrors },
     );
     const result = blaze_query.QueryResult.decode(buffer);
