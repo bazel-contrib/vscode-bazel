@@ -167,6 +167,11 @@
                     "default": false,
                     "markdownDescription": "Whether to add a CodeLens to `BUILD`/`BUILD.bazel` files to provide actions while browsing the file."
                 },
+                "bazel.enableExternalTargetCompletion": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "Whether to enable IntelliSense code completion for external targets in BUILD files."
+                },
                 "bazel.pathsToIgnore": {
                     "type": "array",
                     "items": {

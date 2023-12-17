@@ -125,6 +125,16 @@ export class BazelTargetCompletionItemProvider
     }
 
     const repo = getRepositoryName(candidateTarget);
+    if (repo !== "") {
+      const bazelConfig = vscode.workspace.getConfiguration("bazel");
+      const enableExternalTargetCompletion = bazelConfig.get<boolean>(
+        "enableExternalTargetCompletion",
+      );
+      if (!enableExternalTargetCompletion) {
+        return [];
+      }
+    }
+
     const targets = await this.getTargetsDefinedInRepo(repo);
     const completionItems = new Array<vscode.CompletionItem>();
     targets.forEach((target) => {

@@ -46,6 +46,14 @@ export class BazelRepositoryCompletionItemProvider
     document: vscode.TextDocument,
     position: vscode.Position,
   ) {
+    const bazelConfig = vscode.workspace.getConfiguration("bazel");
+    const enableExternalTargetCompletion = bazelConfig.get<boolean>(
+      "enableExternalTargetCompletion",
+    );
+    if (!enableExternalTargetCompletion) {
+      return [];
+    }
+
     if (!isCompletingInsideRepositoryLabel(document, position)) {
       return [];
     }
