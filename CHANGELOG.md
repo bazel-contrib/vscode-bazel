@@ -1,11 +1,39 @@
 # Change Log
 
+## Version 0.8.0 (December 15, 2022)
+
+### New Features
+
+- Add codelens support for running binary targets (@avx-rchung)
+
+- WORKSPACE.bazel is now identified as starlark (@lalten)
+
+- Add bazel.runTarget command for running targets (@romannikov)
+
+- Add bazel.queryOutputBase configuration setting (@sheldonneuberger-sc)
+
+  Changes where output_base is placed. This is convenient for when someone wants bazel using something other than TMPDIR. This is useful if you use a ramdisk for faster builds, or if your TMPDIR has space or security constraints.
+
+- Add bazel.info.\* commands (@jfirebaugh)
+
+  This command can be used in launch configurations to embed the results of `bazel info` values. For example:
+
+      "initCommands": [
+        "platform settings -w ${command:bazel.info.execution_root}",
+      ]
+
+### Bug Fixes
+
+- Target completion no longer requires leading quotation mark (@kon72)
+- Optimized performance of `bazel query` operations (@iamricard)
+- CI updated to Node 20 (@jfirebaugh)
+
 ## Version 0.7.0 (December 6, 2022)
 
 ### New Features
 
 - Add bazel.commandLine.queryExpression configuration setting (@maximMalofeev)
-   
+
   A [query language expression](https://bazel.build/query/language) which determines the packages displayed in the workspace tree and quick picker. The default inspects the entire workspace, but you could narrow it. For example: `//part/you/want/...:*`
 
 - Make executable and buildifierExecutable settings `machine-overridable` (@jfirebaugh)
@@ -19,7 +47,7 @@
 - Fix and document providing flags to `getTargetOutput` (@jfirebaugh)
 
   Additional Bazel flags can be provided to the `bazel.getTargetOutput` command:
- 
+
       "inputs": [
           {
               "id": "debugOutputLocation",
@@ -34,7 +62,7 @@
 ### New Features
 
 - Add bazel.getTargetOutput command.
-  
+
   This command can be used in launch configurations to obtain the path to an executable built by Bazel. For example, you can set the "program" attribute of a launch configuration to an input variable:
 
       "program": "${input:binaryOutputLocation}"
