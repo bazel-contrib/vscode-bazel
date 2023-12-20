@@ -82,8 +82,8 @@ export abstract class BazelCommand {
       // on bazel v7 or newer which enable bzlmod by default
       // Bazel can still enforce creating the MODULE.bazel automatically
       // when users run command in local.
-      "--lockfile_mode=off"
-    ]
+      "--lockfile_mode=off",
+    ];
 
     const result = startupOptions
       .concat(additionalStartupOptions)
