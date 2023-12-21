@@ -12,4 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from "./bazel_completion_provider";
+export * from "./bazel_repository_completion_provider";
+export * from "./bazel_target_completion_provider";

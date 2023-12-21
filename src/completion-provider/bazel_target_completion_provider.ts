@@ -13,7 +13,11 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import { queryQuickPickTargets } from "../bazel";
+import {
+  BazelWorkspaceInfo,
+  getPackageLabelForBuildFile,
+  queryQuickPickTargets,
+} from "../bazel";
 
 function insertCompletionItemIfUnique(
   options: vscode.CompletionItem[],
@@ -35,7 +39,15 @@ function getCandidateTargetFromDocumentPosition(
   const linePrefix = document
     .lineAt(position)
     .text.substring(0, position.character);
-  const index = linePrefix.lastIndexOf("//");
+  const atIndex = linePrefix.lastIndexOf("@");
+  const doubleSlashIndex = linePrefix.lastIndexOf("//");
+  const colonIndex = linePrefix.lastIndexOf(":");
+  const index =
+    atIndex !== -1
+      ? atIndex
+      : doubleSlashIndex !== -1
+      ? doubleSlashIndex
+      : colonIndex;
   if (index === -1) {
     return undefined;
   }
@@ -65,16 +77,37 @@ function getNextPackage(target: string) {
   return undefined;
 }
 
-export class BazelCompletionItemProvider
+function getAbsoluteLabel(
+  target: string,
+  document: vscode.TextDocument,
+): string {
+  if (target.startsWith("//") || target.startsWith("@")) {
+    return target;
+  }
+  const workspace = BazelWorkspaceInfo.fromDocument(document);
+  if (!workspace) {
+    return target;
+  }
+  const packageLabel = getPackageLabelForBuildFile(
+    workspace.bazelWorkspacePath,
+    document.uri.fsPath,
+  );
+  return `${packageLabel}${target}`;
+}
+
+function getRepositoryName(target: string): string {
+  const endOfRepo = target.indexOf("//");
+  return endOfRepo <= 0 ? "" : target.substring(1, endOfRepo);
+}
+
+export class BazelTargetCompletionItemProvider
   implements vscode.CompletionItemProvider {
-  private targets: string[] = [];
+  private readonly targetsInRepo = new Map<string, Promise<string[]>>();
 
   /**
    * Returns completion items matching the given prefix.
-   *
-   * Only label started with "//: is supported at the moment.
    */
-  public provideCompletionItems(
+  public async provideCompletionItems(
     document: vscode.TextDocument,
     position: vscode.Position,
   ) {
@@ -86,22 +119,35 @@ export class BazelCompletionItemProvider
       return [];
     }
 
+    candidateTarget = getAbsoluteLabel(candidateTarget, document);
     if (!candidateTarget.endsWith("/") && !candidateTarget.endsWith(":")) {
       candidateTarget = stripLastPackageOrTargetName(candidateTarget);
     }
 
+    const repo = getRepositoryName(candidateTarget);
+    if (repo !== "") {
+      const bazelConfig = vscode.workspace.getConfiguration("bazel");
+      const enableExternalTargetCompletion = bazelConfig.get<boolean>(
+        "enableExternalTargetCompletion",
+      );
+      if (!enableExternalTargetCompletion) {
+        return [];
+      }
+    }
+
+    const targets = await this.getTargetsDefinedInRepo(repo);
     const completionItems = new Array<vscode.CompletionItem>();
-    this.targets.forEach((target) => {
+    targets.forEach((target) => {
       if (!target.startsWith(candidateTarget)) {
         return;
       }
-      const sufix = target.replace(candidateTarget, "");
+      const suffix = target.replace(candidateTarget, "");
 
       let completionKind = vscode.CompletionItemKind.Folder;
-      let label = getNextPackage(sufix);
+      let label = getNextPackage(suffix);
       if (label === undefined) {
         completionKind = vscode.CompletionItemKind.Field;
-        label = sufix;
+        label = suffix;
       }
       insertCompletionItemIfUnique(
         completionItems,
@@ -115,12 +161,27 @@ export class BazelCompletionItemProvider
    * Runs a bazel query command to acquire labels of all the targets in the
    * workspace.
    */
-  public async refresh() {
-    const queryTargets = await queryQuickPickTargets("kind('.* rule', ...)");
-    if (queryTargets.length !== 0) {
-      this.targets = queryTargets.map((queryTarget) => {
-        return queryTarget.label;
-      });
+  public async refresh(): Promise<void> {
+    this.targetsInRepo.clear();
+    await this.queryAndCacheTargets();
+  }
+
+  private async getTargetsDefinedInRepo(repository = ""): Promise<string[]> {
+    const deferred = this.targetsInRepo.get(repository);
+    if (deferred) {
+      return await deferred;
     }
+    return await this.queryAndCacheTargets(repository);
+  }
+
+  private async queryAndCacheTargets(repository = ""): Promise<string[]> {
+    const queryTargets = async () => {
+      const query = `kind('.* rule', @${repository}//...)`;
+      const targets = await queryQuickPickTargets(query);
+      return targets.map((target) => target.label);
+    };
+    const deferred = queryTargets();
+    this.targetsInRepo.set(repository, deferred);
+    return await deferred;
   }
 }
