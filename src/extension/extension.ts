@@ -15,9 +15,9 @@
 import * as path from "path";
 import * as vscode from "vscode";
 import {
-  ServerOptions,
   LanguageClient,
   LanguageClientOptions,
+  ServerOptions,
 } from "vscode-languageclient";
 
 import {
@@ -183,8 +183,8 @@ function createLsp(config: vscode.WorkspaceConfiguration) {
   const args = config.get<string[]>("lsp.args");
 
   const serverOptions: ServerOptions = {
-    command,
     args,
+    command,
   };
 
   const clientOptions: LanguageClientOptions = {
