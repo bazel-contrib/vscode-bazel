@@ -195,7 +195,7 @@ function executeBuildifier(
       getDefaultBuildifierExecutablePath(),
       args,
       execOptions,
-      (error: Error, stdout: string, stderr: string) => {
+      (error, stdout, stderr) => {
         if (
           !error ||
           (acceptNonSevereErrors && shouldTreatBuildifierErrorAsSuccess(error))
@@ -213,14 +213,6 @@ function executeBuildifier(
   });
 }
 
-/*
- * A type of error specific to buildifier.
- */
-interface BuildifierError extends Error {
-  // The error code returned by buildifier.
-  code: number;
-}
-
 /**
  * Returns a value indicating whether we need to consider the given error to be
  * a "successful" buildifier exit in the sense that it correctly reported
@@ -229,7 +221,9 @@ interface BuildifierError extends Error {
  * @param error The {@code Error} passed to the `child_process.execFile`
  * callback.
  */
-function shouldTreatBuildifierErrorAsSuccess(error: Error): boolean {
+function shouldTreatBuildifierErrorAsSuccess(
+  error: child_process.ExecFileException,
+): boolean {
   // Some of buildifier's exit codes represent states that we want to treat as
   // "successful" (i.e., the file had warnings/errors but we want to render
   // them), and other exit codes represent legitimate failures (like I/O
@@ -238,9 +232,7 @@ function shouldTreatBuildifierErrorAsSuccess(error: Error): boolean {
   // new failure modes are introduced in the future):
   //
   // https://github.com/bazelbuild/buildtools/blob/831e4632/buildifier/buildifier.go#L323-L331
-  const buildifierError = error as BuildifierError;
-  const code = buildifierError.code;
-  switch (code) {
+  switch (error.code) {
     case 1: // syntax errors in input
     case 4: // check mode failed
       return true;
