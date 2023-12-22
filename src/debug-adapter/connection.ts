@@ -69,7 +69,7 @@ export class BazelDebugConnection extends EventEmitter {
   public constructor(
     host: string,
     port: number,
-    private logger: (message: string, ...objects: any[]) => void,
+    private logger: (message: string, ...objects: object[]) => void,
   ) {
     super();
 
@@ -82,7 +82,7 @@ export class BazelDebugConnection extends EventEmitter {
    * response.
    *
    * @param options The options for the request. The sequence number will be
-   *     populated by this method.
+   * populated by this method.
    * @returns A {@code Promise} for the response to the request.
    */
   public sendRequest(
@@ -137,10 +137,7 @@ export class BazelDebugConnection extends EventEmitter {
           throw error;
         }
       });
-    socket.connect(
-      port,
-      host,
-    );
+    socket.connect(port, host);
   }
 
   /**

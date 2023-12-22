@@ -39,9 +39,9 @@ export class BazelTaskInfo {
 }
 
 export function setBazelTaskInfo(task: vscode.Task, info: BazelTaskInfo) {
-  (task as any).bazelTaskInfo = info;
+  task.definition.bazelTaskInfo = info;
 }
 
 export function getBazelTaskInfo(task: vscode.Task): BazelTaskInfo {
-  return (task as any).bazelTaskInfo;
+  return task.definition.bazelTaskInfo as BazelTaskInfo;
 }

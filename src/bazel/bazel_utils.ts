@@ -58,7 +58,7 @@ export async function getTargetsForBuildFile(
  *
  * @param fsPath The path to a file in a Bazel workspace.
  * @returns true / false for if the path should be ignore (assumed not to
- *     be in a workspace).
+ * be in a workspace).
  */
 function shouldIgnorePath(fsPath: string): boolean {
   const bazelConfig = vscode.workspace.getConfiguration("bazel");
@@ -70,6 +70,7 @@ function shouldIgnorePath(fsPath: string): boolean {
         return true;
       }
     } catch (err) {
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       vscode.window.showErrorMessage(
         "pathsToIgnore value isn't a valid regex: " + escape(pathRegex),
       );
@@ -87,7 +88,7 @@ function shouldIgnorePath(fsPath: string): boolean {
  *
  * @param fsPath The path to a file in a Bazel workspace.
  * @returns The path to the directory with the Bazel WORKSPACE file if found,
- *     others undefined.
+ * others undefined.
  */
 export function getBazelWorkspaceFolder(fsPath: string): string | undefined {
   if (shouldIgnorePath(fsPath)) {

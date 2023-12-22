@@ -47,13 +47,13 @@ import { getDefaultBazelExecutablePath } from "./configuration";
  *
  * @param context The extension context.
  */
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
   const workspaceTreeProvider = new BazelWorkspaceTreeProvider(context);
   const codeLensProvider = new BazelBuildCodeLensProvider(context);
   const buildifierDiagnostics = new BuildifierDiagnosticsManager();
   const completionItemProvider = new BazelCompletionItemProvider();
 
-  // tslint:disable-next-line:no-floating-promises
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
   completionItemProvider.refresh();
 
   context.subscriptions.push(
@@ -87,7 +87,7 @@ export function activate(context: vscode.ExtensionContext) {
     ),
     vscode.commands.registerCommand("bazel.clean", bazelClean),
     vscode.commands.registerCommand("bazel.refreshBazelBuildTargets", () => {
-      // tslint:disable-next-line:no-floating-promises
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       completionItemProvider.refresh();
       workspaceTreeProvider.refresh();
     }),
@@ -148,7 +148,8 @@ export function activate(context: vscode.ExtensionContext) {
 
   // Notify the user if buildifier is not available on their path (or where
   // their settings expect it).
-  checkBuildifierIsAvailable();
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  await checkBuildifierIsAvailable();
 }
 
 /** Called when the extension is deactivated. */
@@ -160,7 +161,7 @@ export function deactivate() {
  * Builds a Bazel target and streams output to the terminal.
  *
  * @param adapter An object that implements {@link IBazelCommandAdapter} from
- *     which the command's arguments will be determined.
+ * which the command's arguments will be determined.
  */
 async function bazelBuildTarget(adapter: IBazelCommandAdapter | undefined) {
   if (adapter === undefined) {
@@ -182,6 +183,7 @@ async function bazelBuildTarget(adapter: IBazelCommandAdapter | undefined) {
   }
   const commandOptions = adapter.getBazelCommandOptions();
   const task = createBazelTask("build", commandOptions);
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
   vscode.tasks.executeTask(task);
 }
 
@@ -189,7 +191,7 @@ async function bazelBuildTarget(adapter: IBazelCommandAdapter | undefined) {
  * Builds a Bazel target and attaches the Starlark debugger.
  *
  * @param adapter An object that implements {@link IBazelCommandAdapter} from
- *     which the command's arguments will be determined.
+ * which the command's arguments will be determined.
  */
 async function bazelBuildTargetWithDebugging(
   adapter: IBazelCommandAdapter | undefined,
@@ -207,7 +209,8 @@ async function bazelBuildTargetWithDebugging(
     // If the result was undefined, the user cancelled the quick pick, so don't
     // try again.
     if (quickPick) {
-      await bazelBuildTargetWithDebugging(quickPick);
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      bazelBuildTargetWithDebugging(quickPick);
     }
     return;
   }
@@ -222,6 +225,7 @@ async function bazelBuildTargetWithDebugging(
     .concat(commandOptions.targets)
     .concat(commandOptions.options);
 
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
   vscode.debug.startDebugging(undefined, {
     args: fullArgs,
     bazelCommand: "build",
@@ -238,7 +242,7 @@ async function bazelBuildTargetWithDebugging(
  * Builds a Bazel package and streams output to the terminal.
  *
  * @param adapter An object that implements {@link IBazelCommandAdapter} from
- *     which the command's arguments will be determined.
+ * which the command's arguments will be determined.
  */
 async function bazelbuildAll(adapter: IBazelCommandAdapter | undefined) {
   await buildPackage(":all", adapter);
@@ -248,7 +252,7 @@ async function bazelbuildAll(adapter: IBazelCommandAdapter | undefined) {
  * Builds a Bazel package recursively and streams output to the terminal.
  *
  * @param adapter An object that implements {@link IBazelCommandAdapter} from
- *     which the command's arguments will be determined.
+ * which the command's arguments will be determined.
  */
 async function bazelbuildAllRecursive(
   adapter: IBazelCommandAdapter | undefined,
@@ -284,6 +288,7 @@ async function buildPackage(
     workspaceInfo: commandOptions.workspaceInfo,
   };
   const task = createBazelTask("build", allCommandOptions);
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
   vscode.tasks.executeTask(task);
 }
 
@@ -291,7 +296,7 @@ async function buildPackage(
  * Runs a Bazel target and streams output to the terminal.
  *
  * @param adapter An object that implements {@link IBazelCommandAdapter} from
- *     which the command's arguments will be determined.
+ * which the command's arguments will be determined.
  */
 async function bazelRunTarget(adapter: IBazelCommandAdapter | undefined) {
   if (adapter === undefined) {
@@ -313,6 +318,7 @@ async function bazelRunTarget(adapter: IBazelCommandAdapter | undefined) {
   }
   const commandOptions = adapter.getBazelCommandOptions();
   const task = createBazelTask("run", commandOptions);
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
   vscode.tasks.executeTask(task);
 }
 
@@ -320,7 +326,7 @@ async function bazelRunTarget(adapter: IBazelCommandAdapter | undefined) {
  * Tests a Bazel target and streams output to the terminal.
  *
  * @param adapter An object that implements {@link IBazelCommandAdapter} from
- *     which the command's arguments will be determined.
+ * which the command's arguments will be determined.
  */
 async function bazelTestTarget(adapter: IBazelCommandAdapter | undefined) {
   if (adapter === undefined) {
@@ -342,6 +348,7 @@ async function bazelTestTarget(adapter: IBazelCommandAdapter | undefined) {
   }
   const commandOptions = adapter.getBazelCommandOptions();
   const task = createBazelTask("test", commandOptions);
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
   vscode.tasks.executeTask(task);
 }
 
@@ -349,7 +356,7 @@ async function bazelTestTarget(adapter: IBazelCommandAdapter | undefined) {
  * Tests a Bazel package and streams output to the terminal.
  *
  * @param adapter An object that implements {@link IBazelCommandAdapter} from
- *     which the command's arguments will be determined.
+ * which the command's arguments will be determined.
  */
 async function bazelTestAll(adapter: IBazelCommandAdapter | undefined) {
   await testPackage(":all", adapter);
@@ -359,7 +366,7 @@ async function bazelTestAll(adapter: IBazelCommandAdapter | undefined) {
  * Tests a Bazel package recursively and streams output to the terminal.
  *
  * @param adapter An object that implements {@link IBazelCommandAdapter} from
- *     which the command's arguments will be determined.
+ * which the command's arguments will be determined.
  */
 async function bazelTestAllRecursive(
   adapter: IBazelCommandAdapter | undefined,
@@ -395,6 +402,7 @@ async function testPackage(
     workspaceInfo: commandOptions.workspaceInfo,
   };
   const task = createBazelTask("test", allCommandOptions);
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
   vscode.tasks.executeTask(task);
 }
 
@@ -408,9 +416,11 @@ async function testPackage(
 async function bazelClean() {
   const workspaceInfo = await BazelWorkspaceInfo.fromWorkspaceFolders();
   if (!workspaceInfo) {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     vscode.window.showInformationMessage(
       "Please open a Bazel workspace folder to use this command.",
     );
+
     return;
   }
   const task = createBazelTask("clean", {
@@ -418,15 +428,14 @@ async function bazelClean() {
     targets: [],
     workspaceInfo,
   });
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
   vscode.tasks.executeTask(task);
 }
 
 /**
  * Copies a target to the clipboard.
  */
-async function bazelCopyTargetToClipboard(
-  adapter: IBazelCommandAdapter | undefined,
-) {
+function bazelCopyTargetToClipboard(adapter: IBazelCommandAdapter | undefined) {
   if (adapter === undefined) {
     // This command should not be enabled in the commands palette, so adapter
     // should always be present.
@@ -435,6 +444,7 @@ async function bazelCopyTargetToClipboard(
   // This can only be called on single targets, so we can assume there is only
   // one of them.
   const target = adapter.getBazelCommandOptions().targets[0];
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
   vscode.env.clipboard.writeText(target);
 }
 
@@ -448,29 +458,35 @@ async function bazelCopyTargetToClipboard(
  * obtain the path to an executable built by Bazel. For example, you can set the
  * "program" attribute of a launch configuration to an input variable:
  *
- *     "program": "${input:binaryOutputLocation}"
+ * ```
+ * "program": "${input:binaryOutputLocation}"
+ * ```
  *
  * Then define a command input variable:
  *
- *     "inputs": [
- *         {
- *             "id": "binaryOutputLocation",
- *             "type": "command",
- *             "command": "bazel.getTargetOutput",
- *             "args": ["//my/binary:target"],
- *         }
- *     ]
+ * ```
+ * "inputs": [
+ *     {
+ *         "id": "binaryOutputLocation",
+ *         "type": "command",
+ *         "command": "bazel.getTargetOutput",
+ *         "args": ["//my/binary:target"],
+ *     }
+ * ]
+ * ```
  *
  * Additional Bazel flags can be provided:
  *
- *     "inputs": [
- *         {
- *             "id": "debugOutputLocation",
- *             "type": "command",
- *             "command": "bazel.getTargetOutput",
- *             "args": ["//my/binary:target", ["--compilation_mode", "dbg"]],
- *         }
- *     ]
+ * ```
+ * "inputs": [
+ *     {
+ *         "id": "debugOutputLocation",
+ *         "type": "command",
+ *         "command": "bazel.getTargetOutput",
+ *         "args": ["//my/binary:target", ["--compilation_mode", "dbg"]],
+ *     }
+ * ]
+ * ```
  */
 async function bazelGetTargetOutput(
   target: string,
@@ -478,14 +494,16 @@ async function bazelGetTargetOutput(
 ): Promise<string> {
   // Workaround for https://github.com/microsoft/vscode/issues/167970
   if (Array.isArray(target)) {
-    options = target[1] || ([] as any);
-    target = target[0];
+    options = (target[1] || []) as string[];
+    target = target[0] as string;
   }
   const workspaceInfo = await BazelWorkspaceInfo.fromWorkspaceFolders();
   if (!workspaceInfo) {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     vscode.window.showInformationMessage(
       "Please open a Bazel workspace folder to use this command.",
     );
+
     return;
   }
   const outputPath = await new BazelInfo(
@@ -517,6 +535,7 @@ async function bazelGetTargetOutput(
 async function bazelInfo(key: string): Promise<string> {
   const workspaceInfo = await BazelWorkspaceInfo.fromWorkspaceFolders();
   if (!workspaceInfo) {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     vscode.window.showInformationMessage(
       "Please open a Bazel workspace folder to use this command.",
     );
@@ -550,6 +569,7 @@ function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
 
     const exitCode = parseExitCode(rawExitCode, bazelTaskInfo.command);
     if (rawExitCode !== 0) {
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       vscode.window.showErrorMessage(
         `Bazel ${bazelTaskInfo.command} failed: ${exitCodeToUserString(
           exitCode,
@@ -557,6 +577,7 @@ function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
       );
     } else {
       const timeInSeconds = measurePerformance(bazelTaskInfo.startTime);
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       vscode.window.showInformationMessage(
         `Bazel ${bazelTaskInfo.command} completed successfully in ${timeInSeconds} seconds.`,
       );

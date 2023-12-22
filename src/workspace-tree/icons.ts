@@ -62,7 +62,7 @@ export function getBazelRuleIcon(
   target: blaze_query.Target,
 ): string | vscode.ThemeIcon {
   const ruleClass = target.rule.ruleClass;
-  let iconName = SPECIFIC_RULE_CLASS_ICONS[ruleClass];
+  let iconName = SPECIFIC_RULE_CLASS_ICONS[ruleClass] as string;
   if (!iconName) {
     if (ruleClass.endsWith("_binary")) {
       iconName = "binary";

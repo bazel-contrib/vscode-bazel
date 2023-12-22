@@ -27,11 +27,11 @@ export type BuildifierFileType = "build" | "bzl" | "workspace" | "default";
  * Invokes buildifier in format mode.
  *
  * @param fileContent The BUILD or .bzl file content to process, which is sent
- *     via stdin.
+ * via stdin.
  * @param type Indicates whether to treat the file content as a BUILD file or a
- *     .bzl file.
+ * .bzl file.
  * @param applyLintFixes If true, lint warnings with automatic fixes will be
- *     fixed as well.
+ * fixed as well.
  * @returns The formatted file content.
  */
 export async function buildifierFormat(
@@ -51,9 +51,9 @@ export async function buildifierFormat(
  * automatically fixed.
  *
  * @param fileContent The BUILD or .bzl file content to process, which is sent
- *     via stdin.
+ * via stdin.
  * @param type Indicates whether to treat the file content as a BUILD file or a
- *     .bzl file.
+ * .bzl file.
  * @param lintMode Indicates whether to warn about lint findings or fix them.
  * @returns The fixed content.
  */
@@ -68,9 +68,9 @@ export async function buildifierLint(
  * were found.
  *
  * @param fileContent The BUILD or .bzl file content to process, which is sent
- *     via stdin.
+ * via stdin.
  * @param type Indicates whether to treat the file content as a BUILD file or a
- *     .bzl file.
+ * .bzl file.
  * @param lintMode Indicates whether to warn about lint findings or fix them.
  * @returns An array of objects representing the lint issues that occurred.
  */
@@ -110,7 +110,7 @@ export async function buildifierLint(
  * Returns the file type of a file with the given path.
  *
  * @param fsPath The file path, whose extension and basename are used to
- *     determine the file type.
+ * determine the file type.
  * @returns The buildifier type of the file.
  */
 export function getBuildifierFileType(fsPath: string): BuildifierFileType {
@@ -159,8 +159,8 @@ export function getBuildifierFileType(fsPath: string): BuildifierFileType {
  * configuration, if present.
  *
  * @returns The path to the buildifier executable specified in the workspace
- *     configuration, or just "buildifier" if not present (in which case the
- *     system path will be searched).
+ * configuration, or just "buildifier" if not present (in which case the
+ * system path will be searched).
  */
 export function getDefaultBuildifierExecutablePath(): string {
   // Try to retrieve the executable from VS Code's settings. If it's not set,
@@ -177,10 +177,10 @@ export function getDefaultBuildifierExecutablePath(): string {
  * Executes buildifier with the given file content and arguments.
  *
  * @param fileContent The BUILD or .bzl file content to process, which is sent
- *     via stdin.
+ * via stdin.
  * @param args Command line arguments to pass to buildifier.
  * @param acceptNonSevereErrors If true, syntax/lint exit codes will not be
- *     treated as severe tool errors.
+ * treated as severe tool errors.
  */
 function executeBuildifier(
   fileContent: string,
@@ -195,7 +195,7 @@ function executeBuildifier(
       getDefaultBuildifierExecutablePath(),
       args,
       execOptions,
-      (error: Error, stdout: string, stderr: string) => {
+      (error, stdout, stderr) => {
         if (
           !error ||
           (acceptNonSevereErrors && shouldTreatBuildifierErrorAsSuccess(error))
@@ -219,9 +219,11 @@ function executeBuildifier(
  * warnings/errors in the file despite the non-zero exit code.
  *
  * @param error The {@code Error} passed to the `child_process.execFile`
- *     callback.
+ * callback.
  */
-function shouldTreatBuildifierErrorAsSuccess(error: Error): boolean {
+function shouldTreatBuildifierErrorAsSuccess(
+  error: child_process.ExecFileException,
+): boolean {
   // Some of buildifier's exit codes represent states that we want to treat as
   // "successful" (i.e., the file had warnings/errors but we want to render
   // them), and other exit codes represent legitimate failures (like I/O
@@ -229,10 +231,8 @@ function shouldTreatBuildifierErrorAsSuccess(error: Error): boolean {
   // the specific exit codes we handle (and make sure that this is updated if
   // new failure modes are introduced in the future):
   //
-  // tslint:disable-next-line:max-line-length
   // https://github.com/bazelbuild/buildtools/blob/831e4632/buildifier/buildifier.go#L323-L331
-  const code = (error as any).code;
-  switch (code) {
+  switch (error.code) {
     case 1: // syntax errors in input
     case 4: // check mode failed
       return true;
