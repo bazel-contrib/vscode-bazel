@@ -101,7 +101,7 @@ export function getBazelWorkspaceFolder(fsPath: string): string | undefined {
   // hang in an infinite loop.
   const maxIterations = 100;
 
-  // These are the names of the files that markthe root of a repository
+  // These are the names of the files that mark the root of a repository
   // or workspace.
   const REPO_ROOT_FILE_NAMES = [
     "WORKSPACE.bazel",
