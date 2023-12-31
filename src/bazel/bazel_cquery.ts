@@ -22,9 +22,9 @@ export class BazelCQuery extends BazelQuery {
    *
    * @param target The target to query.
    * @param options Additional command line options that should be
-   *     passed just to this specific invocation of the query.
+   * passed just to this specific invocation of the query.
    * @returns The files that are outputs of the given target, as paths relative
-   *     to the execution root.
+   * to the execution root.
    */
   public async queryOutputs(
     target: string,

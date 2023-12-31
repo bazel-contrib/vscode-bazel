@@ -25,7 +25,8 @@ import { BazelWorkspaceInfo } from "./bazel_workspace_info";
  * registered bazel commands.
  */
 export class BazelTargetQuickPick
-  implements IBazelCommandAdapter, vscode.QuickPickItem {
+  implements IBazelCommandAdapter, vscode.QuickPickItem
+{
   /** The fully qualified bazel target label. */
   private readonly targetLabel: string;
 
@@ -36,7 +37,7 @@ export class BazelTargetQuickPick
    * Initializes a new Bazel QuickPick target.
    * @param label The fully qualified bazel target label.
    * @param workspaceInfo Information about the workspace in which the target
-   *     should be built.
+   * should be built.
    */
   constructor(label: string, workspaceInfo: BazelWorkspaceInfo) {
     this.targetLabel = label;
@@ -151,6 +152,7 @@ export async function queryQuickPickTargets(
   const workspace: BazelWorkspaceInfo = await pickBazelWorkspace();
 
   if (workspace === undefined) {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     vscode.window.showErrorMessage("Failed to find a Bazel workspace");
     return [];
   }
@@ -168,6 +170,7 @@ export async function queryQuickPickPackage(): Promise<BazelTargetQuickPick[]> {
   const workspace: BazelWorkspaceInfo = await pickBazelWorkspace();
 
   if (workspace === undefined) {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     vscode.window.showErrorMessage("Failed to find a Bazel workspace");
     return [];
   }
