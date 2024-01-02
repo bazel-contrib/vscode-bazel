@@ -28,7 +28,7 @@ export class BazelWorkspaceInfo {
    * function returns {@code undefined}.
    *
    * @param document The {@code vscode.TextDocument} whose workspace info should
-   *     be retrieved.
+   * be retrieved.
    */
   public static fromDocument(
     document: vscode.TextDocument,
@@ -54,7 +54,7 @@ export class BazelWorkspaceInfo {
    * workspace, this function returns {@code undefined}.
    *
    * @param workspaceFolder The {@code vscode.WorkspaceFolder} whose workspace
-   *     info should be retrieved.
+   * info should be retrieved.
    */
   public static fromWorkspaceFolder(
     workspaceFolder: vscode.WorkspaceFolder,
@@ -67,14 +67,37 @@ export class BazelWorkspaceInfo {
   }
 
   /**
+   * Returns a selected Bazel workspace from among the open VS workspace
+   * folders. If there is only a single workspace folder open, it will be used.
+   * If there are multiple workspace folders open, a quick-pick window will be
+   * opened asking the user to choose one.
+   */
+  public static async fromWorkspaceFolders(): Promise<
+    BazelWorkspaceInfo | undefined
+  > {
+    switch (vscode.workspace.workspaceFolders?.length) {
+      case undefined:
+      case 0:
+        return undefined;
+      case 1:
+        return this.fromWorkspaceFolder(vscode.workspace.workspaceFolders[0]);
+      default:
+        const workspaceFolder = await vscode.window.showWorkspaceFolderPick();
+        return workspaceFolder
+          ? this.fromWorkspaceFolder(workspaceFolder)
+          : undefined;
+    }
+  }
+
+  /**
    * Initializes a new workspace info object.
    *
    * @param bazelWorkspacePath The closest directory to a document that contains
-   *     a Bazel WORKSPACE file.
+   * a Bazel WORKSPACE file.
    * @param workspaceFolder An object representing the VS Code workspace folder
-   *     that contains a document, or {@code undefined} if the file does not
-   *     belong to a workspace folder (for example, a standalone file loaded
-   *     into the editor).
+   * that contains a document, or {@code undefined} if the file does not
+   * belong to a workspace folder (for example, a standalone file loaded
+   * into the editor).
    */
   private constructor(
     public readonly bazelWorkspacePath: string,

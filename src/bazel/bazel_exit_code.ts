@@ -12,15 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// tslint:disable:max-line-length
-
 /**
  * Bazel exit codes.
  *
  * This should be kept in sync with
- *   https://source.bazel.build/bazel/+/master:src/main/cpp/util/exit_code.h
+ * https://source.bazel.build/bazel/+/master:src/main/cpp/util/exit_code.h
  * and
- *  https://source.bazel.build/bazel/+/master:src/main/java/com/google/devtools/build/lib/util/ExitCode.java
+ * https://source.bazel.build/bazel/+/master:src/main/java/com/google/devtools/build/lib/util/ExitCode.java
  */
 export enum ExitCode {
   SUCCESS = "SUCCESS",

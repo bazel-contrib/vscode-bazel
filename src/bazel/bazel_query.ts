@@ -22,45 +22,45 @@ import { blaze_query } from "../protos";
 import { BazelCommand } from "./bazel_command";
 import { getBazelWorkspaceFolder } from "./bazel_utils";
 
+const protoOutputOptions = [
+  "--proto:output_rule_attrs=''",
+  "--noproto:rule_inputs_and_outputs",
+  "--noproto:default_values",
+];
+
 /** Provides a promise-based API around a Bazel query. */
 export class BazelQuery extends BazelCommand {
-  /**
-   * Initializes a new Bazel query.
-   *
-   * @param bazelExecutable The path to the Bazel executable.
-   * @param workingDirectory The path to the directory from which Bazel will be
-   *     spawned.
-   * @param query The query to execute.
-   * @param options Command line options that will be passed to Bazel (targets,
-   *     query strings, flags, etc.).
-   * @param ignoresErrors If true, a non-zero exit code for the child process is
-   *     ignored and the {@link #run} function's promise is resolved with the
-   *     empty string instead.
-   */
-  public constructor(
-    bazelExecutable: string,
-    workingDirectory: string,
-    query: string,
-    options: string[],
-    private readonly ignoresErrors: boolean = false,
-  ) {
-    super(bazelExecutable, workingDirectory, [query].concat(options));
-  }
-
   /**
    * Runs the query and returns a {@code QueryResult} containing the targets
    * that match.
    *
-   * @param additionalOptions Additional command line options that should be
-   *     passed just to this specific invocation of the query.
+   * @param query The query to execute.
+   * @param options
+   * @param options.additionalOptions Additional command line options that
+   * should be passed just to this specific invocation of the query.
+   * @param options.sortByRuleName If `true`, the results from the query will
+   * be sorted by their name.
+   * @param options.ignoresErrors `true` if errors from executing the query
+   * should be ignored.
    * @returns A {@link QueryResult} object that contains structured information
-   *     about the query results.
+   * about the query results.
    */
   public async queryTargets(
-    additionalOptions: string[] = [],
-    sortByRuleName: boolean = false,
+    query: string,
+    {
+      additionalOptions = [],
+      sortByRuleName = false,
+      ignoresErrors = false,
+    }: {
+      additionalOptions?: string[];
+      sortByRuleName?: boolean;
+      ignoresErrors?: boolean;
+    } = {},
   ): Promise<blaze_query.QueryResult> {
-    const buffer = await this.run(additionalOptions.concat(["--output=proto"]));
+    const buffer = await this.run(
+      [query, ...additionalOptions, "--output=proto", ...protoOutputOptions],
+      { ignoresErrors },
+    );
     const result = blaze_query.QueryResult.decode(buffer);
     if (sortByRuleName) {
       const sorted = result.target.sort((t1, t2) => {
@@ -83,17 +83,12 @@ export class BazelQuery extends BazelCommand {
    * Runs the query and returns an array of package paths containing the targets
    * that match.
    *
-   * @param additionalOptions Additional command line options that should be
-   *     passed just to this specific invocation of the query.
+   * @param query The query to execute.
    * @returns An sorted array of package paths containing the targets that
-   *     match.
+   * match.
    */
-  public async queryPackages(
-    additionalOptions: string[] = [],
-  ): Promise<string[]> {
-    const buffer = await this.run(
-      additionalOptions.concat(["--output=package"]),
-    );
+  public async queryPackages(query: string): Promise<string[]> {
+    const buffer = await this.run([query, "--output=package"]);
     const result = buffer
       .toString("utf-8")
       .trim()
@@ -111,12 +106,17 @@ export class BazelQuery extends BazelCommand {
    * Executes the command and returns a promise for the binary contents of
    * standard output.
    *
-   * @param additionalOptions Additional command line options that apply only to
-   *     this particular invocation of the command.
+   * @param query The query to execute.
+   * @param options
+   * @param options.ignoresErrors `true` if errors from executing the query
+   * should be ignored.
    * @returns A promise that is resolved with the contents of the process's
-   *     standard output, or rejected if the command fails.
+   * standard output, or rejected if the command fails.
    */
-  private run(additionalOptions: string[] = []): Promise<Buffer> {
+  protected run(
+    options: string[],
+    { ignoresErrors = false }: { ignoresErrors?: boolean } = {},
+  ): Promise<Buffer> {
     const bazelConfig = vscode.workspace.getConfiguration("bazel");
     const queriesShareServer = bazelConfig.get<boolean>("queriesShareServer");
     let additionalStartupOptions: string[] = [];
@@ -126,17 +126,20 @@ export class BazelQuery extends BazelCommand {
       // This helps get the queries out of the way of any other builds (or use
       // of ibazel). The docs suggest using a custom output base for IDE support
       // features, which is what these queries are. See:
-      // tslint:disable-next-line: max-line-length
       // https://docs.bazel.build/versions/master/guide.html#choosing-the-output-base
-      //
       // NOTE: This does NOT use a random directory for each query instead it
       // uses a generated tmp directory based on the Bazel workspace, this way
       // the server is shared for all the queries.
       const ws = getBazelWorkspaceFolder(this.workingDirectory);
       const hash = crypto.createHash("md5").update(ws).digest("hex");
-      const outputBase = path.join(os.tmpdir(), hash);
+      const queryOutputBaseConfigValue =
+        bazelConfig.get<string>("queryOutputBase");
+      const queryOutputBase = path.join(
+        queryOutputBaseConfigValue ?? os.tmpdir(),
+        hash,
+      );
       additionalStartupOptions = additionalStartupOptions.concat([
-        `--output_base=${outputBase}`,
+        `--output_base=${queryOutputBase}`,
       ]);
     }
     return new Promise((resolve, reject) => {
@@ -149,11 +152,11 @@ export class BazelQuery extends BazelCommand {
       };
       child_process.execFile(
         this.bazelExecutable,
-        this.execArgs(additionalOptions, additionalStartupOptions),
+        this.execArgs(options, additionalStartupOptions),
         execOptions,
-        (error: Error, stdout: Buffer, stderr: Buffer) => {
+        (error: Error, stdout: Buffer) => {
           if (error) {
-            if (this.ignoresErrors) {
+            if (ignoresErrors) {
               resolve(new Buffer(0));
             } else {
               reject(error);

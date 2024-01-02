@@ -34,12 +34,12 @@ function getCandidateTargetFromDocumentPosition(
 ): string | undefined {
   const linePrefix = document
     .lineAt(position)
-    .text.substr(0, position.character);
-  const index = linePrefix.indexOf('"//');
+    .text.substring(0, position.character);
+  const index = linePrefix.lastIndexOf("//");
   if (index === -1) {
     return undefined;
   }
-  return linePrefix.substring(index + 1);
+  return linePrefix.substring(index);
 }
 
 function stripLastPackageOrTargetName(target: string) {

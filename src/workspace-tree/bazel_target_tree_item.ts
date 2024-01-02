@@ -21,13 +21,14 @@ import { getBazelRuleIcon } from "./icons";
 
 /** A tree item representing a build target. */
 export class BazelTargetTreeItem
-  implements IBazelCommandAdapter, IBazelTreeItem {
+  implements IBazelCommandAdapter, IBazelTreeItem
+{
   /**
    * Initializes a new tree item with the given query result representing a
    * build target.
    *
    * @param target An object representing a build target that was produced by a
-   *     query.
+   * query.
    */
   constructor(
     private readonly workspaceInfo: BazelWorkspaceInfo,

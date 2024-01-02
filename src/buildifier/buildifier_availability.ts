@@ -29,39 +29,38 @@ const BUILDTOOLS_RELEASES_URL =
  * If not available, a warning message will be presented to the user with a
  * Download button that they can use to go to the GitHub releases page.
  */
-export function checkBuildifierIsAvailable() {
+export async function checkBuildifierIsAvailable() {
   const buildifierExecutable = getDefaultBuildifierExecutablePath();
-  which(buildifierExecutable, async (err, _) => {
-    if (err) {
+  await which(buildifierExecutable)
+    .catch(async () => {
       await showBuildifierDownloadPrompt("Buildifier was not found");
-      return;
-    }
-
-    // If we found it, make sure it's a compatible version by running
-    // buildifier on an empty input and see if it exits successfully and the
-    // output parses.
-    const process = child_process.execFile(
-      buildifierExecutable,
-      ["--format=json", "--mode=check"],
-      {},
-      (error: Error, stdout: string, stderr: string) => {
-        if (!error && stdout) {
-          try {
-            JSON.parse(stdout);
-            return;
-          } catch {
-            // Swallow the error; we'll display the prompt below.
+    })
+    .then(() => {
+      // If we found it, make sure it's a compatible version by running
+      // buildifier on an empty input and see if it exits successfully and the
+      // output parses.
+      const process = child_process.execFile(
+        buildifierExecutable,
+        ["--format=json", "--mode=check"],
+        {},
+        (error: Error, stdout: string) => {
+          if (!error && stdout) {
+            try {
+              JSON.parse(stdout);
+              return;
+            } catch {
+              // Swallow the error; we'll display the prompt below.
+            }
           }
-        }
-        // If we didn't get valid JSON back, we don't have a compatible version.
-        // tslint:disable-next-line:no-floating-promises
-        showBuildifierDownloadPrompt(
-          "Buildifier is too old (0.25.1 or higher is needed)",
-        );
-      },
-    );
-    process.stdin.end();
-  });
+          // If no valid JSON back, we don't have a compatible version.
+          // eslint-disable-next-line @typescript-eslint/no-floating-promises
+          showBuildifierDownloadPrompt(
+            "Buildifier is too old (0.25.1 or higher is needed)",
+          );
+        },
+      );
+      process.stdin.end();
+    });
 }
 
 /**
@@ -69,7 +68,7 @@ export function checkBuildifierIsAvailable() {
  * compatible, and give them the option to download it.
  *
  * @param reason The reason that Buildifier was not valid, which is displayed
- *     to the user.
+ * to the user.
  */
 async function showBuildifierDownloadPrompt(reason: string) {
   const item = await vscode.window.showWarningMessage(
@@ -81,7 +80,7 @@ async function showBuildifierDownloadPrompt(reason: string) {
   );
 
   if (item && item.title === "Download") {
-    vscode.commands.executeCommand(
+    await vscode.commands.executeCommand(
       "vscode.open",
       vscode.Uri.parse(BUILDTOOLS_RELEASES_URL),
     );

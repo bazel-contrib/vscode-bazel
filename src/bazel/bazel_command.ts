@@ -50,15 +50,15 @@ export abstract class BazelCommand {
    *
    * @param bazelExecutable The path to the Bazel executable.
    * @param workingDirectory The path to the directory from which Bazel will be
-   *     spawned.
+   * spawned.
    * @param options Command line options that will be passed to Bazel (targets,
-   *     query strings, flags, etc.).
+   * query strings, flags, etc.).
    */
   public constructor(
     readonly bazelExecutable: string,
     readonly workingDirectory: string,
     readonly options: string[] = [],
-  ) { }
+  ) {}
 
   /**
    * Overridden by subclasses to provide the Bazel command that should be

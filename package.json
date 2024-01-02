@@ -2,7 +2,7 @@
     "name": "vscode-bazel",
     "displayName": "Bazel",
     "description": "Bazel BUILD integration",
-    "version": "0.5.0",
+    "version": "0.8.0",
     "publisher": "BazelBuild",
     "license": "Apache-2.0",
     "repository": {
@@ -19,7 +19,14 @@
     "activationEvents": [
         "onLanguage:starlark",
         "onView:bazelWorkspace",
-        "onCommand:bazel.refreshBazelBuildTargets"
+        "onCommand:bazel.refreshBazelBuildTargets",
+        "onCommand:bazel.getTargetOutput",
+        "onCommand:bazel.info.bazel-bin",
+        "onCommand:bazel.info.bazel-genfiles",
+        "onCommand:bazel.info.bazel-testlogs",
+        "onCommand:bazel.info.execution_root",
+        "onCommand:bazel.info.output_base",
+        "onCommand:bazel.info.output_path"
     ],
     "main": "./out/src/extension/extension",
     "contributes": {
@@ -43,6 +50,11 @@
                 "category": "Bazel",
                 "command": "bazel.buildAll",
                 "title": "Build Package"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.runTarget",
+                "title": "Run Target"
             },
             {
                 "category": "Bazel",
@@ -82,6 +94,41 @@
                 "category": "Bazel",
                 "command": "bazel.copyTargetToClipboard",
                 "title": "Copy Label to Clipboard"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.getTargetOutput",
+                "title": "Get output path for the given target"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.info.bazel-bin",
+                "title": "Get bazel-bin value"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.info.bazel-genfiles",
+                "title": "Get bazel-genfiles value"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.info.bazel-testlogs",
+                "title": "Get bazel-testlogs value"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.info.execution_root",
+                "title": "Get Bazel execution_root value"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.info.output_base",
+                "title": "Get Bazel output_base value"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.info.output_path",
+                "title": "Get Bazel output_path value"
             }
         ],
         "configuration": {
@@ -92,13 +139,13 @@
                     "type": "string",
                     "default": "",
                     "description": "The name of the Bazel executable. This may be an absolute path, or a simple name that will be searched for on the system path. If empty, \"bazel\" on the system path will be used.",
-                    "scope": "machine"
+                    "scope": "machine-overridable"
                 },
                 "bazel.buildifierExecutable": {
                     "type": "string",
                     "default": "",
                     "markdownDescription": "The name of the Buildifier executable. This may be an absolute path, or a simple name that will be searched for on the system path. If empty, \"buildifier\" on the system path will be used.\n\nBuildifier can be downloaded from https://github.com/bazelbuild/buildtools/releases.",
-                    "scope": "machine"
+                    "scope": "machine-overridable"
                 },
                 "bazel.buildifierFixOnFormat": {
                     "type": "boolean",
@@ -109,6 +156,11 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Use the same Bazel server for queries and builds. By default, vscode-bazel uses a separate server for queries so that they can be executed in parallel with builds. You can enable this setting if running multiple Bazel servers has a negative performance impact on your system, but you may experience degraded performance in Visual Studio Code for operations that require queries."
+                },
+                "bazel.queryOutputBase": {
+                    "type": "string",
+                    "default": null,
+                    "description": "If queriesShareServer is false, this sets the directory in which bazel will create its output_base directory. Defaults to $TMPDIR."
                 },
                 "bazel.enableCodeLens": {
                     "type": "boolean",
@@ -141,6 +193,11 @@
                     "uniqueItems": true,
                     "default": [],
                     "markdownDescription": "A list of Bazel command line options to use when building or running tests. From the [common options](https://docs.bazel.build/versions/master/command-line-reference.html#options-common-to-all-commands) and [build options](https://docs.bazel.build/versions/master/command-line-reference.html#build) (`test` honors all `build` options). One option per entry, no shell escaping is needed."
+                },
+                "bazel.commandLine.queryExpression": {
+                    "type": "string",
+                    "default": "...:*",
+                    "description": "A [query language expression](https://bazel.build/query/language) which determines the packages displayed in the workspace tree and quick picker. The default inspects the entire workspace, but you could narrow it. For example: `//part/you/want/...:*`"
                 }
             }
         },
@@ -210,15 +267,15 @@
                 "extensions": [
                     ".BUILD",
                     ".WORKSPACE",
+                    ".bazel",
                     ".bzl",
+                    ".bzlmod",
                     ".sky",
                     ".star"
                 ],
                 "filenames": [
                     "BUILD",
-                    "BUILD.bazel",
-                    "WORKSPACE",
-                    "WORKSPACE.bazel"
+                    "WORKSPACE"
                 ],
                 "configuration": "./syntaxes/starlark.configuration.json"
             }
@@ -243,6 +300,10 @@
                 },
                 {
                     "command": "bazel.buildAllRecursive",
+                    "when": "vscodeBazelHaveBazelWorkspace"
+                },
+                {
+                    "command": "bazel.runTarget",
                     "when": "vscodeBazelHaveBazelWorkspace"
                 },
                 {
@@ -291,6 +352,11 @@
                 {
                     "command": "bazel.buildAllRecursive",
                     "when": "view == bazelWorkspace && viewItem == package",
+                    "group": "build"
+                },
+                {
+                    "command": "bazel.runTarget",
+                    "when": "view == bazelWorkspace && viewItem == rule",
                     "group": "build"
                 },
                 {
@@ -357,16 +423,22 @@
         }
     },
     "scripts": {
-        "check-lint": "tslint --project tsconfig.json -t stylish 'src/**/*.ts' --exclude 'src/**/*.d.ts'",
+        "check-lint": "eslint src/**/*.ts --ext .ts --config .eslintrc.js --ignore-pattern 'src/**/*.d.ts' --format stylish",
         "compile": "./scripts/build.sh",
         "vscode:prepublish": "./scripts/build.sh",
         "watch": "./scripts/build.sh -watch"
     },
     "devDependencies": {
-        "@types/node": "^6.14.9",
+        "@types/node": "^16.11.7",
+        "@types/which": "^3.0.3",
         "@types/vscode": "^1.30.0",
-        "tslint": "^5.20.1",
-        "typescript": "^3.7.2",
+        "@typescript-eslint/eslint-plugin": "^6.13.1",
+        "@typescript-eslint/parser": "^6.13.1",
+        "eslint": "^8.54.0",
+        "eslint-config-prettier": "^9.0.0",
+        "eslint-plugin-jsdoc": "^46.9.0",
+        "eslint-plugin-prefer-arrow": "^1.2.3",
+        "typescript": "^5.3.3",
         "vscode-test": "^1.3.0"
     },
     "dependencies": {
@@ -374,6 +446,6 @@
         "vscode-debugadapter": "^1.37.1",
         "vscode-debugprotocol": "^1.37.0",
         "vscode-uri": "^3.0.2",
-        "which": "^1.3.1"
+        "which": "^4.0.0"
     }
 }

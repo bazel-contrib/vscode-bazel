@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import {
-  CancellationToken,
   Definition,
   DefinitionLink,
   DefinitionProvider,
@@ -33,7 +32,6 @@ export class BazelGotoDefinitionProvider implements DefinitionProvider {
   public async provideDefinition(
     document: TextDocument,
     position: Position,
-    token: CancellationToken,
   ): Promise<Definition | DefinitionLink[]> {
     const workspaceInfo = BazelWorkspaceInfo.fromDocument(document);
     if (workspaceInfo === undefined) {
@@ -54,9 +52,7 @@ export class BazelGotoDefinitionProvider implements DefinitionProvider {
     const queryResult = await new BazelQuery(
       getDefaultBazelExecutablePath(),
       Utils.dirname(document.uri).fsPath,
-      `kind(rule, "${targetName}")`,
-      [],
-    ).queryTargets();
+    ).queryTargets(`kind(rule, "${targetName}")`);
 
     if (!queryResult.target.length) {
       return null;

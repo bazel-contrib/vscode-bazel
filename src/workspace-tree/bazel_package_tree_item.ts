@@ -26,7 +26,8 @@ import { IBazelTreeItem } from "./bazel_tree_item";
 
 /** A tree item representing a build package. */
 export class BazelPackageTreeItem
-  implements IBazelCommandAdapter, IBazelTreeItem {
+  implements IBazelCommandAdapter, IBazelTreeItem
+{
   /**
    * The array of subpackages that should be shown directly under this package
    * item.
@@ -39,8 +40,8 @@ export class BazelPackageTreeItem
    * @param workspacePath The path to the VS Code workspace folder.
    * @param packagePath The path to the build package that this item represents.
    * @param parentPackagePath The path to the build package of the tree item
-   *     that is this item's parent, which indicates how much of
-   *     {@code packagePath} should be stripped for the item's label.
+   * that is this item's parent, which indicates how much of
+   * {@code packagePath} should be stripped for the item's label.
    */
   constructor(
     private readonly workspaceInfo: BazelWorkspaceInfo,
@@ -56,10 +57,10 @@ export class BazelPackageTreeItem
     const queryResult = await new BazelQuery(
       getDefaultBazelExecutablePath(),
       this.workspaceInfo.bazelWorkspacePath,
-      `//${this.packagePath}:all`,
-      [],
-      true,
-    ).queryTargets([], /* sortByRuleName: */ true);
+    ).queryTargets(`//${this.packagePath}:all`, {
+      ignoresErrors: true,
+      sortByRuleName: true,
+    });
     const targets = queryResult.target.map((target: blaze_query.Target) => {
       return new BazelTargetTreeItem(this.workspaceInfo, target);
     });

@@ -22,13 +22,13 @@ import { BazelWorkspaceFolderTreeItem } from "./bazel_workspace_folder_tree_item
  * interface.
  */
 export class BazelWorkspaceTreeProvider
-  implements vscode.TreeDataProvider<IBazelTreeItem> {
+  implements vscode.TreeDataProvider<IBazelTreeItem>
+{
   public onDidChangeTreeData: vscode.Event<IBazelTreeItem | void>;
 
   /** Fired when BUILD files change in the workspace. */
-  private onDidChangeTreeDataEmitter = new vscode.EventEmitter<
-    IBazelTreeItem | void
-  >();
+  private onDidChangeTreeDataEmitter =
+    new vscode.EventEmitter<IBazelTreeItem | void>();
 
   /** The cached toplevel items. */
   private workspaceFolderTreeItems: BazelWorkspaceFolderTreeItem[] | undefined;
@@ -48,22 +48,22 @@ export class BazelWorkspaceTreeProvider
       false,
     );
     buildWatcher.onDidChange(
-      this.onBuildFilesChanged,
+      () => this.onBuildFilesChanged(),
       this,
       context.subscriptions,
     );
     buildWatcher.onDidCreate(
-      this.onBuildFilesChanged,
+      () => this.onBuildFilesChanged(),
       this,
       context.subscriptions,
     );
     buildWatcher.onDidDelete(
-      this.onBuildFilesChanged,
+      () => this.onBuildFilesChanged(),
       this,
       context.subscriptions,
     );
 
-    vscode.workspace.onDidChangeWorkspaceFolders(this.refresh, this);
+    vscode.workspace.onDidChangeWorkspaceFolders(() => this.refresh(), this);
 
     this.updateWorkspaceFolderTreeItems();
   }
@@ -124,7 +124,7 @@ export class BazelWorkspaceTreeProvider
    *
    * @param uri The file system URI of the file that changed.
    */
-  private onBuildFilesChanged(uri: vscode.Uri) {
+  private onBuildFilesChanged() {
     // TODO(allevato): Look into firing the event only for tree items that are
     // affected by the change.
     this.refresh();
@@ -133,26 +133,26 @@ export class BazelWorkspaceTreeProvider
   /** Refresh the cached BazelWorkspaceFolderTreeItems. */
   private updateWorkspaceFolderTreeItems() {
     if (vscode.workspace.workspaceFolders) {
-      this.workspaceFolderTreeItems =
-        vscode.workspace.workspaceFolders
-          .map((folder) => {
-            const workspaceInfo = BazelWorkspaceInfo.fromWorkspaceFolder(
-              folder,
-            );
-            if (workspaceInfo) {
-              return new BazelWorkspaceFolderTreeItem(workspaceInfo);
-            }
-            return undefined;
-          })
-          .filter((folder) => folder !== undefined);
+      this.workspaceFolderTreeItems = vscode.workspace.workspaceFolders
+        .map((folder) => {
+          const workspaceInfo = BazelWorkspaceInfo.fromWorkspaceFolder(folder);
+          if (workspaceInfo) {
+            return new BazelWorkspaceFolderTreeItem(workspaceInfo);
+          }
+          return undefined;
+        })
+        .filter((folder) => folder !== undefined);
     } else {
       this.workspaceFolderTreeItems = [];
     }
 
     // All the UI to update based on having items.
     const haveBazelWorkspace = this.workspaceFolderTreeItems.length !== 0;
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     vscode.commands.executeCommand(
-      "setContext", "vscodeBazelHaveBazelWorkspace", haveBazelWorkspace,
+      "setContext",
+      "vscodeBazelHaveBazelWorkspace",
+      haveBazelWorkspace,
     );
   }
 }

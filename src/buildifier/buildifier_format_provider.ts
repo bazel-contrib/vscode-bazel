@@ -20,11 +20,10 @@ import { buildifierFormat, getBuildifierFileType } from "./buildifier";
  * buildifier.
  */
 export class BuildifierFormatProvider
-  implements vscode.DocumentFormattingEditProvider {
+  implements vscode.DocumentFormattingEditProvider
+{
   public async provideDocumentFormattingEdits(
     document: vscode.TextDocument,
-    options: vscode.FormattingOptions,
-    token: vscode.CancellationToken,
   ): Promise<vscode.TextEdit[]> {
     const bazelConfig = vscode.workspace.getConfiguration("bazel");
     const applyLintFixes = bazelConfig.get<boolean>("buildifierFixOnFormat");
@@ -53,6 +52,7 @@ export class BuildifierFormatProvider
       ];
       return edits;
     } catch (err) {
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       vscode.window.showErrorMessage(`${err}`);
     }
   }
