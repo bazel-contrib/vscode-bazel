@@ -100,12 +100,21 @@ export function getBazelWorkspaceFolder(fsPath: string): string | undefined {
   // match the checks below. Having this failsafe guarantees that we don't
   // hang in an infinite loop.
   const maxIterations = 100;
+
+  // These are the names of the files that mark the root of a repository
+  // or workspace.
+  const REPO_ROOT_FILE_NAMES = [
+    "MODULE.bazel",
+    "REPO.bazel",
+    "WORKSPACE.bazel",
+    "WORKSPACE",
+  ];
+
   if (fs.statSync(fsPath).isFile()) {
     dirname = path.dirname(dirname);
   }
   do {
-    const WORKSPACE_FILES = ["WORKSPACE.bazel", "WORKSPACE"];
-    for (const workspaceFileName of WORKSPACE_FILES) {
+    for (const workspaceFileName of REPO_ROOT_FILE_NAMES) {
       const workspace = path.join(dirname, workspaceFileName);
       try {
         fs.accessSync(workspace, fs.constants.F_OK);
