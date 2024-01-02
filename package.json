@@ -457,7 +457,7 @@
     "devDependencies": {
         "@types/node": "^16.11.7",
         "@types/which": "^3.0.3",
-        "@types/vscode": "^1.30.0",
+        "@types/vscode": "^1.85.0",
         "@typescript-eslint/eslint-plugin": "^6.13.1",
         "@typescript-eslint/parser": "^6.13.1",
         "eslint": "^8.54.0",
@@ -471,7 +471,7 @@
         "protobufjs": "^6.8.0",
         "vscode-debugadapter": "^1.37.1",
         "vscode-debugprotocol": "^1.37.0",
-        "vscode-languageclient": "^6.0.0",
+        "vscode-languageclient": "^9.0.1",
         "vscode-uri": "^3.0.2",
         "which": "^4.0.0"
     }

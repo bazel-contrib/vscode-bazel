@@ -18,7 +18,7 @@ import {
   LanguageClient,
   LanguageClientOptions,
   ServerOptions,
-} from "vscode-languageclient";
+} from "vscode-languageclient/node";
 
 import {
   BazelWorkspaceInfo,
@@ -66,13 +66,16 @@ export async function activate(context: vscode.ExtensionContext) {
 
   if (lspEnabled) {
     const lspClient = createLsp(config);
+
     context.subscriptions.push(
+      lspClient,
       vscode.commands.registerCommand("bazel.lsp.restart", async () => {
         await lspClient.stop();
-        context.subscriptions.push(lspClient.start());
+        await lspClient.start();
       }),
-      lspClient.start(),
     );
+
+    await lspClient.start();
   } else {
     context.subscriptions.push(
       vscode.languages.registerCompletionItemProvider(
