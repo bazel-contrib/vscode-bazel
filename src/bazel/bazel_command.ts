@@ -75,21 +75,10 @@ export abstract class BazelCommand {
       vscode.workspace.getConfiguration("bazel.commandLine");
     const startupOptions = bazelConfigCmdLine.get<string[]>("startupOptions");
 
-    // Options that are applied to all Bazel commands
-    const defaultOptions = [
-      // See https://bazel.build/versions/6.4.0/external/lockfile
-      // Prevent the extension from automatically creating the MODULE.bazel file
-      // on bazel v7 or newer which enable bzlmod by default
-      // Bazel can still enforce creating the MODULE.bazel automatically
-      // when users run command in local.
-      "--lockfile_mode=off",
-    ];
-
     const result = startupOptions
       .concat(additionalStartupOptions)
       .concat([this.bazelCommand()])
       .concat(this.options)
-      .concat(defaultOptions)
       .concat(additionalOptions);
 
     return result;
