@@ -104,10 +104,10 @@ export function getBazelWorkspaceFolder(fsPath: string): string | undefined {
   // These are the names of the files that mark the root of a repository
   // or workspace.
   const REPO_ROOT_FILE_NAMES = [
-    "WORKSPACE.bazel",
-    "WORKSPACE",
     "MODULE.bazel",
     "REPO.bazel",
+    "WORKSPACE.bazel",
+    "WORKSPACE",
   ];
 
   if (fs.statSync(fsPath).isFile()) {
