@@ -69,10 +69,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
       lspClient,
-      vscode.commands.registerCommand("bazel.lsp.restart", async () => {
-        await lspClient.stop();
-        await lspClient.start();
-      }),
+      vscode.commands.registerCommand("bazel.lsp.restart", () =>
+        lspClient.restart(),
+      ),
     );
 
     await lspClient.start();
