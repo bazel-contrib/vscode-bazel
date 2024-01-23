@@ -11,7 +11,7 @@
     },
     "icon": "media/bazel-logo.png",
     "engines": {
-        "vscode": "^1.30.0"
+        "vscode": "^1.85.0"
     },
     "categories": [
         "Programming Languages"
@@ -451,15 +451,16 @@
     "scripts": {
         "check-lint": "eslint src/**/*.ts --ext .ts --config .eslintrc.js --ignore-pattern 'src/**/*.d.ts' --format stylish",
         "compile": "./scripts/build.sh",
-        "vscode:prepublish": "./scripts/build.sh",
         "watch": "./scripts/build.sh -watch"
     },
     "devDependencies": {
+        "@types/long": "^4.0.0",
         "@types/node": "^16.11.7",
-        "@types/which": "^3.0.3",
         "@types/vscode": "^1.85.0",
+        "@types/which": "^3.0.3",
         "@typescript-eslint/eslint-plugin": "^6.13.1",
         "@typescript-eslint/parser": "^6.13.1",
+        "@vscode/vsce": "^2.23.0",
         "eslint": "^8.54.0",
         "eslint-config-prettier": "^9.0.0",
         "eslint-plugin-jsdoc": "^46.9.0",

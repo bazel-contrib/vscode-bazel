@@ -11,10 +11,10 @@
     "version": "2.0.0",
 
     // we want to run npm
-    "command": "npm",
+    "command": "bazel",
 
     // we run the custom script "compile" as defined in package.json
-    "args": ["run", "compile", "--loglevel", "silent"],
+    "args": ["build", "//..."],
 
     // The tsc compiler is started in watching mode
     "isBackground": true,
@@ -23,14 +23,12 @@
     "problemMatcher": "$tsc-watch",
     "tasks": [
         {
-            "label": "npm",
+            "label": "build",
             "type": "shell",
-            "command": "npm",
+            "command": "bazel",
             "args": [
-                "run",
-                "compile",
-                "--loglevel",
-                "silent"
+                "build",
+                "//...",
             ],
             "isBackground": true,
             "problemMatcher": "$tsc-watch",

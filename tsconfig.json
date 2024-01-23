@@ -9,7 +9,7 @@
         "sourceMap": true,
         "rootDir": ".",
         "alwaysStrict": true,
-        "allowJs": true
+        "declaration": true,
     },
     "exclude": [
         "node_modules",

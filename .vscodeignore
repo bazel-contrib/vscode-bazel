@@ -12,3 +12,6 @@ AUTHORS
 CODEOWNERS
 CONTRIBUTORS
 tsconfig.json
+
+package__js_binary_node_bin
+package__js_binary.sh

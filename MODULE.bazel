@@ -1,0 +1,71 @@
+bazel_dep(name = "aspect_rules_ts", version = "2.1.0")
+
+rules_ts_ext = use_extension(
+    "@aspect_rules_ts//ts:extensions.bzl",
+    "ext",
+    dev_dependency = True,
+)
+
+rules_ts_ext.deps()
+
+use_repo(rules_ts_ext, "npm_typescript")
+
+bazel_dep(name = "aspect_rules_js", version = "1.36.1")
+
+bazel_dep(name = "rules_nodejs", version = "5.8.2")
+node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node")
+node.toolchain(node_version = "16.14.2")
+
+npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm", dev_dependency = True)
+
+npm.npm_translate_lock(
+    name = "npm",
+    pnpm_lock = "//:pnpm-lock.yaml",
+    verify_node_modules_ignored = "//:.bazelignore",
+)
+
+use_repo(npm, "npm")
+
+bazel_protos = use_extension("//:bazel_protos.bzl", "bazel_protos")
+
+bazel_protos.version(ref = "7.0.2")
+
+bazel_protos.proto(
+    path = "src/main/java/com/google/devtools/build/lib/buildeventstream/proto/build_event_stream.proto",
+    integrity = "sha256-cGivhm6LgbumecMgMy52aR4STLvWPtK/sQCVnnwiw/A=",
+)
+
+bazel_protos.proto(
+    path = "src/main/java/com/google/devtools/build/lib/starlarkdebug/proto/starlark_debugging.proto",
+    integrity = "sha256-BkXW/Upxdn8IFMltt0jp6jXKJqcGVWp6M5/6Lr29FIU=",
+)
+
+bazel_protos.proto(
+    path = "src/main/protobuf/build.proto",
+    integrity = "sha256-5AZiVI/oW7woGiVsseQBWm0pLJKL8Vv/LdTfHqkNnY0=",
+)
+
+bazel_protos.proto(
+    path = "src/main/protobuf/command_line.proto",
+    integrity = "sha256-pvtlkapQeUQxeHFpvE+uFhBe9cQB58MOzw93XgqyXCw=",
+)
+
+bazel_protos.proto(
+    path = "src/main/protobuf/invocation_policy.proto",
+    integrity = "sha256-eh+QdNZKrqLF/AHfCTol+71o2E22P7+zVfWqFWg6dc0=",
+)
+
+bazel_protos.proto(
+    path = "src/main/protobuf/option_filters.proto",
+    integrity = "sha256-vBzCnlPihWw64lFJzGZhuyGHN6kUbnQX6yn4yqpxWCE=",
+)
+
+use_repo(
+    bazel_protos,
+    "build_event_stream_proto",
+    "starlark_debugging_proto",
+    "build_proto",
+    "command_line_proto",
+    "invocation_policy_proto",
+    "option_filters_proto",
+)

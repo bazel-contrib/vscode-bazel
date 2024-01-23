@@ -24,4 +24,4 @@ tasks:
       # Typescript 3 yet.
       # (https://github.com/azz/prettier-tslint/issues/18)
     build_targets:
-      - "//:dummy_target_for_ci"
+      - "//..."
