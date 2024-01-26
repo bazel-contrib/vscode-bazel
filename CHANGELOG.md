@@ -1,6 +1,18 @@
 # Change Log
 
-## Version 0.8.0 (December 15, 2022)
+## Version 0.8.1 (January 2, 2024)
+
+### Bug Fixes
+
+- Fix regressions caused by `bazel query` optimization in 0.8.0 (@daivinhtran)
+- Add new and upcoming files names to the list of files marking the root of a repo / workspace (@hypdeb)
+
+### Internal Improvements
+
+- Migrate to eslint (@hypdeb)
+- Upgrade typescript (@cameron-martin)
+
+## Version 0.8.0 (December 15, 2023)
 
 ### New Features
 
