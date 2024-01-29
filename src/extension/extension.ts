@@ -14,6 +14,11 @@
 
 import * as path from "path";
 import * as vscode from "vscode";
+import {
+  LanguageClient,
+  LanguageClientOptions,
+  ServerOptions,
+} from "vscode-languageclient/node";
 
 import {
   BazelWorkspaceInfo,
@@ -56,13 +61,42 @@ export async function activate(context: vscode.ExtensionContext) {
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   completionItemProvider.refresh();
 
+  const config = vscode.workspace.getConfiguration("bazel");
+  const lspEnabled = config.get<boolean>("lsp.enabled");
+
+  if (lspEnabled) {
+    const lspClient = createLsp(config);
+
+    context.subscriptions.push(
+      lspClient,
+      vscode.commands.registerCommand("bazel.lsp.restart", () =>
+        lspClient.restart(),
+      ),
+    );
+
+    await lspClient.start();
+  } else {
+    context.subscriptions.push(
+      vscode.languages.registerCompletionItemProvider(
+        [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
+        completionItemProvider,
+        "/",
+        ":",
+      ),
+      // Symbol provider for BUILD files
+      vscode.languages.registerDocumentSymbolProvider(
+        [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
+        new BazelTargetSymbolProvider(),
+      ),
+      // Goto definition for BUILD files
+      vscode.languages.registerDefinitionProvider(
+        [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
+        new BazelGotoDefinitionProvider(),
+      ),
+    );
+  }
+
   context.subscriptions.push(
-    vscode.languages.registerCompletionItemProvider(
-      [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
-      completionItemProvider,
-      "/",
-      ":",
-    ),
     vscode.window.registerTreeDataProvider(
       "bazelWorkspace",
       workspaceTreeProvider,
@@ -130,16 +164,6 @@ export async function activate(context: vscode.ExtensionContext) {
       new BuildifierFormatProvider(),
     ),
     buildifierDiagnostics,
-    // Symbol provider for BUILD files
-    vscode.languages.registerDocumentSymbolProvider(
-      [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
-      new BazelTargetSymbolProvider(),
-    ),
-    // Goto definition for BUILD files
-    vscode.languages.registerDefinitionProvider(
-      [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
-      new BazelGotoDefinitionProvider(),
-    ),
     // Task events.
     vscode.tasks.onDidStartTask(onTaskStart),
     vscode.tasks.onDidStartTaskProcess(onTaskProcessStart),
@@ -155,6 +179,22 @@ export async function activate(context: vscode.ExtensionContext) {
 /** Called when the extension is deactivated. */
 export function deactivate() {
   // Nothing to do here.
+}
+
+function createLsp(config: vscode.WorkspaceConfiguration) {
+  const command = config.get<string>("lsp.command");
+  const args = config.get<string[]>("lsp.args");
+
+  const serverOptions: ServerOptions = {
+    args,
+    command,
+  };
+
+  const clientOptions: LanguageClientOptions = {
+    documentSelector: [{ scheme: "file", language: "starlark" }],
+  };
+
+  return new LanguageClient("Bazel LSP Client", serverOptions, clientOptions);
 }
 
 /**

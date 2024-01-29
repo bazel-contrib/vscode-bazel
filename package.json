@@ -129,6 +129,11 @@
                 "category": "Bazel",
                 "command": "bazel.info.output_path",
                 "title": "Get Bazel output_path value"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.lsp.restart",
+                "title": "Restart language server"
             }
         ],
         "configuration": {
@@ -198,6 +203,27 @@
                     "type": "string",
                     "default": "...:*",
                     "description": "A [query language expression](https://bazel.build/query/language) which determines the packages displayed in the workspace tree and quick picker. The default inspects the entire workspace, but you could narrow it. For example: `//part/you/want/...:*`"
+                },
+                "bazel.lsp.enabled": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Enable the LSP (experimental)"
+                },
+                "bazel.lsp.command": {
+                    "type": "string",
+                    "default": "starlark",
+                    "description": "The executable to launch for the LSP"
+                },
+                "bazel.lsp.args": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": [
+                        "--lsp",
+                        "--bazel"
+                    ],
+                    "description": "The arguments to pass to the LSP executable"
                 }
             }
         },
@@ -431,7 +457,7 @@
     "devDependencies": {
         "@types/node": "^16.11.7",
         "@types/which": "^3.0.3",
-        "@types/vscode": "^1.30.0",
+        "@types/vscode": "^1.85.0",
         "@typescript-eslint/eslint-plugin": "^6.13.1",
         "@typescript-eslint/parser": "^6.13.1",
         "eslint": "^8.54.0",
@@ -445,6 +471,7 @@
         "protobufjs": "^6.8.0",
         "vscode-debugadapter": "^1.37.1",
         "vscode-debugprotocol": "^1.37.0",
+        "vscode-languageclient": "^9.0.1",
         "vscode-uri": "^3.0.2",
         "which": "^4.0.0"
     }

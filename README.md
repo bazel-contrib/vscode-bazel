@@ -49,6 +49,13 @@ Clicking the "Stop" button in the debugger will kill the Bazel process being
 debugger, allowing you to halt the current build. The Bazel server, however,
 will continue running.
 
+## Using the LSP (Experimental)
+
+This extension can use [Facebook's starlark project](https://github.com/facebookexperimental/starlark-rust) as a language server.
+
+1. Install the LSP using cargo: `cargo install starlark_bin`
+2. Enable the LSP extension by setting `bazel.lsp.enabled` to `true`.
+
 ## Contributing
 
 If you would like to contribute to the Bazel Visual Studio extension, please
