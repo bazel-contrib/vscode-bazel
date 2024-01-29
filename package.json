@@ -159,8 +159,8 @@
                 },
                 "bazel.queriesShareServer": {
                     "type": "boolean",
-                    "default": false,
-                    "description": "Use the same Bazel server for queries and builds. By default, vscode-bazel uses a separate server for queries so that they can be executed in parallel with builds. You can enable this setting if running multiple Bazel servers has a negative performance impact on your system, but you may experience degraded performance in Visual Studio Code for operations that require queries."
+                    "default": true,
+                    "description": "Use the same Bazel server for queries and builds. By default, vscode-bazel uses the same server for queries and builds in order to have it easier for the user to set up the plugin. However, you may experience degraded performance in Visual Studio Code for operations that require queries. You can disable this setting so that queries and builds can be executed in parallel. Keep in mind that you might get some errors after disabling this setting if you do not configure it properly. See https://github.com/bazelbuild/vscode-bazel/issues/265."
                 },
                 "bazel.queryOutputBase": {
                     "type": "string",

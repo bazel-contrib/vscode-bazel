@@ -126,7 +126,7 @@ export class BazelQuery extends BazelCommand {
       // This helps get the queries out of the way of any other builds (or use
       // of ibazel). The docs suggest using a custom output base for IDE support
       // features, which is what these queries are. See:
-      // https://docs.bazel.build/versions/master/guide.html#choosing-the-output-base
+      // https://bazel.build/run/scripts#output-base-option
       // NOTE: This does NOT use a random directory for each query instead it
       // uses a generated tmp directory based on the Bazel workspace, this way
       // the server is shared for all the queries.
