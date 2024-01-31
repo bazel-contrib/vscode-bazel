@@ -37,13 +37,13 @@ export class BazelQuery extends BazelCommand {
    * @param query The query to execute.
    * @param options
    * @param options.additionalOptions Additional command line options that
-   *     should be passed just to this specific invocation of the query.
+   * should be passed just to this specific invocation of the query.
    * @param options.sortByRuleName If `true`, the results from the query will
-   *     be sorted by their name.
+   * be sorted by their name.
    * @param options.ignoresErrors `true` if errors from executing the query
-   *     should be ignored.
+   * should be ignored.
    * @returns A {@link QueryResult} object that contains structured information
-   *     about the query results.
+   * about the query results.
    */
   public async queryTargets(
     query: string,
@@ -85,7 +85,7 @@ export class BazelQuery extends BazelCommand {
    *
    * @param query The query to execute.
    * @returns An sorted array of package paths containing the targets that
-   *     match.
+   * match.
    */
   public async queryPackages(query: string): Promise<string[]> {
     const buffer = await this.run([query, "--output=package"]);
@@ -109,9 +109,9 @@ export class BazelQuery extends BazelCommand {
    * @param query The query to execute.
    * @param options
    * @param options.ignoresErrors `true` if errors from executing the query
-   *     should be ignored.
+   * should be ignored.
    * @returns A promise that is resolved with the contents of the process's
-   *     standard output, or rejected if the command fails.
+   * standard output, or rejected if the command fails.
    */
   protected run(
     options: string[],
@@ -126,18 +126,18 @@ export class BazelQuery extends BazelCommand {
       // This helps get the queries out of the way of any other builds (or use
       // of ibazel). The docs suggest using a custom output base for IDE support
       // features, which is what these queries are. See:
-      // tslint:disable-next-line: max-line-length
-      // https://docs.bazel.build/versions/master/guide.html#choosing-the-output-base
-      //
+      // https://bazel.build/run/scripts#output-base-option
       // NOTE: This does NOT use a random directory for each query instead it
       // uses a generated tmp directory based on the Bazel workspace, this way
       // the server is shared for all the queries.
       const ws = getBazelWorkspaceFolder(this.workingDirectory);
       const hash = crypto.createHash("md5").update(ws).digest("hex");
       const queryOutputBaseConfigValue =
-          bazelConfig.get<string>("queryOutputBase");
-      const queryOutputBase =
-          path.join(queryOutputBaseConfigValue ?? os.tmpdir(), hash);
+        bazelConfig.get<string>("queryOutputBase");
+      const queryOutputBase = path.join(
+        queryOutputBaseConfigValue ?? os.tmpdir(),
+        hash,
+      );
       additionalStartupOptions = additionalStartupOptions.concat([
         `--output_base=${queryOutputBase}`,
       ]);
@@ -154,7 +154,7 @@ export class BazelQuery extends BazelCommand {
         this.bazelExecutable,
         this.execArgs(options, additionalStartupOptions),
         execOptions,
-        (error: Error, stdout: Buffer, stderr: Buffer) => {
+        (error: Error, stdout: Buffer) => {
           if (error) {
             if (ignoresErrors) {
               resolve(new Buffer(0));

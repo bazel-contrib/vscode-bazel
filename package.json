@@ -2,7 +2,7 @@
     "name": "vscode-bazel",
     "displayName": "Bazel",
     "description": "Bazel BUILD integration",
-    "version": "0.8.0",
+    "version": "0.8.1",
     "publisher": "BazelBuild",
     "license": "Apache-2.0",
     "repository": {
@@ -129,6 +129,11 @@
                 "category": "Bazel",
                 "command": "bazel.info.output_path",
                 "title": "Get Bazel output_path value"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.lsp.restart",
+                "title": "Restart language server"
             }
         ],
         "configuration": {
@@ -154,8 +159,8 @@
                 },
                 "bazel.queriesShareServer": {
                     "type": "boolean",
-                    "default": false,
-                    "description": "Use the same Bazel server for queries and builds. By default, vscode-bazel uses a separate server for queries so that they can be executed in parallel with builds. You can enable this setting if running multiple Bazel servers has a negative performance impact on your system, but you may experience degraded performance in Visual Studio Code for operations that require queries."
+                    "default": true,
+                    "description": "Use the same Bazel server for queries and builds. By default, vscode-bazel uses the same server for queries and builds in order to have it easier for the user to set up the plugin. However, you may experience degraded performance in Visual Studio Code for operations that require queries. You can disable this setting so that queries and builds can be executed in parallel. Keep in mind that you might get some errors after disabling this setting if you do not configure it properly. See https://github.com/bazelbuild/vscode-bazel/issues/265."
                 },
                 "bazel.queryOutputBase": {
                     "type": "string",
@@ -198,6 +203,27 @@
                     "type": "string",
                     "default": "...:*",
                     "description": "A [query language expression](https://bazel.build/query/language) which determines the packages displayed in the workspace tree and quick picker. The default inspects the entire workspace, but you could narrow it. For example: `//part/you/want/...:*`"
+                },
+                "bazel.lsp.enabled": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Enable the LSP (experimental)"
+                },
+                "bazel.lsp.command": {
+                    "type": "string",
+                    "default": "starlark",
+                    "description": "The executable to launch for the LSP"
+                },
+                "bazel.lsp.args": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": [
+                        "--lsp",
+                        "--bazel"
+                    ],
+                    "description": "The arguments to pass to the LSP executable"
                 }
             }
         },
@@ -423,23 +449,30 @@
         }
     },
     "scripts": {
-        "check-lint": "tslint --project tsconfig.json -t stylish 'src/**/*.ts' --exclude 'src/**/*.d.ts'",
+        "check-lint": "eslint src/**/*.ts --ext .ts --config .eslintrc.js --ignore-pattern 'src/**/*.d.ts' --format stylish",
         "compile": "./scripts/build.sh",
         "vscode:prepublish": "./scripts/build.sh",
         "watch": "./scripts/build.sh -watch"
     },
     "devDependencies": {
-        "@types/node": "^6.14.9",
-        "@types/vscode": "^1.30.0",
-        "tslint": "^5.20.1",
-        "typescript": "^3.7.2",
+        "@types/node": "^16.11.7",
+        "@types/which": "^3.0.3",
+        "@types/vscode": "^1.85.0",
+        "@typescript-eslint/eslint-plugin": "^6.13.1",
+        "@typescript-eslint/parser": "^6.13.1",
+        "eslint": "^8.54.0",
+        "eslint-config-prettier": "^9.0.0",
+        "eslint-plugin-jsdoc": "^46.9.0",
+        "eslint-plugin-prefer-arrow": "^1.2.3",
+        "typescript": "^5.3.3",
         "vscode-test": "^1.3.0"
     },
     "dependencies": {
         "protobufjs": "^6.8.0",
         "vscode-debugadapter": "^1.37.1",
         "vscode-debugprotocol": "^1.37.0",
+        "vscode-languageclient": "^9.0.1",
         "vscode-uri": "^3.0.2",
-        "which": "^1.3.1"
+        "which": "^4.0.0"
     }
 }

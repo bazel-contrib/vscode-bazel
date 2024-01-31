@@ -24,9 +24,8 @@ const DIAGNOSTICS_ON_TYPE_DELAY_MILLIS = 500;
 /** Manages diagnostics emitted by buildifier's lint mode. */
 export class BuildifierDiagnosticsManager implements vscode.Disposable {
   /** The diagnostics collection for buildifier lint warnings. */
-  private diagnosticsCollection = vscode.languages.createDiagnosticCollection(
-    "buildifier",
-  );
+  private diagnosticsCollection =
+    vscode.languages.createDiagnosticCollection("buildifier");
 
   /**
    * Disposables registered by the manager that should be disposed when the
@@ -46,7 +45,7 @@ export class BuildifierDiagnosticsManager implements vscode.Disposable {
         clearTimeout(didChangeTextTimer);
       }
       didChangeTextTimer = setTimeout(() => {
-        // tslint:disable-next-line:no-floating-promises
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         this.updateDiagnostics(e.document);
         didChangeTextTimer = null;
       }, DIAGNOSTICS_ON_TYPE_DELAY_MILLIS);
@@ -56,14 +55,14 @@ export class BuildifierDiagnosticsManager implements vscode.Disposable {
       if (!e) {
         return;
       }
-      // tslint:disable-next-line:no-floating-promises
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       this.updateDiagnostics(e.document);
     });
 
     // If there is an active window at the time the manager is created, make
     // sure its diagnostics are computed.
     if (vscode.window.activeTextEditor) {
-      // tslint:disable-next-line:no-floating-promises
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       this.updateDiagnostics(vscode.window.activeTextEditor.document);
     }
   }

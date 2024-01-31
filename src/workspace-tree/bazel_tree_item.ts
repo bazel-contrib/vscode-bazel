@@ -26,7 +26,7 @@ export interface IBazelTreeItem {
    * children is deferred until {@link #getChildren()} is called.
    *
    * @returns True if the item may have children, or false if it definitively
-   *     does not.
+   * does not.
    */
   mightHaveChildren(): boolean;
 
