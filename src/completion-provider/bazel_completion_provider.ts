@@ -13,7 +13,11 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import { queryQuickPickTargets } from "../bazel";
+import {
+  BazelWorkspaceInfo,
+  getPackageLabelForBuildFile,
+  queryQuickPickTargets,
+} from "../bazel";
 
 function insertCompletionItemIfUnique(
   options: vscode.CompletionItem[],
@@ -35,7 +39,9 @@ function getCandidateTargetFromDocumentPosition(
   const linePrefix = document
     .lineAt(position)
     .text.substring(0, position.character);
-  const index = linePrefix.lastIndexOf("//");
+  const doubleSlashIndex = linePrefix.lastIndexOf("//");
+  const colonIndex = linePrefix.lastIndexOf(":");
+  const index = doubleSlashIndex !== -1 ? doubleSlashIndex : colonIndex;
   if (index === -1) {
     return undefined;
   }
@@ -65,6 +71,24 @@ function getNextPackage(target: string) {
   return undefined;
 }
 
+function getAbsoluteLabel(
+  target: string,
+  document: vscode.TextDocument,
+): string {
+  if (target.startsWith("//")) {
+    return target;
+  }
+  const workspace = BazelWorkspaceInfo.fromDocument(document);
+  if (!workspace) {
+    return target;
+  }
+  const packageLabel = getPackageLabelForBuildFile(
+    workspace.bazelWorkspacePath,
+    document.uri.fsPath,
+  );
+  return `${packageLabel}${target}`;
+}
+
 export class BazelCompletionItemProvider
   implements vscode.CompletionItemProvider {
   private targets: string[] = [];
@@ -72,7 +96,7 @@ export class BazelCompletionItemProvider
   /**
    * Returns completion items matching the given prefix.
    *
-   * Only label started with "//: is supported at the moment.
+   * Only label started with `//` or `:` is supported at the moment.
    */
   public provideCompletionItems(
     document: vscode.TextDocument,
@@ -86,6 +110,8 @@ export class BazelCompletionItemProvider
       return [];
     }
 
+    candidateTarget = getAbsoluteLabel(candidateTarget, document);
+
     if (!candidateTarget.endsWith("/") && !candidateTarget.endsWith(":")) {
       candidateTarget = stripLastPackageOrTargetName(candidateTarget);
     }
@@ -95,13 +121,13 @@ export class BazelCompletionItemProvider
       if (!target.startsWith(candidateTarget)) {
         return;
       }
-      const sufix = target.replace(candidateTarget, "");
+      const suffix = target.replace(candidateTarget, "");
 
       let completionKind = vscode.CompletionItemKind.Folder;
-      let label = getNextPackage(sufix);
+      let label = getNextPackage(suffix);
       if (label === undefined) {
         completionKind = vscode.CompletionItemKind.Field;
-        label = sufix;
+        label = suffix;
       }
       insertCompletionItemIfUnique(
         completionItems,

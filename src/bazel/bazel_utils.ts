@@ -19,18 +19,16 @@ import { blaze_query } from "../protos";
 import { BazelQuery } from "./bazel_query";
 
 /**
- * Get the targets in the build file
+ * Get the package label for a build file.
  *
- * @param bazelExecutable The path to the Bazel executable.
  * @param workspace The path to the workspace.
  * @param buildFile The path to the build file.
- * @returns A query result for targets in the build file.
+ * @returns The package label for the build file.
  */
-export async function getTargetsForBuildFile(
-  bazelExecutable: string,
+export function getPackageLabelForBuildFile(
   workspace: string,
   buildFile: string,
-): Promise<blaze_query.QueryResult> {
+): string {
   // Path to the BUILD file relative to the workspace.
   const relPathToDoc = path.relative(workspace, buildFile);
   // Strip away the name of the BUILD file from the relative path.
@@ -43,7 +41,23 @@ export async function getTargetsForBuildFile(
   // Change \ (backslash) to / (forward slash) when on Windows
   relDirWithDoc = relDirWithDoc.replace(/\\/g, "/");
   // Turn the relative path into a package label
-  const pkg = `//${relDirWithDoc}`;
+  return `//${relDirWithDoc}`;
+}
+
+/**
+ * Get the targets in the build file
+ *
+ * @param bazelExecutable The path to the Bazel executable.
+ * @param workspace The path to the workspace.
+ * @param buildFile The path to the build file.
+ * @returns A query result for targets in the build file.
+ */
+export async function getTargetsForBuildFile(
+  bazelExecutable: string,
+  workspace: string,
+  buildFile: string,
+): Promise<blaze_query.QueryResult> {
+  const pkg = getPackageLabelForBuildFile(workspace, buildFile);
   const queryResult = await new BazelQuery(
     bazelExecutable,
     workspace,
