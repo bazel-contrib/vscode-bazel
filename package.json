@@ -11,7 +11,7 @@
     },
     "icon": "media/bazel-logo.png",
     "engines": {
-        "vscode": "^1.30.0"
+        "vscode": "^1.85.0"
     },
     "categories": [
         "Programming Languages"
