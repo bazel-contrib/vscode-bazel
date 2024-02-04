@@ -69,3 +69,26 @@ use_repo(
     "invocation_policy_proto",
     "option_filters_proto",
 )
+
+bazel_dep(name = "bazel", version = "")
+
+archive_override(
+    module_name = "bazel",
+    urls = ["https://github.com/bazelbuild/bazel/archive/refs/tags/7.0.2.tar.gz"],
+    strip_prefix = "bazel-7.0.2",
+    integrity = "sha256-bqk/ux+PEkd2pcl97tKL0SBjeJGeocawW3SJEIFPHic=",
+)
+
+archive_override(
+    module_name = "googleapis",
+    urls = ["https://github.com/bazelbuild/bazel/archive/refs/tags/7.0.2.tar.gz"],
+    strip_prefix = "bazel-7.0.2/third_party/googleapis",
+    integrity = "sha256-bqk/ux+PEkd2pcl97tKL0SBjeJGeocawW3SJEIFPHic=",
+)
+
+archive_override(
+    module_name = "remoteapis",
+    urls = ["https://github.com/bazelbuild/bazel/archive/refs/tags/7.0.2.tar.gz"],
+    strip_prefix = "bazel-7.0.2/third_party/remoteapis",
+    integrity = "sha256-bqk/ux+PEkd2pcl97tKL0SBjeJGeocawW3SJEIFPHic=",
+)
