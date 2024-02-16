@@ -142,7 +142,8 @@ export class BazelCompletionItemProvider
    * workspace.
    */
   public async refresh() {
-    const queryTargets = await queryQuickPickTargets("kind('.* rule', ...)");
+    //TODO make this a vscode parameter
+    const queryTargets = await queryQuickPickTargets("//packages/...");
     if (queryTargets.length !== 0) {
       this.targets = queryTargets.map((queryTarget) => {
         return queryTarget.label;

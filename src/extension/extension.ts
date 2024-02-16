@@ -107,6 +107,10 @@ export async function activate(context: vscode.ExtensionContext) {
       "bazel.buildTargetWithDebugging",
       bazelBuildTargetWithDebugging,
     ),
+    vscode.commands.registerCommand(
+      "bazel.buildTargetWithGDBDebugging",
+      bazelBuildTargetWithGDBDebugging,
+    ),
     vscode.commands.registerCommand("bazel.buildAll", bazelbuildAll),
     vscode.commands.registerCommand(
       "bazel.buildAllRecursive",
@@ -275,6 +279,90 @@ async function bazelBuildTargetWithDebugging(
     name: "On-demand Bazel Build Debug",
     request: "launch",
     type: "bazel-launch-build",
+  });
+}
+
+// eslint-disable-next-line max-len
+async function bazelBuildTargetWithGDBDebugging(adapter: IBazelCommandAdapter | undefined) {
+  if (adapter === undefined) {
+    // If the command adapter was unspecified, it means this command is being
+    // invoked via the command palette. Provide quickpick build targets for
+    // the user to choose from.
+    const quickPick = await vscode.window.showQuickPick(
+      queryQuickPickTargets("//packages/..."),
+      {
+        canPickMany: false,
+      },
+    );
+    // If the result was undefined, the user cancelled the quick pick, so don't
+    // try again.
+    if (quickPick) {
+      await bazelBuildTargetWithGDBDebugging(quickPick);
+    }
+    return;
+  }
+  const commandOptions = adapter.getBazelCommandOptions();
+  const targetPath = commandOptions.targets[0].substring(2).replace(':', '/');
+  const workspaceRoot = vscode.workspace.workspaceFolders[0].uri.path;
+  // eslint-disable-next-line max-len
+  const pathToBinary = path.join(workspaceRoot, 'bazel-out', 'k8-dbg', 'bin', targetPath);
+  // eslint-disable-next-line max-len
+  const pathToIntegration =path.join(workspaceRoot, 'bazel-out/k8-dbg/bin', targetPath+'.runfiles', '_main', targetPath.substring(0, targetPath.lastIndexOf('/')));
+
+  // Build in debug mode.
+  const allCommandOptions = {
+    options: commandOptions.options.concat(
+      "--config=debug",
+      "--build_type=debug",
+      `--package_path=${commandOptions.workspaceInfo.bazelWorkspacePath}`,
+      `--copt=-DPKG_PATH="${pathToIntegration}/"`,
+    ),
+    targets: commandOptions.targets,
+    workspaceInfo: commandOptions.workspaceInfo,
+  };
+
+  const task = createBazelTask("build", allCommandOptions);
+
+  await vscode.tasks.executeTask(task).then(async (taskExecution) => {
+    await new Promise((resolve, reject) => {
+      const disposable = vscode.tasks.onDidEndTask((e) => {
+        if (e.execution === taskExecution) {
+          disposable.dispose();  // Cleanup the event subscription.
+          // Debugging configuration for gdb.
+          const debugConfiguration = {
+            type: "cppdbg",
+            name: "Debug Bazel Target",
+            request: "launch",
+            program: pathToBinary,
+            cwd: workspaceRoot,
+            MIMode: "gdb",
+            setupCommands: [
+              {
+                description: "Enable pretty-printing for gdb",
+                text: "-enable-pretty-printing",
+                ignoreFailures: true
+              },
+              {
+                  description:  "Set Disassembly Flavor to Intel",
+                  text: "-gdb-set disassembly-flavor intel",
+                  ignoreFailures: true
+              }
+            ],
+            logging: {
+              trace: false,
+              traceResponse: false,
+              engineLogging: true
+          },
+          sourceFileMap:{
+            "": workspaceRoot
+          },
+        };
+          // Start a debugging session with the gdb configuration.
+          // eslint-disable-next-line max-len
+          vscode.debug.startDebugging(undefined, debugConfiguration).then(resolve, reject);
+        }
+      });
+    });
   });
 }
 

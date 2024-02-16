@@ -25,6 +25,7 @@ import { getBazelWorkspaceFolder } from "./bazel_utils";
 const protoOutputOptions = [
   "--proto:output_rule_attrs=''",
   "--noproto:rule_inputs_and_outputs",
+  "--noproto:locations",
   "--noproto:default_values",
 ];
 

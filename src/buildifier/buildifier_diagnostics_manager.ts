@@ -42,7 +42,7 @@ export class BuildifierDiagnosticsManager implements vscode.Disposable {
 
     vscode.workspace.onDidChangeTextDocument((e) => {
       if (didChangeTextTimer) {
-        clearTimeout(didChangeTextTimer);
+        clearTimeout(didChangeTextTimer as NodeJS.Timeout);
       }
       didChangeTextTimer = setTimeout(() => {
         // eslint-disable-next-line @typescript-eslint/no-floating-promises

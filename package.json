@@ -48,6 +48,11 @@
             },
             {
                 "category": "Bazel",
+                "command": "bazel.buildTargetWithGDBDebugging",
+                "title": "Build Target with GDB Debugger"
+            },
+            {
+                "category": "Bazel",
                 "command": "bazel.buildAll",
                 "title": "Build Package"
             },
@@ -321,6 +326,10 @@
                     "when": "vscodeBazelHaveBazelWorkspace"
                 },
                 {
+                    "command": "bazel.buildTargetWithGDBDebugging",
+                    "when": "vscodeBazelHaveBazelWorkspace"
+                },
+                {
                     "command": "bazel.buildAll",
                     "when": "vscodeBazelHaveBazelWorkspace"
                 },
@@ -367,6 +376,16 @@
                 },
                 {
                     "command": "bazel.buildTargetWithDebugging",
+                    "when": "view == bazelWorkspace && viewItem == testRule",
+                    "group": "build"
+                },
+                {
+                    "command": "bazel.buildTargetWithGDBDebugging",
+                    "when": "view == bazelWorkspace && viewItem == rule",
+                    "group": "build"
+                },
+                {
+                    "command": "bazel.buildTargetWithGDBDebugging",
                     "when": "view == bazelWorkspace && viewItem == testRule",
                     "group": "build"
                 },
@@ -455,7 +474,7 @@
         "watch": "./scripts/build.sh -watch"
     },
     "devDependencies": {
-        "@types/node": "^16.11.7",
+        "@types/node": "^20.10.8",
         "@types/which": "^3.0.3",
         "@types/vscode": "^1.85.0",
         "@typescript-eslint/eslint-plugin": "^6.13.1",

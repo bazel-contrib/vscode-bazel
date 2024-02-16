@@ -79,8 +79,11 @@ async function queryWorkspaceQuickPickTargets(
     getDefaultBazelExecutablePath(),
     workspaceInfo.workspaceFolder.uri.fsPath,
   ).queryTargets(query);
+  // Filter out targets that ends with '_nix'
+  // eslint-disable-next-line max-len
+  const filteredQueryResult = queryResult.target.filter((target) => !target.rule.name.endsWith('_nix'));
   // Sort the labels so the QuickPick is ordered.
-  const labels = queryResult.target.map((target) => target.rule.name);
+  const labels = filteredQueryResult.map((target) => target.rule.name);
   labels.sort();
   const result: BazelTargetQuickPick[] = [];
   for (const target of labels) {
@@ -116,7 +119,7 @@ async function pickBazelWorkspace(): Promise<BazelWorkspaceInfo> {
   // Use the active text editor's file to determine the directory of the Bazel
   // workspace, otherwise have them pick one.
   let workspace: BazelWorkspaceInfo;
-  if (vscode.window.activeTextEditor === undefined) {
+  if (vscode.workspace.workspaceFolders !== undefined) {
     let workspaceFolder: vscode.WorkspaceFolder;
     const workspaces = vscode.workspace.workspaceFolders;
     switch (workspaces.length) {
