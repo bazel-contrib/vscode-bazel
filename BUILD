@@ -5,13 +5,13 @@ load("@aspect_rules_ts//ts:proto.bzl", "ts_proto_library")
 
 npm_link_all_packages(name = "node_modules")
 
-ts_proto_library(
-    name = "starlark_debugging_ts_proto",
-    has_services = False,
-    copy_files = False,
-    node_modules = ":node_modules",
-    proto = "@bazel//src/main/java/com/google/devtools/build/lib/starlarkdebug/proto:starlark_debugging_proto",
-)
+# ts_proto_library(
+#     name = "starlark_debugging_ts_proto",
+#     has_services = False,
+#     copy_files = False,
+#     node_modules = ":node_modules",
+#     proto = "@bazel//src/main/java/com/google/devtools/build/lib/starlarkdebug/proto:starlark_debugging_proto",
+# )
 
 ts_proto_library(
     name = "build_event_stream_ts_proto",
@@ -29,8 +29,8 @@ ts_project(
     source_map = True,
     transpiler = "tsc",
     deps = [
-        ":build_event_stream_ts_proto",
-        ":starlark_debugging_ts_proto",
+        # ":build_event_stream_ts_proto",
+        "//foo:starlark_debugging_ts_proto",
         "//:node_modules/@types/long",
         "//:node_modules/@types/node",
         "//:node_modules/@types/vscode",

@@ -449,9 +449,7 @@
         }
     },
     "scripts": {
-        "check-lint": "eslint src/**/*.ts --ext .ts --config .eslintrc.js --ignore-pattern 'src/**/*.d.ts' --format stylish",
-        "compile": "./scripts/build.sh",
-        "watch": "./scripts/build.sh -watch"
+        "check-lint": "eslint src/**/*.ts --ext .ts --config .eslintrc.js --ignore-pattern 'src/**/*.d.ts' --format stylish"
     },
     "devDependencies": {
         "@bufbuild/protoc-gen-es": "^1.7.2",

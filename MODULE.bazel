@@ -1,5 +1,7 @@
 bazel_dep(name = "aspect_rules_ts", version = "2.1.0")
 
+local_path_override(module_name = "aspect_rules_ts", path = "/home/cameron/Repos/rules_ts")
+
 rules_ts_ext = use_extension(
     "@aspect_rules_ts//ts:extensions.bzl",
     "ext",

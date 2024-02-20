@@ -1,6 +1,6 @@
 {
   "lockFileVersion": 3,
-  "moduleFileHash": "b0acdd89773dffe87c02b6bc21f2361f39f02894058bb8ae3cc11bcc9d7b367a",
+  "moduleFileHash": "30799089abcdf238a553a923794c63dabda94738620bf4c6e164cfcba0f1c593",
   "flags": {
     "cmdRegistries": [
       "https://bcr.bazel.build/"
@@ -13,6 +13,7 @@
     "compatibilityMode": "ERROR"
   },
   "localOverrideHashes": {
+    "aspect_rules_ts": "44b0b25c05ef46ce674cb7717c3f42e4c54f2d0494999fd799c14ef6e66e876c",
     "bazel_tools": "922ea6752dc9105de5af957f7a99a6933c0a6a712d23df6aad16a9c399f7e787"
   },
   "moduleDepGraph": {
@@ -30,7 +31,7 @@
           "usingModule": "<root>",
           "location": {
             "file": "@@//:MODULE.bazel",
-            "line": 3,
+            "line": 5,
             "column": 29
           },
           "imports": {
@@ -46,7 +47,7 @@
               "devDependency": true,
               "location": {
                 "file": "@@//:MODULE.bazel",
-                "line": 9,
+                "line": 11,
                 "column": 18
               }
             }
@@ -60,7 +61,7 @@
           "usingModule": "<root>",
           "location": {
             "file": "@@//:MODULE.bazel",
-            "line": 16,
+            "line": 18,
             "column": 21
           },
           "imports": {},
@@ -74,7 +75,7 @@
               "devDependency": false,
               "location": {
                 "file": "@@//:MODULE.bazel",
-                "line": 17,
+                "line": 19,
                 "column": 15
               }
             }
@@ -88,7 +89,7 @@
           "usingModule": "<root>",
           "location": {
             "file": "@@//:MODULE.bazel",
-            "line": 19,
+            "line": 21,
             "column": 20
           },
           "imports": {
@@ -108,7 +109,7 @@
               "devDependency": true,
               "location": {
                 "file": "@@//:MODULE.bazel",
-                "line": 21,
+                "line": 23,
                 "column": 23
               }
             }
@@ -122,7 +123,7 @@
           "usingModule": "<root>",
           "location": {
             "file": "@@//:MODULE.bazel",
-            "line": 29,
+            "line": 31,
             "column": 29
           },
           "imports": {
@@ -143,7 +144,7 @@
               "devDependency": false,
               "location": {
                 "file": "@@//:MODULE.bazel",
-                "line": 31,
+                "line": 33,
                 "column": 21
               }
             },
@@ -156,7 +157,7 @@
               "devDependency": false,
               "location": {
                 "file": "@@//:MODULE.bazel",
-                "line": 33,
+                "line": 35,
                 "column": 19
               }
             },
@@ -169,7 +170,7 @@
               "devDependency": false,
               "location": {
                 "file": "@@//:MODULE.bazel",
-                "line": 38,
+                "line": 40,
                 "column": 19
               }
             },
@@ -182,7 +183,7 @@
               "devDependency": false,
               "location": {
                 "file": "@@//:MODULE.bazel",
-                "line": 43,
+                "line": 45,
                 "column": 19
               }
             },
@@ -195,7 +196,7 @@
               "devDependency": false,
               "location": {
                 "file": "@@//:MODULE.bazel",
-                "line": 48,
+                "line": 50,
                 "column": 19
               }
             },
@@ -208,7 +209,7 @@
               "devDependency": false,
               "location": {
                 "file": "@@//:MODULE.bazel",
-                "line": 53,
+                "line": 55,
                 "column": 19
               }
             },
@@ -221,7 +222,7 @@
               "devDependency": false,
               "location": {
                 "file": "@@//:MODULE.bazel",
-                "line": 58,
+                "line": 60,
                 "column": 19
               }
             }
@@ -231,7 +232,7 @@
         }
       ],
       "deps": {
-        "aspect_rules_ts": "aspect_rules_ts@2.1.0",
+        "aspect_rules_ts": "aspect_rules_ts@_",
         "aspect_rules_js": "aspect_rules_js@1.36.1",
         "rules_nodejs": "rules_nodejs@5.8.2",
         "bazel": "bazel@_",
@@ -239,10 +240,10 @@
         "local_config_platform": "local_config_platform@_"
       }
     },
-    "aspect_rules_ts@2.1.0": {
+    "aspect_rules_ts@_": {
       "name": "aspect_rules_ts",
-      "version": "2.1.0",
-      "key": "aspect_rules_ts@2.1.0",
+      "version": "0.0.0",
+      "key": "aspect_rules_ts@_",
       "repoName": "aspect_rules_ts",
       "executionPlatformsToRegister": [],
       "toolchainsToRegister": [],
@@ -251,26 +252,12 @@
         "bazel_skylib": "bazel_skylib@1.5.0",
         "aspect_rules_js": "aspect_rules_js@1.36.1",
         "aspect_bazel_lib": "aspect_bazel_lib@1.40.0",
+        "aspect_rules_jasmine": "aspect_rules_jasmine@1.1.1",
         "rules_proto": "rules_proto@5.3.0-21.7",
+        "platforms": "platforms@0.0.8",
         "com_google_protobuf": "protobuf@21.7",
         "bazel_tools": "bazel_tools@_",
         "local_config_platform": "local_config_platform@_"
-      },
-      "repoSpec": {
-        "bzlFile": "@bazel_tools//tools/build_defs/repo:http.bzl",
-        "ruleClassName": "http_archive",
-        "attributes": {
-          "name": "aspect_rules_ts~2.1.0",
-          "urls": [
-            "https://github.com/aspect-build/rules_ts/releases/download/v2.1.0/rules_ts-v2.1.0.tar.gz"
-          ],
-          "integrity": "sha256-vT57F+Z30ri6G6w4YvDyOKsW7bPkP7DwuTCGSepYoq0=",
-          "strip_prefix": "rules_ts-2.1.0",
-          "remote_patches": {
-            "https://bcr.bazel.build/modules/aspect_rules_ts/2.1.0/patches/module_dot_bazel_version.patch": "sha256-BEwsxsnnkI1FBFLpBZMcIMOOkOyvXcbInSNvh4eJS5c="
-          },
-          "remote_patch_strip": 1
-        }
       }
     },
     "aspect_rules_js@1.36.1": {
@@ -1334,6 +1321,39 @@
         }
       }
     },
+    "aspect_rules_jasmine@1.1.1": {
+      "name": "aspect_rules_jasmine",
+      "version": "1.1.1",
+      "key": "aspect_rules_jasmine@1.1.1",
+      "repoName": "aspect_rules_jasmine",
+      "executionPlatformsToRegister": [],
+      "toolchainsToRegister": [],
+      "extensionUsages": [],
+      "deps": {
+        "aspect_bazel_lib": "aspect_bazel_lib@1.40.0",
+        "aspect_rules_js": "aspect_rules_js@1.36.1",
+        "bazel_skylib": "bazel_skylib@1.5.0",
+        "rules_nodejs": "rules_nodejs@5.8.2",
+        "bazel_tools": "bazel_tools@_",
+        "local_config_platform": "local_config_platform@_"
+      },
+      "repoSpec": {
+        "bzlFile": "@bazel_tools//tools/build_defs/repo:http.bzl",
+        "ruleClassName": "http_archive",
+        "attributes": {
+          "name": "aspect_rules_jasmine~1.1.1",
+          "urls": [
+            "https://github.com/aspect-build/rules_jasmine/releases/download/v1.1.1/rules_jasmine-v1.1.1.tar.gz"
+          ],
+          "integrity": "sha256-TBbvIC0eU/2IDo7MngeWgCIB6pyJ+jL1LV1jP/+FjKw=",
+          "strip_prefix": "rules_jasmine-1.1.1",
+          "remote_patches": {
+            "https://bcr.bazel.build/modules/aspect_rules_jasmine/1.1.1/patches/module_dot_bazel_version.patch": "sha256-8SGC1oPPwklTgBcPYr0WntS9UOt0xfg2xcC8I35GQZU="
+          },
+          "remote_patch_strip": 0
+        }
+      }
+    },
     "rules_proto@5.3.0-21.7": {
       "name": "rules_proto",
       "version": "5.3.0-21.7",
@@ -1359,6 +1379,34 @@
           ],
           "integrity": "sha256-3D+yBqLLNEG0heseQjFlsjEjWh6psDG0Qzz3vB+kYN0=",
           "strip_prefix": "rules_proto-5.3.0-21.7",
+          "remote_patches": {},
+          "remote_patch_strip": 0
+        }
+      }
+    },
+    "platforms@0.0.8": {
+      "name": "platforms",
+      "version": "0.0.8",
+      "key": "platforms@0.0.8",
+      "repoName": "platforms",
+      "executionPlatformsToRegister": [],
+      "toolchainsToRegister": [],
+      "extensionUsages": [],
+      "deps": {
+        "rules_license": "rules_license@0.0.7",
+        "bazel_tools": "bazel_tools@_",
+        "local_config_platform": "local_config_platform@_"
+      },
+      "repoSpec": {
+        "bzlFile": "@bazel_tools//tools/build_defs/repo:http.bzl",
+        "ruleClassName": "http_archive",
+        "attributes": {
+          "name": "platforms",
+          "urls": [
+            "https://github.com/bazelbuild/platforms/releases/download/0.0.8/platforms-0.0.8.tar.gz"
+          ],
+          "integrity": "sha256-gVBAZgU4ns7LbaB8vLUJ1WN6OrmiS8abEQFTE2fYnXQ=",
+          "strip_prefix": "",
           "remote_patches": {},
           "remote_patch_strip": 0
         }
@@ -1530,34 +1578,6 @@
           "remote_patches": {
             "https://bcr.bazel.build/modules/bazel_features/1.1.0/patches/module_dot_bazel_version.patch": "sha256-o16WYfVZruIX5FGE8sATXKb9PLRpH26dbAVdbKPKVRk="
           },
-          "remote_patch_strip": 0
-        }
-      }
-    },
-    "platforms@0.0.8": {
-      "name": "platforms",
-      "version": "0.0.8",
-      "key": "platforms@0.0.8",
-      "repoName": "platforms",
-      "executionPlatformsToRegister": [],
-      "toolchainsToRegister": [],
-      "extensionUsages": [],
-      "deps": {
-        "rules_license": "rules_license@0.0.7",
-        "bazel_tools": "bazel_tools@_",
-        "local_config_platform": "local_config_platform@_"
-      },
-      "repoSpec": {
-        "bzlFile": "@bazel_tools//tools/build_defs/repo:http.bzl",
-        "ruleClassName": "http_archive",
-        "attributes": {
-          "name": "platforms",
-          "urls": [
-            "https://github.com/bazelbuild/platforms/releases/download/0.0.8/platforms-0.0.8.tar.gz"
-          ],
-          "integrity": "sha256-gVBAZgU4ns7LbaB8vLUJ1WN6OrmiS8abEQFTE2fYnXQ=",
-          "strip_prefix": "",
-          "remote_patches": {},
           "remote_patch_strip": 0
         }
       }
@@ -24402,22 +24422,21 @@
         ]
       }
     },
-    "@@aspect_rules_ts~2.1.0//ts:extensions.bzl%ext": {
+    "@@aspect_rules_ts~override//ts:extensions.bzl%ext": {
       "general": {
-        "bzlTransitiveDigest": "NIKnw1B2mMpPArLmrgk609jGMhRPnI/pcNvKTYOcve8=",
+        "bzlTransitiveDigest": "xaqMZIPpF0rMb6Fhakxx8brrxao0GP3EE4ogqOsrVNo=",
         "accumulatedFileDigests": {},
         "envVariables": {},
         "generatedRepoSpecs": {
           "npm_typescript": {
-            "bzlFile": "@@aspect_rules_ts~2.1.0//ts/private:npm_repositories.bzl",
+            "bzlFile": "@@aspect_rules_ts~override//ts/private:npm_repositories.bzl",
             "ruleClassName": "http_archive_version",
             "attributes": {
-              "name": "aspect_rules_ts~2.1.0~ext~npm_typescript",
+              "name": "aspect_rules_ts~override~ext~npm_typescript",
               "bzlmod": true,
-              "check_for_updates": true,
-              "version": "5.2.2",
+              "version": "5.3.3",
               "integrity": "",
-              "build_file": "@@aspect_rules_ts~2.1.0//ts:BUILD.typescript",
+              "build_file": "@@aspect_rules_ts~override//ts:BUILD.typescript",
               "build_file_substitutions": {
                 "bazel_worker_version": "5.4.2",
                 "google_protobuf_version": "3.20.1"
@@ -24430,7 +24449,7 @@
         },
         "recordedRepoMappingEntries": [
           [
-            "aspect_rules_ts~2.1.0",
+            "aspect_rules_ts~override",
             "bazel_tools",
             "bazel_tools"
           ]
