@@ -1,5 +1,16 @@
 # Change Log
 
+## Version 0.9.0 (February 20, 2024)
+
+### New Features
+
+- Support relative target completion (@kon72)
+- Add support for launching an LSP (@cameron-martin)
+
+### Bug fixes
+
+- Make queries share the same server by default (@limdor)
+
 ## Version 0.8.1 (January 2, 2024)
 
 ### Bug Fixes
