@@ -21,16 +21,12 @@ import {
 
 import {
   BazelWorkspaceInfo,
+  activateTaskProvider,
   createBazelTask,
-  getBazelTaskInfo,
   queryQuickPickPackage,
   queryQuickPickTargets,
 } from "../bazel";
-import {
-  exitCodeToUserString,
-  IBazelCommandAdapter,
-  parseExitCode,
-} from "../bazel";
+import { IBazelCommandAdapter } from "../bazel";
 import {
   BuildifierDiagnosticsManager,
   BuildifierFormatProvider,
@@ -148,10 +144,8 @@ export async function activate(context: vscode.ExtensionContext) {
       new BuildifierFormatProvider(),
     ),
     buildifierDiagnostics,
-    // Task events.
-    vscode.tasks.onDidStartTask(onTaskStart),
-    vscode.tasks.onDidStartTaskProcess(onTaskProcessStart),
-    vscode.tasks.onDidEndTaskProcess(onTaskProcessEnd),
+    // Task provider
+    ...activateTaskProvider(),
     // Command variables
     ...activateCommandVariables(),
   );
@@ -472,51 +466,4 @@ function bazelCopyTargetToClipboard(adapter: IBazelCommandAdapter | undefined) {
   const target = adapter.getBazelCommandOptions().targets[0];
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   vscode.env.clipboard.writeText(target);
-}
-
-function onTaskStart(event: vscode.TaskStartEvent) {
-  const bazelTaskInfo = getBazelTaskInfo(event.execution.task);
-  if (bazelTaskInfo) {
-    bazelTaskInfo.startTime = process.hrtime();
-  }
-}
-
-function onTaskProcessStart(event: vscode.TaskProcessStartEvent) {
-  const bazelTaskInfo = getBazelTaskInfo(event.execution.task);
-  if (bazelTaskInfo) {
-    bazelTaskInfo.processId = event.processId;
-  }
-}
-
-function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
-  const bazelTaskInfo = getBazelTaskInfo(event.execution.task);
-  if (bazelTaskInfo) {
-    const rawExitCode = event.exitCode;
-    bazelTaskInfo.exitCode = rawExitCode;
-
-    const exitCode = parseExitCode(rawExitCode, bazelTaskInfo.command);
-    if (rawExitCode !== 0) {
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      vscode.window.showErrorMessage(
-        `Bazel ${bazelTaskInfo.command} failed: ${exitCodeToUserString(
-          exitCode,
-        )}`,
-      );
-    } else {
-      const timeInSeconds = measurePerformance(bazelTaskInfo.startTime);
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      vscode.window.showInformationMessage(
-        `Bazel ${bazelTaskInfo.command} completed successfully in ${timeInSeconds} seconds.`,
-      );
-    }
-  }
-}
-
-/**
- * Returns the number of seconds elapsed with a single decimal place.
- *
- */
-function measurePerformance(start: [number, number]) {
-  const diff = process.hrtime(start);
-  return (diff[0] + diff[1] / 1e9).toFixed(1);
 }
