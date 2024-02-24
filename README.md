@@ -14,6 +14,8 @@ This extension provides support for Bazel in Visual Studio.
 - **Buildifier** integration to lint and format your Bazel files (requires that
   [Buildifier](https://github.com/bazelbuild/buildtools/releases) be installed)
 - **Bazel Task** definitions for `tasks.json`
+- **Coverage Support** showing coverage results from `bazel coverage` directly
+  in VS Code.
 - Debug Starlark code in your `.bzl` files during a build (set breakpoints, step
   through code, inspect variables, etc.)
 
@@ -61,7 +63,7 @@ This extension can use [Facebook's starlark project](https://github.com/facebook
 
 Bazel tasks can be configured from the `tasks.json` using the following structure:
 
-```json
+```jsonc
 {
   // See https://go.microsoft.com/fwlink/?LinkId=733558
   // for the documentation about the tasks.json format
@@ -88,6 +90,36 @@ Bazel tasks can be configured from the `tasks.json` using the following structur
   ]
 }
 ```
+
+## Coverage support (Experimental)
+
+For all `coverage` tasks, the coverage results are automatically loaded into VS
+Code upon completion of the task. E.g., you could define your own task to
+display the coverage provided by your integration tests using the following task
+definition:
+
+```jsonc
+{
+  "label": "Show test coverage from integration test",
+  "type": "bazel",
+  "command": "coverage",
+  "targets": ["//test/integration/...", "//cpp/test/integration/..."],
+  "options": ["--instrumentation_filter=.*"]
+}
+```
+
+You might need additional Bazel `options` to get the intended coverage results.
+In particular if are using remote builds, you might need to use the
+`--experimental_split_coverage_postprocessing` and `--experimental_fetch_all_coverage_outputs`
+options. See the documentation on [Code Coverage with Bazel](https://bazel.build/configure/coverage)
+for more details.
+
+Code coverage support in this extension is still rather fresh and might still
+have rough edges. It was tested with the Java, C++, Go and Rust rules.
+In case you are using the code coverage integration with any other language
+(Python, Swift, Kotlin, Scala, ...), please let us know how things are going in
+bazelbuild/vscode-bazel#367. Please share both positive and negative experiences
+you might have.
 
 ## Contributing
 

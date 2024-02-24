@@ -17,6 +17,10 @@ import { getDefaultBazelExecutablePath } from "../extension/configuration";
 import { IBazelCommandOptions } from "./bazel_command";
 import { BazelWorkspaceInfo } from "./bazel_workspace_info";
 import { exitCodeToUserString, parseExitCode } from "./bazel_exit_code";
+import { BazelInfo } from "./bazel_info";
+import { fstat } from "fs";
+import { showLcovCoverage } from "../test-explorer";
+import { exec } from "child_process";
 
 export const TASK_TYPE = "bazel";
 
@@ -34,7 +38,7 @@ export class BazelTaskInfo {
  */
 export interface BazelTaskDefinition extends vscode.TaskDefinition {
   /** The Bazel command */
-  command: "build" | "clean" | "test" | "run";
+  command: "build" | "clean" | "coverage" | "test" | "run";
   /** The list of Bazel targets */
   targets: string[];
   /** Additional command line arguments */
@@ -67,15 +71,7 @@ class BazelTaskProvider implements vscode.TaskProvider {
     // a ShellExecution for it.
 
     // Infer `BazelWorkspaceInfo` from `scope`
-    let workspaceInfo: BazelWorkspaceInfo;
-    if (
-      task.scope === vscode.TaskScope.Global ||
-      task.scope === vscode.TaskScope.Workspace
-    ) {
-      workspaceInfo = await BazelWorkspaceInfo.fromWorkspaceFolders();
-    } else if (task.scope) {
-      workspaceInfo = BazelWorkspaceInfo.fromWorkspaceFolder(task.scope);
-    }
+    let workspaceInfo = await getWorkspaceInfoFromTask(task.scope);
     if (!workspaceInfo) {
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
       vscode.window.showInformationMessage(
@@ -89,6 +85,21 @@ class BazelTaskProvider implements vscode.TaskProvider {
       workspaceInfo,
     );
   }
+}
+
+async function getWorkspaceInfoFromTask(
+  scope: vscode.WorkspaceFolder | vscode.TaskScope,
+) {
+  let workspaceInfo: BazelWorkspaceInfo;
+  if (
+    scope === vscode.TaskScope.Global ||
+    scope === vscode.TaskScope.Workspace
+  ) {
+    workspaceInfo = await BazelWorkspaceInfo.fromWorkspaceFolders();
+  } else if (scope) {
+    workspaceInfo = BazelWorkspaceInfo.fromWorkspaceFolder(scope);
+  }
+  return workspaceInfo;
 }
 
 /**
@@ -116,20 +127,19 @@ function measurePerformance(start: [number, number]) {
 /**
  * Display a notification whenever a Bazel task finished
  */
-function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
+async function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
   const task = event.execution.task;
   if (task.definition.type !== TASK_TYPE) {
     return;
   }
   const taskDefinition = task.definition as BazelTaskDefinition;
   const command = taskDefinition.command;
+  const rawExitCode = event.exitCode;
+  const exitCode = parseExitCode(rawExitCode, command);
   const bazelTaskInfo = taskDefinition.bazelTaskInfo;
 
   // Show a notification that the build is finished
   if (bazelTaskInfo) {
-    const rawExitCode = event.exitCode;
-
-    const exitCode = parseExitCode(rawExitCode, command);
     if (rawExitCode !== 0) {
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
       vscode.window.showErrorMessage(
@@ -140,6 +150,52 @@ function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
       vscode.window.showInformationMessage(
         `Bazel ${command} completed successfully in ${timeInSeconds} seconds.`,
+      );
+    }
+  }
+
+  // For coverage runs: Display the coverage results
+  if (taskDefinition.command == "coverage" && rawExitCode === 0) {
+    // Find the coverage file and load it.
+    let workspaceInfo = await getWorkspaceInfoFromTask(task.scope);
+    const outputPath = await new BazelInfo(
+      getDefaultBazelExecutablePath(),
+      workspaceInfo.bazelWorkspacePath,
+    ).run("output_path");
+
+    // Build a description string which will be displayed as part of the test run.
+    const execution = task.execution as vscode.ShellExecution;
+    const bazelCommandStr = JSON.stringify(
+      [execution.command]
+        .concat(execution.args)
+        .map((a) => (typeof a === "string" ? a : a.value)),
+    );
+    const description = `Coverage info from:\n  ${bazelCommandStr}\n`;
+
+    const covFilePath = outputPath + "/_coverage/_coverage_report.dat";
+    const covFileUri = vscode.Uri.file(covFilePath);
+    try {
+      const covFileBytes = await vscode.workspace.fs.readFile(covFileUri);
+      const covFileStr = new TextDecoder("utf8").decode(covFileBytes);
+      if (covFileStr.trim() === "") {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        vscode.window.showWarningMessage(
+          "The generated LCOV coverage file was empty.\n" +
+            "Please ensure your toolchain is correctly setup and " +
+            "the instrumentation filters are set correctly.",
+        );
+      } else {
+        // Show the coverage date
+        showLcovCoverage(
+          description,
+          workspaceInfo.bazelWorkspacePath,
+          covFileStr,
+        );
+      }
+    } catch (e: any) {
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      vscode.window.showErrorMessage(
+        `Unable to open coverage report from ${covFilePath}:\n${e}`,
       );
     }
   }
@@ -172,18 +228,13 @@ export function createBazelTaskFromDefinition(
   const bazelConfigCmdLine =
     vscode.workspace.getConfiguration("bazel.commandLine");
   const startupOptions = bazelConfigCmdLine.get<string[]>("startupOptions");
-  const addCommandArgs = command === "build" || command === "test";
+  const addCommandArgs =
+    command === "build" || command === "test" || command === "coverage";
   const commandArgs = addCommandArgs
     ? bazelConfigCmdLine.get<string[]>("commandArgs")
     : [];
 
-  const args = startupOptions
-    .concat([command as string])
-    .concat(commandArgs)
-    .concat(taskDefinition.targets)
-    .concat(taskDefinition.options ?? [])
-    .map(quotedOption);
-
+  let implicitArgs = [] as string[];
   let commandDescription: string;
   let group: vscode.TaskGroup | undefined;
   switch (command) {
@@ -195,6 +246,15 @@ export function createBazelTaskFromDefinition(
       commandDescription = "Clean";
       group = vscode.TaskGroup.Clean;
       break;
+    case "coverage":
+      commandDescription = "Coverage";
+      group = vscode.TaskGroup.Test;
+      // Coverage for cached tests doesn't work as expected :/
+      // Disable caching.
+      implicitArgs.push("--nocache_test_results");
+      // We only support lcov formats, so request this format
+      implicitArgs.push("--combined_report=lcov");
+      break;
     case "test":
       commandDescription = "Test";
       group = vscode.TaskGroup.Test;
@@ -203,6 +263,14 @@ export function createBazelTaskFromDefinition(
       commandDescription = "Run";
       break;
   }
+
+  const args = startupOptions
+    .concat([command as string])
+    .concat(commandArgs)
+    .concat(implicitArgs)
+    .concat(taskDefinition.options ?? [])
+    .concat(taskDefinition.targets)
+    .map(quotedOption);
 
   const targetsDescription = taskDefinition.targets.join(", ");
   const task = new vscode.Task(
@@ -227,7 +295,7 @@ export function createBazelTaskFromDefinition(
  * @param options Describes the options used to launch Bazel.
  */
 export function createBazelTask(
-  command: "build" | "clean" | "test" | "run",
+  command: "build" | "clean" | "coverage" | "test" | "run",
   options: IBazelCommandOptions,
 ): vscode.Task {
   const taskDefinition: BazelTaskDefinition = {
