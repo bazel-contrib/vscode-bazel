@@ -151,7 +151,7 @@ export class BazelWorkspaceTreeProvider
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     vscode.commands.executeCommand(
       "setContext",
-      "vscodeBazelHaveBazelWorkspace",
+      "bazel.haveWorkspace",
       haveBazelWorkspace,
     );
   }

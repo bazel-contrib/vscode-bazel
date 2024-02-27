@@ -128,7 +128,8 @@
             {
                 "category": "Bazel",
                 "command": "bazel.lsp.restart",
-                "title": "Restart language server"
+                "title": "Restart language server",
+                "when": "bazel.lsp.enabled"
             }
         ],
         "configuration": {
@@ -309,39 +310,39 @@
                 },
                 {
                     "command": "bazel.buildTarget",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 },
                 {
                     "command": "bazel.buildTargetWithDebugging",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 },
                 {
                     "command": "bazel.buildAll",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 },
                 {
                     "command": "bazel.buildAllRecursive",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 },
                 {
                     "command": "bazel.runTarget",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 },
                 {
                     "command": "bazel.testTarget",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 },
                 {
                     "command": "bazel.testAll",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 },
                 {
                     "command": "bazel.testAllRecursive",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 },
                 {
                     "command": "bazel.clean",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 }
             ],
             "view/item/context": [
@@ -438,7 +439,7 @@
                 {
                     "id": "bazelWorkspace",
                     "name": "Bazel Build Targets",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 }
             ]
         }
