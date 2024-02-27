@@ -142,7 +142,9 @@ export class BazelCompletionItemProvider
    * workspace.
    */
   public async refresh() {
-    const queryTargets = await queryQuickPickTargets("kind('.* rule', ...)");
+    const queryTargets = await queryQuickPickTargets({
+      query: "kind('.* rule', ...)",
+    });
     if (queryTargets.length !== 0) {
       this.targets = queryTargets.map((queryTarget) => {
         return queryTarget.label;

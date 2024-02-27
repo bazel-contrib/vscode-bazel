@@ -22,6 +22,8 @@
         "workspaceContains:**/WORKSPACE.bazel",
         "workspaceContains:**/MODULE.bazel",
         "workspaceContains:**/REPO.bazel",
+        "onCommand:bazel.pickPackage",
+        "onCommand:bazel.pickTarget",
         "onCommand:bazel.getTargetOutput",
         "onCommand:bazel.info.bazel-bin",
         "onCommand:bazel.info.bazel-genfiles",

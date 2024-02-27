@@ -71,8 +71,19 @@ Bazel tasks can be configured from the `launch.json` using the following structu
       "label": "Check for flakyness",
       "type": "bazel",
       "command": "test",
-      "targets": ["//my/package:integration_test"],
+      "targets": ["${input:pickFlakyTest}"],
       "options": ["--runs_per_test=9"]
+    }
+  ],
+  "inputs": [
+    {
+      "id": "pickFlakyTest",
+      "type": "command",
+      "command": "bazel.pickTarget",
+      "args": {
+        "query": "kind('.*_test', //...:*)",
+        "placeHolder": "Which test to check for flakyness?"
+      }
     }
   ]
 }
