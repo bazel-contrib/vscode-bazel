@@ -17,16 +17,11 @@
         "Programming Languages"
     ],
     "activationEvents": [
-        "onLanguage:starlark",
-        "onView:bazelWorkspace",
-        "onCommand:bazel.refreshBazelBuildTargets",
-        "onCommand:bazel.getTargetOutput",
-        "onCommand:bazel.info.bazel-bin",
-        "onCommand:bazel.info.bazel-genfiles",
-        "onCommand:bazel.info.bazel-testlogs",
-        "onCommand:bazel.info.execution_root",
-        "onCommand:bazel.info.output_base",
-        "onCommand:bazel.info.output_path"
+        "workspaceContains:**/BUILD",
+        "workspaceContains:**/WORKSPACE",
+        "workspaceContains:**/WORKSPACE.bazel",
+        "workspaceContains:**/MODULE.bazel",
+        "workspaceContains:**/REPO.bazel"
     ],
     "main": "./out/src/extension/extension",
     "contributes": {
