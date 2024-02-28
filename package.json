@@ -21,7 +21,14 @@
         "workspaceContains:**/WORKSPACE",
         "workspaceContains:**/WORKSPACE.bazel",
         "workspaceContains:**/MODULE.bazel",
-        "workspaceContains:**/REPO.bazel"
+        "workspaceContains:**/REPO.bazel",
+        "onCommand:bazel.getTargetOutput",
+        "onCommand:bazel.info.bazel-bin",
+        "onCommand:bazel.info.bazel-genfiles",
+        "onCommand:bazel.info.bazel-testlogs",
+        "onCommand:bazel.info.execution_root",
+        "onCommand:bazel.info.output_base",
+        "onCommand:bazel.info.output_path"
     ],
     "main": "./out/src/extension/extension",
     "contributes": {
@@ -89,41 +96,6 @@
                 "category": "Bazel",
                 "command": "bazel.copyTargetToClipboard",
                 "title": "Copy Label to Clipboard"
-            },
-            {
-                "category": "Bazel",
-                "command": "bazel.getTargetOutput",
-                "title": "Get output path for the given target"
-            },
-            {
-                "category": "Bazel",
-                "command": "bazel.info.bazel-bin",
-                "title": "Get bazel-bin value"
-            },
-            {
-                "category": "Bazel",
-                "command": "bazel.info.bazel-genfiles",
-                "title": "Get bazel-genfiles value"
-            },
-            {
-                "category": "Bazel",
-                "command": "bazel.info.bazel-testlogs",
-                "title": "Get bazel-testlogs value"
-            },
-            {
-                "category": "Bazel",
-                "command": "bazel.info.execution_root",
-                "title": "Get Bazel execution_root value"
-            },
-            {
-                "category": "Bazel",
-                "command": "bazel.info.output_base",
-                "title": "Get Bazel output_base value"
-            },
-            {
-                "category": "Bazel",
-                "command": "bazel.info.output_path",
-                "title": "Get Bazel output_path value"
             },
             {
                 "category": "Bazel",
