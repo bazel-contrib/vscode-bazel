@@ -134,6 +134,7 @@ export function activateCommandVariables(): vscode.Disposable[] {
       "execution_root",
       "output_base",
       "output_path",
+      "workspace",
     ].map((key) =>
       vscode.commands.registerCommand(`bazel.info.${key}`, () =>
         bazelInfo(key),
