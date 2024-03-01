@@ -28,7 +28,8 @@
         "onCommand:bazel.info.bazel-testlogs",
         "onCommand:bazel.info.execution_root",
         "onCommand:bazel.info.output_base",
-        "onCommand:bazel.info.output_path"
+        "onCommand:bazel.info.output_path",
+        "onCommand:bazel.info.workspace"
     ],
     "main": "./out/src/extension/extension",
     "contributes": {
