@@ -13,6 +13,7 @@ This extension provides support for Bazel in Visual Studio.
   clicking on the targets
 - **Buildifier** integration to lint and format your Bazel files (requires that
   [Buildifier](https://github.com/bazelbuild/buildtools/releases) be installed)
+- **Bazel Task** definitions for `tasks.json`
 - Debug Starlark code in your `.bzl` files during a build (set breakpoints, step
   through code, inspect variables, etc.)
 
@@ -55,6 +56,27 @@ This extension can use [Facebook's starlark project](https://github.com/facebook
 
 1. Install the LSP using cargo: `cargo install starlark_bin`
 2. Enable the LSP extension by setting `bazel.lsp.enabled` to `true`.
+
+## Bazel tasks
+
+Bazel tasks can be configured from the `launch.json` using the following structure:
+
+```json
+{
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Check for flakyness",
+      "type": "bazel",
+      "command": "test",
+      "targets": ["//my/package:integration_test"],
+      "options": ["--runs_per_test=9"]
+    }
+  ]
+}
+```
 
 ## Contributing
 

@@ -391,18 +391,35 @@
         "taskDefinitions": [
             {
                 "type": "bazel",
+                "when": "shellExecutionSupported",
                 "required": [
                     "command",
                     "targets"
                 ],
                 "properties": {
                     "command": {
+                        "description": "The Bazel command to execute (\"build\" or \"test\").",
                         "type": "string",
-                        "description": "The Bazel command to execute (\"build\" or \"test\")."
+                        "enum": [
+                            "build",
+                            "test",
+                            "run",
+                            "clean"
+                        ]
                     },
                     "targets": {
+                        "description": "The labels of the targets to build or test.",
                         "type": "array",
-                        "description": "The labels of the targets to build or test."
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "options": {
+                        "description": "Additional command line parameters to pass to Bazel.",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
                     }
                 }
             }
