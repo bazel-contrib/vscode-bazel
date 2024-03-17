@@ -124,7 +124,7 @@
                 "bazel.buildifierConfigJsonPath": {
                     "type": "string",
                     "default": "",
-                    "markdownDescription": "The path of the Buildifier config json file, ex: `.buildifier.json`. This may be an absolute path, or a relative path within the workspace.",
+                    "markdownDescription": "The path of the Buildifier config json file, ex: `.buildifier.json`. This may be an absolute path, or a relative path within the workspace. If this option is unset, `buildifier` will automatically look for a `.buildifier.json` file in the workspace.",
                     "scope": "machine-overridable"
                 },
                 "bazel.buildifierFixOnFormat": {
