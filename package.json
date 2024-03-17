@@ -121,6 +121,12 @@
                     "markdownDescription": "The name of the Buildifier executable. This may be an absolute path, or a simple name that will be searched for on the system path. Paths starting with `@` are interpreted as Bazel targets and are run via `bazel run`. If empty, \"buildifier\" on the system path will be used.\n\nBuildifier can be downloaded from https://github.com/bazelbuild/buildtools/releases.",
                     "scope": "machine-overridable"
                 },
+                "bazel.buildifierConfigJsonPath": {
+                    "type": "string",
+                    "default": "",
+                    "markdownDescription": "The path of the Buildifier config json file, ex: `.buildifier.json`. This may be an absolute path, or a relative path within the workspace.",
+                    "scope": "machine-overridable"
+                },
                 "bazel.buildifierFixOnFormat": {
                     "type": "boolean",
                     "default": false,
