@@ -25,7 +25,7 @@ import { blaze_query } from "../protos";
  * application/extension/framework targets are shown with folder-like icons
  * because those bundles are conceptually folders.
  */
-const SPECIFIC_RULE_CLASS_ICONS = {
+const SPECIFIC_RULE_CLASS_ICONS: Record<string, string> = {
   android_binary: "android_binary",
   apple_bundle_import: "resource_bundle",
   apple_resource_bundle: "resource_bundle",
@@ -59,10 +59,10 @@ const SPECIFIC_RULE_CLASS_ICONS = {
  * @param rule The {@code QueriedRule} representing the build target.
  */
 export function getBazelRuleIcon(
-  target: blaze_query.Target,
+  target: blaze_query.ITarget,
 ): string | vscode.ThemeIcon {
   const ruleClass = target.rule.ruleClass;
-  let iconName = SPECIFIC_RULE_CLASS_ICONS[ruleClass] as string;
+  let iconName = SPECIFIC_RULE_CLASS_ICONS[ruleClass];
   if (!iconName) {
     if (ruleClass.endsWith("_binary")) {
       iconName = "binary";
