@@ -183,7 +183,7 @@ export function getDefaultBuildifierExecutablePath(): string {
  */
 export function getDefaultBuildifierJsonConfigPath(): string {
   const bazelConfig = vscode.workspace.getConfiguration("bazel");
-  return bazelConfig.get<string>("buildifierConfigJsonPath");
+  return bazelConfig.get<string>("buildifierConfigJsonPath", "");
 }
 
 /**
