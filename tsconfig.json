@@ -8,8 +8,8 @@
         ],
         "sourceMap": true,
         "rootDir": ".",
-        "alwaysStrict": true,
-        "allowJs": true
+        "strict": true,
+        "strictNullChecks": false
     },
     "exclude": [
         "node_modules",
