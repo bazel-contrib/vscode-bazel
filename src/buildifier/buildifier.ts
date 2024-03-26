@@ -175,6 +175,18 @@ export function getDefaultBuildifierExecutablePath(): string {
 }
 
 /**
+ * Gets the path to the buildifier json configuration file specified by the
+ * workspace configuration, if present.
+ *
+ * @returns The path to the buildifier json configuration file specified in the
+ * workspace configuration, or an empty string if not present.
+ */
+export function getDefaultBuildifierJsonConfigPath(): string {
+  const bazelConfig = vscode.workspace.getConfiguration("bazel");
+  return bazelConfig.get<string>("buildifierConfigJsonPath", "");
+}
+
+/**
  * Executes buildifier with the given file content and arguments.
  *
  * @param fileContent The BUILD or .bzl file content to process, which is sent
@@ -191,6 +203,10 @@ export function executeBuildifier(
   return new Promise((resolve, reject) => {
     // Determine the executable
     let executable = getDefaultBuildifierExecutablePath();
+    const buildifierConfigJsonPath = getDefaultBuildifierJsonConfigPath();
+    if (buildifierConfigJsonPath.length !== 0) {
+      args = ["--config", buildifierConfigJsonPath, ...args];
+    }
     // Paths starting with an `@` are referring to Bazel targets
     if (executable.startsWith("@")) {
       const targetName = executable;
