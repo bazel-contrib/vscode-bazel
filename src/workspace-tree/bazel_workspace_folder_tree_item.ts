@@ -183,7 +183,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
       ignoresErrors: true,
       sortByRuleName: true,
     });
-    const targets = queryResult.target.map((target: blaze_query.Target) => {
+    const targets = queryResult.target.map((target: blaze_query.ITarget) => {
       return new BazelTargetTreeItem(this.workspaceInfo, target);
     });
 
