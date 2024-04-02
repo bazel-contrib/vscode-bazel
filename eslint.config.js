@@ -1,4 +1,6 @@
 module.exports = {
+  files: ["src/**/*.ts"],
+  ignorePatterns: ["src/protos/protos.js", "src/protos/protos.d.ts"],
   env: {
     es6: true,
     node: true,
