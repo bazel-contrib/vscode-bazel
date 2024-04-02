@@ -32,7 +32,7 @@ export class BazelTargetTreeItem
    */
   constructor(
     private readonly workspaceInfo: BazelWorkspaceInfo,
-    private readonly target: blaze_query.Target,
+    private readonly target: blaze_query.ITarget,
   ) {}
 
   public mightHaveChildren(): boolean {

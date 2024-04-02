@@ -143,7 +143,7 @@ export class BazelQuery extends BazelCommand {
       ]);
     }
     return new Promise((resolve, reject) => {
-      const execOptions = {
+      const execOptions: child_process.ExecFileOptionsWithBufferEncoding = {
         cwd: this.workingDirectory,
         // A null encoding causes the callback below to receive binary data as a
         // Buffer instead of text data as strings.

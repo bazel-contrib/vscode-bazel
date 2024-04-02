@@ -2,7 +2,7 @@
     "name": "vscode-bazel",
     "displayName": "Bazel",
     "description": "Bazel BUILD integration",
-    "version": "0.8.1",
+    "version": "0.9.0",
     "publisher": "BazelBuild",
     "license": "Apache-2.0",
     "repository": {
@@ -11,22 +11,25 @@
     },
     "icon": "media/bazel-logo.png",
     "engines": {
-        "vscode": "^1.30.0"
+        "vscode": "^1.85.0"
     },
     "categories": [
         "Programming Languages"
     ],
     "activationEvents": [
-        "onLanguage:starlark",
-        "onView:bazelWorkspace",
-        "onCommand:bazel.refreshBazelBuildTargets",
+        "workspaceContains:**/BUILD",
+        "workspaceContains:**/WORKSPACE",
+        "workspaceContains:**/WORKSPACE.bazel",
+        "workspaceContains:**/MODULE.bazel",
+        "workspaceContains:**/REPO.bazel",
         "onCommand:bazel.getTargetOutput",
         "onCommand:bazel.info.bazel-bin",
         "onCommand:bazel.info.bazel-genfiles",
         "onCommand:bazel.info.bazel-testlogs",
         "onCommand:bazel.info.execution_root",
         "onCommand:bazel.info.output_base",
-        "onCommand:bazel.info.output_path"
+        "onCommand:bazel.info.output_path",
+        "onCommand:bazel.info.workspace"
     ],
     "main": "./out/src/extension/extension",
     "contributes": {
@@ -97,43 +100,9 @@
             },
             {
                 "category": "Bazel",
-                "command": "bazel.getTargetOutput",
-                "title": "Get output path for the given target"
-            },
-            {
-                "category": "Bazel",
-                "command": "bazel.info.bazel-bin",
-                "title": "Get bazel-bin value"
-            },
-            {
-                "category": "Bazel",
-                "command": "bazel.info.bazel-genfiles",
-                "title": "Get bazel-genfiles value"
-            },
-            {
-                "category": "Bazel",
-                "command": "bazel.info.bazel-testlogs",
-                "title": "Get bazel-testlogs value"
-            },
-            {
-                "category": "Bazel",
-                "command": "bazel.info.execution_root",
-                "title": "Get Bazel execution_root value"
-            },
-            {
-                "category": "Bazel",
-                "command": "bazel.info.output_base",
-                "title": "Get Bazel output_base value"
-            },
-            {
-                "category": "Bazel",
-                "command": "bazel.info.output_path",
-                "title": "Get Bazel output_path value"
-            },
-            {
-                "category": "Bazel",
                 "command": "bazel.lsp.restart",
-                "title": "Restart language server"
+                "title": "Restart language server",
+                "when": "bazel.lsp.enabled"
             }
         ],
         "configuration": {
@@ -149,7 +118,13 @@
                 "bazel.buildifierExecutable": {
                     "type": "string",
                     "default": "",
-                    "markdownDescription": "The name of the Buildifier executable. This may be an absolute path, or a simple name that will be searched for on the system path. If empty, \"buildifier\" on the system path will be used.\n\nBuildifier can be downloaded from https://github.com/bazelbuild/buildtools/releases.",
+                    "markdownDescription": "The name of the Buildifier executable. This may be an absolute path, or a simple name that will be searched for on the system path. Paths starting with `@` are interpreted as Bazel targets and are run via `bazel run`. If empty, \"buildifier\" on the system path will be used.\n\nBuildifier can be downloaded from https://github.com/bazelbuild/buildtools/releases.",
+                    "scope": "machine-overridable"
+                },
+                "bazel.buildifierConfigJsonPath": {
+                    "type": "string",
+                    "default": "",
+                    "markdownDescription": "The path of the Buildifier config json file, ex: `.buildifier.json`. This may be an absolute path, or a relative path within the workspace. If this option is unset, `buildifier` will automatically look for a `.buildifier.json` file in the workspace.",
                     "scope": "machine-overridable"
                 },
                 "bazel.buildifierFixOnFormat": {
@@ -159,8 +134,8 @@
                 },
                 "bazel.queriesShareServer": {
                     "type": "boolean",
-                    "default": true,
-                    "description": "Use the same Bazel server for queries and builds. By default, vscode-bazel uses the same server for queries and builds in order to have it easier for the user to set up the plugin. However, you may experience degraded performance in Visual Studio Code for operations that require queries. You can disable this setting so that queries and builds can be executed in parallel. Keep in mind that you might get some errors after disabling this setting if you do not configure it properly. See https://github.com/bazelbuild/vscode-bazel/issues/265."
+                    "default": false,
+                    "description": "Use the same Bazel server for queries and builds. By default, vscode-bazel uses a separate server for queries so that they can be executed in parallel with builds. You can enable this setting if running multiple Bazel servers has a negative performance impact on your system, but you may experience degraded performance in Visual Studio Code for operations that require queries."
                 },
                 "bazel.queryOutputBase": {
                     "type": "string",
@@ -314,39 +289,39 @@
                 },
                 {
                     "command": "bazel.buildTarget",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 },
                 {
                     "command": "bazel.buildTargetWithDebugging",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 },
                 {
                     "command": "bazel.buildAll",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 },
                 {
                     "command": "bazel.buildAllRecursive",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 },
                 {
                     "command": "bazel.runTarget",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 },
                 {
                     "command": "bazel.testTarget",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 },
                 {
                     "command": "bazel.testAll",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 },
                 {
                     "command": "bazel.testAllRecursive",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 },
                 {
                     "command": "bazel.clean",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 }
             ],
             "view/item/context": [
@@ -422,18 +397,35 @@
         "taskDefinitions": [
             {
                 "type": "bazel",
+                "when": "shellExecutionSupported",
                 "required": [
                     "command",
                     "targets"
                 ],
                 "properties": {
                     "command": {
+                        "description": "The Bazel command to execute (\"build\" or \"test\").",
                         "type": "string",
-                        "description": "The Bazel command to execute (\"build\" or \"test\")."
+                        "enum": [
+                            "build",
+                            "test",
+                            "run",
+                            "clean"
+                        ]
                     },
                     "targets": {
+                        "description": "The labels of the targets to build or test.",
                         "type": "array",
-                        "description": "The labels of the targets to build or test."
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "options": {
+                        "description": "Additional command line parameters to pass to Bazel.",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
                     }
                 }
             }
@@ -443,7 +435,7 @@
                 {
                     "id": "bazelWorkspace",
                     "name": "Bazel Build Targets",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 }
             ]
         }

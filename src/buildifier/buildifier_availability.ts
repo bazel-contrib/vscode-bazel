@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as child_process from "child_process";
 import * as vscode from "vscode";
 import * as which from "which";
 
-import { getDefaultBuildifierExecutablePath } from "./buildifier";
+import {
+  executeBuildifier,
+  getDefaultBuildifierExecutablePath,
+} from "./buildifier";
 
 /** The URL to load for buildifier's releases. */
 const BUILDTOOLS_RELEASES_URL =
@@ -31,36 +33,34 @@ const BUILDTOOLS_RELEASES_URL =
  */
 export async function checkBuildifierIsAvailable() {
   const buildifierExecutable = getDefaultBuildifierExecutablePath();
-  await which(buildifierExecutable)
-    .catch(async () => {
+  // Check if the program exists (in case it's an actual executable and not
+  // an target name starting with `@`).
+  if (!buildifierExecutable.startsWith("@")) {
+    try {
+      await which(buildifierExecutable);
+    } catch (e) {
       await showBuildifierDownloadPrompt("Buildifier was not found");
-    })
-    .then(() => {
-      // If we found it, make sure it's a compatible version by running
-      // buildifier on an empty input and see if it exits successfully and the
-      // output parses.
-      const process = child_process.execFile(
-        buildifierExecutable,
-        ["--format=json", "--mode=check"],
-        {},
-        (error: Error, stdout: string) => {
-          if (!error && stdout) {
-            try {
-              JSON.parse(stdout);
-              return;
-            } catch {
-              // Swallow the error; we'll display the prompt below.
-            }
-          }
-          // If no valid JSON back, we don't have a compatible version.
-          // eslint-disable-next-line @typescript-eslint/no-floating-promises
-          showBuildifierDownloadPrompt(
-            "Buildifier is too old (0.25.1 or higher is needed)",
-          );
-        },
-      );
-      process.stdin.end();
-    });
+      return;
+    }
+  }
+
+  // Make sure it's a compatible version by running
+  // buildifier on an empty input and see if it exits successfully and the
+  // output parses.
+  const { stdout } = await executeBuildifier(
+    "",
+    ["--format=json", "--mode=check"],
+    false,
+  );
+  try {
+    JSON.parse(stdout);
+  } catch {
+    // If we got no valid JSON back, we don't have a compatible version.
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    showBuildifierDownloadPrompt(
+      "Buildifier is too old (0.25.1 or higher is needed)",
+    );
+  }
 }
 
 /**
