@@ -15,9 +15,16 @@
 import * as path from "path";
 import * as vscode from "vscode";
 import { getDefaultBazelExecutablePath } from "./configuration";
-import { BazelWorkspaceInfo } from "../bazel";
+import {
+  BazelTargetQuickPick,
+  BazelWorkspaceInfo,
+  QuickPickParams,
+  queryQuickPickPackage,
+  queryQuickPickTargets,
+} from "../bazel";
 import { BazelCQuery } from "../bazel/bazel_cquery";
 import { BazelInfo } from "../bazel/bazel_info";
+import { assert } from "console";
 
 /**
  * Get the output of the given target.
@@ -119,6 +126,79 @@ async function bazelInfo(key: string): Promise<string> {
 }
 
 /**
+ * Gets a string-valued argument in a typesafe manner from an object.
+ * Throws `Error`s with user-friendly error messages in case of an error.
+ *
+ * @param args the arguments
+ * @param argName the argument name
+ * @param commandName the commmand name. Used in the error message
+ * @returns the extracted string value
+ */
+function getArgumentValue(
+  args: Record<string, any>,
+  argName: string,
+  commandName: string,
+): string | undefined {
+  if (argName in args && typeof args[argName] === "string") {
+    return args[argName] as string;
+  } else if (argName in args) {
+    throw new Error(
+      `Expected the \`${argName}\` argument for \`${commandName}\` to be a string`,
+    );
+  }
+}
+
+/**
+ * Wraps the `queryQuickPickPackage` / `queryQuickPickTargets` functions
+ * so they can be exposed as command variables.
+ */
+async function wrapQuickPick(
+  commandName: string,
+  queryQuickPick: (x: QuickPickParams) => Promise<BazelTargetQuickPick[]>,
+  args: unknown,
+): Promise<string | undefined> {
+  const workspaceInfo = await BazelWorkspaceInfo.fromWorkspaceFolders();
+  if (!workspaceInfo) {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    vscode.window.showInformationMessage(
+      "Please open a Bazel workspace folder to use this command.",
+    );
+
+    return;
+  }
+
+  // Default values, overridable from the `tasks.json` invocation
+  let query = "//...";
+  let placeHolder = "";
+
+  // Interpret the arguments
+  if (args) {
+    if (!(args instanceof Object) || args instanceof Array) {
+      throw new Error(
+        `Expected the \`args\` for \`${commandName}\` to be an object`,
+      );
+    } else {
+      query = getArgumentValue(args, "query", commandName) ?? query;
+      placeHolder =
+        getArgumentValue(args, "placeHolder", commandName) ?? placeHolder;
+    }
+  }
+  const quickPick = await vscode.window.showQuickPick(
+    queryQuickPick({ query, workspaceInfo }),
+    {
+      canPickMany: false,
+      placeHolder,
+    },
+  );
+  if (quickPick === undefined) {
+    // If the user cancelled the quick pick, fail the substitution
+    return;
+  }
+  assert(quickPick.getBazelCommandOptions().targets.length === 1);
+  return quickPick.getBazelCommandOptions().targets[0];
+}
+
+/**
  * Activate all "command variables"
  */
 export function activateCommandVariables(): vscode.Disposable[] {
@@ -127,6 +207,14 @@ export function activateCommandVariables(): vscode.Disposable[] {
       "bazel.getTargetOutput",
       bazelGetTargetOutput,
     ),
+    ...["pickPackage", "pickTarget"].map((key, idx) => {
+      const commandName = `bazel.${key}`;
+      const funcs = [queryQuickPickPackage, queryQuickPickTargets];
+      const func = funcs[idx];
+      return vscode.commands.registerCommand(commandName, (args) =>
+        wrapQuickPick(commandName, func, args),
+      );
+    }),
     ...[
       "bazel-bin",
       "bazel-genfiles",
