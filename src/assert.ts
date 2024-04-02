@@ -22,5 +22,6 @@ export function assert(value: boolean): asserts value {
           "https://github.com/bazelbuild/vscode-bazel/issues",
       );
     }
+    throw new Error("Assertion violated.");
   }
 }

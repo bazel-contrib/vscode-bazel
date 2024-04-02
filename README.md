@@ -59,7 +59,7 @@ This extension can use [Facebook's starlark project](https://github.com/facebook
 
 ## Bazel tasks
 
-Bazel tasks can be configured from the `launch.json` using the following structure:
+Bazel tasks can be configured from the `tasks.json` using the following structure:
 
 ```json
 {
