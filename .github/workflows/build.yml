@@ -1,0 +1,69 @@
+name: Build VS Code extension
+
+on:
+  push:
+  pull_request:
+  release:
+    types: [prereleased, released]
+
+permissions:
+    # Write permissions needed for publishing the release
+    contents: write
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+    cancel-in-progress: true
+
+jobs:
+  build_vscode_ext:
+    name: Build VS Code extension
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        shell: bash
+        run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
+
+      - uses: actions/cache@v3
+        id: npm-cache
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install Javascript dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run check-lint
+
+      - name: Package VS Code extension
+        run: npm run package
+
+      - name: Upload Workflow Artifact
+        uses: actions/upload-artifact@v4
+        with:
+            name: vscode-bazel-prerelease.vsix
+            path: vscode-bazel-*.vsix
+            if-no-files-found: error
+
+      - name: Upload Release Artifact
+        if: ${{ github.event_name == 'release' }}
+        shell: bash
+        run: |
+          upload_url=`echo '${{ github.event.release.upload_url }}' | cut -f1 -d"{"`;
+          filename=`echo vscode-bazel-*.vsix`;
+          gh api --method POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "${upload_url}?name=$filename" \
+            --input "$filename"
+        env:
+          GH_TOKEN: ${{ github.token }}
