@@ -1,6 +1,6 @@
 # Change Log
 
-## Version 0.9.0 (February 20, 2024)
+## 0.9.0 (February 20, 2024)
 
 ### New Features
 
@@ -11,7 +11,7 @@
 
 - Make queries share the same server by default (@limdor)
 
-## Version 0.8.1 (January 2, 2024)
+## 0.8.1 (January 2, 2024)
 
 ### Bug Fixes
 
@@ -23,7 +23,7 @@
 - Migrate to eslint (@hypdeb)
 - Upgrade typescript (@cameron-martin)
 
-## Version 0.8.0 (December 15, 2023)
+## 0.8.0 (December 15, 2023)
 
 ### New Features
 
@@ -51,7 +51,7 @@
 - Optimized performance of `bazel query` operations (@iamricard)
 - CI updated to Node 20 (@jfirebaugh)
 
-## Version 0.7.0 (December 6, 2022)
+## 0.7.0 (December 6, 2022)
 
 ### New Features
 
@@ -80,7 +80,7 @@
           }
       ]
 
-## Version 0.6.0 (September 14, 2022)
+## 0.6.0 (September 14, 2022)
 
 ### New Features
 
@@ -105,7 +105,7 @@
 
 - return `default` for .sky files in getBuildifierFileType (@arahatashun)
 
-## Version 0.5.0 (October 29, 2021)
+## 0.5.0 (October 29, 2021)
 
 ### New Features
 
@@ -122,13 +122,13 @@
 
 We would like to thank Alex Frasson, Chi Wang, ericisko, hensom, Jonathan Dierksen and Neil Ding for their great contributions.
 
-## Version 0.4.1 (April 14, 2021)
+## 0.4.1 (April 14, 2021)
 
 ### Bug Fixes
 
 - Fix CVE-2021-22539: Malicious project can cause vscode-bazel to run arbitrary executable when linting a \*.bzl file.
 
-## Version 0.4.0 (August 21, 2020)
+## 0.4.0 (August 21, 2020)
 
 ### New Features
 
@@ -139,7 +139,7 @@ We would like to thank Alex Frasson, Chi Wang, ericisko, hensom, Jonathan Dierks
 - WORKSPACE.bazel files are now properly recognized.
 - We made multiple improvements to Windows support.
 
-## Version 0.3.0 (September 19, 2019)
+## 0.3.0 (September 19, 2019)
 
 ### Breaking Changes
 
@@ -162,7 +162,7 @@ We would like to thank Alex Frasson, Chi Wang, ericisko, hensom, Jonathan Dierks
 - BUILD files named `BUILD.bazel` are now correctly treated as BUILD files,
   not `bzl` files, for the purposes of formatting and linting.
 
-## Version 0.2.0 (May 15, 2019)
+## 0.2.0 (May 15, 2019)
 
 ### New Features
 
@@ -190,7 +190,7 @@ We would like to thank Alex Frasson, Chi Wang, ericisko, hensom, Jonathan Dierks
 - Fixed issue where VS Code would hang when the Bazel Build Targets view was
   opened and a workspace folder was _not_ part of a Bazel workspace.
 
-## Version 0.1.0 (January 23, 2019)
+## 0.1.0 (January 23, 2019)
 
 ### New Features
 
@@ -215,10 +215,10 @@ We would like to thank Alex Frasson, Chi Wang, ericisko, hensom, Jonathan Dierks
   is now presented that allows the user to type or select which target should
   be built or tested.
 
-## Version 0.0.2 (November 28, 2018)
+## 0.0.2 (November 28, 2018)
 
 - Fix an issue where runtime dependencies were listed as development dependencies.
 
-## Version 0.0.1 (November 28, 2018)
+## 0.0.1 (November 28, 2018)
 
 - Initial release.
