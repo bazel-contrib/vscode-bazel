@@ -94,13 +94,12 @@ describe("The lcov parser", () => {
     it("function coverage details", () => {
       const initFunc = getFunctionByLine(fileCov, 24);
       assert(initFunc !== undefined);
-      assert.equal(initFunc.name, "com/example/myproject/Greeter::<init> ()V");
+      assert.equal(initFunc.name, "void Greeter::<init>()");
       assert.equal(initFunc.executed, 1);
       const convertFunc = getFunctionByLine(fileCov, 28);
       assert.equal(
         convertFunc.name,
-        "com/example/myproject/Greeter::convertStreamToString " +
-          "(Ljava/io/InputStream;)Ljava/lang/String;",
+        "String Greeter::convertStreamToString(InputStream)",
       );
       assert.equal(convertFunc.executed, 0);
     });
