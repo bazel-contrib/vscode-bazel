@@ -46,8 +46,10 @@ export function parseLcov(
   // Note that line numbers in LCOV files seem to be 1-based, while line
   // numbers for VS Code need to be 0-based.
   class FileCoverageInfo {
-    functionsByLine: Map<number, vscode.DeclarationCoverage> = new Map();
-    lineCoverage: Map<number, vscode.StatementCoverage> = new Map();
+    functionsByLine: Map<Number, vscode.DeclarationCoverage> = new Map();
+    lineCoverage: Map<Number, vscode.StatementCoverage> = new Map();
+    coverageByLineAndBranch: Map<number, Map<string, vscode.BranchCoverage>> =
+      new Map();
   }
   const infosByFile: Map<string, FileCoverageInfo> = new Map();
   for (const block of lcov.split(/end_of_record(\n|$)/)) {
@@ -191,12 +193,54 @@ export function parseLcov(
           // Ignored. Reconstructed from DA entries
           break;
         case "BRDA": {
-          // branch coverage: <line_number>,[<exception>]<block>,<branch>,<taken>
+          // branch coverage: <line_number>,[<exception>]<block>,<branch>,<hitCount>
+          // Note that the <branch> might contain commas, which requires being
+          // a bit careful while parsing.
           const match = value.match(/(\d+),(e?)(\d+),(.+)/);
           if (!match) {
             throw new Error(`Invalid FNDA entry`);
           }
-          // TODO: Add support for branch coverage
+          const lineNumber = Number.parseInt(match[1]) - 1;
+          if (lineNumber < 0) {
+            throw new Error("Negative line number in DA entry");
+          }
+          const isException = match[2] === "e";
+          const blockId = Number.parseInt(match[3]);
+          const rest = match[4];
+          const commaOffset = rest.lastIndexOf(",");
+          if (commaOffset === undefined) {
+            throw new Error(`Invalid FNDA entry`);
+          }
+          const label = rest.substring(0, commaOffset);
+          const hitCountStr = rest.substring(commaOffset + 1);
+          const hitCount =
+            hitCountStr == "-" ? 0 : Number.parseInt(hitCountStr);
+          if (hitCount < 0) {
+            throw new Error("Negative hit count in DA entry");
+          }
+
+          if (info === undefined) {
+            throw new Error(`Missing filename`);
+          }
+
+          // We don't want to display coverage for exception edges.
+          if (isException) break;
+
+          // Insert into `branchByLineAndBranch`
+          if (!info.coverageByLineAndBranch.has(lineNumber)) {
+            info.coverageByLineAndBranch.set(lineNumber, new Map());
+          }
+          const coverageByBranch = info.coverageByLineAndBranch.get(lineNumber);
+          const branchId = `${blockId}:${label}`;
+          if (!coverageByBranch.has(branchId)) {
+            coverageByBranch.set(
+              branchId,
+              new vscode.BranchCoverage(0, undefined, label),
+            );
+          }
+          const branchCoverage = coverageByBranch.get(branchId);
+          assert(typeof branchCoverage.executed == "number");
+          branchCoverage.executed += hitCount;
           break;
         }
         case "BRF": // branches found
@@ -216,7 +260,16 @@ export function parseLcov(
       Array.from(info.functionsByLine.values()),
     );
     detailedCoverage = detailedCoverage.concat(
-      Array.from(info.lineCoverage.values()),
+      Array.from(info.lineCoverage.values()).map((c) => {
+        assert("line" in c.location);
+        const branchCoverage = info.coverageByLineAndBranch.get(
+          c.location.line,
+        );
+        if (branchCoverage) {
+          c.branches = Array.from(branchCoverage.values());
+        }
+        return c;
+      }),
     );
     fileCoverages.push(
       BazelFileCoverage.fromDetails(
