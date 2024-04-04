@@ -15,10 +15,16 @@
 import * as vscode from "vscode";
 import { getDefaultBazelExecutablePath } from "../extension/configuration";
 import { IBazelCommandOptions } from "./bazel_command";
-import { onTaskProcessEnd, onTaskStart } from "./bazel_task_info";
 import { BazelWorkspaceInfo } from "./bazel_workspace_info";
+import { exitCodeToUserString, parseExitCode } from "./bazel_exit_code";
 
 export const TASK_TYPE = "bazel";
+
+/** Information about a running Bazel task. */
+export class BazelTaskInfo {
+  /** start time (for internal performance tracking). */
+  public startTime: [number, number];
+}
 
 /**
  * Definition of a Bazel task
@@ -33,6 +39,8 @@ export interface BazelTaskDefinition extends vscode.TaskDefinition {
   targets: string[];
   /** Additional command line arguments */
   options?: string[];
+  /** Information about the running task */
+  bazelTaskInfo?: BazelTaskInfo;
 }
 
 /**
@@ -80,6 +88,60 @@ class BazelTaskProvider implements vscode.TaskProvider {
       task.definition as BazelTaskDefinition,
       workspaceInfo,
     );
+  }
+}
+
+/**
+ * Keep track of running Bazel tasks
+ */
+function onTaskStart(event: vscode.TaskStartEvent) {
+  const task = event.execution.task;
+  if (task.definition.type !== TASK_TYPE) {
+    return;
+  }
+  const definition = task.definition as BazelTaskDefinition;
+  const bazelTaskInfo = new BazelTaskInfo();
+  bazelTaskInfo.startTime = process.hrtime();
+  definition.bazelTaskInfo = bazelTaskInfo;
+}
+
+/**
+ * Returns the number of seconds elapsed with a single decimal place.
+ */
+function measurePerformance(start: [number, number]) {
+  const diff = process.hrtime(start);
+  return (diff[0] + diff[1] / 1e9).toFixed(1);
+}
+
+/**
+ * Display a notification whenever a Bazel task finished
+ */
+function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
+  const task = event.execution.task;
+  if (task.definition.type !== TASK_TYPE) {
+    return;
+  }
+  const taskDefinition = task.definition as BazelTaskDefinition;
+  const command = taskDefinition.command;
+  const bazelTaskInfo = taskDefinition.bazelTaskInfo;
+
+  // Show a notification that the build is finished
+  if (bazelTaskInfo) {
+    const rawExitCode = event.exitCode;
+
+    const exitCode = parseExitCode(rawExitCode, command);
+    if (rawExitCode !== 0) {
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      vscode.window.showErrorMessage(
+        `Bazel ${command} failed: ${exitCodeToUserString(exitCode)}`,
+      );
+    } else {
+      const timeInSeconds = measurePerformance(bazelTaskInfo.startTime);
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      vscode.window.showInformationMessage(
+        `Bazel ${command} completed successfully in ${timeInSeconds} seconds.`,
+      );
+    }
   }
 }
 
