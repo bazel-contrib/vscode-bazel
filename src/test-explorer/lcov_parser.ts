@@ -1,6 +1,11 @@
 import * as vscode from "vscode";
 import * as path from "path";
+import * as child_process from "child_process";
+import * as which from "which";
+import * as util from "util";
 import { assert } from "../assert";
+
+const execFile = util.promisify(child_process.execFile);
 
 /**
  * Demangle JVM method names.
@@ -110,6 +115,20 @@ function demangleJVMMethodName(mangled: string): string | undefined {
 }
 
 /**
+ * Demangle a name by calling a filter binary (like c++filt or rustfilt)
+ */
+async function demangleNameUsingFilter(
+  execPath: string | null,
+  mangled: string,
+): Promise<string | undefined> {
+  if (execPath === null) return undefined;
+  const unmangled = (await execFile(execPath, [mangled])).stdout.trim();
+  // If unmangling failed, return undefined, so we could fallback to another demangler.
+  if (!unmangled || unmangled == mangled) return undefined;
+  return unmangled;
+}
+
+/**
  * Coverage data from a Bazel run.
  *
  * For Bazel, we parse the detailed coverage data eagerly and store it as part
@@ -136,10 +155,12 @@ export class BazelFileCoverage extends vscode.FileCoverage {
 /**
  * Parses the LCOV coverage info into VS Code's representation
  */
-export function parseLcov(
+export async function parseLcov(
   baseFolder: string,
   lcov: string,
-): BazelFileCoverage[] {
+): Promise<BazelFileCoverage[]> {
+  const cxxFiltPath = await which("c++filt", { nothrow: true });
+  const rustFiltPath = await which("rustfilt", { nothrow: true });
   lcov = lcov.replaceAll("\r\n", "\n");
 
   // Documentation of the lcov format:
@@ -218,17 +239,19 @@ export function parseLcov(
             location = new vscode.Position(startLine, 0);
           }
           if (!info.functionsByLine.has(startLine)) {
-            // TODO: Also add demangling for C++ and Rust.
-            // https://internals.rust-lang.org/t/symbol-mangling-of-rust-vs-c/7222
-            // https://github.com/rust-lang/rustc-demangle
-            //
-            // Tested with:
-            // * Go -> no function names, only line coverage
-            // * C++ -> mangled names
-            // * Java -> mangled names
-            // * Rust -> mangled names
-            // Not tested with Python, Swift, Kotlin etc.
-            const demangled = demangleJVMMethodName(funcName) ?? funcName;
+            // Demangle the name.
+            // We must first try rustfilt before trying c++filt.
+            // The Rust name mangling scheme is intentionally compatible with
+            // C++ mangling. Hence, c++filt will be succesful on Rust's mangled
+            // names. But rustfilt provides more readable demanglings, and hence
+            // we prefer rustfilt over c++filt. For C++ mangled names, rustfilt
+            // will fail and we will fallback to c++filt.
+            // See https://internals.rust-lang.org/t/symbol-mangling-of-rust-vs-c/7222
+            const demangled =
+              demangleJVMMethodName(funcName) ??
+              (await demangleNameUsingFilter(rustFiltPath, funcName)) ??
+              (await demangleNameUsingFilter(cxxFiltPath, funcName)) ??
+              funcName;
             info.functionsByLine.set(
               startLine,
               new vscode.DeclarationCoverage(demangled, 0, location),
