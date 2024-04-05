@@ -246,12 +246,28 @@
         ],
         "grammars": [
             {
+                "language": "bazelrc",
+                "scopeName": "source.bazelrc",
+                "path": "./syntaxes/bazelrc.tmLanguage.json"
+            },
+            {
                 "language": "starlark",
                 "scopeName": "source.starlark",
                 "path": "./syntaxes/starlark.tmLanguage.json"
             }
         ],
         "languages": [
+            {
+                "id": "bazelrc",
+                "extensions": [
+                    ".bazelrc"
+                ],
+                "filenames": [
+                    ".bazelrc",
+                    "bazel.rc"
+                ],
+                "configuration": "./syntaxes/bazelrc.configuration.json"
+            },
             {
                 "id": "starlark",
                 "aliases": [
