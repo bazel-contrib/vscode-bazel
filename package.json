@@ -188,7 +188,7 @@
                 },
                 "bazel.lsp.command": {
                     "type": "string",
-                    "default": "starlark",
+                    "default": "",
                     "description": "The executable to launch for the LSP"
                 },
                 "bazel.lsp.args": {
@@ -196,10 +196,7 @@
                     "items": {
                         "type": "string"
                     },
-                    "default": [
-                        "--lsp",
-                        "--bazel"
-                    ],
+                    "default": [],
                     "description": "The arguments to pass to the LSP executable"
                 }
             }

@@ -50,12 +50,14 @@ Clicking the "Stop" button in the debugger will kill the Bazel process being
 debugger, allowing you to halt the current build. The Bazel server, however,
 will continue running.
 
-## Using the LSP (Experimental)
+## Using a language server (Experimental)
 
-This extension can use [Facebook's starlark project](https://github.com/facebookexperimental/starlark-rust) as a language server.
+Some of the functionality of this extension, such as go to definition and completions, can be replaced with a language server. There are currently two in-progress implementations of this:
 
-1. Install the LSP using cargo: `cargo install starlark_bin`
-2. Enable the LSP extension by setting `bazel.lsp.enabled` to `true`.
+- [bazel-lsp](https://github.com/cameron-martin/bazel-lsp): Based on Facebook's starlark project.
+- [starpls](https://github.com/withered-magic/starpls): Based on rust-analyzer.
+
+See the README of the corresponding repo for setup instructions.
 
 ## Bazel tasks
 
