@@ -52,12 +52,14 @@ will continue running.
 
 ## Using a language server (Experimental)
 
-Some of the functionality of this extension, such as go to definition and completions, can be replaced with a language server. There are currently two in-progress implementations of this:
+This extension can use a language server for various features, such as go to definition and completions. There are currently two compatible language servers:
 
-- [bazel-lsp](https://github.com/cameron-martin/bazel-lsp): Based on Facebook's starlark project.
-- [starpls](https://github.com/withered-magic/starpls): Based on rust-analyzer.
+- [bazel-lsp](https://github.com/cameron-martin/bazel-lsp): is based on Facebook's Starlark language server and extends it with additional, Bazel-specific functionality.
+- [starpls](https://github.com/withered-magic/starpls): is an implementation based on rust-analyzer which also provides Bazel-specific functionality.
 
-See the README of the corresponding repo for setup instructions.
+In general, you need to install the language server binary and then set the `bazel.lsp.command` setting. See the README of the corresponding repo for more specific setup instructions.
+
+We can't currently make any recommendation between these two. Both are under active development and are rapidly gaining more functionality.
 
 ## Bazel tasks
 
