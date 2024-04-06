@@ -440,7 +440,14 @@
                     "when": "bazel.haveWorkspace"
                 }
             ]
-        }
+        },
+        "viewsWelcome": [
+            {
+                "view": "bazelWorkspace",
+                "contents": "No Bazel targets found.\n[Refresh Target List](command:bazel.refreshBazelBuildTargets)",
+                "when": "bazel.haveWorkspace"
+            }
+        ]
     },
     "scripts": {
         "check-lint": "eslint",
