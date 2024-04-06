@@ -50,7 +50,7 @@ Clicking the "Stop" button in the debugger will kill the Bazel process being
 debugger, allowing you to halt the current build. The Bazel server, however,
 will continue running.
 
-## Using a language server (Experimental)
+## Using a language server (experimental)
 
 This extension can use a language server for various features, such as go to definition and completions. There are currently two compatible language servers:
 
