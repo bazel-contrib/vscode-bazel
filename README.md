@@ -52,10 +52,26 @@ will continue running.
 
 ## Using the LSP (Experimental)
 
-This extension can use [Facebook's starlark project](https://github.com/facebookexperimental/starlark-rust) as a language server.
+This extension can use a LSP for Starlark autocompletion.
 
-1. Install the LSP using cargo: `cargo install starlark_bin`
-2. Enable the LSP extension by setting `bazel.lsp.enabled` to `true`.
+There are currently three different compatible language servers:
+
+- [Facebook's starlark project](https://github.com/facebookexperimental/starlark-rust)
+  contains a general purpose Starlark language server. You can install the it
+  using cargo: `cargo install starlark_bin`
+- [bazel-lsp](https://github.com/cameron-martin/bazel-lsp) is based on
+  Facebook's language server and extends it with additional, Bazel-specific
+  functionality.
+- [starpls](https://github.com/withered-magic/starpls) is an independent
+  implementation which also provides Bazel-specific functionality.
+
+In general, you need to install the language server binary and then set the
+`bazel.lsp.enabled` and `bazel.lsp.command` settings.
+
+The `bazel-lsp` server is more feature-complete than Facebook's LSP and probably
+preferable. Between `starpls` and `bazel-lsp`, we can't currently make any
+recommendation. Both are under active development and are rapidly gaining more
+functionality.
 
 ## Bazel tasks
 
