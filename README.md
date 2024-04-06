@@ -54,8 +54,8 @@ will continue running.
 
 This extension can use a language server for various features, such as go to definition and completions. There are currently two compatible language servers:
 
-- [bazel-lsp](https://github.com/cameron-martin/bazel-lsp): is based on Facebook's Starlark language server and extends it with additional, Bazel-specific functionality.
-- [starpls](https://github.com/withered-magic/starpls): is an implementation based on rust-analyzer which also provides Bazel-specific functionality.
+- [bazel-lsp](https://github.com/cameron-martin/bazel-lsp) is based on Facebook's Starlark language server and extends it with additional, Bazel-specific functionality.
+- [starpls](https://github.com/withered-magic/starpls) is an implementation based on rust-analyzer which also provides Bazel-specific functionality.
 
 In general, you need to install the language server binary and then set the `bazel.lsp.command` setting. See the README of the corresponding repo for more specific setup instructions.
 
