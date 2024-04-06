@@ -152,8 +152,12 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Notify the user if buildifier is not available on their path (or where
   // their settings expect it).
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  await checkBuildifierIsAvailable();
+  // We intentionally do no `await` the completion because doing so would mean
+  // that VS Code considers the extension activation to be "in-flight" until the
+  // users closes the "Buildifier not found" notification. VS Code hence
+  // dislayed  never-finishing "Loading" indicator on top of the "Bazel Build
+  // Targets" tree view.
+  checkBuildifierIsAvailable();
 }
 
 /** Called when the extension is deactivated. */
