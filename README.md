@@ -34,6 +34,18 @@ this extension does not automatically _fix_ lint warnings during formatting,
 but you can opt into this by enabling the **Bazel: Buildifier Fix on Format**
 setting.
 
+### Using a separate output base
+
+By default this extension will use the default output base for running queries. This will cause builds to block queries, potentially causing degraded performance. In Bazel versions since 7.1 it is safe to disable this by changing the `bazel.queriesShareServer` setting to `false`. In earlier versions it can be safely disabled after adding the convenience symlinks to `.bazelignore`, for example:
+
+```
+bazel-myreponame
+bazel-bin
+bazel-testlogs
+```
+
+See [#216](https://github.com/bazelbuild/vscode-bazel/issues/216) and [bazelbuild/bazel#106539](https://github.com/bazelbuild/bazel/issues/10653).
+
 ## Using the Starlark Debugger
 
 Currently, the Starlark Debugger can be used by right-clicking a build target in
