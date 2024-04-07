@@ -182,5 +182,6 @@ module.exports = tseslint.config(
     rules: {
       // Re-enable as soon as we are using ES modules for this config file.
       "@typescript-eslint/no-var-requires": "off",
-    }
-  });
+    },
+  },
+);
