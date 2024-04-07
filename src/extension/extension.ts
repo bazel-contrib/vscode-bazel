@@ -157,6 +157,7 @@ export async function activate(context: vscode.ExtensionContext) {
   // users closes the "Buildifier not found" notification. VS Code hence
   // dislayed  never-finishing "Loading" indicator on top of the "Bazel Build
   // Targets" tree view.
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
   checkBuildifierIsAvailable();
 }
 
