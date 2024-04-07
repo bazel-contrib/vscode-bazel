@@ -96,7 +96,7 @@ export async function buildifierLint(
   switch (lintMode) {
     case "fix":
       return outputs.stdout;
-    case "warn":
+    case "warn": {
       const result = JSON.parse(outputs.stdout) as IBuildifierResult;
       for (const file of result.files) {
         if (file.filename === "<stdin>") {
@@ -104,6 +104,7 @@ export async function buildifierLint(
         }
       }
       return [];
+    }
   }
 }
 

@@ -81,11 +81,12 @@ export class BazelWorkspaceInfo {
         return undefined;
       case 1:
         return this.fromWorkspaceFolder(vscode.workspace.workspaceFolders[0]);
-      default:
+      default: {
         const workspaceFolder = await vscode.window.showWorkspaceFolderPick();
         return workspaceFolder
           ? this.fromWorkspaceFolder(workspaceFolder)
           : undefined;
+      }
     }
   }
 
