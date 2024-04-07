@@ -455,7 +455,6 @@
         "eslint": "^8.57.0",
         "eslint-config-prettier": "^9.1.0",
         "eslint-plugin-jsdoc": "^48.2.2",
-        "eslint-plugin-prefer-arrow": "^1.2.3",
         "typescript": "^5.4.4",
         "typescript-eslint": "^7.5.0"
     },
