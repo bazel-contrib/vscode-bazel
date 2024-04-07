@@ -444,7 +444,7 @@
         }
     },
     "scripts": {
-        "check-lint": "eslint",
+        "check-lint": "eslint .",
         "compile": "./scripts/build.sh",
         "pretest": "./scripts/build.sh",
         "test": "vscode-test",
@@ -456,16 +456,14 @@
         "@types/node": "^16.11.7",
         "@types/vscode": "^1.88.0",
         "@types/which": "^3.0.3",
-        "@typescript-eslint/eslint-plugin": "^7.5.0",
-        "@typescript-eslint/parser": "^7.5.0",
         "@vscode/test-cli": "^0.0.9",
         "@vscode/test-electron": "^2.3.9",
         "eslint": "^8.57.0",
         "eslint-config-prettier": "^9.1.0",
         "eslint-plugin-jsdoc": "^48.2.2",
-        "eslint-plugin-prefer-arrow": "^1.2.3",
         "mocha": "^10.4.0",
-        "typescript": "^5.4.3"
+        "typescript": "^5.4.4",
+        "typescript-eslint": "^7.5.0"
     },
     "dependencies": {
         "protobufjs": "^6.8.0",
