@@ -176,12 +176,10 @@ module.exports = tseslint.config(
   },
   {
     files: ["eslint.config.js"],
+    // `@eslint/js` is currnetly missing type information.
+    // Re-enable the type checks as soon as we have type infos.
+    extends: [tseslint.configs.disableTypeChecked],
     rules: {
-      // `@eslint/js` is currnetly missing type information.
-      // Re-enable the following checks as soon as we have type infos.
-      "@typescript-eslint/no-unsafe-member-access": "off",
-      "@typescript-eslint/no-unsafe-argument": "off",
-      "@typescript-eslint/no-unsafe-assignment": "off",
       // Re-enable as soon as we are using ES modules for this config file.
       "@typescript-eslint/no-var-requires": "off",
     }
