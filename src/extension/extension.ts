@@ -57,7 +57,7 @@ export async function activate(context: vscode.ExtensionContext) {
   completionItemProvider.refresh();
 
   const config = vscode.workspace.getConfiguration("bazel");
-  const lspEnabled = config.get<boolean>("lsp.enabled");
+  const lspEnabled = !!config.get<string>("lsp.command");
 
   if (lspEnabled) {
     const lspClient = createLsp(config);
