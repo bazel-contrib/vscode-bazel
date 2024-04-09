@@ -34,6 +34,18 @@ this extension does not automatically _fix_ lint warnings during formatting,
 but you can opt into this by enabling the **Bazel: Buildifier Fix on Format**
 setting.
 
+### Using a separate output base
+
+By default this extension will use the default output base for running queries. This will cause builds to block queries, potentially causing degraded performance. In Bazel versions since 7.1 it is safe to disable this by changing the `bazel.queriesShareServer` setting to `false`. In earlier versions it can be safely disabled after adding the convenience symlinks to `.bazelignore`, for example:
+
+```
+bazel-myreponame
+bazel-bin
+bazel-testlogs
+```
+
+See [#216](https://github.com/bazelbuild/vscode-bazel/issues/216) and [bazelbuild/bazel#106539](https://github.com/bazelbuild/bazel/issues/10653).
+
 ## Using the Starlark Debugger
 
 Currently, the Starlark Debugger can be used by right-clicking a build target in
@@ -50,12 +62,16 @@ Clicking the "Stop" button in the debugger will kill the Bazel process being
 debugger, allowing you to halt the current build. The Bazel server, however,
 will continue running.
 
-## Using the LSP (Experimental)
+## Using a language server (experimental)
 
-This extension can use [Facebook's starlark project](https://github.com/facebookexperimental/starlark-rust) as a language server.
+This extension can use a language server for various features, such as go to definition and completions. There are currently two compatible language servers:
 
-1. Install the LSP using cargo: `cargo install starlark_bin`
-2. Enable the LSP extension by setting `bazel.lsp.enabled` to `true`.
+- [bazel-lsp](https://github.com/cameron-martin/bazel-lsp) is based on Facebook's Starlark language server and extends it with additional, Bazel-specific functionality.
+- [starpls](https://github.com/withered-magic/starpls) is an implementation based on rust-analyzer which also provides Bazel-specific functionality.
+
+In general, you need to install the language server binary and then set the `bazel.lsp.command` setting. See the README of the corresponding repo for more specific setup instructions.
+
+We can't currently make any recommendation between these two. Both are under active development and are rapidly gaining more functionality.
 
 ## Bazel tasks
 
