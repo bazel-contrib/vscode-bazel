@@ -90,8 +90,8 @@ Bazel tasks can be configured from the `tasks.json` using the following structur
       "type": "bazel",
       "command": "test",
       "targets": ["${input:pickFlakyTest}"],
-      "options": ["--runs_per_test=9"]
-    }
+      "options": ["--runs_per_test=9"],
+    },
   ],
   "inputs": [
     {
@@ -100,10 +100,10 @@ Bazel tasks can be configured from the `tasks.json` using the following structur
       "command": "bazel.pickTarget",
       "args": {
         "query": "kind('.*_test', //...:*)",
-        "placeHolder": "Which test to check for flakyness?"
-      }
-    }
-  ]
+        "placeHolder": "Which test to check for flakyness?",
+      },
+    },
+  ],
 }
 ```
 
@@ -120,7 +120,7 @@ definition:
   "type": "bazel",
   "command": "coverage",
   "targets": ["//test/integration/...", "//cpp/test/integration/..."],
-  "options": ["--instrumentation_filter=.*"]
+  "options": ["--instrumentation_filter=.*"],
 }
 ```
 
