@@ -175,12 +175,13 @@ module.exports = tseslint.config(
     },
   },
   {
-    files: ["eslint.config.js"],
-    // `@eslint/js` is currnetly missing type information.
+    // `@eslint/js` is currently missing type information.
     // Re-enable the type checks as soon as we have type infos.
+    // For vscode-test.js, we also don't use TypeScript, yet.
+    files: ["eslint.config.js", ".vscode-test.js"],
     extends: [tseslint.configs.disableTypeChecked],
     rules: {
-      // Re-enable as soon as we are using ES modules for this config file.
+      // Re-enable as soon as we are using ES modules for the config files.
       "@typescript-eslint/no-var-requires": "off",
     }
   });
