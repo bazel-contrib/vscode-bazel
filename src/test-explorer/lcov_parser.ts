@@ -46,39 +46,40 @@ export function parseLcov(
   // Note that line numbers in LCOV files seem to be 1-based, while line
   // numbers for VS Code need to be 0-based.
   class FileCoverageInfo {
-    functionsByLine: Map<Number, vscode.DeclarationCoverage> = new Map();
-    lineCoverage: Map<Number, vscode.StatementCoverage> = new Map();
+    functionsByLine: Map<number, vscode.DeclarationCoverage> = new Map();
+    lineCoverage: Map<number, vscode.StatementCoverage> = new Map();
   }
   const infosByFile: Map<string, FileCoverageInfo> = new Map();
-  for (let block of lcov.split(/end_of_record(\n|$)/)) {
-    let functionsByName: Map<string, vscode.DeclarationCoverage> = new Map();
+  for (const block of lcov.split(/end_of_record(\n|$)/)) {
+    const functionsByName: Map<string, vscode.DeclarationCoverage> = new Map();
     let info: FileCoverageInfo;
     for (let line of block.split("\n")) {
       line = line.trim();
       if (line === "") continue;
       // Split into key and value. Note that the value might contain addtional
       // `:` characters.
-      const parts = line.split(":");
-      if (parts.length < 2) {
+      const lineParts = line.split(":");
+      if (lineParts.length < 2) {
         throw new Error(`Separator \`:\` missing`);
       }
-      const key = parts.shift();
-      const value = parts.join(":");
+      const key = lineParts.shift();
+      const value = lineParts.join(":");
       switch (key) {
         case "TN": // Test name
           // Ignored. There is no way to expose this through the VSCode APIs
           break;
-        case "SF":
+        case "SF": {
           // File name
           if (info !== undefined) {
             throw new Error(`Duplicated SF entry`);
           }
-          let filename = path.resolve(baseFolder, value);
+          const filename = path.resolve(baseFolder, value);
           if (!infosByFile.has(filename)) {
             infosByFile.set(filename, new FileCoverageInfo());
           }
           info = infosByFile.get(filename);
           break;
+        }
         case "FN": {
           // Line number, <End Line Number>, Function name
           // Note that the function name could also contain a comma.
@@ -89,14 +90,14 @@ export function parseLcov(
           if (info === undefined) {
             throw new Error(`Missing filename`);
           }
-          const startLine = Number.parseInt(match[1]) - 1;
+          const startLine = Number.parseInt(match[1], 10) - 1;
           if (startLine < 0) {
             throw new Error("Negative start line in FN entry");
           }
           const funcName = match[3];
           let location: vscode.Position | vscode.Range;
           if (match[2] !== undefined) {
-            const endLine = Number.parseInt(match[2]) - 1;
+            const endLine = Number.parseInt(match[2], 10) - 1;
             if (endLine < startLine) {
               throw new Error("End line < start line in FN entry");
             }
@@ -134,7 +135,7 @@ export function parseLcov(
           if (!match) {
             throw new Error(`Invalid FNDA entry`);
           }
-          const coveredCount = Number.parseInt(match[1]);
+          const coveredCount = Number.parseInt(match[1], 10);
           const funcName = match[2];
           const functionDef = functionsByName.get(funcName);
           if (functionDef === undefined) {
@@ -159,11 +160,11 @@ export function parseLcov(
           if (parts.length < 2 || parts.length > 3) {
             throw new Error("Invalid DA entry");
           }
-          const lineNumber = Number.parseInt(parts[0]) - 1;
+          const lineNumber = Number.parseInt(parts[0], 10) - 1;
           if (lineNumber < 0) {
             throw new Error("Negative line number in DA entry");
           }
-          const hitCount = Number.parseInt(parts[1]);
+          const hitCount = Number.parseInt(parts[1], 10);
           if (hitCount < 0) {
             throw new Error("Negative hit count in DA entry");
           }

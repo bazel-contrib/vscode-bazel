@@ -18,9 +18,7 @@ import { IBazelCommandOptions } from "./bazel_command";
 import { BazelWorkspaceInfo } from "./bazel_workspace_info";
 import { exitCodeToUserString, parseExitCode } from "./bazel_exit_code";
 import { BazelInfo } from "./bazel_info";
-import { fstat } from "fs";
 import { showLcovCoverage } from "../test-explorer";
-import { exec } from "child_process";
 
 export const TASK_TYPE = "bazel";
 
@@ -71,7 +69,7 @@ class BazelTaskProvider implements vscode.TaskProvider {
     // a ShellExecution for it.
 
     // Infer `BazelWorkspaceInfo` from `scope`
-    let workspaceInfo = await getWorkspaceInfoFromTask(task.scope);
+    const workspaceInfo = await getWorkspaceInfoFromTask(task.scope);
     if (!workspaceInfo) {
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
       vscode.window.showInformationMessage(
@@ -155,9 +153,9 @@ async function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
   }
 
   // For coverage runs: Display the coverage results
-  if (taskDefinition.command == "coverage" && rawExitCode === 0) {
+  if (taskDefinition.command === "coverage" && rawExitCode === 0) {
     // Find the coverage file and load it.
-    let workspaceInfo = await getWorkspaceInfoFromTask(task.scope);
+    const workspaceInfo = await getWorkspaceInfoFromTask(task.scope);
     const outputPath = await new BazelInfo(
       getDefaultBazelExecutablePath(),
       workspaceInfo.bazelWorkspacePath,
@@ -234,7 +232,7 @@ export function createBazelTaskFromDefinition(
     ? bazelConfigCmdLine.get<string[]>("commandArgs")
     : [];
 
-  let implicitArgs = [] as string[];
+  const implicitArgs = [] as string[];
   let commandDescription: string;
   let group: vscode.TaskGroup | undefined;
   switch (command) {

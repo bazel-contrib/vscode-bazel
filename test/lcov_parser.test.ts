@@ -11,7 +11,7 @@ function parseTestLcov(lcov: string): BazelFileCoverage[] {
 }
 
 async function parseTestLcovFile(p: string): Promise<BazelFileCoverage[]> {
-  let absolutePath = path.join(testDir, p);
+  const absolutePath = path.join(testDir, p);
   const lcov = await readFile(absolutePath, { encoding: "utf-8" });
   return parseTestLcov(lcov);
 }
@@ -20,7 +20,7 @@ function getCoverageForFile(
   cov: BazelFileCoverage[],
   fileName: string,
 ): BazelFileCoverage | undefined {
-  return cov.find((c) => c.uri.fsPath == fileName);
+  return cov.find((c) => c.uri.fsPath === fileName);
 }
 
 function getFunctionByLine(
@@ -68,13 +68,14 @@ describe("The lcov parser", () => {
   });
 
   describe("parses Java coverage data:", () => {
-    let fileCov: BazelFileCoverage = undefined;
+    let fileCov: BazelFileCoverage;
     before(async () => {
       const coveredFiles = await parseTestLcovFile("lcov/java.lcov");
       assert.equal(coveredFiles.length, 1);
       fileCov = getCoverageForFile(
         coveredFiles,
-        "/base/examples/java-native/src/main/java/com/example/myproject/Greeter.java",
+        "/base/examples/java-native/src/main/java/com/example/myproject/" +
+          "Greeter.java",
       );
       assert(fileCov !== undefined);
     });
@@ -98,7 +99,8 @@ describe("The lcov parser", () => {
       const convertFunc = getFunctionByLine(fileCov, 28);
       assert.equal(
         convertFunc.name,
-        "com/example/myproject/Greeter::convertStreamToString (Ljava/io/InputStream;)Ljava/lang/String;",
+        "com/example/myproject/Greeter::convertStreamToString " +
+          "(Ljava/io/InputStream;)Ljava/lang/String;",
       );
       assert.equal(convertFunc.executed, 0);
     });
@@ -109,8 +111,8 @@ describe("The lcov parser", () => {
     });
   });
 
-  describe("parses C++ coverage data", async () => {
-    let fileCov: BazelFileCoverage = undefined;
+  describe("parses C++ coverage data", () => {
+    let fileCov: BazelFileCoverage;
     before(async () => {
       const coveredFiles = await parseTestLcovFile("lcov/cpp.lcov");
       assert.equal(coveredFiles.length, 1);
@@ -141,8 +143,8 @@ describe("The lcov parser", () => {
     });
   });
 
-  describe("parses Rust coverage data", async () => {
-    let fileCov: BazelFileCoverage = undefined;
+  describe("parses Rust coverage data", () => {
+    let fileCov: BazelFileCoverage;
     before(async () => {
       const coveredFiles = await parseTestLcovFile("lcov/rust.lcov");
       assert.equal(coveredFiles.length, 2);
@@ -176,8 +178,8 @@ describe("The lcov parser", () => {
     });
   });
 
-  describe("parses Go coverage data", async () => {
-    let fileCov: BazelFileCoverage = undefined;
+  describe("parses Go coverage data", () => {
+    let fileCov: BazelFileCoverage;
     before(async () => {
       const coveredFiles = await parseTestLcovFile("lcov/go.lcov");
       assert.equal(coveredFiles.length, 7);

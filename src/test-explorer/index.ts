@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { BazelFileCoverage, parseLcov } from "./lcov_parser";
 
-let testController: vscode.TestController = undefined;
+let testController: vscode.TestController;
 let coverageRunProfile: vscode.TestRunProfile;
 
 export function activateTesting(): vscode.Disposable[] {
@@ -22,8 +22,8 @@ export function activateTesting(): vscode.Disposable[] {
   );
   coverageRunProfile.isDefault = false;
   // `loadDetailedCoverage` is important so that line coverage data is shown.
-  coverageRunProfile.loadDetailedCoverage = async (_, coverage) =>
-    (coverage as BazelFileCoverage).details!;
+  coverageRunProfile.loadDetailedCoverage = (_, coverage) =>
+    Promise.resolve((coverage as BazelFileCoverage).details);
 
   return subscriptions;
 }
