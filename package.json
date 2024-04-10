@@ -447,6 +447,8 @@
         "compile": "./scripts/build.sh",
         "pretest": "./scripts/build.sh",
         "test": "vscode-test",
+        "format-check": "prettier --check .",
+        "format-fix": "prettier --write .",
         "vscode:prepublish": "./scripts/build.sh",
         "watch": "./scripts/build.sh -watch"
     },
@@ -461,6 +463,7 @@
         "eslint-config-prettier": "^9.1.0",
         "eslint-plugin-jsdoc": "^48.2.2",
         "mocha": "^10.4.0",
+        "prettier": "^3.2.5",
         "typescript": "^5.4.4",
         "typescript-eslint": "^7.5.0"
     },

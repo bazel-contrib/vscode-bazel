@@ -90,7 +90,8 @@ function getAbsoluteLabel(
 }
 
 export class BazelCompletionItemProvider
-  implements vscode.CompletionItemProvider {
+  implements vscode.CompletionItemProvider
+{
   private targets: string[] = [];
 
   /**
