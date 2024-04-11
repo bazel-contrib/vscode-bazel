@@ -18,10 +18,6 @@ tasks:
       - npm ci
       - npm run compile
       - npm run check-lint
-      # TODO(allevato): Add a prettier check to verify that *.ts files don't
-      # differ from their prettier output. We need `prettier-tslint` so that
-      # prettier will obey our tslint config, but it doesn't support
-      # Typescript 3 yet.
-      # (https://github.com/azz/prettier-tslint/issues/18)
+      - npm run format-check
     build_targets:
       - "//:dummy_target_for_ci"
