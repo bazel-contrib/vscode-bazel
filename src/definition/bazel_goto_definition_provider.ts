@@ -24,6 +24,7 @@ import {
 import { Utils } from "vscode-uri";
 import { BazelQuery, BazelWorkspaceInfo, QueryLocation } from "../bazel";
 import { getDefaultBazelExecutablePath } from "../extension/configuration";
+import { blaze_query } from "../protos";
 
 // LABEL_REGEX matches label strings, e.g. @r//x/y/z:abc
 const LABEL_REGEX = /"((?:@\w+)?\/\/|(?:.+\/)?[^:]*(?::[^:]+)?)"/;
@@ -52,12 +53,18 @@ export class BazelGotoDefinitionProvider implements DefinitionProvider {
     const queryResult = await new BazelQuery(
       getDefaultBazelExecutablePath(),
       Utils.dirname(document.uri).fsPath,
-    ).queryTargets(`kind(rule, "${targetName}")`);
+    ).queryTargets(`kind(rule, "${targetName}") + kind(file, "${targetName}")`);
 
     if (!queryResult.target.length) {
       return null;
     }
-    const location = new QueryLocation(queryResult.target[0].rule.location);
-    return new Location(Uri.file(location.path), location.range);
+    const result = queryResult.target[0];
+    if (result.type == blaze_query.Target.Discriminator.RULE) {
+      const location = new QueryLocation(result.rule.location);
+      return new Location(Uri.file(location.path), location.range);
+    } else {
+      const location = new QueryLocation(result.sourceFile.location);
+      return new Location(Uri.file(location.path), new Position(0, 0));
+    }
   }
 }
