@@ -16,7 +16,6 @@ import {
   Definition,
   DefinitionLink,
   DefinitionProvider,
-  Location,
   Position,
   TextDocument,
   Uri,
