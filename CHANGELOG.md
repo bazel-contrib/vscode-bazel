@@ -1,5 +1,27 @@
 # Change Log
 
+## [0.10.0](https://github.com/bazelbuild/vscode-bazel/compare/0.9.0...v0.10.0) (2024-04-09)
+
+
+### Features
+
+* Add `bazel.info.workspace` command variable ([#351](https://github.com/bazelbuild/vscode-bazel/issues/351)) ([8ae24cf](https://github.com/bazelbuild/vscode-bazel/commit/8ae24cf235cfe66078be7deab86f4f83ac25bbd1))
+* Add buildifier Json File Configuration ([#357](https://github.com/bazelbuild/vscode-bazel/issues/357)) ([afc3aed](https://github.com/bazelbuild/vscode-bazel/commit/afc3aeddfce0821a10a0b1fa889855a2a12a2433))
+* Introduce `pickTarget` and `pickPackage` command variables ([#354](https://github.com/bazelbuild/vscode-bazel/issues/354)) ([2ef6d2a](https://github.com/bazelbuild/vscode-bazel/commit/2ef6d2ad3f30700bc7076e8d3b7d42e81abb1ed2))
+* Pick up `.buildifier.json` configuration from the Bazel workspace root ([#350](https://github.com/bazelbuild/vscode-bazel/issues/350)) ([c2f3f8c](https://github.com/bazelbuild/vscode-bazel/commit/c2f3f8cb486edb079d129db0c08b53535f88a20c))
+* Support bazel tasks from tasks.json ([#346](https://github.com/bazelbuild/vscode-bazel/issues/346)) ([f2426e4](https://github.com/bazelbuild/vscode-bazel/commit/f2426e4e29c88e04cb1589f518c169804deda70f))
+* Support relative paths for bazel.buildifierExecutable ([#350](https://github.com/bazelbuild/vscode-bazel/issues/350)) ([c2f3f8c](https://github.com/bazelbuild/vscode-bazel/commit/c2f3f8cb486edb079d129db0c08b53535f88a20c))
+* Support running buildifier through Bazel ([#350](https://github.com/bazelbuild/vscode-bazel/issues/350)) ([c2f3f8c](https://github.com/bazelbuild/vscode-bazel/commit/c2f3f8cb486edb079d129db0c08b53535f88a20c))
+
+
+### Bug Fixes
+
+* Activate the extension automatically ([#344](https://github.com/bazelbuild/vscode-bazel/issues/344)) ([085262e](https://github.com/bazelbuild/vscode-bazel/commit/085262ea23607449f098b1cb47b6f4b9b4c84881))
+* Add a welcome view to the Bazel Build Targets tree view ([#372](https://github.com/bazelbuild/vscode-bazel/issues/372)) ([1cbdfd6](https://github.com/bazelbuild/vscode-bazel/commit/1cbdfd6ad60b2bcee04dd4e689b2ac04f37672d2))
+* Don't wait on the "Buildifier not found" notification ([#368](https://github.com/bazelbuild/vscode-bazel/issues/368)) ([8b659a2](https://github.com/bazelbuild/vscode-bazel/commit/8b659a23875e80ba278b99846e019cddb2c99338))
+* Enable the "Restart LSP" command only if the language server is enabled ([#345](https://github.com/bazelbuild/vscode-bazel/issues/345)) ([15793a4](https://github.com/bazelbuild/vscode-bazel/commit/15793a40abb6127cbe08b53827440f6938a09369))
+* Hide commands which are intended to be command variables ([#347](https://github.com/bazelbuild/vscode-bazel/issues/347)) ([6d3e988](https://github.com/bazelbuild/vscode-bazel/commit/6d3e9884e345e754706f20d847e1f86b8729f40c))
+
 ## 0.9.0 (February 20, 2024)
 
 ### New Features
