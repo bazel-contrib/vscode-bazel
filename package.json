@@ -462,6 +462,8 @@
         "compile": "./scripts/build.sh",
         "format-check": "prettier --check .",
         "format-fix": "prettier --write .",
+        "test": "./scripts/test.sh",
+        "update-snapshot": "./scripts/test.sh -u",
         "vscode:prepublish": "./scripts/build.sh",
         "watch": "./scripts/build.sh -watch"
     },
@@ -475,7 +477,8 @@
         "js-yaml": "^4.1.0",
         "prettier": "^3.2.5",
         "typescript": "^5.4.4",
-        "typescript-eslint": "^7.5.0"
+        "typescript-eslint": "^7.5.0",
+        "vscode-tmgrammar-test": "^0.1.3"
     },
     "dependencies": {
         "protobufjs": "^6.8.0",
