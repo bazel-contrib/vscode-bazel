@@ -59,12 +59,18 @@ export class BazelGotoDefinitionProvider implements DefinitionProvider {
       return null;
     }
     const result = queryResult.target[0];
+    let location;
     if (result.type === blaze_query.Target.Discriminator.RULE) {
-      const location = new QueryLocation(result.rule.location);
-      return new Location(Uri.file(location.path), location.range);
+      location = new QueryLocation(result.rule.location);
     } else {
-      const location = new QueryLocation(result.sourceFile.location);
-      return new Location(Uri.file(location.path), new Position(0, 0));
+      location = new QueryLocation(result.sourceFile.location);
     }
+    return [
+      {
+        originSelectionRange: range,
+        targetUri: Uri.file(location.path),
+        targetRange: location.range,
+      },
+    ];
   }
 }
