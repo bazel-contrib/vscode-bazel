@@ -31,5 +31,8 @@ if [[ ! -f src/protos/protos.d.ts ]] ; then
   pbts -o src/protos/protos.d.ts src/protos/protos.js
 fi
 
+# Convert yaml language definition to json form requred by vscode.
+js-yaml syntaxes/bazelrc.tmLanguage.yaml > syntaxes/bazelrc.tmLanguage.json
+
 # Compile the rest of the project.
 tsc "$@" -p ./
