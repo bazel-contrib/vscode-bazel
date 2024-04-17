@@ -7,12 +7,12 @@ on:
     types: [prereleased, released]
 
 permissions:
-    # Write permissions needed for publishing the release
-    contents: write
+  # Write permissions needed for publishing the release
+  contents: write
 
 concurrency:
-    group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
-    cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 jobs:
   build_vscode_ext:
@@ -39,9 +39,9 @@ jobs:
       - name: Upload Workflow Artifact
         uses: actions/upload-artifact@v4
         with:
-            name: vscode-bazel-prerelease.vsix
-            path: vscode-bazel-*.vsix
-            if-no-files-found: error
+          name: vscode-bazel-prerelease.vsix
+          path: vscode-bazel-*.vsix
+          if-no-files-found: error
 
       - name: Upload Release Artifact
         if: ${{ github.event_name == 'release' }}
