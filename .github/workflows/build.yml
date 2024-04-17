@@ -4,7 +4,7 @@ on:
   push:
   pull_request:
   release:
-    types: [prereleased, released]
+    types: [published]
 
 permissions:
   # Write permissions needed for publishing the release
