@@ -1,0 +1,734 @@
+># This is a comment
+#^ source.bazelrc comment.line.number-sign.shell punctuation.definition.comment.shell
+# ^^^^^^^^^^^^^^^^^^ source.bazelrc comment.line.number-sign.shell
+>build --config=foo
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.config entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^^^ source.bazelrc meta.group.args meta.group.flag.config entity.name.class.flag
+#              ^ source.bazelrc meta.group.args meta.group.flag.config punctuation.separator.equal
+#               ^^^ source.bazelrc meta.group.args meta.group.flag.config variable.other.config
+>
+># This is a weird \
+#^ source.bazelrc comment.line.number-sign.shell punctuation.definition.comment.shell
+# ^^^^^^^^^^^^^^^^^ source.bazelrc comment.line.number-sign.shell
+#                  ^ source.bazelrc comment.line.number-sign.shell constant.character.escape.line-continuation.shell
+>  multi-line comment
+#^^^^^^^^^^^^^^^^^^^^ source.bazelrc comment.line.number-sign.shell
+>
+>build --incompatible_py3_is_default=true
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                                   ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                                    ^^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value constant.language.boolean
+>build --incompatible_py3_is_default true
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.space_value entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.space_value entity.name.class.flag
+#                                   ^ source.bazelrc meta.group.args meta.group.flag.space_value
+#                                    ^^^^ source.bazelrc meta.group.args meta.group.flag.space_value meta.string.flag_value constant.language.boolean
+>common  --enable_platform_specific_config
+#^^^^^^ source.bazelrc keyword.control.subcommand
+#      ^^ source.bazelrc
+#        ^^ source.bazelrc meta.group.args meta.group.flag.bare entity.name.class.flag punctuation.definition.dash.flag
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.bare entity.name.class.flag
+>common:macos --repo_env=PATH
+#^^^^^^ source.bazelrc keyword.control.subcommand
+#      ^ source.bazelrc punctuation.separator.colon.config
+#       ^^^^^ source.bazelrc entity.name.tag.config
+#            ^ source.bazelrc
+#             ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#               ^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                       ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                        ^^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.unquoted.argument
+>build --action_env=PATH=/bin:/sbin:/usr/bin
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                  ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                   ^^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value support.variable
+#                       ^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value punctuation.separator.equal
+#                        ^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.unquoted.argument string.unquoted.argument
+>build --sandbox_tmpfs_path=/tmp
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                          ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                           ^^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.unquoted.argument
+>common: --action_env=NO_CONFIG
+#^^^^^^ source.bazelrc keyword.control.subcommand
+#      ^ source.bazelrc punctuation.separator.colon.config
+#       ^ source.bazelrc
+#        ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#          ^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                    ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                     ^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.unquoted.argument
+>build:space\ name --action_env=FOO
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc punctuation.separator.colon.config
+#      ^^^^^ source.bazelrc entity.name.tag.config
+#           ^^ source.bazelrc entity.name.tag.config constant.character.escape.shell
+#             ^^^^ source.bazelrc entity.name.tag.config
+#                 ^ source.bazelrc
+#                  ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#                    ^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                              ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                               ^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.unquoted.argument
+>build:"space name" --action_env=FOO
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc punctuation.separator.colon.config
+#      ^ source.bazelrc string.quoted.double.argument punctuation.definition.quote.begin
+#       ^^^^^^^^^^ source.bazelrc string.quoted.double.argument entity.name.tag.config
+#                 ^ source.bazelrc string.quoted.double.argument punctuation.definition.quote.end
+#                  ^ source.bazelrc
+#                   ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#                     ^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                               ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                                ^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.unquoted.argument
+>build:'space name' --action_env=FOO
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc punctuation.separator.colon.config
+#      ^ source.bazelrc string.quoted.single.argument punctuation.definition.quote.begin
+#       ^^^^^^^^^^ source.bazelrc string.quoted.single.argument entity.name.tag.config
+#                 ^ source.bazelrc string.quoted.single.argument punctuation.definition.quote.end
+#                  ^ source.bazelrc
+#                   ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#                     ^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                               ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                                ^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.unquoted.argument
+>build --config="space name"
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.config entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^^^ source.bazelrc meta.group.args meta.group.flag.config entity.name.class.flag
+#              ^ source.bazelrc meta.group.args meta.group.flag.config punctuation.separator.equal
+#               ^ source.bazelrc meta.group.args meta.group.flag.config string.quoted.double.argument punctuation.definition.quote.begin
+#                ^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.config string.quoted.double.argument variable.other.config
+#                          ^ source.bazelrc meta.group.args meta.group.flag.config string.quoted.double.argument punctuation.definition.quote.end
+>build --config='space name'
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.config entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^^^ source.bazelrc meta.group.args meta.group.flag.config entity.name.class.flag
+#              ^ source.bazelrc meta.group.args meta.group.flag.config punctuation.separator.equal
+#               ^ source.bazelrc meta.group.args meta.group.flag.config string.quoted.single.argument punctuation.definition.quote.begin
+#                ^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.config string.quoted.single.argument variable.other.config
+#                          ^ source.bazelrc meta.group.args meta.group.flag.config string.quoted.single.argument punctuation.definition.quote.end
+>build --config=space\ name
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.config entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^^^ source.bazelrc meta.group.args meta.group.flag.config entity.name.class.flag
+#              ^ source.bazelrc meta.group.args meta.group.flag.config punctuation.separator.equal
+#               ^^^^^ source.bazelrc meta.group.args meta.group.flag.config variable.other.config
+#                    ^^ source.bazelrc meta.group.args meta.group.flag.config variable.other.config constant.character.escape.shell
+#                      ^^^^ source.bazelrc meta.group.args meta.group.flag.config variable.other.config
+>build --build_label=some\ label
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                   ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                    ^^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.unquoted.argument
+#                        ^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.unquoted.argument constant.character.escape.shell
+#                          ^^^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.unquoted.argument
+>build --build_label="some \"quoted\" label"
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                   ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                    ^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.quoted.double.argument punctuation.definition.quote.begin
+#                     ^^^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.quoted.double.argument string.unquoted.argument
+#                          ^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.quoted.double.argument string.unquoted.argument constant.character.escape.shell
+#                            ^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.quoted.double.argument string.unquoted.argument
+#                                  ^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.quoted.double.argument string.unquoted.argument constant.character.escape.shell
+#                                    ^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.quoted.double.argument string.unquoted.argument
+#                                          ^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.quoted.double.argument punctuation.definition.quote.end
+>build --build_label='some "quoted" label'
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                   ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                    ^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.quoted.single.argument punctuation.definition.quote.begin
+#                     ^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.quoted.single.argument string.unquoted.argument
+#                                        ^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.quoted.single.argument punctuation.definition.quote.end
+>
+>test -k
+#^^^^ source.bazelrc keyword.control.subcommand
+#    ^ source.bazelrc
+#     ^ source.bazelrc meta.group.args meta.group.flag.short punctuation.definition.dash.flag entity.name.class.flag.short
+#      ^ source.bazelrc meta.group.args meta.group.flag.short entity.name.class.flag.short
+>
+>build --platforms=//:foo
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                 ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                  ^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value meta.class.target entity.name.namespace.workspace punctuation.separator.slash.root
+#                    ^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value meta.class.target entity.name.class.target punctuation.separator.colon.package
+#                     ^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value meta.class.target entity.name.class.target
+>
+>build --action_env=PYTHONNOUSERSITE=1
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                  ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                   ^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value support.variable
+#                                   ^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value punctuation.separator.equal
+#                                    ^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.unquoted.argument constant.numeric
+>build --test_tag_filters=-requires_s3
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                        ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                         ^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.unquoted.argument
+>test --objc_debug_with_GLIBCXX
+#^^^^ source.bazelrc keyword.control.subcommand
+#    ^ source.bazelrc
+#     ^^ source.bazelrc meta.group.args meta.group.flag.bare entity.name.class.flag punctuation.definition.dash.flag
+#       ^^^^^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.bare entity.name.class.flag
+>
+>build -j "HOST_CPUS * .5"
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^ source.bazelrc meta.group.args meta.group.flag.short punctuation.definition.dash.flag entity.name.class.flag.short
+#       ^ source.bazelrc meta.group.args meta.group.flag.short entity.name.class.flag.short
+#        ^ source.bazelrc meta.group.args meta.group.flag.short
+#         ^ source.bazelrc meta.group.args meta.group.flag.short meta.string.flag_value string.quoted.double.argument punctuation.definition.quote.begin
+#          ^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.short meta.string.flag_value string.quoted.double.argument meta.variable.parameter.computed variable.language
+#                   ^ source.bazelrc meta.group.args meta.group.flag.short meta.string.flag_value string.quoted.double.argument
+#                    ^ source.bazelrc meta.group.args meta.group.flag.short meta.string.flag_value string.quoted.double.argument meta.variable.parameter.computed keyword.operator.minus
+#                     ^ source.bazelrc meta.group.args meta.group.flag.short meta.string.flag_value string.quoted.double.argument
+#                      ^^ source.bazelrc meta.group.args meta.group.flag.short meta.string.flag_value string.quoted.double.argument meta.variable.parameter.computed constant.numeric
+#                        ^ source.bazelrc meta.group.args meta.group.flag.short meta.string.flag_value string.quoted.double.argument punctuation.definition.quote.end
+>build --local_cpu_resources=HOST_CPUS*0.5
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                           ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                            ^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value meta.variable.parameter.computed variable.language
+#                                     ^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value meta.variable.parameter.computed keyword.operator.minus
+#                                      ^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value meta.variable.parameter.computed constant.numeric
+>build "--local_cpu_resources=HOST_CPUS*0.5"
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^ source.bazelrc meta.group.args string.quoted.double.argument punctuation.definition.quote.begin
+#       ^^ source.bazelrc meta.group.args string.quoted.double.argument meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#         ^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args string.quoted.double.argument meta.group.flag.valued entity.name.class.flag
+#                            ^ source.bazelrc meta.group.args string.quoted.double.argument meta.group.flag.valued punctuation.separator.equal
+#                             ^^^^^^^^^ source.bazelrc meta.group.args string.quoted.double.argument meta.group.flag.valued meta.string.flag_value meta.variable.parameter.computed variable.language
+#                                      ^ source.bazelrc meta.group.args string.quoted.double.argument meta.group.flag.valued meta.string.flag_value meta.variable.parameter.computed keyword.operator.minus
+#                                       ^^^ source.bazelrc meta.group.args string.quoted.double.argument meta.group.flag.valued meta.string.flag_value meta.variable.parameter.computed constant.numeric
+#                                          ^ source.bazelrc meta.group.args string.quoted.double.argument punctuation.definition.quote.end
+>build --local_cpu_resources="HOST_CPUS * 0.5"
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                           ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                            ^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.quoted.double.argument punctuation.definition.quote.begin
+#                             ^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.quoted.double.argument meta.variable.parameter.computed variable.language
+#                                      ^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.quoted.double.argument
+#                                       ^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.quoted.double.argument meta.variable.parameter.computed keyword.operator.minus
+#                                        ^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.quoted.double.argument
+#                                         ^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.quoted.double.argument meta.variable.parameter.computed constant.numeric
+#                                            ^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.quoted.double.argument punctuation.definition.quote.end
+>build "--local_cpu_resources=HOST_CPUS * 0.5"
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^ source.bazelrc meta.group.args string.quoted.double.argument punctuation.definition.quote.begin
+#       ^^ source.bazelrc meta.group.args string.quoted.double.argument meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#         ^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args string.quoted.double.argument meta.group.flag.valued entity.name.class.flag
+#                            ^ source.bazelrc meta.group.args string.quoted.double.argument meta.group.flag.valued punctuation.separator.equal
+#                             ^^^^^^^^^ source.bazelrc meta.group.args string.quoted.double.argument meta.group.flag.valued meta.string.flag_value meta.variable.parameter.computed variable.language
+#                                      ^ source.bazelrc meta.group.args string.quoted.double.argument meta.group.flag.valued meta.string.flag_value
+#                                       ^ source.bazelrc meta.group.args string.quoted.double.argument meta.group.flag.valued meta.string.flag_value meta.variable.parameter.computed keyword.operator.minus
+#                                        ^ source.bazelrc meta.group.args string.quoted.double.argument meta.group.flag.valued meta.string.flag_value
+#                                         ^^^ source.bazelrc meta.group.args string.quoted.double.argument meta.group.flag.valued meta.string.flag_value meta.variable.parameter.computed constant.numeric
+#                                            ^ source.bazelrc meta.group.args string.quoted.double.argument punctuation.definition.quote.end
+>  build --local_cpu_resources HOST_CPUS*0.5
+#^^ source.bazelrc
+#  ^^^^^ source.bazelrc keyword.control.subcommand
+#       ^ source.bazelrc
+#        ^^ source.bazelrc meta.group.args meta.group.flag.space_value entity.name.class.flag punctuation.definition.dash.flag
+#          ^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.space_value entity.name.class.flag
+#                             ^ source.bazelrc meta.group.args meta.group.flag.space_value
+#                              ^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.space_value meta.string.flag_value meta.variable.parameter.computed variable.language
+#                                       ^ source.bazelrc meta.group.args meta.group.flag.space_value meta.string.flag_value meta.variable.parameter.computed keyword.operator.minus
+#                                        ^^^ source.bazelrc meta.group.args meta.group.flag.space_value meta.string.flag_value meta.variable.parameter.computed constant.numeric
+>build --local_resources=cpu=HOST_CPUS*0.5
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                       ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                        ^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value support.variable
+#                           ^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value punctuation.separator.equal
+#                            ^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.unquoted.argument meta.variable.parameter.computed variable.language
+#                                     ^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.unquoted.argument meta.variable.parameter.computed keyword.operator.minus
+#                                      ^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.unquoted.argument meta.variable.parameter.computed constant.numeric
+>test --nobuild_runfile_links
+#^^^^ source.bazelrc keyword.control.subcommand
+#    ^ source.bazelrc
+#     ^^ source.bazelrc meta.group.args entity.name.class.flag.negated punctuation.definition.dash.flag
+#       ^^ source.bazelrc meta.group.args entity.name.class.flag.negated keyword.control.negation
+#         ^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args entity.name.class.flag.negated
+>build:linux --config=remote  
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc punctuation.separator.colon.config
+#      ^^^^^ source.bazelrc entity.name.tag.config
+#           ^ source.bazelrc
+#            ^^ source.bazelrc meta.group.args meta.group.flag.config entity.name.class.flag punctuation.definition.dash.flag
+#              ^^^^^^ source.bazelrc meta.group.args meta.group.flag.config entity.name.class.flag
+#                    ^ source.bazelrc meta.group.args meta.group.flag.config punctuation.separator.equal
+#                     ^^^^^^ source.bazelrc meta.group.args meta.group.flag.config variable.other.config
+#                           ^ source.bazelrc meta.group.args punctuation.separator.space
+#                            ^ source.bazelrc meta.group.args
+>build:remote --jobs=200
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc punctuation.separator.colon.config
+#      ^^^^^^ source.bazelrc entity.name.tag.config
+#            ^ source.bazelrc
+#             ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#               ^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                   ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                    ^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value constant.numeric
+>build:remote --jobs=auto
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc punctuation.separator.colon.config
+#      ^^^^^^ source.bazelrc entity.name.tag.config
+#            ^ source.bazelrc
+#             ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#               ^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                   ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                    ^^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value variable.language
+>build:remote --jobs 200
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc punctuation.separator.colon.config
+#      ^^^^^^ source.bazelrc entity.name.tag.config
+#            ^ source.bazelrc
+#             ^^ source.bazelrc meta.group.args meta.group.flag.space_value entity.name.class.flag punctuation.definition.dash.flag
+#               ^^^^ source.bazelrc meta.group.args meta.group.flag.space_value entity.name.class.flag
+#                   ^ source.bazelrc meta.group.args meta.group.flag.space_value
+#                    ^^^ source.bazelrc meta.group.args meta.group.flag.space_value meta.string.flag_value constant.numeric
+>build:no_remote --jobs="HOST_CPUS*.5"
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc punctuation.separator.colon.config
+#      ^^^^^^^^^ source.bazelrc entity.name.tag.config
+#               ^ source.bazelrc
+#                ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#                  ^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                      ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                       ^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.quoted.double.argument punctuation.definition.quote.begin
+#                        ^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.quoted.double.argument meta.variable.parameter.computed variable.language
+#                                 ^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.quoted.double.argument meta.variable.parameter.computed keyword.operator.minus
+#                                  ^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.quoted.double.argument meta.variable.parameter.computed constant.numeric
+#                                    ^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.quoted.double.argument punctuation.definition.quote.end
+>build:ci -c opt
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc punctuation.separator.colon.config
+#      ^^ source.bazelrc entity.name.tag.config
+#        ^ source.bazelrc
+#         ^ source.bazelrc meta.group.args meta.group.flag.short punctuation.definition.dash.flag entity.name.class.flag.short
+#          ^ source.bazelrc meta.group.args meta.group.flag.short entity.name.class.flag.short
+#           ^ source.bazelrc meta.group.args meta.group.flag.short
+#            ^^^ source.bazelrc meta.group.args meta.group.flag.short meta.string.flag_value string.unquoted.argument
+>coverage:remote --remote_download_regex=.*/((testlogs/.*/_coverage/.*)|coverage.dat$|_coverage/_coverage_report.dat$)
+#^^^^^^^^ source.bazelrc keyword.control.subcommand
+#        ^ source.bazelrc punctuation.separator.colon.config
+#         ^^^^^^ source.bazelrc entity.name.tag.config
+#               ^ source.bazelrc
+#                ^^ source.bazelrc meta.group.args meta.group.flag.regex entity.name.class.flag punctuation.definition.dash.flag
+#                  ^^^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.regex entity.name.class.flag
+#                                       ^ source.bazelrc meta.group.args meta.group.flag.regex punctuation.separator.equal
+#                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.regex string.regexp.filter
+>coverage:remote --remote_download_regex=".*/((testlogs/.*/_coverage/.*)|coverage.dat$| _coverage/_coverage_report.dat$)"
+#^^^^^^^^ source.bazelrc keyword.control.subcommand
+#        ^ source.bazelrc punctuation.separator.colon.config
+#         ^^^^^^ source.bazelrc entity.name.tag.config
+#               ^ source.bazelrc
+#                ^^ source.bazelrc meta.group.args meta.group.flag.regex entity.name.class.flag punctuation.definition.dash.flag
+#                  ^^^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.regex entity.name.class.flag
+#                                       ^ source.bazelrc meta.group.args meta.group.flag.regex punctuation.separator.equal
+#                                        ^ source.bazelrc meta.group.args meta.group.flag.regex string.quoted.double.argument punctuation.definition.string.begin
+#                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.regex string.quoted.double.argument string.regexp.filter
+#                                                                                                                       ^ source.bazelrc meta.group.args meta.group.flag.regex string.quoted.double.argument punctuation.definition.string.end
+>coverage:remote --remote_download_regex='.*/((testlogs/.*/_coverage/.*)|coverage.dat$|_coverage/_coverage_report.dat$)'
+#^^^^^^^^ source.bazelrc keyword.control.subcommand
+#        ^ source.bazelrc punctuation.separator.colon.config
+#         ^^^^^^ source.bazelrc entity.name.tag.config
+#               ^ source.bazelrc
+#                ^^ source.bazelrc meta.group.args meta.group.flag.regex entity.name.class.flag punctuation.definition.dash.flag
+#                  ^^^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.regex entity.name.class.flag
+#                                       ^ source.bazelrc meta.group.args meta.group.flag.regex punctuation.separator.equal
+#                                        ^ source.bazelrc meta.group.args meta.group.flag.regex string.quoted.single.argument punctuation.definition.string.begin
+#                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.regex string.quoted.single.argument string.regexp.filter
+#                                                                                                                      ^ source.bazelrc meta.group.args meta.group.flag.regex string.quoted.single.argument punctuation.definition.string.end
+>
+>build:ci --stamp --verbose_failures
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc punctuation.separator.colon.config
+#      ^^ source.bazelrc entity.name.tag.config
+#        ^ source.bazelrc
+#         ^^ source.bazelrc meta.group.args meta.group.flag.bare entity.name.class.flag punctuation.definition.dash.flag
+#           ^^^^^ source.bazelrc meta.group.args meta.group.flag.bare entity.name.class.flag
+#                ^ source.bazelrc meta.group.args punctuation.separator.space
+#                 ^^ source.bazelrc meta.group.args meta.group.flag.bare entity.name.class.flag punctuation.definition.dash.flag
+#                   ^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.bare entity.name.class.flag
+>
+>try-import .bazelrc-user
+#^^^^^^^^^^ source.bazelrc keyword.control.import
+#          ^ source.bazelrc
+#           ^^^^^^^^^^^^^ source.bazelrc string.value.filename
+>try-import:"weird config" foo.bazelrc
+#^^^^^^^^^^ source.bazelrc keyword.control.import
+#          ^ source.bazelrc punctuation.separator.colon.config
+#           ^^^^^^^^^^^^^^ source.bazelrc entity.name.tag.config
+#                         ^ source.bazelrc
+#                          ^^^^^^^^^^^ source.bazelrc string.value.filename
+>import %workspace%/.bazelrc-user
+#^^^^^^ source.bazelrc keyword.control.import
+#      ^ source.bazelrc
+#       ^^^^^^^^^^^ source.bazelrc support.variable
+#                  ^^^^^^^^^^^^^^ source.bazelrc string.value.filename
+>import:ci %workspace%/ci.bazelrc
+#^^^^^^ source.bazelrc keyword.control.import
+#      ^ source.bazelrc punctuation.separator.colon.config
+#       ^^ source.bazelrc entity.name.tag.config
+#         ^ source.bazelrc
+#          ^^^^^^^^^^^ source.bazelrc support.variable
+#                     ^^^^^^^^^^^ source.bazelrc string.value.filename
+>build --//rules/foo:enable_bar
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag punctuation.definition.dash.flag
+#        ^^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag.target meta.class.target entity.name.namespace.workspace punctuation.separator.slash.root
+#          ^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag.target meta.class.target entity.name.class.package
+#                   ^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag.target meta.class.target entity.name.class.target punctuation.separator.colon.package
+#                    ^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag.target meta.class.target entity.name.class.target
+>common --no@some_rules//:enable_foo  # comment
+#^^^^^^ source.bazelrc keyword.control.subcommand
+#      ^ source.bazelrc
+#       ^^ source.bazelrc meta.group.args meta.group.flag.negated.target entity.name.class.flag punctuation.definition.dash.flag
+#         ^^ source.bazelrc meta.group.args meta.group.flag.negated.target keyword.control.negation
+#           ^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.negated.target entity.name.class.flag.target meta.class.target entity.name.namespace.workspace
+#                      ^^ source.bazelrc meta.group.args meta.group.flag.negated.target entity.name.class.flag.target meta.class.target entity.name.namespace.workspace punctuation.separator.slash.root
+#                        ^ source.bazelrc meta.group.args meta.group.flag.negated.target entity.name.class.flag.target meta.class.target entity.name.class.target punctuation.separator.colon.package
+#                         ^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.negated.target entity.name.class.flag.target meta.class.target entity.name.class.target
+#                                   ^^ source.bazelrc meta.group.args punctuation.separator.space
+#                                     ^ source.bazelrc meta.group.args comment.line.number-sign.shell punctuation.definition.comment.shell
+#                                      ^^^^^^^^ source.bazelrc meta.group.args comment.line.number-sign.shell
+>build --//rules/foo
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag punctuation.definition.dash.flag
+#        ^^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag.target meta.class.target entity.name.namespace.workspace punctuation.separator.slash.root
+#          ^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag.target meta.class.target entity.name.class.package
+>build --//rules/foo=bar
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag punctuation.definition.dash.flag
+#        ^^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag.target meta.class.target entity.name.namespace.workspace punctuation.separator.slash.root
+#          ^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag.target meta.class.target entity.name.class.package
+#                   ^ source.bazelrc meta.group.args meta.group.flag.target punctuation.separator.equal
+#                    ^^^ source.bazelrc meta.group.args meta.group.flag.target meta.string.flag_value string.unquoted.argument
+>build --@some_rules//rules/foo:enable_bar
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag.target meta.class.target entity.name.namespace.workspace
+#                   ^^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag.target meta.class.target entity.name.namespace.workspace punctuation.separator.slash.root
+#                     ^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag.target meta.class.target entity.name.class.package
+#                              ^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag.target meta.class.target entity.name.class.target punctuation.separator.colon.package
+#                               ^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag.target meta.class.target entity.name.class.target
+>build --@some_rules//rules/foo:rustflags=-Cforce-frame-pointers=yes
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag.target meta.class.target entity.name.namespace.workspace
+#                   ^^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag.target meta.class.target entity.name.namespace.workspace punctuation.separator.slash.root
+#                     ^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag.target meta.class.target entity.name.class.package
+#                              ^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag.target meta.class.target entity.name.class.target punctuation.separator.colon.package
+#                               ^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag.target meta.class.target entity.name.class.target
+#                                        ^ source.bazelrc meta.group.args meta.group.flag.target punctuation.separator.equal
+#                                         ^^^^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.target meta.string.flag_value support.variable
+#                                                               ^ source.bazelrc meta.group.args meta.group.flag.target meta.string.flag_value punctuation.separator.equal
+#                                                                ^^^ source.bazelrc meta.group.args meta.group.flag.target meta.string.flag_value string.unquoted.argument constant.language.boolean
+>build --@some_rules//rules/foo:rustflags="-Cforce-frame-pointers=yes"
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag.target meta.class.target entity.name.namespace.workspace
+#                   ^^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag.target meta.class.target entity.name.namespace.workspace punctuation.separator.slash.root
+#                     ^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag.target meta.class.target entity.name.class.package
+#                              ^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag.target meta.class.target entity.name.class.target punctuation.separator.colon.package
+#                               ^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.target entity.name.class.flag.target meta.class.target entity.name.class.target
+#                                        ^ source.bazelrc meta.group.args meta.group.flag.target punctuation.separator.equal
+#                                         ^ source.bazelrc meta.group.args meta.group.flag.target meta.string.flag_value string.quoted.double.argument punctuation.definition.quote.begin
+#                                          ^^^^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.target meta.string.flag_value string.quoted.double.argument support.variable
+#                                                                ^ source.bazelrc meta.group.args meta.group.flag.target meta.string.flag_value string.quoted.double.argument punctuation.separator.equal
+#                                                                 ^^^ source.bazelrc meta.group.args meta.group.flag.target meta.string.flag_value string.quoted.double.argument string.unquoted.argument constant.language.boolean
+#                                                                    ^ source.bazelrc meta.group.args meta.group.flag.target meta.string.flag_value string.quoted.double.argument punctuation.definition.quote.end
+>build --@some_invalid:target=nope
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args invalid.flag
+>build --another/invalid:target=nope
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.bare entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^^^^ source.bazelrc meta.group.args meta.group.flag.bare entity.name.class.flag
+#               ^^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args invalid.flag
+>build --/yet/another/invalid:target=nope
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args invalid.flag
+>build --no@some_invalid:target=nope
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.bare entity.name.class.flag punctuation.definition.dash.flag
+#        ^^ source.bazelrc meta.group.args meta.group.flag.bare entity.name.class.flag
+#          ^^^^^^^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args invalid.flag
+>build:ci //...
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc punctuation.separator.colon.config
+#      ^^ source.bazelrc entity.name.tag.config
+#        ^ source.bazelrc
+#         ^^ source.bazelrc meta.group.args meta.class.target.wild.recursive entity.name.namespace.workspace punctuation.separator.slash.root
+#           ^^^ source.bazelrc meta.group.args meta.class.target.wild.recursive keyword.operator.wordlike.all.recursive
+>build:ci //example/...
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc punctuation.separator.colon.config
+#      ^^ source.bazelrc entity.name.tag.config
+#        ^ source.bazelrc
+#         ^^ source.bazelrc meta.group.args meta.class.target.wild.recursive entity.name.namespace.workspace punctuation.separator.slash.root
+#           ^^^^^^^^ source.bazelrc meta.group.args meta.class.target.wild.recursive entity.name.class.package
+#                   ^^^ source.bazelrc meta.group.args meta.class.target.wild.recursive keyword.operator.wordlike.all.recursive
+>build:ci //:all
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc punctuation.separator.colon.config
+#      ^^ source.bazelrc entity.name.tag.config
+#        ^ source.bazelrc
+#         ^^ source.bazelrc meta.group.args meta.class.target.wild entity.name.namespace.workspace punctuation.separator.slash.root
+#           ^ source.bazelrc meta.group.args meta.class.target.wild entity.name.class.target punctuation.separator.colon.package
+#            ^^^ source.bazelrc meta.group.args meta.class.target.wild keyword.operator.wordlike.all
+>build:ci //example:all
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc punctuation.separator.colon.config
+#      ^^ source.bazelrc entity.name.tag.config
+#        ^ source.bazelrc
+#         ^^ source.bazelrc meta.group.args meta.class.target.wild entity.name.namespace.workspace punctuation.separator.slash.root
+#           ^^^^^^^ source.bazelrc meta.group.args meta.class.target.wild entity.name.class.package
+#                  ^ source.bazelrc meta.group.args meta.class.target.wild entity.name.class.target punctuation.separator.colon.package
+#                   ^^^ source.bazelrc meta.group.args meta.class.target.wild keyword.operator.wordlike.all
+>build:ci //:foo
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc punctuation.separator.colon.config
+#      ^^ source.bazelrc entity.name.tag.config
+#        ^ source.bazelrc
+#         ^^ source.bazelrc meta.group.args meta.class.target entity.name.namespace.workspace punctuation.separator.slash.root
+#           ^ source.bazelrc meta.group.args meta.class.target entity.name.class.target punctuation.separator.colon.package
+#            ^^^^ source.bazelrc meta.group.args meta.class.target entity.name.class.target
+>build:ci @rules_go//:example
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc punctuation.separator.colon.config
+#      ^^ source.bazelrc entity.name.tag.config
+#        ^ source.bazelrc
+#         ^^^^^^^^^ source.bazelrc meta.group.args meta.class.target entity.name.namespace.workspace
+#                  ^^ source.bazelrc meta.group.args meta.class.target entity.name.namespace.workspace punctuation.separator.slash.root
+#                    ^ source.bazelrc meta.group.args meta.class.target entity.name.class.target punctuation.separator.colon.package
+#                     ^^^^^^^^ source.bazelrc meta.group.args meta.class.target entity.name.class.target
+>build:ci @rules_go//pkg:example
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc punctuation.separator.colon.config
+#      ^^ source.bazelrc entity.name.tag.config
+#        ^ source.bazelrc
+#         ^^^^^^^^^ source.bazelrc meta.group.args meta.class.target entity.name.namespace.workspace
+#                  ^^ source.bazelrc meta.group.args meta.class.target entity.name.namespace.workspace punctuation.separator.slash.root
+#                    ^^^ source.bazelrc meta.group.args meta.class.target entity.name.class.package
+#                       ^ source.bazelrc meta.group.args meta.class.target entity.name.class.target punctuation.separator.colon.package
+#                        ^^^^^^^^ source.bazelrc meta.group.args meta.class.target entity.name.class.target
+>build --copt=-ffunction-sections --linkopt=-Wl,--gc-sections
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#            ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#             ^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.unquoted.argument
+#                                ^ source.bazelrc meta.group.args punctuation.separator.space
+#                                 ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#                                   ^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                                          ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                                           ^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.unquoted.argument
+>build "--copt=-ffunction-sections" --linkopt=-Wl,--gc-sections
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^ source.bazelrc meta.group.args string.quoted.double.argument punctuation.definition.quote.begin
+#       ^^ source.bazelrc meta.group.args string.quoted.double.argument meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#         ^^^^ source.bazelrc meta.group.args string.quoted.double.argument meta.group.flag.valued entity.name.class.flag
+#             ^ source.bazelrc meta.group.args string.quoted.double.argument meta.group.flag.valued punctuation.separator.equal
+#              ^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args string.quoted.double.argument meta.group.flag.valued meta.string.flag_value string.unquoted.argument
+#                                 ^ source.bazelrc meta.group.args string.quoted.double.argument punctuation.definition.quote.end
+#                                  ^ source.bazelrc meta.group.args punctuation.separator.space
+#                                   ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#                                     ^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                                            ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                                             ^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.unquoted.argument
+>build "--copt=-ffunction-sections" \
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^ source.bazelrc meta.group.args string.quoted.double.argument punctuation.definition.quote.begin
+#       ^^ source.bazelrc meta.group.args string.quoted.double.argument meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#         ^^^^ source.bazelrc meta.group.args string.quoted.double.argument meta.group.flag.valued entity.name.class.flag
+#             ^ source.bazelrc meta.group.args string.quoted.double.argument meta.group.flag.valued punctuation.separator.equal
+#              ^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args string.quoted.double.argument meta.group.flag.valued meta.string.flag_value string.unquoted.argument
+#                                 ^ source.bazelrc meta.group.args string.quoted.double.argument punctuation.definition.quote.end
+#                                  ^ source.bazelrc meta.group.args punctuation.separator.space
+#                                   ^ source.bazelrc meta.group.args constant.character.escape.line-continuation.shell
+>  --linkopt=-Wl,--gc-sections 
+#^^ source.bazelrc meta.group.args punctuation.separator.space
+#  ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#    ^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#           ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#            ^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.unquoted.argument
+#                             ^ source.bazelrc meta.group.args
+>
+>build --workspace_status_script name\ with\ escaped\ space
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.space_value entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.space_value entity.name.class.flag
+#                               ^ source.bazelrc meta.group.args meta.group.flag.space_value
+#                                ^^^^ source.bazelrc meta.group.args meta.group.flag.space_value meta.string.flag_value string.unquoted.argument
+#                                    ^^ source.bazelrc meta.group.args meta.group.flag.space_value meta.string.flag_value string.unquoted.argument constant.character.escape.shell
+#                                      ^^^^ source.bazelrc meta.group.args meta.group.flag.space_value meta.string.flag_value string.unquoted.argument
+#                                          ^^ source.bazelrc meta.group.args meta.group.flag.space_value meta.string.flag_value string.unquoted.argument constant.character.escape.shell
+#                                            ^^^^^^^ source.bazelrc meta.group.args meta.group.flag.space_value meta.string.flag_value string.unquoted.argument
+#                                                   ^^ source.bazelrc meta.group.args meta.group.flag.space_value meta.string.flag_value string.unquoted.argument constant.character.escape.shell
+#                                                     ^^^^^ source.bazelrc meta.group.args meta.group.flag.space_value meta.string.flag_value string.unquoted.argument
+>build --workspace_status_script \
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.space_value entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.space_value entity.name.class.flag
+#                               ^ source.bazelrc meta.group.args meta.group.flag.space_value
+#                                ^ source.bazelrc meta.group.args meta.group.flag.space_value constant.character.escape.line-continuation.shell
+>  some/path
+#^^ source.bazelrc meta.group.args meta.group.flag.space_value
+#  ^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.space_value meta.string.flag_value string.unquoted.argument
+>build --workspace_status_script \
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.space_value entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.space_value entity.name.class.flag
+#                               ^ source.bazelrc meta.group.args meta.group.flag.space_value
+#                                ^ source.bazelrc meta.group.args meta.group.flag.space_value constant.character.escape.line-continuation.shell
+>  name\ with\ escaped\ space \
+#^^ source.bazelrc meta.group.args meta.group.flag.space_value
+#  ^^^^ source.bazelrc meta.group.args meta.group.flag.space_value meta.string.flag_value string.unquoted.argument
+#      ^^ source.bazelrc meta.group.args meta.group.flag.space_value meta.string.flag_value string.unquoted.argument constant.character.escape.shell
+#        ^^^^ source.bazelrc meta.group.args meta.group.flag.space_value meta.string.flag_value string.unquoted.argument
+#            ^^ source.bazelrc meta.group.args meta.group.flag.space_value meta.string.flag_value string.unquoted.argument constant.character.escape.shell
+#              ^^^^^^^ source.bazelrc meta.group.args meta.group.flag.space_value meta.string.flag_value string.unquoted.argument
+#                     ^^ source.bazelrc meta.group.args meta.group.flag.space_value meta.string.flag_value string.unquoted.argument constant.character.escape.shell
+#                       ^^^^^ source.bazelrc meta.group.args meta.group.flag.space_value meta.string.flag_value string.unquoted.argument
+#                            ^ source.bazelrc meta.group.args punctuation.separator.space
+#                             ^ source.bazelrc meta.group.args constant.character.escape.line-continuation.shell
+>  but_not_another
+#^^ source.bazelrc meta.group.args punctuation.separator.space
+#  ^^^^^^^^^^^^^^^ source.bazelrc meta.group.args invalid.flag
+>build --workspace_status_script \
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.space_value entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.space_value entity.name.class.flag
+#                               ^ source.bazelrc meta.group.args meta.group.flag.space_value
+#                                ^ source.bazelrc meta.group.args meta.group.flag.space_value constant.character.escape.line-continuation.shell
+>  value_on_next_line \
+#^^ source.bazelrc meta.group.args meta.group.flag.space_value
+#  ^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.space_value meta.string.flag_value string.unquoted.argument
+#                    ^ source.bazelrc meta.group.args punctuation.separator.space
+#                     ^ source.bazelrc meta.group.args constant.character.escape.line-continuation.shell
+>  --stamp
+#^^ source.bazelrc meta.group.args punctuation.separator.space
+#  ^^ source.bazelrc meta.group.args meta.group.flag.bare entity.name.class.flag punctuation.definition.dash.flag
+#    ^^^^^ source.bazelrc meta.group.args meta.group.flag.bare entity.name.class.flag
+>build --workspace_status_script \
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^ source.bazelrc meta.group.args meta.group.flag.space_value entity.name.class.flag punctuation.definition.dash.flag
+#        ^^^^^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.space_value entity.name.class.flag
+#                               ^ source.bazelrc meta.group.args meta.group.flag.space_value
+#                                ^ source.bazelrc meta.group.args meta.group.flag.space_value constant.character.escape.line-continuation.shell
+>  value_on_next_line --stamp
+#^^ source.bazelrc meta.group.args meta.group.flag.space_value
+#  ^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.space_value meta.string.flag_value string.unquoted.argument
+#                    ^ source.bazelrc meta.group.args punctuation.separator.space
+#                     ^^ source.bazelrc meta.group.args meta.group.flag.bare entity.name.class.flag punctuation.definition.dash.flag
+#                       ^^^^^ source.bazelrc meta.group.args meta.group.flag.bare entity.name.class.flag
+>
+>startup --io_nice_level=1
+#^^^^^^^ source.bazelrc keyword.control.subcommand.startup
+#       ^ source.bazelrc
+#        ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#          ^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                       ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                        ^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value constant.numeric
+>startup --io_nice_level=-1
+#^^^^^^^ source.bazelrc keyword.control.subcommand.startup
+#       ^ source.bazelrc
+#        ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#          ^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                       ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                        ^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value constant.numeric
+>startup --override_repository=foo=/tmp/bar
+#^^^^^^^ source.bazelrc keyword.control.subcommand.startup
+#       ^ source.bazelrc
+#        ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#          ^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                             ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                              ^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value support.variable
+#                                 ^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value punctuation.separator.equal
+#                                  ^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.unquoted.argument string.unquoted.argument
+>startup: --override_repository=foo=/tmp/bar
+#^^^^^^^ source.bazelrc keyword.control.subcommand.startup
+#       ^ source.bazelrc punctuation.separator.colon.config
+#        ^ source.bazelrc
+#         ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#           ^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                              ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                               ^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value support.variable
+#                                  ^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value punctuation.separator.equal
+#                                   ^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.unquoted.argument string.unquoted.argument
+>startup:invalid --override_repository=foo=/tmp/bar
+#^^^^^^^ source.bazelrc keyword.control.subcommand.startup
+#       ^ source.bazelrc punctuation.separator.colon.config
+#        ^^^^^^^ source.bazelrc invalid.config
+#               ^ source.bazelrc
+#                ^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag punctuation.definition.dash.flag
+#                  ^^^^^^^^^^^^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued entity.name.class.flag
+#                                     ^ source.bazelrc meta.group.args meta.group.flag.valued punctuation.separator.equal
+#                                      ^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value support.variable
+#                                         ^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value punctuation.separator.equal
+#                                          ^^^^^^^^ source.bazelrc meta.group.args meta.group.flag.valued meta.string.flag_value string.unquoted.argument string.unquoted.argument
+>build invalid-target
+#^^^^^ source.bazelrc keyword.control.subcommand
+#     ^ source.bazelrc
+#      ^^^^^^^^^^^^^^ source.bazelrc meta.group.args invalid.flag
+>not a valid line
+#^^^ source.bazelrc invalid
+#   ^^ source.bazelrc invalid
+#     ^^^^^^ source.bazelrc invalid
+#           ^^^^^ source.bazelrc invalid
+>
