@@ -87,7 +87,7 @@ async function bazelGetTargetOutput(
   const outputPath = await new BazelInfo(
     getDefaultBazelExecutablePath(),
     workspaceInfo.bazelWorkspacePath,
-  ).run("output_path");
+  ).getOne("output_path");
   const outputs = await new BazelCQuery(
     getDefaultBazelExecutablePath(),
     workspaceInfo.bazelWorkspacePath,
@@ -122,7 +122,7 @@ async function bazelInfo(key: string): Promise<string> {
   return new BazelInfo(
     getDefaultBazelExecutablePath(),
     workspaceInfo.bazelWorkspacePath,
-  ).run(key);
+  ).getOne(key);
 }
 
 /**
