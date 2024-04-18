@@ -30,6 +30,13 @@ jobs:
       - name: Install Javascript dependencies
         run: npm ci
 
+      - name: Check formatting
+        run: npm run format-check
+
+      # Has to happen before `check-lint`, because we need the generated protobuf types
+      - name: Compile the extension
+        run: npm run compile
+
       - name: Lint
         run: npm run check-lint
 
