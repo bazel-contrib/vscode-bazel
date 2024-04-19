@@ -54,12 +54,7 @@ jobs:
         if: ${{ github.event_name == 'release' }}
         shell: bash
         run: |
-          upload_url=`echo '${{ github.event.release.upload_url }}' | cut -f1 -d"{"`;
           filename=`echo vscode-bazel-*.vsix`;
-          gh api --method POST \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "${upload_url}?name=$filename" \
-            --input "$filename"
+          gh release upload ${{ github.event.release.tag_name }} "$filename"
         env:
           GH_TOKEN: ${{ github.token }}
