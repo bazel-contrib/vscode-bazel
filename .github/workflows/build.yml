@@ -1,0 +1,60 @@
+name: Build VS Code extension
+
+on:
+  push:
+  pull_request:
+  release:
+    types: [published]
+
+permissions:
+  # Write permissions needed for publishing the release
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  build_vscode_ext:
+    name: Build VS Code extension
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          cache: "npm"
+
+      - name: Install Javascript dependencies
+        run: npm ci
+
+      - name: Check formatting
+        run: npm run format-check
+
+      # Has to happen before `check-lint`, because we need the generated protobuf types
+      - name: Compile the extension
+        run: npm run compile
+
+      - name: Lint
+        run: npm run check-lint
+
+      - name: Package VS Code extension
+        run: npm run package
+
+      - name: Upload Workflow Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vscode-bazel-prerelease.vsix
+          path: vscode-bazel-*.vsix
+          if-no-files-found: error
+
+      - name: Upload Release Artifact
+        if: ${{ github.event_name == 'release' }}
+        shell: bash
+        run: |
+          filename=`echo vscode-bazel-*.vsix`;
+          gh release upload ${{ github.event.release.tag_name }} "$filename"
+        env:
+          GH_TOKEN: ${{ github.token }}

@@ -463,6 +463,7 @@
         "format-check": "prettier --check .",
         "format-fix": "prettier --write .",
         "test": "./scripts/test.sh",
+        "package": "vsce package",
         "update-snapshot": "./scripts/test.sh -u",
         "vscode:prepublish": "./scripts/build.sh",
         "watch": "./scripts/build.sh -watch"
@@ -471,6 +472,7 @@
         "@types/node": "^16.11.7",
         "@types/vscode": "^1.85.0",
         "@types/which": "^3.0.3",
+        "@vscode/vsce": "^2.24.0",
         "eslint": "^8.57.0",
         "eslint-config-prettier": "^9.1.0",
         "eslint-plugin-jsdoc": "^48.2.2",
