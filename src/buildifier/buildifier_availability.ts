@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as fs from "fs";
+import * as path from "path";
 import * as vscode from "vscode";
 import * as which from "which";
 
@@ -33,9 +35,15 @@ const BUILDTOOLS_RELEASES_URL =
  */
 export async function checkBuildifierIsAvailable() {
   const buildifierExecutable = getDefaultBuildifierExecutablePath();
+
   // Check if the program exists (in case it's an actual executable and not
   // an target name starting with `@`).
-  if (!buildifierExecutable.startsWith("@")) {
+  const isTarget = buildifierExecutable.startsWith("@")
+
+  // Check if the program exists as a relative path of the workspace
+  const isRelative = fs.existsSync(path.join(vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath, buildifierExecutable));
+
+  if (!isTarget && !isRelative) {
     try {
       await which(buildifierExecutable);
     } catch (e) {
