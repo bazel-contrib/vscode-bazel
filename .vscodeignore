@@ -8,6 +8,9 @@ test/**
 
 **/*.map
 
+syntaxes/bazelrc.tmLanguage.yaml
+syntaxes/.gitignore
+
 .gitignore
 AUTHORS
 CODEOWNERS

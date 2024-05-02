@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Copyright 2018 The Bazel Authors. All rights reserved.
+# Copyright 2024 The Bazel Authors. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,20 +19,9 @@ set -eu
 # Move into the top-level directory of the project.
 cd "$(dirname "${BASH_SOURCE[0]}")/.." > /dev/null
 
-# Only regenerate the .js and .t.ds file if the protos have changed (i.e.,
-# it's a fresh checkout or update_protos.sh has been executed again and
-# deleted the old generated files). This shaves several seconds off the
-# extension's build time.
-if [[ ! -f src/protos/protos.js ]] ; then
-  sed -e "s#^#src/protos/#" src/protos/protos_list.txt | \
-      xargs pbjs -t static-module -o src/protos/protos.js
-fi
-if [[ ! -f src/protos/protos.d.ts ]] ; then
-  pbts -o src/protos/protos.d.ts src/protos/protos.js
-fi
-
-# Convert yaml language definition to json form requred by vscode.
+# If tests are eventually added for other things, this line should probably
+# be replaced by just running scripts/build.sh.
 js-yaml syntaxes/bazelrc.tmLanguage.yaml > syntaxes/bazelrc.tmLanguage.json
 
-# Compile the rest of the project.
-tsc "$@" -p ./
+# Regression test for bazelrc grammar
+vscode-tmgrammar-snap "$@" test/example.bazelrc

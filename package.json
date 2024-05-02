@@ -246,12 +246,28 @@
         ],
         "grammars": [
             {
+                "language": "bazelrc",
+                "scopeName": "source.bazelrc",
+                "path": "./syntaxes/bazelrc.tmLanguage.json"
+            },
+            {
                 "language": "starlark",
                 "scopeName": "source.starlark",
                 "path": "./syntaxes/starlark.tmLanguage.json"
             }
         ],
         "languages": [
+            {
+                "id": "bazelrc",
+                "extensions": [
+                    ".bazelrc"
+                ],
+                "filenames": [
+                    ".bazelrc",
+                    "bazel.rc"
+                ],
+                "configuration": "./syntaxes/bazelrc.configuration.json"
+            },
             {
                 "id": "starlark",
                 "aliases": [
@@ -449,6 +465,9 @@
         "test": "vscode-test",
         "format-check": "prettier --check .",
         "format-fix": "prettier --write .",
+        "test": "./scripts/test.sh",
+        "package": "vsce package",
+        "update-snapshot": "./scripts/test.sh -u",
         "vscode:prepublish": "./scripts/build.sh",
         "watch": "./scripts/build.sh -watch"
     },
@@ -459,13 +478,16 @@
         "@types/which": "^3.0.3",
         "@vscode/test-cli": "^0.0.9",
         "@vscode/test-electron": "^2.3.9",
+        "@vscode/vsce": "^2.24.0",
         "eslint": "^8.57.0",
         "eslint-config-prettier": "^9.1.0",
         "eslint-plugin-jsdoc": "^48.2.2",
+        "js-yaml": "^4.1.0",
         "mocha": "^10.4.0",
         "prettier": "^3.2.5",
         "typescript": "^5.4.4",
-        "typescript-eslint": "^7.5.0"
+        "typescript-eslint": "^7.5.0",
+        "vscode-tmgrammar-test": "^0.1.3"
     },
     "dependencies": {
         "protobufjs": "^6.8.0",
