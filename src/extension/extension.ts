@@ -39,6 +39,7 @@ import { BazelTargetSymbolProvider } from "../symbols";
 import { BazelWorkspaceTreeProvider } from "../workspace-tree";
 import { getDefaultBazelExecutablePath } from "./configuration";
 import { activateCommandVariables } from "./command_variables";
+import { activateTesting } from "../test-explorer";
 
 /**
  * Called when the extension is activated; that is, when its first command is
@@ -148,6 +149,8 @@ export async function activate(context: vscode.ExtensionContext) {
     ...activateTaskProvider(),
     // Command variables
     ...activateCommandVariables(),
+    // Test provider
+    ...activateTesting(),
   );
 
   // Notify the user if buildifier is not available on their path (or where

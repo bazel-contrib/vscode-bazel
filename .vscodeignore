@@ -4,6 +4,7 @@ out/test/**
 scripts/**
 src/**
 test/**
+.vscode-test/
 
 **/*.map
 
