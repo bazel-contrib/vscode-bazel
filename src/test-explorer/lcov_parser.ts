@@ -52,8 +52,8 @@ function demangleJVMTypeNames(mangled: string): string[] | undefined {
         break;
       case "L": {
         const startIdx = idx + 1;
-        while (idx < mangled.length && mangled[idx] != ";") ++idx;
-        if (idx == mangled.length) return undefined;
+        while (idx < mangled.length && mangled[idx] !== ";") ++idx;
+        if (idx === mangled.length) return undefined;
         const fullClassName = mangled.substring(startIdx, idx - startIdx + 1);
         const shortClassName = fullClassName.split("/").pop();
         flushType(shortClassName);
@@ -80,15 +80,18 @@ function demangleJVMTypeName(mangled: string): string | undefined {
  * See https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.3.3
  *
  * Examples:
+ * ```
  *   com/example/myproject/Greeter::<clinit> ()V
  *   com/example/myproject/Greeter::<init> ()V
  *   com/example/myproject/Greeter::convertStreamToString (Ljava/io/InputStream;)Ljava/lang/String;
  *   com/example/myproject/Greeter::hello (Ljava/lang/String;)V
  *   com/example/myproject/Greeter::main ([Ljava/lang/String;)V
+ * ```
  */
 function demangleJVMMethodName(mangled: string): string | undefined {
   const match = mangled.match(
-    /^([\p{XIDS}\p{XIDC}/]+)::([\p{XIDS}\p{XIDC}<>]+) \(([\p{XIDS}\p{XIDC};/\[]*)\)([\p{XIDS}\p{XIDC};/\[]*)$/u,
+    // eslint-disable-next-line max-len
+    /^([\p{XIDS}\p{XIDC}/]+)::([\p{XIDS}\p{XIDC}<>]+) \(([\p{XIDS}\p{XIDC};/[]*)\)([\p{XIDS}\p{XIDC};/[]*)$/u,
   );
   if (!match) return undefined;
   const fullClassName = match[1];
