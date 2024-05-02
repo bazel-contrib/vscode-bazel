@@ -47,10 +47,15 @@ export async function checkBuildifierIsAvailable() {
 
   // Check if the program exists (in case it's an actual executable and not
   // an target name starting with `@`).
-  const isTarget = buildifierExecutable.startsWith("@")
+  const isTarget = buildifierExecutable.startsWith("@");
 
   // Check if the program exists as a relative path of the workspace
-  const pathExists = await fileExists(path.join(vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath, buildifierExecutable));
+  const pathExists = await fileExists(
+    path.join(
+      vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath,
+      buildifierExecutable,
+    ),
+  );
 
   if (!isTarget && !pathExists) {
     try {
