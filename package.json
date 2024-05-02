@@ -462,7 +462,6 @@
         "check-lint": "eslint .",
         "compile": "./scripts/build.sh",
         "pretest": "./scripts/build.sh",
-        "test": "vscode-test",
         "format-check": "prettier --check .",
         "format-fix": "prettier --write .",
         "test": "./scripts/test.sh",
