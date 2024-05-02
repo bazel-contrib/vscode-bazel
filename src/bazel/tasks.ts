@@ -159,7 +159,7 @@ async function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
     const outputPath = await new BazelInfo(
       getDefaultBazelExecutablePath(),
       workspaceInfo.bazelWorkspacePath,
-    ).run("output_path");
+    ).getOne("output_path");
 
     // Build a description string which will be displayed as part of the test run.
     const execution = task.execution as vscode.ShellExecution;
