@@ -40,6 +40,9 @@ jobs:
       - name: Lint
         run: npm run check-lint
 
+      - run: xvfb-run -a npm test
+        if: runner.os == 'Linux'
+
       - name: Package VS Code extension
         run: npm run package
 
