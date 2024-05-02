@@ -25,3 +25,6 @@ js-yaml syntaxes/bazelrc.tmLanguage.yaml > syntaxes/bazelrc.tmLanguage.json
 
 # Regression test for bazelrc grammar
 vscode-tmgrammar-snap "$@" test/example.bazelrc
+
+# Java Script tests
+vscode-test
