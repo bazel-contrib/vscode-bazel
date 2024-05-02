@@ -46,8 +46,8 @@ export function parseLcov(
   // Note that line numbers in LCOV files seem to be 1-based, while line
   // numbers for VS Code need to be 0-based.
   class FileCoverageInfo {
-    functionsByLine: Map<Number, vscode.DeclarationCoverage> = new Map();
-    lineCoverage: Map<Number, vscode.StatementCoverage> = new Map();
+    functionsByLine: Map<number, vscode.DeclarationCoverage> = new Map();
+    lineCoverage: Map<number, vscode.StatementCoverage> = new Map();
     coverageByLineAndBranch: Map<number, Map<string, vscode.BranchCoverage>> =
       new Map();
   }
@@ -200,12 +200,12 @@ export function parseLcov(
           if (!match) {
             throw new Error(`Invalid FNDA entry`);
           }
-          const lineNumber = Number.parseInt(match[1]) - 1;
+          const lineNumber = Number.parseInt(match[1], 10) - 1;
           if (lineNumber < 0) {
             throw new Error("Negative line number in DA entry");
           }
           const isException = match[2] === "e";
-          const blockId = Number.parseInt(match[3]);
+          const blockId = Number.parseInt(match[3], 10);
           const rest = match[4];
           const commaOffset = rest.lastIndexOf(",");
           if (commaOffset === undefined) {
@@ -214,7 +214,7 @@ export function parseLcov(
           const label = rest.substring(0, commaOffset);
           const hitCountStr = rest.substring(commaOffset + 1);
           const hitCount =
-            hitCountStr == "-" ? 0 : Number.parseInt(hitCountStr);
+            hitCountStr === "-" ? 0 : Number.parseInt(hitCountStr, 10);
           if (hitCount < 0) {
             throw new Error("Negative hit count in DA entry");
           }
