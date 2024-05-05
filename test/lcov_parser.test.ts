@@ -89,7 +89,9 @@ describe("The lcov parser", () => {
       assert.strictEqual(fileCov.statementCoverage.covered, 11);
     });
     it("branch coverage", () => {
-      assert(fileCov.branchCoverage === undefined);
+      assert(fileCov.branchCoverage !== undefined);
+      assert.strictEqual(fileCov.branchCoverage.total, 6);
+      assert.strictEqual(fileCov.branchCoverage.covered, 3);
     });
     it("function coverage details", () => {
       const initFunc = getFunctionByLine(fileCov, 24);
@@ -108,6 +110,12 @@ describe("The lcov parser", () => {
       assert.equal(getLineCoverageForLine(fileCov, 37).executed, 1);
       assert.equal(getLineCoverageForLine(fileCov, 38).executed, 0);
       assert.equal(getLineCoverageForLine(fileCov, 40).executed, 1);
+    });
+    it("branch coverage data", () => {
+      const branchCoverage = getLineCoverageForLine(fileCov, 37).branches;
+      assert.equal(branchCoverage.length, 2);
+      assert.equal(branchCoverage[0].executed, 1);
+      assert.equal(branchCoverage[1].executed, 0);
     });
   });
 
@@ -128,7 +136,9 @@ describe("The lcov parser", () => {
       assert.strictEqual(fileCov.statementCoverage.covered, 505);
     });
     it("branch coverage", () => {
-      assert(fileCov.branchCoverage === undefined);
+      assert(fileCov.branchCoverage !== undefined);
+      assert.strictEqual(fileCov.branchCoverage.total, 2560);
+      assert.strictEqual(fileCov.branchCoverage.covered, 843);
     });
     it("function coverage details", () => {
       const initFunc = getFunctionByLine(fileCov, 71);
@@ -140,6 +150,14 @@ describe("The lcov parser", () => {
       assert.equal(getLineCoverageForLine(fileCov, 176).executed, 1);
       assert.equal(getLineCoverageForLine(fileCov, 178).executed, 0);
       assert.equal(getLineCoverageForLine(fileCov, 193).executed, 4);
+    });
+    it("branch coverage data", () => {
+      const branchCoverage = getLineCoverageForLine(fileCov, 479).branches;
+      assert.equal(branchCoverage.length, 2);
+      assert.equal(branchCoverage[0].executed, 1);
+      assert.equal(branchCoverage[1].executed, 0);
+      const branchCoverage2 = getLineCoverageForLine(fileCov, 481).branches;
+      assert.equal(branchCoverage2.length, 12);
     });
   });
 
@@ -161,6 +179,8 @@ describe("The lcov parser", () => {
       assert.strictEqual(fileCov.statementCoverage.covered, 426);
     });
     it("branch coverage", () => {
+      // Rust has no branch coverage data, as of writing this test case.
+      // Also see https://github.com/rust-lang/rust/issues/79649
       assert(fileCov.branchCoverage === undefined);
     });
     it("function coverage details", () => {
@@ -194,6 +214,7 @@ describe("The lcov parser", () => {
       assert.strictEqual(fileCov.statementCoverage.covered, 133);
     });
     it("branch coverage", () => {
+      // Go has no branch coverage data.
       assert(fileCov.branchCoverage === undefined);
     });
     it("line coverage details", () => {
