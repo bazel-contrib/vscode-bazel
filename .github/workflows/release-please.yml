@@ -12,6 +12,7 @@ name: release-please
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    if: ${{ github.repository == 'bazelbuild/vscode-bazel' }}
     steps:
       - uses: google-github-actions/release-please-action@v4
         id: release
