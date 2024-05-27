@@ -49,17 +49,17 @@
         "docstring": {
             "patterns": [
                 {
-                    "name": "comment.block.documentation.starlark",
+                    "name": "comment.block.documentation.python.starlark",
                     "begin": "('''|\"\"\")",
                     "end": "(\\1)",
                     "beginCaptures": {
                         "1": {
-                            "name": "punctuation.definition.string.begin.starlark"
+                            "name": "punctuation.definition.string.begin.python.starlark"
                         }
                     },
                     "endCaptures": {
                         "1": {
-                            "name": "punctuation.definition.string.end.starlark"
+                            "name": "punctuation.definition.string.end.python.starlark"
                         }
                     },
                     "patterns": [
@@ -72,20 +72,20 @@
                     ]
                 },
                 {
-                    "name": "comment.block.documentation.starlark",
+                    "name": "comment.block.documentation.python.starlark",
                     "begin": "(r)('''|\"\"\")",
                     "end": "(\\2)",
                     "beginCaptures": {
                         "1": {
-                            "name": "storage.type.string.starlark"
+                            "name": "storage.type.string.python.starlark"
                         },
                         "2": {
-                            "name": "punctuation.definition.string.begin.starlark"
+                            "name": "punctuation.definition.string.begin.python.starlark"
                         }
                     },
                     "endCaptures": {
                         "1": {
-                            "name": "punctuation.definition.string.end.starlark"
+                            "name": "punctuation.definition.string.end.python.starlark"
                         }
                     },
                     "patterns": [
@@ -98,20 +98,20 @@
                     ]
                 },
                 {
-                    "name": "comment.line.documentation.starlark",
+                    "name": "comment.line.documentation.python.starlark",
                     "begin": "('|\")",
                     "end": "(\\1)|((?<!\\\\)\\n)",
                     "beginCaptures": {
                         "1": {
-                            "name": "punctuation.definition.string.begin.starlark"
+                            "name": "punctuation.definition.string.begin.python.starlark"
                         }
                     },
                     "endCaptures": {
                         "1": {
-                            "name": "punctuation.definition.string.end.starlark"
+                            "name": "punctuation.definition.string.end.python.starlark"
                         },
                         "2": {
-                            "name": "invalid.illegal.newline.starlark"
+                            "name": "invalid.illegal.newline.python.starlark"
                         }
                     },
                     "patterns": [
@@ -124,23 +124,23 @@
                     ]
                 },
                 {
-                    "name": "comment.line.documentation.starlark",
+                    "name": "comment.line.documentation.python.starlark",
                     "begin": "(r)('|\")",
                     "end": "(\\2)|((?<!\\\\)\\n)",
                     "beginCaptures": {
                         "1": {
-                            "name": "storage.type.string.starlark"
+                            "name": "storage.type.string.python.starlark"
                         },
                         "2": {
-                            "name": "punctuation.definition.string.begin.starlark"
+                            "name": "punctuation.definition.string.begin.python.starlark"
                         }
                     },
                     "endCaptures": {
                         "1": {
-                            "name": "punctuation.definition.string.end.starlark"
+                            "name": "punctuation.definition.string.end.python.starlark"
                         },
                         "2": {
-                            "name": "invalid.illegal.newline.starlark"
+                            "name": "invalid.illegal.newline.python.starlark"
                         }
                     },
                     "patterns": [
@@ -167,15 +167,15 @@
         "statement-keyword": {
             "patterns": [
                 {
-                    "name": "storage.type.function.starlark",
+                    "name": "storage.type.function.python.starlark",
                     "match": "\\b(\\s*def)\\b"
                 },
                 {
-                    "name": "keyword.control.flow.starlark",
+                    "name": "keyword.control.flow.python.starlark",
                     "match": "\\b(?<!\\.)(break|continue|elif|else|for|if|pass|return)\\b"
                 },
                 {
-                    "name": "invalid.illegal.keyword.starlark",
+                    "name": "invalid.illegal.keyword.python.starlark",
                     "match": "\\b(?<!\\.)(as|assert|class|del|except|finally|from|global|import|is|lambda|nonlocal|raise|try|while|with|yield)\\b"
                 }
             ]
@@ -244,14 +244,14 @@
         },
         "variable": {
             "match": "\\b([[:alpha:]_]\\w*)\\b",
-            "name": "variable.other.starlark"
+            "name": "variable.other.python.starlark"
         },
         "member-access": {
             "begin": "(\\.)\\s*(?!\\.)",
             "end": "(?# Stop when we read non-whitespace followed by non-word; i.e. when finished reading an identifier or function call)(?<=\\S)(?=\\W)|(?# Stop when seeing the start of something that's not a word; e.g., a non-identifier)(^|(?<=\\s))(?=[^\\\\\\w\\s])|$",
             "beginCaptures": {
                 "1": {
-                    "name": "punctuation.accessor.starlark"
+                    "name": "punctuation.accessor.python.starlark"
                 }
             },
             "patterns": [
@@ -290,14 +290,14 @@
         },
         "member-access-property": {
             "match": "\\b([[:alpha:]_]\\w*)\\b",
-            "name": "variable.other.property.starlark"
+            "name": "variable.other.property.python.starlark"
         },
         "constant-identifier": {
-            "name": "variable.other.constant.starlark",
+            "name": "variable.other.constant.python.starlark",
             "match": "\\b_*[[:upper:]][[:upper:]\\d]*(_\\w*)?\\b"
         },
         "type-identifier": {
-            "name": "entity.name.type.starlark",
+            "name": "entity.name.type.python.starlark",
             "match": "\\b_*[[:upper:]][[:alpha:]\\d]*(_\\w*)?\\b"
         },
         "dictionary-literal": {
@@ -306,12 +306,12 @@
             "end": "\\}",
             "beginCaptures": {
                 "0": {
-                    "name": "punctuation.definition.dict.begin.starlark"
+                    "name": "punctuation.definition.dict.begin.python.starlark"
                 }
             },
             "endCaptures": {
                 "0": {
-                    "name": "punctuation.definition.dict.end.starlark"
+                    "name": "punctuation.definition.dict.end.python.starlark"
                 }
             },
             "patterns": [
@@ -326,12 +326,12 @@
             "end": "\\]",
             "beginCaptures": {
                 "0": {
-                    "name": "punctuation.definition.list.begin.starlark"
+                    "name": "punctuation.definition.list.begin.python.starlark"
                 }
             },
             "endCaptures": {
                 "0": {
-                    "name": "punctuation.definition.list.end.starlark"
+                    "name": "punctuation.definition.list.end.python.starlark"
                 }
             },
             "patterns": [
@@ -346,12 +346,12 @@
             "end": "\\)",
             "beginCaptures": {
                 "0": {
-                    "name": "punctuation.parenthesis.begin.starlark"
+                    "name": "punctuation.parenthesis.begin.python.starlark"
                 }
             },
             "endCaptures": {
                 "0": {
-                    "name": "punctuation.parenthesis.end.starlark"
+                    "name": "punctuation.parenthesis.end.python.starlark"
                 }
             },
             "patterns": [
@@ -366,10 +366,10 @@
                     "match": "(\\\\)\\s*(\\S.*$\\n?)",
                     "captures": {
                         "1": {
-                            "name": "invalid.deprecated.continuation.line.starlark"
+                            "name": "invalid.deprecated.continuation.line.python.starlark"
                         },
                         "2": {
-                            "name": "invalid.illegal.line.continuation.starlark"
+                            "name": "invalid.illegal.line.continuation.python.starlark"
                         }
                     }
                 },
@@ -378,7 +378,7 @@
                     "end": "(?=^\\s*$)|(?!(\\s*[rR]?('''|\"\"\"|'|\"))|(\\G$))",
                     "beginCaptures": {
                         "1": {
-                            "name": "invalid.deprecated.continuation.line.starlark"
+                            "name": "invalid.deprecated.continuation.line.python.starlark"
                         }
                     },
                     "patterns": [
@@ -390,30 +390,30 @@
             ]
         },
         "assignment-operator": {
-            "name": "keyword.operator.assignment.starlark",
+            "name": "keyword.operator.assignment.python.starlark",
             "match": "//=|\\+=|-=|/=|\\*=|%=|=(?!=)"
         },
         "operator": {
             "match": "\\b(?<!\\.)(?:(and|or|not|in)(?# 1)|(for|if|else)(?# 2))(?!\\s*:)\\b|(\\*|\\+|-|%|//|/)(?# 3)|(!=|==|>=|<=|<|>)(?# 4)",
             "captures": {
                 "1": {
-                    "name": "keyword.operator.logical.starlark"
+                    "name": "keyword.operator.logical.python.starlark"
                 },
                 "2": {
-                    "name": "keyword.control.flow.starlark"
+                    "name": "keyword.control.flow.python.starlark"
                 },
                 "3": {
-                    "name": "keyword.operator.arithmetic.starlark"
+                    "name": "keyword.operator.arithmetic.python.starlark"
                 },
                 "4": {
-                    "name": "keyword.operator.comparison.starlark"
+                    "name": "keyword.operator.comparison.python.starlark"
                 }
             }
         },
         "literal": {
             "patterns": [
                 {
-                    "name": "constant.language.starlark",
+                    "name": "constant.language.python.starlark",
                     "match": "\\b(True|False|None)\\b"
                 },
                 {
@@ -433,21 +433,21 @@
                     "include": "#number-octal"
                 },
                 {
-                    "name": "invalid.illegal.name.starlark",
+                    "name": "invalid.illegal.name.python.starlark",
                     "match": "\\b[0-9]+\\w+"
                 }
             ]
         },
         "number-decimal": {
-            "name": "constant.numeric.decimal.starlark",
+            "name": "constant.numeric.decimal.python.starlark",
             "match": "(?<![\\w\\.])(?:[1-9][0-9]*|0+)\\b"
         },
         "number-hexadecimal": {
-            "name": "constant.numeric.hex.starlark",
+            "name": "constant.numeric.hex.python.starlark",
             "match": "(?<![\\w\\.])0[xX][0-9a-fA-F]+\\b"
         },
         "number-octal": {
-            "name": "constant.numeric.octal.starlark",
+            "name": "constant.numeric.octal.python.starlark",
             "match": "(?<![\\w\\.])0[oO][0-7]+\\b"
         },
         "string": {
@@ -467,23 +467,23 @@
             ]
         },
         "string-raw-quoted-single-line": {
-            "name": "string.quoted.raw.single.starlark",
+            "name": "string.quoted.raw.single.python.starlark",
             "begin": "\\b(r)(['\"])",
             "end": "(\\2)|((?<!\\\\)\\n)",
             "beginCaptures": {
                 "1": {
-                    "name": "storage.type.string.starlark"
+                    "name": "storage.type.string.python.starlark"
                 },
                 "2": {
-                    "name": "punctuation.definition.string.begin.starlark"
+                    "name": "punctuation.definition.string.begin.python.starlark"
                 }
             },
             "endCaptures": {
                 "1": {
-                    "name": "punctuation.definition.string.end.starlark"
+                    "name": "punctuation.definition.string.end.python.starlark"
                 },
                 "2": {
-                    "name": "invalid.illegal.newline.starlark"
+                    "name": "invalid.illegal.newline.python.starlark"
                 }
             },
             "patterns": [
@@ -493,20 +493,20 @@
             ]
         },
         "string-quoted-single-line": {
-            "name": "string.quoted.single.starlark",
+            "name": "string.quoted.single.python.starlark",
             "begin": "(['\"])",
             "end": "(\\1)|((?<!\\\\)\\n)",
             "beginCaptures": {
                 "1": {
-                    "name": "punctuation.definition.string.begin.starlark"
+                    "name": "punctuation.definition.string.begin.python.starlark"
                 }
             },
             "endCaptures": {
                 "1": {
-                    "name": "punctuation.definition.string.end.starlark"
+                    "name": "punctuation.definition.string.end.python.starlark"
                 },
                 "2": {
-                    "name": "invalid.illegal.newline.starlark"
+                    "name": "invalid.illegal.newline.python.starlark"
                 }
             },
             "patterns": [
@@ -516,20 +516,20 @@
             ]
         },
         "string-raw-quoted-multi-line": {
-            "name": "string.quoted.raw.multi.starlark",
+            "name": "string.quoted.raw.multi.python.starlark",
             "begin": "\\b(r)('''|\"\"\")",
             "end": "(\\2)",
             "beginCaptures": {
                 "1": {
-                    "name": "storage.type.string.starlark"
+                    "name": "storage.type.string.python.starlark"
                 },
                 "2": {
-                    "name": "punctuation.definition.string.begin.starlark"
+                    "name": "punctuation.definition.string.begin.python.starlark"
                 }
             },
             "endCaptures": {
                 "1": {
-                    "name": "punctuation.definition.string.end.starlark"
+                    "name": "punctuation.definition.string.end.python.starlark"
                 }
             },
             "patterns": [
@@ -539,17 +539,17 @@
             ]
         },
         "string-quoted-multi-line": {
-            "name": "string.quoted.multi.starlark",
+            "name": "string.quoted.multi.python.starlark",
             "begin": "('''|\"\"\")",
             "end": "(\\1)",
             "beginCaptures": {
                 "1": {
-                    "name": "punctuation.definition.string.begin.starlark"
+                    "name": "punctuation.definition.string.begin.python.starlark"
                 }
             },
             "endCaptures": {
                 "1": {
-                    "name": "punctuation.definition.string.end.starlark"
+                    "name": "punctuation.definition.string.end.python.starlark"
                 }
             },
             "patterns": [
@@ -594,37 +594,37 @@
             "match": "\\\\['\"\\n\\\\]"
         },
         "string-escape-sequence": {
-            "name": "constant.character.escape.starlark",
+            "name": "constant.character.escape.python.starlark",
             "match": "\\\\[\\\\\"'nrt]"
         },
         "string-illegal-escape-sequence": {
-            "name": "invalid.illegal.character.escape.starlark",
+            "name": "invalid.illegal.character.escape.python.starlark",
             "match": "\\\\[^\\\\\"'nrt]"
         },
         "string-format-placeholder-percent": {
-            "name": "constant.character.format.placeholder.other.starlark",
+            "name": "constant.character.format.placeholder.other.python.starlark",
             "match": "%[drs%]"
         },
         "string-format-placeholder-braces": {
             "patterns": [
                 {
-                    "name": "constant.character.format.placeholder.other.starlark",
+                    "name": "constant.character.format.placeholder.other.python.starlark",
                     "match": "\\{(?:[0-9]+|[[:alpha:]_][[:alnum:]_]*)?\\}"
                 }
             ]
         },
         "function-definition": {
-            "name": "meta.function.starlark",
+            "name": "meta.function.python.starlark",
             "begin": "\\s*\\b(def)\\s+(?=[[:alpha:]_][[:word:]]*\\s*\\()",
             "end": "(:|(?=[#'\"\\n]))",
             "beginCaptures": {
                 "1": {
-                    "name": "storage.type.function.starlark"
+                    "name": "storage.type.function.python.starlark"
                 }
             },
             "endCaptures": {
                 "1": {
-                    "name": "punctuation.section.function.begin.starlark"
+                    "name": "punctuation.section.function.begin.python.starlark"
                 }
             },
             "patterns": [
@@ -651,28 +651,28 @@
                     "include": "#builtin-function"
                 },
                 {
-                    "name": "entity.name.function.starlark",
+                    "name": "entity.name.function.python.starlark",
                     "match": "\\b([[:alpha:]_]\\w*)\\b"
                 }
             ]
         },
         "function-definition-parameters": {
-            "name": "meta.function.parameters.starlark",
+            "name": "meta.function.parameters.python.starlark",
             "begin": "(\\()",
             "end": "(\\))",
             "beginCaptures": {
                 "1": {
-                    "name": "punctuation.definition.parameters.begin.starlark"
+                    "name": "punctuation.definition.parameters.begin.python.starlark"
                 }
             },
             "endCaptures": {
                 "1": {
-                    "name": "punctuation.definition.parameters.end.starlark"
+                    "name": "punctuation.definition.parameters.end.python.starlark"
                 }
             },
             "patterns": [
                 {
-                    "name": "keyword.operator.unpacking.parameter.starlark",
+                    "name": "keyword.operator.unpacking.parameter.python.starlark",
                     "match": "(\\*\\*|\\*)"
                 },
                 {
@@ -685,10 +685,10 @@
                     "match": "([[:alpha:]_]\\w*)\\s*(?:(,)|(?=[)#\\n=]))",
                     "captures": {
                         "1": {
-                            "name": "variable.parameter.starlark"
+                            "name": "variable.parameter.python.starlark"
                         },
                         "2": {
-                            "name": "punctuation.separator.parameters.starlark"
+                            "name": "punctuation.separator.parameters.python.starlark"
                         }
                     }
                 },
@@ -705,12 +705,12 @@
             "end": "(,)|(?=\\))",
             "beginCaptures": {
                 "1": {
-                    "name": "keyword.operator.starlark"
+                    "name": "keyword.operator.python.starlark"
                 }
             },
             "endCaptures": {
                 "1": {
-                    "name": "punctuation.separator.parameters.starlark"
+                    "name": "punctuation.separator.parameters.python.starlark"
                 }
             },
             "patterns": [
@@ -722,12 +722,12 @@
         "subscript-expression": {
             "patterns": [
                 {
-                    "name": "meta.item-access.starlark",
+                    "name": "meta.item-access.python.starlark",
                     "begin": "\\b(?=[[:alpha:]_]\\w*\\s*\\[)",
                     "end": "(\\])",
                     "endCaptures": {
                         "1": {
-                            "name": "punctuation.definition.arguments.end.starlark"
+                            "name": "punctuation.definition.arguments.end.python.starlark"
                         }
                     },
                     "patterns": [
@@ -753,7 +753,7 @@
                     "include": "#constant-identifier"
                 },
                 {
-                    "name": "variable.other.starlark",
+                    "name": "variable.other.python.starlark",
                     "match": "\\b([[:alpha:]_]\\w*)\\b"
                 }
             ]
@@ -763,7 +763,7 @@
             "end": "(?=\\])",
             "beginCaptures": {
                 "1": {
-                    "name": "punctuation.definition.arguments.begin.starlark"
+                    "name": "punctuation.definition.arguments.begin.python.starlark"
                 }
             },
             "contentName": "meta.item-access.arguments.starlark",
@@ -774,12 +774,12 @@
             ]
         },
         "function-call": {
-            "name": "meta.function-call.starlark",
+            "name": "meta.function-call.python.starlark",
             "begin": "\\b(?=([[:alpha:]_]\\w*)\\s*(\\())",
             "end": "(\\))",
             "endCaptures": {
                 "1": {
-                    "name": "punctuation.definition.arguments.end.starlark"
+                    "name": "punctuation.definition.arguments.end.python.starlark"
                 }
             },
             "patterns": [
@@ -800,7 +800,7 @@
                     "include": "#builtin-function"
                 },
                 {
-                    "name": "entity.name.function.starlark",
+                    "name": "entity.name.function.python.starlark",
                     "match": "\\b([[:alpha:]_]\\w*)\\b"
                 }
             ]
@@ -810,10 +810,10 @@
             "end": "(?=\\))(?!\\)\\s*\\()",
             "beginCaptures": {
                 "1": {
-                    "name": "punctuation.definition.arguments.begin.starlark"
+                    "name": "punctuation.definition.arguments.begin.python.starlark"
                 },
                 "2": {
-                    "name": "keyword.operator.unpacking.arguments.starlark"
+                    "name": "keyword.operator.unpacking.arguments.python.starlark"
                 }
             },
             "contentName": "meta.function-call.arguments.starlark",
@@ -822,10 +822,10 @@
                     "match": "(?:(,)(?:\\s*(\\*\\*|\\*))?)",
                     "captures": {
                         "1": {
-                            "name": "punctuation.separator.arguments.starlark"
+                            "name": "punctuation.separator.arguments.python.starlark"
                         },
                         "2": {
-                            "name": "keyword.operator.unpacking.arguments.starlark"
+                            "name": "keyword.operator.unpacking.arguments.python.starlark"
                         }
                     }
                 },
@@ -836,15 +836,15 @@
                     "match": "\\b([[:alpha:]_]\\w*)\\s*(=)(?!=)",
                     "captures": {
                         "1": {
-                            "name": "meta.parameter.keyword.starlark"
+                            "name": "meta.parameter.keyword.python.starlark"
                         },
                         "2": {
-                            "name": "keyword.operator.assignment.starlark"
+                            "name": "keyword.operator.assignment.python.starlark"
                         }
                     }
                 },
                 {
-                    "name": "keyword.operator.assignment.starlark",
+                    "name": "keyword.operator.assignment.python.starlark",
                     "match": "=(?!=)"
                 },
                 {
@@ -854,10 +854,10 @@
                     "match": "\\s*(\\))\\s*(\\()",
                     "captures": {
                         "1": {
-                            "name": "punctuation.definition.arguments.end.starlark"
+                            "name": "punctuation.definition.arguments.end.python.starlark"
                         },
                         "2": {
-                            "name": "punctuation.definition.arguments.begin.starlark"
+                            "name": "punctuation.definition.arguments.begin.python.starlark"
                         }
                     }
                 }
@@ -866,41 +866,41 @@
         "builtin-function": {
             "patterns": [
                 {
-                    "name": "support.function.starlark",
+                    "name": "support.function.python.starlark",
                     "match": "(?<!\\.)\\b(all|any|bool|dict|dir|enumerate|getattr|hasattr|hash|int|len|list|load|max|min|print|range|repr|reversed|sorted|str|tuple|type|zip)\\b"
                 }
             ]
         },
         "builtin-constant": {
-            "name": "keyword.illegal.name.starlark",
+            "name": "keyword.illegal.name.python.starlark",
             "match": "\\b(True|False|None)\\b"
         },
         "illegal-name": {
-            "name": "keyword.control.flow.starlark",
+            "name": "keyword.control.flow.python.starlark",
             "match": "\\b(and|as|assert|break|class|continue|def|del|elif|else|except|finally|for|from|global|if|import|in|is|lambda|load|nonlocal|not|or|pass|raise|return|try|while|with|yield)\\b"
         },
         "illegal-operator": {
             "patterns": [
                 {
-                    "name": "invalid.illegal.operator.starlark",
+                    "name": "invalid.illegal.operator.python.starlark",
                     "match": "&&|\\|\\||--|\\+\\+"
                 },
                 {
-                    "name": "invalid.illegal.operator.starlark",
+                    "name": "invalid.illegal.operator.python.starlark",
                     "match": "[?$]"
                 },
                 {
-                    "name": "invalid.illegal.operator.starlark",
+                    "name": "invalid.illegal.operator.python.starlark",
                     "match": "!\\b"
                 }
             ]
         },
         "line-comment": {
-            "name": "comment.line.number-sign.starlark",
+            "name": "comment.line.number-sign.python.starlark",
             "begin": "(\\#)",
             "beginCaptures": {
                 "1": {
-                    "name": "punctuation.definition.comment.starlark"
+                    "name": "punctuation.definition.comment.python.starlark"
                 }
             },
             "end": "($)",
@@ -914,20 +914,20 @@
             "match": "(?:\\b(NOTE|XXX|HACK|FIXME|BUG|TODO)\\b)",
             "captures": {
                 "1": {
-                    "name": "keyword.codetag.notation.starlark"
+                    "name": "keyword.codetag.notation.python.starlark"
                 }
             }
         },
         "discouraged-semicolon": {
             "patterns": [
                 {
-                    "name": "invalid.deprecated.semicolon.starlark",
+                    "name": "invalid.deprecated.semicolon.python.starlark",
                     "match": "\\;$"
                 }
             ]
         },
         "discouraged-string-line-continuation": {
-            "name": "invalid.deprecated.language.starlark",
+            "name": "invalid.deprecated.language.python.starlark",
             "match": "\\\\$"
         }
     }
