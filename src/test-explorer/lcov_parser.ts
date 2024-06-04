@@ -3,6 +3,113 @@ import * as path from "path";
 import { assert } from "../assert";
 
 /**
+ * Demangle JVM method names.
+ *
+ * See https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.3.2
+ */
+function demangleJVMTypeNames(mangled: string): string[] | undefined {
+  let arrayCnt = 0;
+  const types = [] as string[];
+  const flushType = (type: string) => {
+    for (let i = 0; i < arrayCnt; ++i) {
+      type += "[]";
+    }
+    types.push(type);
+    arrayCnt = 0;
+  };
+  let idx = 0;
+  while (idx < mangled.length) {
+    switch (mangled[idx]) {
+      case "B":
+        flushType("bool");
+        break;
+      case "C":
+        flushType("char");
+        break;
+      case "D":
+        flushType("double");
+        break;
+      case "F":
+        flushType("float");
+        break;
+      case "I":
+        flushType("int");
+        break;
+      case "J":
+        flushType("long");
+        break;
+      case "S":
+        flushType("short");
+        break;
+      case "Z":
+        flushType("boolean");
+        break;
+      case "V":
+        flushType("void");
+        break;
+      case "[":
+        ++arrayCnt;
+        break;
+      case "L": {
+        const startIdx = idx + 1;
+        while (idx < mangled.length && mangled[idx] !== ";") ++idx;
+        if (idx === mangled.length) return undefined;
+        const fullClassName = mangled.substring(startIdx, idx - startIdx + 1);
+        const shortClassName = fullClassName.split("/").pop();
+        flushType(shortClassName);
+        break;
+      }
+      default:
+        return undefined;
+    }
+    ++idx;
+  }
+  if (arrayCnt) return undefined;
+  return types;
+}
+
+function demangleJVMTypeName(mangled: string): string | undefined {
+  const demangled = demangleJVMTypeNames(mangled) ?? [];
+  if (demangled.length !== 1) return undefined;
+  return demangled[0];
+}
+
+/**
+ * Demangle JVM method names.
+ *
+ * See https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.3.3
+ *
+ * Examples:
+ * ```
+ *   com/example/myproject/Greeter::<clinit> ()V
+ *   com/example/myproject/Greeter::<init> ()V
+ *   com/example/myproject/Greeter::convertStreamToString (Ljava/io/InputStream;)Ljava/lang/String;
+ *   com/example/myproject/Greeter::hello (Ljava/lang/String;)V
+ *   com/example/myproject/Greeter::main ([Ljava/lang/String;)V
+ * ```
+ */
+function demangleJVMMethodName(mangled: string): string | undefined {
+  const match = mangled.match(
+    // eslint-disable-next-line max-len
+    /^([\p{XIDS}\p{XIDC}/]+)::([\p{XIDS}\p{XIDC}<>]+) \(([\p{XIDS}\p{XIDC};/[]*)\)([\p{XIDS}\p{XIDC};/[]*)$/u,
+  );
+  if (!match) return undefined;
+  const fullClassName = match[1];
+  const functionName = match[2];
+  const mangledArgList = match[3];
+  const mangledReturnType = match[4];
+
+  const shortClassName = fullClassName.split("/").pop();
+  const argList = demangleJVMTypeNames(mangledArgList);
+  if (!argList) return undefined;
+  const argListStr = argList.join(", ");
+  const returnType = demangleJVMTypeName(mangledReturnType);
+  if (!returnType) return undefined;
+
+  return `${returnType} ${shortClassName}::${functionName}(${argListStr})`;
+}
+
+/**
  * Coverage data from a Bazel run.
  *
  * For Bazel, we parse the detailed coverage data eagerly and store it as part
@@ -111,10 +218,9 @@ export function parseLcov(
             location = new vscode.Position(startLine, 0);
           }
           if (!info.functionsByLine.has(startLine)) {
-            // TODO: For Java, C++ and Rust the function names should be demangled.
+            // TODO: Also add demangling for C++ and Rust.
             // https://internals.rust-lang.org/t/symbol-mangling-of-rust-vs-c/7222
             // https://github.com/rust-lang/rustc-demangle
-            // https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.3.3
             //
             // Tested with:
             // * Go -> no function names, only line coverage
@@ -122,9 +228,10 @@ export function parseLcov(
             // * Java -> mangled names
             // * Rust -> mangled names
             // Not tested with Python, Swift, Kotlin etc.
+            const demangled = demangleJVMMethodName(funcName) ?? funcName;
             info.functionsByLine.set(
               startLine,
-              new vscode.DeclarationCoverage(funcName, 0, location),
+              new vscode.DeclarationCoverage(demangled, 0, location),
             );
           }
           functionsByName.set(funcName, info.functionsByLine.get(startLine));
