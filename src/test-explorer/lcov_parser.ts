@@ -123,8 +123,8 @@ async function demangleNameUsingFilter(
 ): Promise<string | undefined> {
   if (execPath === null) return undefined;
   const unmangled = (await execFile(execPath, [mangled])).stdout.trim();
-  // If unmangling failed, return undefined, so we could fallback to another demangler.
-  if (!unmangled || unmangled == mangled) return undefined;
+  // If unmangling failed, return undefined, so we can fallback to another demangler.
+  if (!unmangled || unmangled === mangled) return undefined;
   return unmangled;
 }
 
