@@ -31,7 +31,7 @@ export function activateTesting(): vscode.Disposable[] {
 /**
  * Display coverage information from a `.lcov` file.
  */
-export function showLcovCoverage(
+export async function showLcovCoverage(
   description: string,
   baseFolder: string,
   lcov: string,
@@ -42,7 +42,7 @@ export function showLcovCoverage(
     false,
   );
   run.appendOutput(description.replaceAll("\n", "\r\n"));
-  for (const c of parseLcov(baseFolder, lcov)) {
+  for (const c of await parseLcov(baseFolder, lcov)) {
     run.addCoverage(c);
   }
   run.end();

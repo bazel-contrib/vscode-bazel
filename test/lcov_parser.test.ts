@@ -6,7 +6,7 @@ import { DeclarationCoverage, StatementCoverage } from "vscode";
 
 const testDir = path.join(__dirname, "../..", "test");
 
-function parseTestLcov(lcov: string): BazelFileCoverage[] {
+function parseTestLcov(lcov: string): Promise<BazelFileCoverage[]> {
   return parseLcov("/base", lcov);
 }
 
@@ -50,19 +50,23 @@ function getLineCoverageForLine(
 }
 
 describe("The lcov parser", () => {
-  it("accepts an empty string", () => {
-    assert.deepEqual(parseTestLcov(""), []);
+  it("accepts an empty string", async () => {
+    assert.deepEqual(await parseTestLcov(""), []);
   });
 
-  it("accepts Linux end-of-lines", () => {
-    const coveredFiles = parseTestLcov("SF:a.cpp\nFN:1,abc\nend_of_record\n");
+  it("accepts Linux end-of-lines", async () => {
+    const coveredFiles = await parseTestLcov(
+      "SF:a.cpp\nFN:1,abc\nend_of_record\n",
+    );
     assert.equal(coveredFiles.length, 1);
     assert.equal(coveredFiles[0].declarationCoverage.total, 1);
   });
 
-  it("accepts Windows end-of-lines", () => {
+  it("accepts Windows end-of-lines", async () => {
     // \r\n and no final end of line
-    const coveredFiles = parseTestLcov("SF:a.cpp\r\nFN:1,abc\r\nend_of_record");
+    const coveredFiles = await parseTestLcov(
+      "SF:a.cpp\r\nFN:1,abc\r\nend_of_record",
+    );
     assert.equal(coveredFiles.length, 1);
     assert.equal(coveredFiles[0].declarationCoverage.total, 1);
   });
@@ -142,7 +146,7 @@ describe("The lcov parser", () => {
     it("function coverage details", () => {
       const initFunc = getFunctionByLine(fileCov, 71);
       assert(initFunc !== undefined);
-      assert.equal(initFunc.name, "_ZN5blaze10RcFileTest5SetUpEv");
+      assert.equal(initFunc.name, "blaze::RcFileTest::SetUp()");
       assert.equal(initFunc.executed, 34);
     });
     it("line coverage details", () => {
@@ -187,7 +191,7 @@ describe("The lcov parser", () => {
       assert(consumeFunc !== undefined);
       assert.equal(
         consumeFunc.name,
-        "_RNCNvCscQvVXOS7Ja3_5label20consume_package_name0B3_",
+        "label::consume_package_name::{closure#0}",
       );
       assert.equal(consumeFunc.executed, 2);
     });

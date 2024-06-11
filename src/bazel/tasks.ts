@@ -184,7 +184,7 @@ async function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
         );
       } else {
         // Show the coverage date
-        showLcovCoverage(
+        await showLcovCoverage(
           description,
           workspaceInfo.bazelWorkspacePath,
           covFileStr,

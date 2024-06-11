@@ -137,6 +137,10 @@ In case you are using the code coverage integration with any other language
 bazelbuild/vscode-bazel#367. Please share both positive and negative experiences
 you might have.
 
+For C++ and Rust, make sure to have `c++filt` / `rustfilt` installed and
+available through the `$PATH`. Otherwise, only mangled, hard-to-decipher
+function names will be displayed. For Java, no additional steps are required.
+
 ## Contributing
 
 If you would like to contribute to the Bazel Visual Studio extension, please
