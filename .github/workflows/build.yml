@@ -42,7 +42,7 @@ jobs:
 
       # Required for the test cases
       - name: Install system dependencies
-        run: sudo apt install -y c++filt rustfilt
+        run: sudo apt install -y binutils rustfilt
 
       - run: xvfb-run -a npm test
         if: runner.os == 'Linux'
