@@ -20,6 +20,25 @@ import { getDefaultBazelExecutablePath } from "../extension/configuration";
 import { blaze_query } from "../protos";
 import { CodeLensCommandAdapter } from "./code_lens_command_adapter";
 
+/** Computes the shortened name of a Bazel target.
+ *
+ * For example, if the target name starts with `//foo/bar/baz:fizbuzz`,
+ * the target's short name will be `fizzbuzz`.
+ *
+ * This allows our code lens suggestions to avoid filling users' screen with
+ * redundant path information.
+ *
+ * @param targetName The unshortened name of the target.
+ * @returns The shortened name of the target.
+ */
+function getTargetShortName(targetName: string): string {
+  const colonFragments = targetName.split(":");
+  if (colonFragments.length !== 2) {
+    return targetName;
+  }
+  return colonFragments[1];
+}
+
 /** Provids CodeLenses for targets in Bazel BUILD files. */
 export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
   public onDidChangeCodeLenses: vscode.Event<void>;
@@ -107,40 +126,60 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
   ): vscode.CodeLens[] {
     const result: vscode.CodeLens[] = [];
 
+    interface LensCommand {
+      commandString: string;
+      name: string;
+    }
+
     for (const target of queryResult.target) {
       const location = new QueryLocation(target.rule.location);
       const targetName = target.rule.name;
       const ruleClass = target.rule.ruleClass;
-      let cmd: vscode.Command;
+      const targetShortName = getTargetShortName(targetName);
+
+      const commands: LensCommand[] = [];
+
+      // Only test targets support testing.
       if (ruleClass.endsWith("_test") || ruleClass === "test_suite") {
-        cmd = {
-          arguments: [
-            new CodeLensCommandAdapter(bazelWorkspaceInfo, [targetName]),
-          ],
-          command: "bazel.testTarget",
-          title: `Test ${targetName}`,
-          tooltip: `Test ${targetName}`,
-        };
-      } else if (ruleClass.endsWith("_binary")) {
-        cmd = {
-          arguments: [
-            new CodeLensCommandAdapter(bazelWorkspaceInfo, [targetName]),
-          ],
-          command: "bazel.runTarget",
-          title: `Run ${targetName}`,
-          tooltip: `Run ${targetName}`,
-        };
-      } else {
-        cmd = {
-          arguments: [
-            new CodeLensCommandAdapter(bazelWorkspaceInfo, [targetName]),
-          ],
-          command: "bazel.buildTarget",
-          title: `Build ${targetName}`,
-          tooltip: `Build ${targetName}`,
-        };
+        commands.push({
+          commandString: "bazel.testTarget",
+          name: "Test",
+        });
       }
-      result.push(new vscode.CodeLens(location.range, cmd));
+
+      // Targets which are not libraries may support running.
+      //
+      // Without checking the Bazel rule's `executable` attribute we can't know
+      // for sure which targets can be run. This could be calculated by running
+      // `bazel cquery`, but this would introduce significant costs due to
+      // first running the `analysis` phase, so we use a heuristic instead.
+      const ruleIsLibrary = ruleClass.endsWith("_library");
+      if (!ruleIsLibrary) {
+        commands.push({
+          commandString: "bazel.runTarget",
+          name: "Run",
+        });
+      }
+
+      // All targets support building.
+      commands.push({
+        commandString: "bazel.buildTarget",
+        name: "Build",
+      });
+
+      for (const command of commands) {
+        const title = `${command.name} ${targetShortName}`;
+        result.push(
+          new vscode.CodeLens(location.range, {
+            arguments: [
+              new CodeLensCommandAdapter(bazelWorkspaceInfo, [targetName]),
+            ],
+            command: command.commandString,
+            title,
+            tooltip: title,
+          }),
+        );
+      }
     }
 
     return result;
