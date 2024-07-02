@@ -139,6 +139,11 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
 
       const commands: LensCommand[] = [];
 
+      commands.push({
+        commandString: "bazel.copyTargetToClipboard",
+        name: "Copy",
+      });
+
       // Only test targets support testing.
       if (ruleClass.endsWith("_test") || ruleClass === "test_suite") {
         commands.push({
@@ -168,15 +173,14 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
       });
 
       for (const command of commands) {
-        const title = `${command.name} ${targetShortName}`;
         result.push(
           new vscode.CodeLens(location.range, {
             arguments: [
               new CodeLensCommandAdapter(bazelWorkspaceInfo, [targetName]),
             ],
             command: command.commandString,
-            title,
-            tooltip: title,
+            title: command.name,
+            tooltip: `${command.name} ${targetShortName}`,
           }),
         );
       }
