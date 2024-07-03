@@ -139,6 +139,16 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
 
       const commands: LensCommand[] = [];
 
+      // All targets support target copying and building.
+      commands.push({
+        commandString: "bazel.copyTargetToClipboard",
+        name: "Copy",
+      });
+      commands.push({
+        commandString: "bazel.buildTarget",
+        name: "Build",
+      });
+
       // Only test targets support testing.
       if (ruleClass.endsWith("_test") || ruleClass === "test_suite") {
         commands.push({
@@ -160,12 +170,6 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
           name: "Run",
         });
       }
-
-      // All targets support building.
-      commands.push({
-        commandString: "bazel.buildTarget",
-        name: "Build",
-      });
 
       for (const command of commands) {
         const title = `${command.name} ${targetShortName}`;
