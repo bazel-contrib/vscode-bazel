@@ -131,6 +131,12 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
       name: string;
     }
 
+    const useTargetMap = queryResult.target
+      .map((t) => new QueryLocation(t.rule.location).line)
+      .reduce((countMap, line) => {
+        countMap.set(line, countMap.has(line));
+        return countMap;
+      }, new Map<number, boolean>());
     for (const target of queryResult.target) {
       const location = new QueryLocation(target.rule.location);
       const targetName = target.rule.name;
@@ -172,7 +178,8 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
       }
 
       for (const command of commands) {
-        const title = `${command.name} ${targetShortName}`;
+        const tooltip = `${command.name} ${targetShortName}`;
+        const title = useTargetMap.get(location.line) ? tooltip : command.name;
         result.push(
           new vscode.CodeLens(location.range, {
             arguments: [
@@ -180,7 +187,7 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
             ],
             command: command.commandString,
             title,
-            tooltip: title,
+            tooltip,
           }),
         );
       }
