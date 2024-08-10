@@ -445,7 +445,7 @@
             "explorer": [
                 {
                     "id": "bazelWorkspace",
-                    "name": "Bazel Build Targets",
+                    "name": "Bazel Targets",
                     "when": "bazel.haveWorkspace"
                 }
             ]
