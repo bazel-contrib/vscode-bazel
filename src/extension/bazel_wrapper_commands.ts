@@ -298,25 +298,10 @@ async function bazelClean() {
 }
 
 /**
- * Copies a target to the clipboard.
+ * Activate all user-facing commands which simply wrap Bazel commands
+ * such as `build`, `clean`, etc.
  */
-function bazelCopyTargetToClipboard(adapter: IBazelCommandAdapter | undefined) {
-  if (adapter === undefined) {
-    // This command should not be enabled in the commands palette, so adapter
-    // should always be present.
-    return;
-  }
-  // This can only be called on single targets, so we can assume there is only
-  // one of them.
-  const target = adapter.getBazelCommandOptions().targets[0];
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  vscode.env.clipboard.writeText(target);
-}
-
-/**
- * Activate all user-facing commands
- */
-export function activateCommands(): vscode.Disposable[] {
+export function activateWrapperCommands(): vscode.Disposable[] {
   return [
     vscode.commands.registerCommand("bazel.buildTarget", bazelBuildTarget),
     vscode.commands.registerCommand(

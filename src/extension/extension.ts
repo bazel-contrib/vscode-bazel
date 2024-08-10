@@ -32,7 +32,7 @@ import { BazelTargetSymbolProvider } from "../symbols";
 import { BazelWorkspaceTreeProvider } from "../workspace-tree";
 import { activateCommandVariables } from "./command_variables";
 import { activateTesting } from "../test-explorer";
-import { activateCommands } from "./commands";
+import { activateWrapperCommands } from "./bazel_wrapper_commands";
 
 /**
  * Called when the extension is activated; that is, when its first command is
@@ -92,7 +92,7 @@ export async function activate(context: vscode.ExtensionContext) {
       workspaceTreeProvider,
     ),
     // Commands
-    ...activateCommands(),
+    ...activateWrapperCommands(),
     vscode.commands.registerCommand("bazel.refreshBazelBuildTargets", () => {
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
       completionItemProvider.refresh();
@@ -159,4 +159,21 @@ function createLsp(config: vscode.WorkspaceConfiguration) {
   };
 
   return new LanguageClient("Bazel LSP Client", serverOptions, clientOptions);
+}
+
+
+/**
+ * Copies a target to the clipboard.
+ */
+function bazelCopyTargetToClipboard(adapter: IBazelCommandAdapter | undefined) {
+  if (adapter === undefined) {
+    // This command should not be enabled in the commands palette, so adapter
+    // should always be present.
+    return;
+  }
+  // This can only be called on single targets, so we can assume there is only
+  // one of them.
+  const target = adapter.getBazelCommandOptions().targets[0];
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  vscode.env.clipboard.writeText(target);
 }
