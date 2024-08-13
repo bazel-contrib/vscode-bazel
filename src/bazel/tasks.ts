@@ -227,7 +227,10 @@ export function createBazelTaskFromDefinition(
     vscode.workspace.getConfiguration("bazel.commandLine");
   const startupOptions = bazelConfigCmdLine.get<string[]>("startupOptions");
   const addCommandArgs =
-    command === "build" || command === "test" || command === "coverage";
+    command === "build" ||
+    command === "test" ||
+    command === "coverage" ||
+    command === "run";
   const commandArgs = addCommandArgs
     ? bazelConfigCmdLine.get<string[]>("commandArgs")
     : [];

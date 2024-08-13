@@ -131,6 +131,12 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
       name: string;
     }
 
+    const useTargetMap = queryResult.target
+      .map((t) => new QueryLocation(t.rule.location).line)
+      .reduce((countMap, line) => {
+        countMap.set(line, countMap.has(line));
+        return countMap;
+      }, new Map<number, boolean>());
     for (const target of queryResult.target) {
       const location = new QueryLocation(target.rule.location);
       const targetName = target.rule.name;
@@ -138,6 +144,16 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
       const targetShortName = getTargetShortName(targetName);
 
       const commands: LensCommand[] = [];
+
+      // All targets support target copying and building.
+      commands.push({
+        commandString: "bazel.copyTargetToClipboard",
+        name: "Copy",
+      });
+      commands.push({
+        commandString: "bazel.buildTarget",
+        name: "Build",
+      });
 
       // Only test targets support testing.
       if (ruleClass.endsWith("_test") || ruleClass === "test_suite") {
@@ -161,14 +177,9 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
         });
       }
 
-      // All targets support building.
-      commands.push({
-        commandString: "bazel.buildTarget",
-        name: "Build",
-      });
-
       for (const command of commands) {
-        const title = `${command.name} ${targetShortName}`;
+        const tooltip = `${command.name} ${targetShortName}`;
+        const title = useTargetMap.get(location.line) ? tooltip : command.name;
         result.push(
           new vscode.CodeLens(location.range, {
             arguments: [
@@ -176,7 +187,7 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
             ],
             command: command.commandString,
             title,
-            tooltip: title,
+            tooltip,
           }),
         );
       }
