@@ -19,7 +19,7 @@ import {
   ServerOptions,
 } from "vscode-languageclient/node";
 
-import { activateTaskProvider } from "../bazel";
+import { activateTaskProvider, IBazelCommandAdapter } from "../bazel";
 import {
   BuildifierDiagnosticsManager,
   BuildifierFormatProvider,
@@ -160,7 +160,6 @@ function createLsp(config: vscode.WorkspaceConfiguration) {
 
   return new LanguageClient("Bazel LSP Client", serverOptions, clientOptions);
 }
-
 
 /**
  * Copies a target to the clipboard.

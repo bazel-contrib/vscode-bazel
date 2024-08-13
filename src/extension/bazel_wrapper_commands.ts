@@ -21,6 +21,7 @@ import {
   queryQuickPickPackage,
   queryQuickPickTargets,
 } from "../bazel";
+import { getDefaultBazelExecutablePath } from "./configuration";
 
 /**
  * Builds a Bazel target and streams output to the terminal.
