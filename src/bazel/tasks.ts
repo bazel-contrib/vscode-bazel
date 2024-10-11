@@ -156,10 +156,12 @@ async function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
   if (taskDefinition.command === "coverage" && rawExitCode === 0) {
     // Find the coverage file and load it.
     const workspaceInfo = await getWorkspaceInfoFromTask(task.scope);
-    const outputPath = await new BazelInfo(
+    const bazelInfo = new BazelInfo(
       getDefaultBazelExecutablePath(),
       workspaceInfo.bazelWorkspacePath,
-    ).getOne("output_path");
+    );
+    const outputPath = await bazelInfo.getOne("output_path");
+    const executionRoot = await bazelInfo.getOne("execution_root");
 
     // Build a description string which will be displayed as part of the test run.
     const execution = task.execution as vscode.ShellExecution;
@@ -183,12 +185,10 @@ async function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
             "the instrumentation filters are set correctly.",
         );
       } else {
-        // Show the coverage date
-        await showLcovCoverage(
-          description,
-          workspaceInfo.bazelWorkspacePath,
-          covFileStr,
-        );
+        // The `bazel coverage` runs the build/test/coverage in sandboxes with
+        // the similar/same layout of execution root, thus making it as the base
+        // for mapping the source files.
+        await showLcovCoverage(description, executionRoot, covFileStr);
       }
     } catch (e: any) {
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
