@@ -17,6 +17,7 @@ import { BazelWorkspaceInfo } from "../bazel";
 import { IBazelTreeItem } from "./bazel_tree_item";
 import { BazelWorkspaceFolderTreeItem } from "./bazel_workspace_folder_tree_item";
 import { Resources } from "../extension/resources";
+import { IBazelQuerier, ProcessBazelQuerier } from "./querier";
 
 /**
  * Provides a tree of Bazel build packages and targets for the VS Code explorer
@@ -46,9 +47,12 @@ export class BazelWorkspaceTreeProvider
   /**
    * Initializes a new tree provider with the given extension context.
    *
-   * @param context The VS Code extension context.
+   * @param querier The interface providing the `bazel query` results.
    */
-  constructor(private readonly resources: Resources) {
+  constructor(
+    private readonly resources: Resources,
+    private readonly querier: IBazelQuerier = new ProcessBazelQuerier(),
+  ) {
     const buildFilesWatcher = vscode.workspace.createFileSystemWatcher(
       "**/{BUILD,BUILD.bazel}",
       false,
@@ -137,6 +141,7 @@ export class BazelWorkspaceTreeProvider
           if (workspaceInfo) {
             return new BazelWorkspaceFolderTreeItem(
               this.resources,
+              this.querier,
               workspaceInfo,
             );
           }
