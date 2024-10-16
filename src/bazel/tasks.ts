@@ -186,7 +186,7 @@ async function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
         );
       } else {
         // The `bazel coverage` runs the build/test/coverage in sandboxes with
-        // the similar/same layout of execution root, thus making it as the base
+        // the similar/same layout of execution root, thus using it as the base
         // for mapping the source files.
         await showLcovCoverage(description, executionRoot, covFileStr);
       }
