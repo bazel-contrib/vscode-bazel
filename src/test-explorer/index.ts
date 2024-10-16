@@ -30,6 +30,10 @@ export function activateTesting(): vscode.Disposable[] {
 
 /**
  * Display coverage information from a `.lcov` file.
+ *
+ * @param description The heading message for test (coverage) run.
+ * @param baseFolder The source file entries are relative paths to baseFolder.
+ * @param lcov The lcov report data in string.
  */
 export async function showLcovCoverage(
   description: string,

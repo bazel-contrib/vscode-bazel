@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import * as fs from "fs/promises";
 import * as path from "path";
 import * as child_process from "child_process";
 import * as which from "which";
@@ -128,6 +129,32 @@ async function demangleNameUsingFilter(
   return unmangled;
 }
 
+async function resolveSourceFilePath(
+  baseFolder: string,
+  sfPath: string,
+): Promise<string> {
+  // Ignore and keep the not existing paths for matching in later
+  // phases.
+  const resolvedSfPath = path.resolve(baseFolder, sfPath);
+  // Path could be in pattern `external/<local_repository name>/...`,
+  // Try resolve the symlink for <exec root>/external/<local_repository name>,
+  // so that the SF path could be patched into `<real>/<path>/<to>/<repo>/...`.
+  const externalRepoMatch = sfPath.match(/^external\/([^/]+)(\/.*)/);
+  if (externalRepoMatch) {
+    const repoName = externalRepoMatch[1];
+    const rest = externalRepoMatch[2];
+    try {
+      const repoPath = await fs.realpath(`${baseFolder}/external/${repoName}`);
+      const realSourcePath = `${repoPath}${rest}`;
+      await fs.stat(realSourcePath);
+      return realSourcePath;
+    } catch {
+      // Ignore invalid paths and fallback to original resolved one.
+    }
+  }
+  return resolvedSfPath;
+}
+
 /**
  * Coverage data from a Bazel run.
  *
@@ -154,6 +181,9 @@ export class BazelFileCoverage extends vscode.FileCoverage {
 
 /**
  * Parses the LCOV coverage info into VS Code's representation
+ *
+ * @param baseFolder The source file entries are relative paths to baseFolder.
+ * @param lcov The lcov report data in string.
  */
 export async function parseLcov(
   baseFolder: string,
@@ -203,7 +233,7 @@ export async function parseLcov(
           if (info !== undefined) {
             throw new Error(`Duplicated SF entry`);
           }
-          const filename = path.resolve(baseFolder, value);
+          const filename = await resolveSourceFilePath(baseFolder, value);
           if (!infosByFile.has(filename)) {
             infosByFile.set(filename, new FileCoverageInfo());
           }
