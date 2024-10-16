@@ -71,6 +71,10 @@ describe("The lcov parser", () => {
     assert.equal(coveredFiles[0].declarationCoverage.total, 1);
   });
 
+  it("ignores invalid line numbers", async () => {
+    assert.deepEqual(await parseTestLcov("BRDA:0,0,0,b"), []);
+  });
+
   describe("parses Java coverage data:", () => {
     let fileCov: BazelFileCoverage;
     before(async () => {
