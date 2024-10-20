@@ -25,9 +25,9 @@ export class BazelWorkspaceTreeProvider
   implements vscode.TreeDataProvider<IBazelTreeItem>, vscode.Disposable
 {
   /** Fired when BUILD files change in the workspace. */
-  private readonly _onDidChangeTreeData =
+  private readonly onDidChangeTreeDataEmitter =
     new vscode.EventEmitter<IBazelTreeItem | void>();
-  public readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
+  public readonly onDidChangeTreeData = this.onDidChangeTreeDataEmitter.event;
 
   /** The cached toplevel items. */
   private workspaceFolderTreeItems: BazelWorkspaceFolderTreeItem[] | undefined;
@@ -104,7 +104,7 @@ export class BazelWorkspaceTreeProvider
   /** Forces a re-query and refresh of the tree's contents. */
   public refresh() {
     this.updateWorkspaceFolderTreeItems();
-    this._onDidChangeTreeData.fire();
+    this.onDidChangeTreeDataEmitter.fire();
   }
 
   /**
