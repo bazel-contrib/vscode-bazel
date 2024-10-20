@@ -33,7 +33,7 @@
         "onCommand:bazel.info.output_path",
         "onCommand:bazel.info.workspace"
     ],
-    "main": "./dist/extension.js",
+    "main": "./extension.js",
     "contributes": {
         "breakpoints": [
             {
@@ -465,9 +465,8 @@
         "format-check": "prettier --check .",
         "format-fix": "prettier --write .",
         "test": "./scripts/test.sh",
-        "package": "vsce package",
+        "package": "./scripts/package.sh",
         "update-snapshot": "./scripts/test.sh -u",
-        "vscode:prepublish": "./scripts/build.sh && node esbuild.js",
         "watch": "./scripts/build.sh -watch"
     },
     "devDependencies": {

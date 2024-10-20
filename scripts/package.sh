@@ -19,20 +19,18 @@ set -eu
 # Move into the top-level directory of the project.
 cd "$(dirname "${BASH_SOURCE[0]}")/.." > /dev/null
 
-# Only regenerate the .js and .t.ds file if the protos have changed (i.e.,
-# it's a fresh checkout or update_protos.sh has been executed again and
-# deleted the old generated files). This shaves several seconds off the
-# extension's build time.
-if [[ ! -f src/protos/protos.js ]] ; then
-  sed -e "s#^#src/protos/#" src/protos/protos_list.txt | \
-      xargs pbjs -t static-module -o src/protos/protos.js
-fi
-if [[ ! -f src/protos/protos.d.ts ]] ; then
-  pbts -o src/protos/protos.d.ts src/protos/protos.js
-fi
+./scripts/build.sh
 
-# Convert yaml language definition to json form requred by vscode.
-js-yaml syntaxes/bazelrc.tmLanguage.yaml > syntaxes/bazelrc.tmLanguage.json
+# Prepare dist/ content besides the entry js.
+mkdir -p dist
+cp ./package.json ./dist/package.json
+cp ./LICENSE ./dist/LICENSE
+cp ./README.md ./dist/README.md
+cp -r ./icons ./dist/icons
+cp -r ./media ./dist/media
+cp -r ./syntaxes ./dist/syntaxes
 
-# Compile the rest of the project for non-release development flow.
-tsc "$@" -p ./
+node esbuild.js --production
+
+cd dist
+vsce package --no-dependencies -o ..

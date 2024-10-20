@@ -16,6 +16,6 @@
         "node_modules",
         "out",
         "eslint.config.js",
-        "esbuild.js",
+        "scripts",
     ]
 }
