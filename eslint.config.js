@@ -11,7 +11,12 @@ module.exports = tseslint.config(
   ...tseslint.configs.recommendedTypeChecked,
   eslintConfigPrettier,
   {
-    ignores: ["out/", "src/protos/protos.js", "src/protos/protos.d.ts"],
+    ignores: [
+      "out/",
+      "src/protos/protos.js",
+      "src/protos/protos.d.ts",
+      "esbuild.js",
+    ],
   },
   {
     languageOptions: {

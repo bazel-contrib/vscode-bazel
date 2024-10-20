@@ -15,6 +15,7 @@
     "exclude": [
         "node_modules",
         "out",
-        "eslint.config.js"
+        "eslint.config.js",
+        "esbuild.js",
     ]
 }

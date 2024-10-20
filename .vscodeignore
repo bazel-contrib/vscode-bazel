@@ -1,7 +1,9 @@
+.github/**
 .vscode-test/**
 .vscode/**
-out/test/**
+out/**
 scripts/**
+node_modules/**
 src/**
 test/**
 .vscode-test/
@@ -12,7 +14,10 @@ syntaxes/bazelrc.tmLanguage.yaml
 syntaxes/.gitignore
 
 .gitignore
+.prettierignore
+.vscode-test.js
 AUTHORS
 CODEOWNERS
 CONTRIBUTORS
 tsconfig.json
+esbuild.js
