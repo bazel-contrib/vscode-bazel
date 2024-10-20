@@ -26,6 +26,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
   /**
    * Initializes a new tree item with the given workspace folder.
    *
+   * @param querier Querier for getting information inside a Bazel workspace.
    * @param workspaceFolder The workspace folder that the tree item represents.
    */
   constructor(
@@ -54,8 +55,8 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     return this.workspaceInfo.workspaceFolder.uri.fsPath;
   }
 
-  public getCommand(): vscode.Command | undefined {
-    return undefined;
+  public getCommand(): Promise<vscode.Command | undefined> {
+    return Promise.resolve<undefined>(undefined);
   }
 
   public getContextValue(): string {
@@ -83,7 +84,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     startIndex: number,
     endIndex: number,
     treeItems: IBazelTreeItem[],
-    parentPackagePath: string,
+    parentPackagePath?: string,
   ) {
     // We can assume that the caller has sorted the packages, so we scan them to
     // find groupings into which we should traverse more deeply. For example, if
@@ -117,7 +118,9 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
       // erroneously collapse something like "foo" and "foobar".
       while (
         groupEnd < endIndex &&
-        packagePaths[groupEnd].startsWith(packagePath + "/")
+        (packagePaths[groupEnd].startsWith(packagePath + "/") ||
+          (packagePaths[groupEnd].startsWith(packagePath) &&
+            packagePath.endsWith("//")))
       ) {
         groupEnd++;
       }
@@ -163,14 +166,8 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
       return Promise.resolve([] as IBazelTreeItem[]);
     }
     const packagePaths = await this.querier.queryPackages(this.workspaceInfo);
-    const topLevelItems: BazelPackageTreeItem[] = [];
-    this.buildPackageTree(
-      packagePaths,
-      0,
-      packagePaths.length,
-      topLevelItems,
-      "",
-    );
+    const topLevelItems: IBazelTreeItem[] = [];
+    this.buildPackageTree(packagePaths, 0, packagePaths.length, topLevelItems);
 
     // Now collect any targets in the directory also (this can fail since
     // there might not be a BUILD files at this level (but down levels)).
@@ -186,6 +183,6 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
       );
     });
 
-    return Promise.resolve((topLevelItems as IBazelTreeItem[]).concat(targets));
+    return Promise.resolve(topLevelItems.concat(targets));
   }
 }
