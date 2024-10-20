@@ -22,48 +22,37 @@ import { BazelWorkspaceFolderTreeItem } from "./bazel_workspace_folder_tree_item
  * interface.
  */
 export class BazelWorkspaceTreeProvider
-  implements vscode.TreeDataProvider<IBazelTreeItem>
+  implements vscode.TreeDataProvider<IBazelTreeItem>, vscode.Disposable
 {
-  public onDidChangeTreeData: vscode.Event<IBazelTreeItem | void>;
-
   /** Fired when BUILD files change in the workspace. */
-  private onDidChangeTreeDataEmitter =
+  private readonly onDidChangeTreeDataEmitter =
     new vscode.EventEmitter<IBazelTreeItem | void>();
+  public readonly onDidChangeTreeData = this.onDidChangeTreeDataEmitter.event;
 
   /** The cached toplevel items. */
   private workspaceFolderTreeItems: BazelWorkspaceFolderTreeItem[] | undefined;
+
+  private disposables: vscode.Disposable[] = [];
 
   /**
    * Initializes a new tree provider with the given extension context.
    *
    * @param context The VS Code extension context.
    */
-  constructor(private context: vscode.ExtensionContext) {
-    this.onDidChangeTreeData = this.onDidChangeTreeDataEmitter.event;
-
-    const buildWatcher = vscode.workspace.createFileSystemWatcher(
+  constructor() {
+    const buildFilesWatcher = vscode.workspace.createFileSystemWatcher(
       "**/{BUILD,BUILD.bazel}",
       false,
       false,
       false,
     );
-    buildWatcher.onDidChange(
-      () => this.onBuildFilesChanged(),
-      this,
-      context.subscriptions,
+    this.disposables.push(
+      buildFilesWatcher,
+      buildFilesWatcher.onDidChange(() => this.onBuildFilesChanged()),
+      buildFilesWatcher.onDidCreate(() => this.onBuildFilesChanged()),
+      buildFilesWatcher.onDidDelete(() => this.onBuildFilesChanged()),
+      vscode.workspace.onDidChangeWorkspaceFolders(() => this.refresh()),
     );
-    buildWatcher.onDidCreate(
-      () => this.onBuildFilesChanged(),
-      this,
-      context.subscriptions,
-    );
-    buildWatcher.onDidDelete(
-      () => this.onBuildFilesChanged(),
-      this,
-      context.subscriptions,
-    );
-
-    vscode.workspace.onDidChangeWorkspaceFolders(() => this.refresh(), this);
 
     this.updateWorkspaceFolderTreeItems();
   }
@@ -154,5 +143,11 @@ export class BazelWorkspaceTreeProvider
       "bazel.haveWorkspace",
       haveBazelWorkspace,
     );
+  }
+
+  public dispose() {
+    for (const disposable of this.disposables) {
+      disposable.dispose();
+    }
   }
 }
