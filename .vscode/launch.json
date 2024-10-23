@@ -21,6 +21,13 @@
             "args": ["--server=4711"],
             "sourceMaps": true,
             "outFiles": ["${workspaceRoot}/out/src/**/*.js"]
+        },
+        {
+            "name": "Launch Extension Tests",
+            "type": "extensionHost",
+            "request": "launch",
+            "testConfiguration": "${workspaceFolder}/.vscode-test.js",
+            "args": ["--extensionDevelopmentPath=${workspaceFolder}"]
         }
     ],
     "compounds": [
@@ -28,6 +35,13 @@
             "name": "Extension and Debug Server",
             "configurations": [
                 "Launch Extension",
+                "Launch Debug Server"
+            ]
+        },
+        {
+            "name": "Extension Tests and Debug Server",
+            "configurations": [
+                "Launch Extension Tests",
                 "Launch Debug Server"
             ]
         }
