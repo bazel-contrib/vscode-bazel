@@ -14,21 +14,24 @@
 
 import * as vscode from "vscode";
 import { BazelWorkspaceInfo } from "../bazel";
-import { BazelQuery } from "../bazel";
-import { getDefaultBazelExecutablePath } from "../extension/configuration";
 import { blaze_query } from "../protos";
 import { BazelPackageTreeItem } from "./bazel_package_tree_item";
 import { BazelTargetTreeItem } from "./bazel_target_tree_item";
 import { IBazelTreeItem } from "./bazel_tree_item";
+import { IBazelQuerier } from "./querier";
 
 /** A tree item representing a workspace folder. */
 export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
   /**
    * Initializes a new tree item with the given workspace folder.
    *
+   * @param querier Querier for getting information inside a Bazel workspace.
    * @param workspaceFolder The workspace folder that the tree item represents.
    */
-  constructor(private workspaceInfo: BazelWorkspaceInfo) {}
+  constructor(
+    private readonly querier: IBazelQuerier,
+    private readonly workspaceInfo: BazelWorkspaceInfo,
+  ) {}
 
   public mightHaveChildren(): boolean {
     return true;
@@ -50,8 +53,8 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     return this.workspaceInfo.workspaceFolder.uri.fsPath;
   }
 
-  public getCommand(): vscode.Command | undefined {
-    return undefined;
+  public getCommand(): Thenable<vscode.Command | undefined> {
+    return Promise.resolve(undefined);
   }
 
   public getContextValue(): string {
@@ -78,8 +81,8 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     packagePaths: string[],
     startIndex: number,
     endIndex: number,
-    treeItems: BazelPackageTreeItem[],
-    parentPackagePath: string,
+    treeItems: IBazelTreeItem[],
+    parentPackagePath?: string,
   ) {
     // We can assume that the caller has sorted the packages, so we scan them to
     // find groupings into which we should traverse more deeply. For example, if
@@ -113,7 +116,9 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
       // erroneously collapse something like "foo" and "foobar".
       while (
         groupEnd < endIndex &&
-        packagePaths[groupEnd].startsWith(packagePath + "/")
+        (packagePaths[groupEnd].startsWith(packagePath + "/") ||
+          (packagePaths[groupEnd].startsWith(packagePath) &&
+            packagePath.endsWith("//")))
       ) {
         groupEnd++;
       }
@@ -123,6 +128,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
       // tree node for the element at groupStart and then recursively call the
       // algorithm again to group its children.
       const item = new BazelPackageTreeItem(
+        this.querier,
         this.workspaceInfo,
         packagePath,
         parentPackagePath,
@@ -156,37 +162,20 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     if (!this.workspaceInfo) {
       return Promise.resolve([] as IBazelTreeItem[]);
     }
-    const workspacePath = this.workspaceInfo.workspaceFolder.uri.fsPath;
-    const packagePaths = await new BazelQuery(
-      getDefaultBazelExecutablePath(),
-      workspacePath,
-    ).queryPackages(
-      vscode.workspace
-        .getConfiguration("bazel.commandLine")
-        .get("queryExpression"),
-    );
-    const topLevelItems: BazelPackageTreeItem[] = [];
-    this.buildPackageTree(
-      packagePaths,
-      0,
-      packagePaths.length,
-      topLevelItems,
-      "",
-    );
+    const packagePaths = await this.querier.queryPackages(this.workspaceInfo);
+    const topLevelItems: IBazelTreeItem[] = [];
+    this.buildPackageTree(packagePaths, 0, packagePaths.length, topLevelItems);
 
     // Now collect any targets in the directory also (this can fail since
     // there might not be a BUILD files at this level (but down levels)).
-    const queryResult = await new BazelQuery(
-      getDefaultBazelExecutablePath(),
-      workspacePath,
-    ).queryTargets(`:all`, {
-      ignoresErrors: true,
-      sortByRuleName: true,
-    });
+    const queryResult = await this.querier.queryChildrenTargets(
+      this.workspaceInfo,
+      "",
+    );
     const targets = queryResult.target.map((target: blaze_query.ITarget) => {
       return new BazelTargetTreeItem(this.workspaceInfo, target);
     });
 
-    return Promise.resolve((topLevelItems as IBazelTreeItem[]).concat(targets));
+    return Promise.resolve(topLevelItems.concat(targets));
   }
 }

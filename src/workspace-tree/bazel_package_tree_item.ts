@@ -14,15 +14,11 @@
 
 import * as vscode from "vscode";
 import { BazelWorkspaceInfo } from "../bazel";
-import {
-  BazelQuery,
-  IBazelCommandAdapter,
-  IBazelCommandOptions,
-} from "../bazel";
-import { getDefaultBazelExecutablePath } from "../extension/configuration";
+import { IBazelCommandAdapter, IBazelCommandOptions } from "../bazel";
 import { blaze_query } from "../protos";
 import { BazelTargetTreeItem } from "./bazel_target_tree_item";
 import { IBazelTreeItem } from "./bazel_tree_item";
+import { IBazelQuerier } from "./querier";
 
 /** A tree item representing a build package. */
 export class BazelPackageTreeItem
@@ -32,11 +28,12 @@ export class BazelPackageTreeItem
    * The array of subpackages that should be shown directly under this package
    * item.
    */
-  public directSubpackages: BazelPackageTreeItem[] = [];
+  public directSubpackages: IBazelTreeItem[] = [];
 
   /**
    * Initializes a new tree item with the given workspace path and package path.
    *
+   * @param querier Querier for getting information inside a Bazel workspace.
    * @param workspacePath The path to the VS Code workspace folder.
    * @param packagePath The path to the build package that this item represents.
    * @param parentPackagePath The path to the build package of the tree item
@@ -44,9 +41,10 @@ export class BazelPackageTreeItem
    * {@code packagePath} should be stripped for the item's label.
    */
   constructor(
+    private readonly querier: IBazelQuerier,
     private readonly workspaceInfo: BazelWorkspaceInfo,
     private readonly packagePath: string,
-    private readonly parentPackagePath: string,
+    private readonly parentPackagePath?: string,
   ) {}
 
   public mightHaveChildren(): boolean {
@@ -54,28 +52,34 @@ export class BazelPackageTreeItem
   }
 
   public async getChildren(): Promise<IBazelTreeItem[]> {
-    const queryResult = await new BazelQuery(
-      getDefaultBazelExecutablePath(),
-      this.workspaceInfo.bazelWorkspacePath,
-    ).queryTargets(`//${this.packagePath}:all`, {
-      ignoresErrors: true,
-      sortByRuleName: true,
-    });
+    const queryResult = await this.querier.queryChildrenTargets(
+      this.workspaceInfo,
+      this.packagePath,
+    );
     const targets = queryResult.target.map((target: blaze_query.ITarget) => {
       return new BazelTargetTreeItem(this.workspaceInfo, target);
     });
-    return (this.directSubpackages as IBazelTreeItem[]).concat(targets);
+    return this.directSubpackages.concat(targets);
   }
 
   public getLabel(): string {
-    // If this is a top-level package, include the leading double-slash on the
-    // label.
-    if (this.parentPackagePath.length === 0) {
-      return `//${this.packagePath}`;
+    if (this.parentPackagePath === undefined) {
+      return this.packagePath;
     }
-    // Otherwise, strip off the part of the package path that came from the
-    // parent item (along with the slash).
-    return this.packagePath.substring(this.parentPackagePath.length + 1);
+    // Strip off the part of the package path that came from the
+    // parent item.
+    const parentLength = this.parentPackagePath.length;
+    // (null)
+    // //a
+    //
+    // @repo//foo
+    // @repo//foo/bar
+    //
+    // @repo//
+    // @repo//foo
+    const diffIsLeadingSlash = this.packagePath[parentLength] === "/";
+    const prefixLength = diffIsLeadingSlash ? parentLength + 1 : parentLength;
+    return this.packagePath.substring(prefixLength);
   }
 
   public getIcon(): vscode.ThemeIcon {
@@ -83,11 +87,11 @@ export class BazelPackageTreeItem
   }
 
   public getTooltip(): string {
-    return `//${this.packagePath}`;
+    return this.packagePath;
   }
 
-  public getCommand(): vscode.Command | undefined {
-    return undefined;
+  public getCommand(): Thenable<vscode.Command | undefined> {
+    return Promise.resolve(undefined);
   }
 
   public getContextValue(): string {
@@ -97,7 +101,7 @@ export class BazelPackageTreeItem
   public getBazelCommandOptions(): IBazelCommandOptions {
     return {
       options: [],
-      targets: [`//${this.packagePath}`],
+      targets: [this.packagePath],
       workspaceInfo: this.workspaceInfo,
     };
   }
