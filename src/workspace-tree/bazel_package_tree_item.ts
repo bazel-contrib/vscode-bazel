@@ -23,6 +23,7 @@ import { getDefaultBazelExecutablePath } from "../extension/configuration";
 import { blaze_query } from "../protos";
 import { BazelTargetTreeItem } from "./bazel_target_tree_item";
 import { IBazelTreeItem } from "./bazel_tree_item";
+import { Resources } from "../extension/resources";
 
 /** A tree item representing a build package. */
 export class BazelPackageTreeItem
@@ -44,6 +45,7 @@ export class BazelPackageTreeItem
    * {@code packagePath} should be stripped for the item's label.
    */
   constructor(
+    private readonly resources: Resources,
     private readonly workspaceInfo: BazelWorkspaceInfo,
     private readonly packagePath: string,
     private readonly parentPackagePath: string,
@@ -62,7 +64,11 @@ export class BazelPackageTreeItem
       sortByRuleName: true,
     });
     const targets = queryResult.target.map((target: blaze_query.ITarget) => {
-      return new BazelTargetTreeItem(this.workspaceInfo, target);
+      return new BazelTargetTreeItem(
+        this.resources,
+        this.workspaceInfo,
+        target,
+      );
     });
     return (this.directSubpackages as IBazelTreeItem[]).concat(targets);
   }
@@ -78,8 +84,8 @@ export class BazelPackageTreeItem
     return this.packagePath.substring(this.parentPackagePath.length + 1);
   }
 
-  public getIconName(): undefined {
-    return undefined;
+  public getIcon(): vscode.ThemeIcon {
+    return vscode.ThemeIcon.Folder;
   }
 
   public getTooltip(): string {

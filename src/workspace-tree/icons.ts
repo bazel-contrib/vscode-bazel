@@ -60,18 +60,18 @@ const SPECIFIC_RULE_CLASS_ICONS: Record<string, IconName> = {
 export function getBazelRuleIcon(
   target: blaze_query.ITarget,
 ): IconName | undefined {
-  const ruleClass = target.rule.ruleClass;
-  let iconName = SPECIFIC_RULE_CLASS_ICONS[ruleClass];
-  if (!iconName) {
-    if (ruleClass.endsWith("_binary")) {
-      iconName = IconName.BINARY;
-    } else if (ruleClass.endsWith("_proto_library")) {
-      iconName = IconName.PROTO;
-    } else if (ruleClass.endsWith("_library")) {
-      iconName = IconName.LIBRARY;
-    } else if (ruleClass.endsWith("_test")) {
-      iconName = IconName.TEST;
-    }
+  const ruleClass = target.rule?.ruleClass ?? "";
+  const iconName = SPECIFIC_RULE_CLASS_ICONS[ruleClass];
+  if (iconName) {
+    return iconName;
+  } else if (ruleClass.endsWith("_binary")) {
+    return IconName.BINARY;
+  } else if (ruleClass.endsWith("_proto_library")) {
+    return IconName.PROTO;
+  } else if (ruleClass.endsWith("_library")) {
+    return IconName.LIBRARY;
+  } else if (ruleClass.endsWith("_test")) {
+    return IconName.TEST;
   }
-  return iconName;
+  return undefined;
 }

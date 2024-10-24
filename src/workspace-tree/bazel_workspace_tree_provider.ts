@@ -96,18 +96,6 @@ export class BazelWorkspaceTreeProvider
     return Promise.resolve([]);
   }
 
-  private getIcon(element: IBazelTreeItem): string | vscode.ThemeIcon {
-    const iconName = element.getIconName();
-    if (iconName === undefined) {
-      if (element.mightHaveChildren()) {
-        return vscode.ThemeIcon.Folder;
-      } else {
-        return vscode.ThemeIcon.File;
-      }
-    }
-    return this.resources.getIconPath(iconName);
-  }
-
   public getTreeItem(element: IBazelTreeItem): vscode.TreeItem {
     const label = element.getLabel();
     const collapsibleState = element.mightHaveChildren()
@@ -116,7 +104,7 @@ export class BazelWorkspaceTreeProvider
 
     const treeItem = new vscode.TreeItem(label, collapsibleState);
     treeItem.contextValue = element.getContextValue();
-    treeItem.iconPath = this.getIcon(element);
+    treeItem.iconPath = element.getIcon();
     treeItem.tooltip = element.getTooltip();
     treeItem.command = element.getCommand();
     return treeItem;
@@ -147,7 +135,10 @@ export class BazelWorkspaceTreeProvider
         .map((folder) => {
           const workspaceInfo = BazelWorkspaceInfo.fromWorkspaceFolder(folder);
           if (workspaceInfo) {
-            return new BazelWorkspaceFolderTreeItem(workspaceInfo);
+            return new BazelWorkspaceFolderTreeItem(
+              this.resources,
+              workspaceInfo,
+            );
           }
           return undefined;
         })

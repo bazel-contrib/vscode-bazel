@@ -19,6 +19,7 @@ import { blaze_query } from "../protos";
 import { BazelPackageTreeItem } from "./bazel_package_tree_item";
 import { BazelTargetTreeItem } from "./bazel_target_tree_item";
 import { IBazelTreeItem } from "./bazel_tree_item";
+import { Resources } from "../extension/resources";
 
 /** A tree item representing a workspace folder. */
 export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
@@ -27,7 +28,10 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
    *
    * @param workspaceFolder The workspace folder that the tree item represents.
    */
-  constructor(private workspaceInfo: BazelWorkspaceInfo) {}
+  constructor(
+    private readonly resources: Resources,
+    private readonly workspaceInfo: BazelWorkspaceInfo,
+  ) {}
 
   public mightHaveChildren(): boolean {
     return true;
@@ -41,8 +45,8 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     return this.workspaceInfo.workspaceFolder.name;
   }
 
-  public getIconName(): undefined {
-    return undefined;
+  public getIcon(): vscode.ThemeIcon {
+    return vscode.ThemeIcon.Folder;
   }
 
   public getTooltip(): string {
@@ -122,6 +126,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
       // tree node for the element at groupStart and then recursively call the
       // algorithm again to group its children.
       const item = new BazelPackageTreeItem(
+        this.resources,
         this.workspaceInfo,
         packagePath,
         parentPackagePath,
@@ -183,7 +188,11 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
       sortByRuleName: true,
     });
     const targets = queryResult.target.map((target: blaze_query.ITarget) => {
-      return new BazelTargetTreeItem(this.workspaceInfo, target);
+      return new BazelTargetTreeItem(
+        this.resources,
+        this.workspaceInfo,
+        target,
+      );
     });
 
     return Promise.resolve((topLevelItems as IBazelTreeItem[]).concat(targets));
