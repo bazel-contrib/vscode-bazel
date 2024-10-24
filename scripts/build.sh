@@ -34,5 +34,5 @@ fi
 # Convert yaml language definition to json form requred by vscode.
 js-yaml syntaxes/bazelrc.tmLanguage.yaml > syntaxes/bazelrc.tmLanguage.json
 
-# Compile the rest of the project.
+# Compile the rest of the project for non-release development flow.
 tsc "$@" -p ./
