@@ -18,6 +18,7 @@ import { IBazelCommandAdapter, IBazelCommandOptions } from "../bazel";
 import { blaze_query } from "../protos";
 import { IBazelTreeItem } from "./bazel_tree_item";
 import { getBazelRuleIcon } from "./icons";
+import { Resources } from "../extension/resources";
 
 /** A tree item representing a build target. */
 export class BazelTargetTreeItem
@@ -31,6 +32,7 @@ export class BazelTargetTreeItem
    * query.
    */
   constructor(
+    private readonly resources: Resources,
     private readonly workspaceInfo: BazelWorkspaceInfo,
     private readonly target: blaze_query.ITarget,
   ) {}
@@ -50,8 +52,12 @@ export class BazelTargetTreeItem
     return `${targetName}  (${this.target.rule.ruleClass})`;
   }
 
-  public getIcon(): vscode.ThemeIcon | string {
-    return getBazelRuleIcon(this.target);
+  public getIcon(): string | vscode.ThemeIcon {
+    const bazelRuleIcon = getBazelRuleIcon(this.target);
+    if (bazelRuleIcon) {
+      return this.resources.getIconPath(bazelRuleIcon);
+    }
+    return vscode.ThemeIcon.File;
   }
 
   public getTooltip(): string {

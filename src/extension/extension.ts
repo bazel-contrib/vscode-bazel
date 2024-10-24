@@ -41,7 +41,8 @@ import { activateWrapperCommands } from "./bazel_wrapper_commands";
  * @param context The extension context.
  */
 export async function activate(context: vscode.ExtensionContext) {
-  const workspaceTreeProvider = new BazelWorkspaceTreeProvider();
+  const workspaceTreeProvider =
+    BazelWorkspaceTreeProvider.fromExtensionContext(context);
   context.subscriptions.push(workspaceTreeProvider);
 
   const codeLensProvider = new BazelBuildCodeLensProvider(context);
