@@ -13,8 +13,7 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import { BazelWorkspaceInfo } from "../bazel";
-import { BazelQuery } from "../bazel";
+import { BazelWorkspaceInfo, BazelQuery } from "../bazel";
 import { getDefaultBazelExecutablePath } from "../extension/configuration";
 import { blaze_query } from "../protos";
 import { BazelPackageTreeItem } from "./bazel_package_tree_item";
@@ -42,8 +41,8 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     return this.workspaceInfo.workspaceFolder.name;
   }
 
-  public getIcon(): vscode.ThemeIcon {
-    return vscode.ThemeIcon.Folder;
+  public getIconName(): undefined {
+    return undefined;
   }
 
   public getTooltip(): string {

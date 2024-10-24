@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as path from "path";
-import * as vscode from "vscode";
+import { IconName } from "../extension/resources";
 import { blaze_query } from "../protos";
 
 /**
@@ -25,31 +24,31 @@ import { blaze_query } from "../protos";
  * application/extension/framework targets are shown with folder-like icons
  * because those bundles are conceptually folders.
  */
-const SPECIFIC_RULE_CLASS_ICONS: Record<string, string> = {
-  android_binary: "android_binary",
-  apple_bundle_import: "resource_bundle",
-  apple_resource_bundle: "resource_bundle",
-  config_setting: "config_setting",
-  filegroup: "filegroup",
-  genrule: "genrule",
-  ios_application: "apple_application",
-  ios_extension: "apple_executable_bundle",
-  ios_framework: "apple_framework",
-  macos_application: "apple_application",
-  macos_bundle: "apple_executable_bundle",
-  macos_extension: "apple_executable_bundle",
-  objc_bundle: "resource_bundle",
-  objc_bundle_library: "resource_bundle",
-  objc_framework: "apple_framework",
-  objc_import: "library",
-  proto_library: "proto",
-  swift_c_module: "library",
-  swift_import: "library",
-  test_suite: "test_suite",
-  tvos_application: "apple_application",
-  tvos_extension: "apple_executable_bundle",
-  watchos_application: "apple_application",
-  watchos_extension: "apple_executable_bundle",
+const SPECIFIC_RULE_CLASS_ICONS: Record<string, IconName> = {
+  android_binary: IconName.ANDROID_BINARY,
+  apple_bundle_import: IconName.RESOURCE_BUNDLE,
+  apple_resource_bundle: IconName.RESOURCE_BUNDLE,
+  config_setting: IconName.CONFIG_SETTING,
+  filegroup: IconName.FILEGROUP,
+  genrule: IconName.GENRULE,
+  ios_application: IconName.APPLE_APPLICATION,
+  ios_extension: IconName.APPLE_EXECUTABLE_BUNDLE,
+  ios_framework: IconName.APPLE_FRAMEWORK,
+  macos_application: IconName.APPLE_APPLICATION,
+  macos_bundle: IconName.APPLE_EXECUTABLE_BUNDLE,
+  macos_extension: IconName.APPLE_EXECUTABLE_BUNDLE,
+  objc_bundle: IconName.RESOURCE_BUNDLE,
+  objc_bundle_library: IconName.RESOURCE_BUNDLE,
+  objc_framework: IconName.APPLE_FRAMEWORK,
+  objc_import: IconName.LIBRARY,
+  proto_library: IconName.PROTO,
+  swift_c_module: IconName.LIBRARY,
+  swift_import: IconName.LIBRARY,
+  test_suite: IconName.TEST_SUITE,
+  tvos_application: IconName.APPLE_APPLICATION,
+  tvos_extension: IconName.APPLE_EXECUTABLE_BUNDLE,
+  watchos_application: IconName.APPLE_APPLICATION,
+  watchos_extension: IconName.APPLE_EXECUTABLE_BUNDLE,
 };
 
 /**
@@ -60,23 +59,19 @@ const SPECIFIC_RULE_CLASS_ICONS: Record<string, string> = {
  */
 export function getBazelRuleIcon(
   target: blaze_query.ITarget,
-): string | vscode.ThemeIcon {
+): IconName | undefined {
   const ruleClass = target.rule.ruleClass;
   let iconName = SPECIFIC_RULE_CLASS_ICONS[ruleClass];
   if (!iconName) {
     if (ruleClass.endsWith("_binary")) {
-      iconName = "binary";
+      iconName = IconName.BINARY;
     } else if (ruleClass.endsWith("_proto_library")) {
-      iconName = "proto";
+      iconName = IconName.PROTO;
     } else if (ruleClass.endsWith("_library")) {
-      iconName = "library";
+      iconName = IconName.LIBRARY;
     } else if (ruleClass.endsWith("_test")) {
-      iconName = "test";
+      iconName = IconName.TEST;
     }
   }
-  if (iconName) {
-    return path.join(__dirname, "../../../icons", `${iconName}.svg`);
-  } else {
-    return vscode.ThemeIcon.File;
-  }
+  return iconName;
 }

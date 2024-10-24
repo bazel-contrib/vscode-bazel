@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
+import { IconName } from "../extension/resources";
 
 /** An interface implemented by items in the Bazel tree provider. */
 export interface IBazelTreeItem {
@@ -36,8 +37,8 @@ export interface IBazelTreeItem {
   /** Returns the text label of the tree item. */
   getLabel(): string;
 
-  /** Returns the icon that should be shown next to the tree item. */
-  getIcon(): vscode.ThemeIcon | string | undefined;
+  /** Returns the icon name that should be shown next to the tree item. */
+  getIconName(): IconName | undefined;
 
   /**
    * Returns the tooltip that should be displayed when the user hovers over the

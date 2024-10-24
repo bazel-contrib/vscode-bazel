@@ -16,6 +16,7 @@ import * as vscode from "vscode";
 import { BazelWorkspaceInfo } from "../bazel";
 import { IBazelTreeItem } from "./bazel_tree_item";
 import { BazelWorkspaceFolderTreeItem } from "./bazel_workspace_folder_tree_item";
+import { Resources } from "../extension/resources";
 
 /**
  * Provides a tree of Bazel build packages and targets for the VS Code explorer
@@ -34,12 +35,20 @@ export class BazelWorkspaceTreeProvider
 
   private disposables: vscode.Disposable[] = [];
 
+  public static fromExtensionContext(
+    context: vscode.ExtensionContext,
+  ): BazelWorkspaceTreeProvider {
+    return new BazelWorkspaceTreeProvider(
+      Resources.fromExtensionContext(context),
+    );
+  }
+
   /**
    * Initializes a new tree provider with the given extension context.
    *
    * @param context The VS Code extension context.
    */
-  constructor() {
+  constructor(private readonly resources: Resources) {
     const buildFilesWatcher = vscode.workspace.createFileSystemWatcher(
       "**/{BUILD,BUILD.bazel}",
       false,
@@ -87,6 +96,18 @@ export class BazelWorkspaceTreeProvider
     return Promise.resolve([]);
   }
 
+  private getIcon(element: IBazelTreeItem): string | vscode.ThemeIcon {
+    const iconName = element.getIconName();
+    if (iconName === undefined) {
+      if (element.mightHaveChildren()) {
+        return vscode.ThemeIcon.Folder;
+      } else {
+        return vscode.ThemeIcon.File;
+      }
+    }
+    return this.resources.getIconPath(iconName);
+  }
+
   public getTreeItem(element: IBazelTreeItem): vscode.TreeItem {
     const label = element.getLabel();
     const collapsibleState = element.mightHaveChildren()
@@ -95,7 +116,7 @@ export class BazelWorkspaceTreeProvider
 
     const treeItem = new vscode.TreeItem(label, collapsibleState);
     treeItem.contextValue = element.getContextValue();
-    treeItem.iconPath = element.getIcon();
+    treeItem.iconPath = this.getIcon(element);
     treeItem.tooltip = element.getTooltip();
     treeItem.command = element.getCommand();
     return treeItem;

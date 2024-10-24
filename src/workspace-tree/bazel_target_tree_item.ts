@@ -18,6 +18,7 @@ import { IBazelCommandAdapter, IBazelCommandOptions } from "../bazel";
 import { blaze_query } from "../protos";
 import { IBazelTreeItem } from "./bazel_tree_item";
 import { getBazelRuleIcon } from "./icons";
+import { IconName } from "../extension/resources";
 
 /** A tree item representing a build target. */
 export class BazelTargetTreeItem
@@ -50,7 +51,7 @@ export class BazelTargetTreeItem
     return `${targetName}  (${this.target.rule.ruleClass})`;
   }
 
-  public getIcon(): vscode.ThemeIcon | string {
+  public getIconName(): IconName | undefined {
     return getBazelRuleIcon(this.target);
   }
 

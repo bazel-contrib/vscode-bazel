@@ -78,8 +78,8 @@ export class BazelPackageTreeItem
     return this.packagePath.substring(this.parentPackagePath.length + 1);
   }
 
-  public getIcon(): vscode.ThemeIcon {
-    return vscode.ThemeIcon.Folder;
+  public getIconName(): undefined {
+    return undefined;
   }
 
   public getTooltip(): string {
