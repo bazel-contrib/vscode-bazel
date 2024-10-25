@@ -1,0 +1,10 @@
+# Ignore all files by default.
+**/*
+
+!README.md
+!LICENSE
+!package.json
+!dist/**/*.js
+!icons/**/*.+(svg|license)
+!media/**/*
+!syntaxes/**/*.+(json|yaml|license)

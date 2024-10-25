@@ -19,9 +19,8 @@ set -eu
 # Move into the top-level directory of the project.
 cd "$(dirname "${BASH_SOURCE[0]}")/.." > /dev/null
 
-# If tests are eventually added for other things, this line should probably
-# be replaced by just running scripts/build.sh.
-js-yaml syntaxes/bazelrc.tmLanguage.yaml > syntaxes/bazelrc.tmLanguage.json
+# This should be invoked by either `npm test` or `npm run test` in pretest
+# implicitly, thus the build build steps are all moved into build.sh.
 
 # Regression test for bazelrc grammar
 vscode-tmgrammar-snap "$@" test/example.bazelrc

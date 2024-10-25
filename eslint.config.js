@@ -12,8 +12,10 @@ module.exports = tseslint.config(
   eslintConfigPrettier,
   {
     ignores: [
-      "esbuild.js",
-      "out/",
+      ".vscode-test/**",
+      "esbuild*.js",
+      "dist/**",
+      "out/**",
       "src/protos/protos.js",
       "src/protos/protos.d.ts",
     ],
