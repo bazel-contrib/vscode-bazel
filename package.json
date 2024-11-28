@@ -193,6 +193,16 @@
                     },
                     "default": [],
                     "description": "The arguments to pass to the LSP executable"
+                },
+                "bazel.trace.server": {
+                    "type": "string",
+                    "enum": [
+                        "off",
+                        "messages",
+                        "verbose"
+                    ],
+                    "default": "off",
+                    "description": "Trace the communication between VS Code and Bazel LSP server (language server)."
                 }
             }
         },

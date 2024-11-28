@@ -161,7 +161,12 @@ function createLsp(config: vscode.WorkspaceConfiguration) {
     documentSelector: [{ scheme: "file", language: "starlark" }],
   };
 
-  return new LanguageClient("Bazel LSP Client", serverOptions, clientOptions);
+  return new LanguageClient(
+    "bazel",
+    "Bazel LSP Client",
+    serverOptions,
+    clientOptions,
+  );
 }
 
 /**
