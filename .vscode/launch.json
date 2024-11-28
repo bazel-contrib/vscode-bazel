@@ -6,28 +6,29 @@
             "type": "extensionHost",
             "request": "launch",
             "runtimeExecutable": "${execPath}",
-            "args": ["--extensionDevelopmentPath=${workspaceRoot}"],
-            "stopOnEntry": false,
+            "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
             "sourceMaps": true,
-            "outFiles": ["${workspaceRoot}/out/src/**/*.js"],
-            "preLaunchTask": "npm"
+            "outFiles": ["${workspaceFolder}/dist/**/*.js"],
+            "preLaunchTask": "npm: compile"
         },
         {
             "name": "Launch Debug Server",
             "type": "node",
             "request": "launch",
             "cwd": "${workspaceFolder}",
-            "program": "${workspaceFolder}/src/debug-adapter/client.ts",
+            "program": "${workspaceFolder}/dist/debug-adapter-client.js",
             "args": ["--server=4711"],
             "sourceMaps": true,
-            "outFiles": ["${workspaceRoot}/out/src/**/*.js"]
+            "outFiles": ["${workspaceFolder}/dist/**/*.js"]
         },
         {
             "name": "Launch Extension Tests",
             "type": "extensionHost",
             "request": "launch",
             "testConfiguration": "${workspaceFolder}/.vscode-test.js",
-            "args": ["--extensionDevelopmentPath=${workspaceFolder}"]
+            "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
+            "sourceMaps": true,
+            "outFiles": ["${workspaceFolder}/out/**/*.js"]
         }
     ],
     "compounds": [

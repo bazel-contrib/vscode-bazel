@@ -33,7 +33,7 @@
         "onCommand:bazel.info.output_path",
         "onCommand:bazel.info.workspace"
     ],
-    "main": "./out/src/extension/extension",
+    "main": "./dist/extension.js",
     "contributes": {
         "breakpoints": [
             {
@@ -210,7 +210,7 @@
             {
                 "type": "bazel-launch-build",
                 "label": "Launch Bazel Build",
-                "program": "./out/src/debug-adapter/client.js",
+                "program": "./dist/debug-adapter-client.js",
                 "runtime": "node",
                 "configurationAttributes": {
                     "launch": {
@@ -470,15 +470,19 @@
     },
     "scripts": {
         "check-lint": "eslint .",
+        "precompile": "./scripts/prepare.sh",
         "compile": "./scripts/build.sh",
-        "pretest": "./scripts/build.sh",
         "format-check": "prettier --check .",
         "format-fix": "prettier --write .",
+        "pretest": "npm run compile",
         "test": "./scripts/test.sh",
-        "package": "vsce package",
+        "prepackage": "./scripts/prepare.sh",
+        "package": "./scripts/package.sh",
         "update-snapshot": "./scripts/test.sh -u",
-        "vscode:prepublish": "./scripts/build.sh",
-        "watch": "./scripts/build.sh -watch"
+        "watch": "npm-run-all -p watch:*",
+        "watch:esbuild-extension": "node esbuild.js --watch",
+        "watch:esbuild-debug-adapter": "node esbuild-debug-adapter.js --watch",
+        "watch:tsc": "tsc --noEmit --watch --project tsconfig.json"
     },
     "devDependencies": {
         "@types/mocha": "^10.0.6",
@@ -488,11 +492,13 @@
         "@vscode/test-cli": "^0.0.9",
         "@vscode/test-electron": "^2.3.9",
         "@vscode/vsce": "^2.24.0",
+        "esbuild": "^0.24.0",
         "eslint": "^8.57.0",
         "eslint-config-prettier": "^9.1.0",
         "eslint-plugin-jsdoc": "^48.2.2",
         "js-yaml": "^4.1.0",
         "mocha": "^10.4.0",
+        "npm-run-all": "^4.1.5",
         "prettier": "^3.2.5",
         "typescript": "^5.4.4",
         "typescript-eslint": "^7.5.0",

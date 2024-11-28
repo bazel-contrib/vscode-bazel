@@ -19,11 +19,7 @@ set -eu
 # Move into the top-level directory of the project.
 cd "$(dirname "${BASH_SOURCE[0]}")/.." > /dev/null
 
-# This should be invoked by either `npm test` or `npm run test` in pretest
-# implicitly, thus the build build steps are all moved into build.sh.
+node esbuild-debug-adapter.js --production
+node esbuild.js --production
 
-# Regression test for bazelrc grammar
-vscode-tmgrammar-snap "$@" test/example.bazelrc
-
-# Java Script tests
-vscode-test
+vsce package --no-dependencies

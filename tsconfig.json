@@ -13,8 +13,11 @@
         "allowJs": true,
     },
     "exclude": [
+        "dist",
         "node_modules",
         "out",
-        "eslint.config.js"
+        "esbuild*.js",
+        "eslint.config.js",
+        "scripts",
     ]
 }

@@ -1,18 +1,10 @@
-.vscode-test/**
-.vscode/**
-out/test/**
-scripts/**
-src/**
-test/**
-.vscode-test/
+# Ignore all files by default.
+**/*
 
-**/*.map
-
-syntaxes/bazelrc.tmLanguage.yaml
-syntaxes/.gitignore
-
-.gitignore
-AUTHORS
-CODEOWNERS
-CONTRIBUTORS
-tsconfig.json
+!README.md
+!LICENSE
+!package.json
+!dist/**/*.js
+!icons/**/*.+(svg|license)
+!media/**/*
+!syntaxes/**/*.+(json|yaml|license)
