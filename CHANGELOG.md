@@ -1,5 +1,32 @@
 # Change Log
 
+## [0.11.0](https://github.com/bazel-contrib/vscode-bazel/compare/0.10.0...v0.11.0) (2024-11-28)
+
+
+### Features
+
+* Cmd-click to jump to a source file from a build rule ([#380](https://github.com/bazel-contrib/vscode-bazel/issues/380)) ([fa38d08](https://github.com/bazel-contrib/vscode-bazel/commit/fa38d08eceedf56777cfff2b8b0f74477e623154))
+* **codelens:** Add a copy target command ([da62c67](https://github.com/bazel-contrib/vscode-bazel/commit/da62c6718515de8a0c50cffd77cf284acdbf85ab))
+* **codelens:** Don't add target names for one line targets ([#407](https://github.com/bazel-contrib/vscode-bazel/issues/407)) ([4f02dc5](https://github.com/bazel-contrib/vscode-bazel/commit/4f02dc5a86d5293800b44b67000b14cbd4edce38))
+* **codelens:** Extend CodeLens to build and run more targets ([00d9971](https://github.com/bazel-contrib/vscode-bazel/commit/00d9971761e5f4378b4157574afe1ef6c53b1a1d))
+* **coverage:** Basic test coverage support ([#366](https://github.com/bazel-contrib/vscode-bazel/issues/366)) ([0d293b8](https://github.com/bazel-contrib/vscode-bazel/commit/0d293b81154b77c29900d89577a6b4ed1b725b93))
+* **coverage:** Demangling C++ & Rust function names in coverage results ([#398](https://github.com/bazel-contrib/vscode-bazel/issues/398)) ([d28c294](https://github.com/bazel-contrib/vscode-bazel/commit/d28c29443610f627cbafcab1ddf7007a02934b9a))
+* **coverage:** Demangling of Java function names in coverage results ([#388](https://github.com/bazel-contrib/vscode-bazel/issues/388)) ([7084368](https://github.com/bazel-contrib/vscode-bazel/commit/7084368f5e76741fd8cdc2fd072a799187e7e513))
+* **coverage:** Load branch coverage from coverage files [#389](https://github.com/bazel-contrib/vscode-bazel/issues/389) ([e5c95e4](https://github.com/bazel-contrib/vscode-bazel/commit/e5c95e4567a80c82ada48031c9fde5561fc7c957))
+* **lsp:** Add option to trace LSP communication ([#425](https://github.com/bazel-contrib/vscode-bazel/issues/425)) ([583fb65](https://github.com/bazel-contrib/vscode-bazel/commit/583fb651b0dc27d6deb56df6b617f1941c49f255))
+* syntax highlighting for .bazelrc ([#379](https://github.com/bazel-contrib/vscode-bazel/issues/379)) ([2aea27e](https://github.com/bazel-contrib/vscode-bazel/commit/2aea27e45cca43e7f20b673f331b3c994c195e99)), closes [#259](https://github.com/bazel-contrib/vscode-bazel/issues/259)
+
+
+### Bug Fixes
+
+* **buildifier:** Handle relative buildifier path without warning [#387](https://github.com/bazel-contrib/vscode-bazel/issues/387) ([60051c5](https://github.com/bazel-contrib/vscode-bazel/commit/60051c54854332f9a00891ebd6fa46ac08a4c577))
+* Change explorer UI label to "Bazel Targets" ([#409](https://github.com/bazel-contrib/vscode-bazel/issues/409)) ([dba3102](https://github.com/bazel-contrib/vscode-bazel/commit/dba310232cf89f125250b6b627c9e83e8afefcf2))
+* **codelens:** Apply commandArgs to run targets ([#408](https://github.com/bazel-contrib/vscode-bazel/issues/408)) ([9c77c18](https://github.com/bazel-contrib/vscode-bazel/commit/9c77c18410b565f69fcad0f44f8861abf4fc9caf))
+* **coverage:** Do not emit error on BRDA:0 entries ([#417](https://github.com/bazel-contrib/vscode-bazel/issues/417)) ([7f62f0e](https://github.com/bazel-contrib/vscode-bazel/commit/7f62f0eb775590417c12afc01029781d6851e4e8))
+* **coverage:** Expand external local repo in coverage report ([#418](https://github.com/bazel-contrib/vscode-bazel/issues/418)) ([c115a86](https://github.com/bazel-contrib/vscode-bazel/commit/c115a86f20924fdbde89ed85c307b122958c2252))
+* Default to Python syntax highlighting theme ([#397](https://github.com/bazel-contrib/vscode-bazel/issues/397)) ([2614f19](https://github.com/bazel-contrib/vscode-bazel/commit/2614f1985f9ea4ba0a16418f338cfcd736067f2a))
+* Link the full label / file name instead of individual components ([#382](https://github.com/bazel-contrib/vscode-bazel/issues/382)) ([2e207c9](https://github.com/bazel-contrib/vscode-bazel/commit/2e207c9647881f335afa7288d7f05b70818be8bd))
+
 ## [0.10.0](https://github.com/bazelbuild/vscode-bazel/compare/0.9.0...v0.10.0) (2024-04-09)
 
 
