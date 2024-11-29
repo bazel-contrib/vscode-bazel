@@ -42,7 +42,7 @@ import { activateWrapperCommands } from "./bazel_wrapper_commands";
  */
 export async function activate(context: vscode.ExtensionContext) {
   const workspaceTreeProvider =
-    BazelWorkspaceTreeProvider.fromExtensionContext(context);
+    await BazelWorkspaceTreeProvider.fromExtensionContext(context);
   context.subscriptions.push(workspaceTreeProvider);
 
   const codeLensProvider = new BazelBuildCodeLensProvider(context);
@@ -96,11 +96,15 @@ export async function activate(context: vscode.ExtensionContext) {
     ),
     // Commands
     ...activateWrapperCommands(),
-    vscode.commands.registerCommand("bazel.refreshBazelBuildTargets", () => {
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      completionItemProvider.refresh();
-      workspaceTreeProvider.refresh();
-    }),
+    vscode.commands.registerCommand(
+      "bazel.refreshBazelBuildTargets",
+      async () => {
+        await Promise.allSettled([
+          completionItemProvider.refresh(),
+          workspaceTreeProvider.refresh(vscode.workspace.workspaceFolders),
+        ]);
+      },
+    ),
     vscode.commands.registerCommand(
       "bazel.copyTargetToClipboard",
       bazelCopyTargetToClipboard,

@@ -13,11 +13,14 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
+import * as fs from "fs/promises";
 import { BazelWorkspaceInfo, QueryLocation } from "../bazel";
 import { IBazelCommandAdapter, IBazelCommandOptions } from "../bazel";
 import { blaze_query } from "../protos";
 import { IBazelTreeItem } from "./bazel_tree_item";
 import { getBazelRuleIcon } from "./icons";
+import { BazelInfo } from "../bazel/bazel_info";
+import { getDefaultBazelExecutablePath } from "../extension/configuration";
 import { Resources } from "../extension/resources";
 
 /** A tree item representing a build target. */
@@ -61,16 +64,36 @@ export class BazelTargetTreeItem
   }
 
   public getTooltip(): string {
-    return `${this.target.rule.name}`;
+    return this.target.rule.name;
   }
 
-  public getCommand(): vscode.Command | undefined {
+  public async getCommand(): Promise<vscode.Command | undefined> {
+    // Resolve the prefix if prefix is
+    // $(./prebuilts/bazel info output_base)/external/
     const location = new QueryLocation(this.target.rule.location);
+    // Maybe we should cache this to prevent the repeating invocations.
+    const outputBase = await new BazelInfo(
+      getDefaultBazelExecutablePath(),
+      this.workspaceInfo.workspaceFolder.uri.fsPath,
+    ).getOne("output_base");
+    let locationPath = location.path;
+    // If location is in pattern `${execRoot}/external/<repo>/...`, then it
+    // should be a file in local_repository(). Trying to remapping it back to
+    // the origin source folder by resolve the symlink
+    // ${execRoot}/external/<repo>.
+    const outputBaseExternalPath = `${outputBase}/external/`;
+    if (location.path.startsWith(outputBaseExternalPath)) {
+      const repoPath = location.path.substring(outputBaseExternalPath.length);
+      const repoPathMatch = repoPath.match(/^([^/]+)\/(.*)$/);
+      if (repoPathMatch.length === 3) {
+        const repo = repoPathMatch[1];
+        const rest = repoPathMatch[2];
+        const realRepo = await fs.realpath(`${outputBaseExternalPath}${repo}`);
+        locationPath = `${realRepo}/${rest}`;
+      }
+    }
     return {
-      arguments: [
-        vscode.Uri.file(location.path),
-        { selection: location.range },
-      ],
+      arguments: [vscode.Uri.file(locationPath), { selection: location.range }],
       command: "vscode.open",
       title: "Jump to Build Target",
     };
@@ -87,7 +110,7 @@ export class BazelTargetTreeItem
   public getBazelCommandOptions(): IBazelCommandOptions {
     return {
       options: [],
-      targets: [`${this.target.rule.name}`],
+      targets: [this.target.rule.name],
       workspaceInfo: this.workspaceInfo,
     };
   }

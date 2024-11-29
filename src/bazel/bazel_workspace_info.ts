@@ -100,8 +100,8 @@ export class BazelWorkspaceInfo {
    * belong to a workspace folder (for example, a standalone file loaded
    * into the editor).
    */
-  private constructor(
+  constructor(
     public readonly bazelWorkspacePath: string,
-    public readonly workspaceFolder: vscode.WorkspaceFolder | undefined,
+    public readonly workspaceFolder?: vscode.WorkspaceFolder,
   ) {}
 }
