@@ -27,7 +27,10 @@ import {
 } from "../buildifier";
 import { BazelBuildCodeLensProvider } from "../codelens";
 import { BazelCompletionItemProvider } from "../completion-provider";
-import { BazelGotoDefinitionProvider } from "../definition/bazel_goto_definition_provider";
+import {
+  BazelGotoDefinitionProvider,
+  targetToUri,
+} from "../definition/bazel_goto_definition_provider";
 import { BazelTargetSymbolProvider } from "../symbols";
 import { BazelWorkspaceTreeProvider } from "../workspace-tree";
 import { activateCommandVariables } from "./command_variables";
@@ -105,6 +108,33 @@ export async function activate(context: vscode.ExtensionContext) {
       "bazel.copyTargetToClipboard",
       bazelCopyTargetToClipboard,
     ),
+    // URI handler
+    vscode.window.registerUriHandler({
+      async handleUri(uri: vscode.Uri) {
+        try {
+          const workspace = vscode.workspace.workspaceFolders[0];
+          const quotedUriPath = `"${uri.path}"`;
+          const location = await targetToUri(quotedUriPath, workspace.uri);
+
+          vscode.commands
+            .executeCommand(
+              "vscode.open",
+              vscode.Uri.file(location.path).with({
+                fragment: `${location.line}:${location.column}`,
+              }),
+            )
+            .then(undefined, (err) => {
+              void vscode.window.showErrorMessage(
+                `Could not open file: ${location.path} Error: ${err}`,
+              );
+            });
+        } catch (err: any) {
+          void vscode.window.showErrorMessage(
+            `While handling URI: ${JSON.stringify(uri)} Error: ${err}`,
+          );
+        }
+      },
+    }),
     // CodeLens provider for BUILD files
     vscode.languages.registerCodeLensProvider(
       [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
