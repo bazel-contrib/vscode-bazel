@@ -15,6 +15,7 @@
 import * as child_process from "child_process";
 import * as fs from "fs";
 import * as path from "path";
+import * as util from "util";
 import {
   ContinuedEvent,
   DebugSession,
@@ -32,7 +33,8 @@ import { DebugProtocol } from "vscode-debugprotocol";
 import { skylark_debugging } from "../protos";
 import { BazelDebugConnection } from "./connection";
 import { Handles } from "./handles";
-import { BazelInfo } from "../bazel/bazel_info";
+
+const execFile = util.promisify(child_process.execFile);
 
 /**
  * Returns a {@code number} equivalent to the given {@code number} or
@@ -165,11 +167,11 @@ class BazelDebugSession extends DebugSession {
   ) {
     const port = args.port || 7300;
     const verbose = args.verbose || false;
+    const bazelStartupOptions: string[] = args.bazelStartupOptions || [];
 
     const bazelExecutable = this.bazelExecutable(args);
-    this.bazelInfo = await new BazelInfo(bazelExecutable, args.cwd).getAll();
-
-    const fullArgs = args.bazelStartupOptions
+    this.bazelInfo = await this.getBazelInfo(bazelExecutable, args.cwd);
+    const fullArgs = bazelStartupOptions
       .concat([
         args.bazelCommand,
         "--color=yes",
@@ -398,32 +400,35 @@ class BazelDebugSession extends DebugSession {
     args: DebugProtocol.EvaluateArguments,
   ) {
     const threadId = this.frameThreadIds.get(args.frameId);
-
-    const value = (
-      await this.bazelConnection.sendRequest({
+    try {
+      const evaluateResponse = await this.bazelConnection.sendRequest({
         evaluate: skylark_debugging.EvaluateRequest.create({
           statement: args.expression,
           threadId,
         }),
-      })
-    ).evaluate.result;
+      });
 
-    let valueHandle: number;
-    if (value.hasChildren && value.id) {
-      // Record the value in a handle so that its children can be queried when
-      // the user expands it in the UI. We also record the thread ID for the
-      // value since we need it when we make that request later.
-      valueHandle = this.variableHandles.create(value);
-      this.valueThreadIds.set(valueHandle, threadId);
-    } else {
-      valueHandle = 0;
+      const value = evaluateResponse.evaluate.result;
+
+      let valueHandle: number;
+      if (value.hasChildren && value.id) {
+        // Record the value in a handle so that its children can be queried when
+        // the user expands it in the UI. We also record the thread ID for the
+        // value since we need it when we make that request later.
+        valueHandle = this.variableHandles.create(value);
+        this.valueThreadIds.set(valueHandle, threadId);
+      } else {
+        valueHandle = 0;
+      }
+
+      response.body = {
+        result: value.description,
+        variablesReference: valueHandle,
+      };
+      this.sendResponse(response);
+    } catch (e) {
+      this.debugLog(`Unable to evaluate expression: ${args.expression}`);
     }
-
-    response.body = {
-      result: value.description,
-      variablesReference: valueHandle,
-    };
-    this.sendResponse(response);
   }
 
   // Execution/control flow requests
@@ -530,6 +535,36 @@ class BazelDebugSession extends DebugSession {
       return "bazel";
     }
     return bazelExecutable;
+  }
+
+  /**
+   * Invokes {@code bazel info} and returns the information in a map.
+   *
+   * @param bazelExecutable The name/path of the Bazel executable.
+   * @param cwd The working directory in which Bazel should be launched.
+   */
+  private async getBazelInfo(
+    bazelExecutable: string,
+    cwd: string,
+  ): Promise<Map<string, string>> {
+    const execOptions = {
+      cwd,
+      // The maximum amount of data allowed on stdout. 500KB should be plenty
+      // of `bazel info`, but if this becomes problematic we can switch to the
+      // event-based `child_process` APIs instead.
+      maxBuffer: 500 * 1024,
+    };
+    const { stdout } = await execFile(bazelExecutable, ["info"], execOptions);
+    const keyValues = new Map<string, string>();
+    const lines = stdout.trim().split("\n");
+    for (const line of lines) {
+      // Windows paths can have >1 ':', so can't use line.split(":", 2)
+      const splitterIndex = line.indexOf(":");
+      const key = line.substring(0, splitterIndex);
+      const value = line.substring(splitterIndex + 1);
+      keyValues.set(key.trim(), value.trim());
+    }
+    return keyValues;
   }
 
   /**
