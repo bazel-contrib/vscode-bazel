@@ -1,3 +1,5 @@
 build --@aspect_rules_ts//ts:skipLibCheck=always
 fetch --@aspect_rules_ts//ts:skipLibCheck=always
 query --@aspect_rules_ts//ts:skipLibCheck=always
+
+startup --host_jvm_args=-DBAZEL_TRACK_SOURCE_DIRECTORIES=1

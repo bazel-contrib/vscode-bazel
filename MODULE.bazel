@@ -28,62 +28,15 @@ npm.npm_translate_lock(
 
 use_repo(npm, "npm")
 
-bazel_protos = use_extension("//:bazel_protos.bzl", "bazel_protos")
-
-bazel_protos.version(ref = "8.0.1")
-
-bazel_protos.proto(
-    path = "src/main/java/com/google/devtools/build/lib/buildeventstream/proto/build_event_stream.proto",
-    integrity = "sha256-cGivhm6LgbumecMgMy52aR4STLvWPtK/sQCVnnwiw/A=",
-)
-
-bazel_protos.proto(
-    path = "src/main/java/com/google/devtools/build/lib/starlarkdebug/proto/starlark_debugging.proto",
-    integrity = "sha256-BkXW/Upxdn8IFMltt0jp6jXKJqcGVWp6M5/6Lr29FIU=",
-)
-
-bazel_protos.proto(
-    path = "src/main/protobuf/build.proto",
-    integrity = "sha256-5AZiVI/oW7woGiVsseQBWm0pLJKL8Vv/LdTfHqkNnY0=",
-)
-
-bazel_protos.proto(
-    path = "src/main/protobuf/command_line.proto",
-    integrity = "sha256-pvtlkapQeUQxeHFpvE+uFhBe9cQB58MOzw93XgqyXCw=",
-)
-
-bazel_protos.proto(
-    path = "src/main/protobuf/invocation_policy.proto",
-    integrity = "sha256-eh+QdNZKrqLF/AHfCTol+71o2E22P7+zVfWqFWg6dc0=",
-)
-
-bazel_protos.proto(
-    path = "src/main/protobuf/option_filters.proto",
-    integrity = "sha256-vBzCnlPihWw64lFJzGZhuyGHN6kUbnQX6yn4yqpxWCE=",
-)
-
-use_repo(
-    bazel_protos,
-    "build_event_stream_proto",
-    "starlark_debugging_proto",
-    "build_proto",
-    "command_line_proto",
-    "invocation_policy_proto",
-    "option_filters_proto",
-)
-
-bazel_dep(name = "bazel", version = "")
-
-archive_override(
-    module_name = "bazel",
-    urls = ["https://github.com/bazelbuild/bazel/archive/refs/tags/8.0.1.tar.gz"],
-    strip_prefix = "bazel-8.0.1",
+http_file = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "http_file")
+http_file(
+    name = "bazel_tar",
     integrity = "sha256-1RkOrSf1u0LkcI0rr9R4NWU5VzYSlR+AiGMmW/9xBOQ=",
+    downloaded_file_path = "bazel.tar",
+    # strip_prefix = "bazel-8.0.1",
+    urls = ["https://github.com/bazelbuild/bazel/archive/refs/tags/8.0.1.tar.gz"],
 )
 
-archive_override(
-    module_name = "remoteapis",
-    urls = ["https://github.com/bazelbuild/bazel/archive/refs/tags/8.0.1.tar.gz"],
-    strip_prefix = "bazel-8.0.1/third_party/remoteapis",
-    integrity = "sha256-1RkOrSf1u0LkcI0rr9R4NWU5VzYSlR+AiGMmW/9xBOQ=",
-)
+bazel_dep(name = "buildozer", version = "8.0.1")
+bazel_dep(name = "protobuf", version = "29.3")
+bazel_dep(name = "googleapis", version = "0.0.0-20240819-fe8ba054a")
