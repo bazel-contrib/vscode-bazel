@@ -97,7 +97,7 @@ function shouldIgnorePath(fsPath: string): boolean {
  * Search for the path to the directory that has the Bazel WORKSPACE file for
  * the given file.
  *
- * If multiple directories along the path to the file has files called
+ * If multiple directories along the path to the file have files called
  * "WORKSPACE", the lowest path is returned.
  *
  * @param fsPath The path to a file in a Bazel workspace.

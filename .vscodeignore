@@ -4,8 +4,12 @@ out/test/**
 scripts/**
 src/**
 test/**
+.vscode-test/
 
 **/*.map
+
+syntaxes/bazelrc.tmLanguage.yaml
+syntaxes/.gitignore
 
 .gitignore
 AUTHORS

@@ -47,6 +47,13 @@ extensions to have these tools applied automatically as you develop:
 - [Prettier - Code Formatter](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
 - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
 
+## Commit messages
+
+Commit messages should follow the [Conventional Commit message](https://www.conventionalcommits.org/)
+conventions. The [`release-please`](https://github.com/google-github-actions/release-please-action)
+Github action relies on those commit messages to automatically generate the
+release notes. See the [list of supported commit types](https://github.com/googleapis/release-please/blob/main/src/changelog-notes.ts#L43).
+
 ## Code reviews
 
 All submissions, including submissions by project members, require review. We

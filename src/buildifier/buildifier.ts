@@ -14,8 +14,17 @@
 
 import * as child_process from "child_process";
 import * as path from "path";
+import * as util from "util";
 import * as vscode from "vscode";
+
 import { IBuildifierResult, IBuildifierWarning } from "./buildifier_result";
+import { getDefaultBazelExecutablePath } from "../extension/configuration";
+
+const execFile = util.promisify(child_process.execFile);
+type PromiseExecFileException = child_process.ExecFileException & {
+  stdout: string;
+  stderr: string;
+};
 
 /** Whether to warn about lint findings or fix them. */
 export type BuildifierLintMode = "fix" | "warn";
@@ -95,7 +104,7 @@ export async function buildifierLint(
   switch (lintMode) {
     case "fix":
       return outputs.stdout;
-    case "warn":
+    case "warn": {
       const result = JSON.parse(outputs.stdout) as IBuildifierResult;
       for (const file of result.files) {
         if (file.filename === "<stdin>") {
@@ -103,6 +112,7 @@ export async function buildifierLint(
         }
       }
       return [];
+    }
   }
 }
 
@@ -174,6 +184,18 @@ export function getDefaultBuildifierExecutablePath(): string {
 }
 
 /**
+ * Gets the path to the buildifier json configuration file specified by the
+ * workspace configuration, if present.
+ *
+ * @returns The path to the buildifier json configuration file specified in the
+ * workspace configuration, or an empty string if not present.
+ */
+export function getDefaultBuildifierJsonConfigPath(): string {
+  const bazelConfig = vscode.workspace.getConfiguration("bazel");
+  return bazelConfig.get<string>("buildifierConfigJsonPath", "");
+}
+
+/**
  * Executes buildifier with the given file content and arguments.
  *
  * @param fileContent The BUILD or .bzl file content to process, which is sent
@@ -182,35 +204,48 @@ export function getDefaultBuildifierExecutablePath(): string {
  * @param acceptNonSevereErrors If true, syntax/lint exit codes will not be
  * treated as severe tool errors.
  */
-function executeBuildifier(
+export async function executeBuildifier(
   fileContent: string,
   args: string[],
   acceptNonSevereErrors: boolean,
 ): Promise<{ stdout: string; stderr: string }> {
-  return new Promise((resolve, reject) => {
-    const execOptions = {
-      maxBuffer: Number.MAX_SAFE_INTEGER,
-    };
-    const process = child_process.execFile(
-      getDefaultBuildifierExecutablePath(),
-      args,
-      execOptions,
-      (error, stdout, stderr) => {
-        if (
-          !error ||
-          (acceptNonSevereErrors && shouldTreatBuildifierErrorAsSuccess(error))
-        ) {
-          resolve({ stdout, stderr });
-        } else {
-          reject(error);
-        }
-      },
-    );
-    // Write the file being linted/formatted to stdin and close the stream so
-    // that the buildifier process continues.
-    process.stdin.write(fileContent);
-    process.stdin.end();
-  });
+  // Determine the executable
+  let executable = getDefaultBuildifierExecutablePath();
+  const buildifierConfigJsonPath = getDefaultBuildifierJsonConfigPath();
+  if (buildifierConfigJsonPath.length !== 0) {
+    args = ["--config", buildifierConfigJsonPath, ...args];
+  }
+  // Paths starting with an `@` are referring to Bazel targets
+  if (executable.startsWith("@")) {
+    const targetName = executable;
+    executable = getDefaultBazelExecutablePath();
+    args = ["run", targetName, "--", ...args];
+  }
+  const execOptions = {
+    maxBuffer: Number.MAX_SAFE_INTEGER,
+    // Use the workspace folder as CWD, thereby allowing relative
+    // paths. See #329
+    cwd: vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath,
+  };
+
+  // Start buildifier
+  const process = execFile(executable, args, execOptions);
+
+  // Write the file being linted/formatted to stdin and close the stream so
+  // that the buildifier process continues.
+  process.child.stdin?.write(fileContent);
+  process.child.stdin?.end();
+
+  try {
+    return await process;
+  } catch (e) {
+    const error = e as PromiseExecFileException;
+    if (acceptNonSevereErrors && shouldTreatBuildifierErrorAsSuccess(error)) {
+      return { stdout: error.stdout, stderr: error.stderr };
+    } else {
+      throw error;
+    }
+  }
 }
 
 /**

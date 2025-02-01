@@ -2,7 +2,7 @@
     "name": "vscode-bazel",
     "displayName": "Bazel",
     "description": "Bazel BUILD integration",
-    "version": "0.8.1",
+    "version": "0.11.0",
     "publisher": "BazelBuild",
     "license": "Apache-2.0",
     "repository": {
@@ -11,22 +11,27 @@
     },
     "icon": "media/bazel-logo.png",
     "engines": {
-        "vscode": "^1.85.0"
+        "vscode": "^1.88.0"
     },
     "categories": [
         "Programming Languages"
     ],
     "activationEvents": [
-        "onLanguage:starlark",
-        "onView:bazelWorkspace",
-        "onCommand:bazel.refreshBazelBuildTargets",
+        "workspaceContains:**/BUILD",
+        "workspaceContains:**/WORKSPACE",
+        "workspaceContains:**/WORKSPACE.bazel",
+        "workspaceContains:**/MODULE.bazel",
+        "workspaceContains:**/REPO.bazel",
+        "onCommand:bazel.pickPackage",
+        "onCommand:bazel.pickTarget",
         "onCommand:bazel.getTargetOutput",
         "onCommand:bazel.info.bazel-bin",
         "onCommand:bazel.info.bazel-genfiles",
         "onCommand:bazel.info.bazel-testlogs",
         "onCommand:bazel.info.execution_root",
         "onCommand:bazel.info.output_base",
-        "onCommand:bazel.info.output_path"
+        "onCommand:bazel.info.output_path",
+        "onCommand:bazel.info.workspace"
     ],
     "main": "./out/src/extension/extension",
     "contributes": {
@@ -97,43 +102,9 @@
             },
             {
                 "category": "Bazel",
-                "command": "bazel.getTargetOutput",
-                "title": "Get output path for the given target"
-            },
-            {
-                "category": "Bazel",
-                "command": "bazel.info.bazel-bin",
-                "title": "Get bazel-bin value"
-            },
-            {
-                "category": "Bazel",
-                "command": "bazel.info.bazel-genfiles",
-                "title": "Get bazel-genfiles value"
-            },
-            {
-                "category": "Bazel",
-                "command": "bazel.info.bazel-testlogs",
-                "title": "Get bazel-testlogs value"
-            },
-            {
-                "category": "Bazel",
-                "command": "bazel.info.execution_root",
-                "title": "Get Bazel execution_root value"
-            },
-            {
-                "category": "Bazel",
-                "command": "bazel.info.output_base",
-                "title": "Get Bazel output_base value"
-            },
-            {
-                "category": "Bazel",
-                "command": "bazel.info.output_path",
-                "title": "Get Bazel output_path value"
-            },
-            {
-                "category": "Bazel",
                 "command": "bazel.lsp.restart",
-                "title": "Restart language server"
+                "title": "Restart language server",
+                "when": "bazel.lsp.enabled"
             }
         ],
         "configuration": {
@@ -149,7 +120,13 @@
                 "bazel.buildifierExecutable": {
                     "type": "string",
                     "default": "",
-                    "markdownDescription": "The name of the Buildifier executable. This may be an absolute path, or a simple name that will be searched for on the system path. If empty, \"buildifier\" on the system path will be used.\n\nBuildifier can be downloaded from https://github.com/bazelbuild/buildtools/releases.",
+                    "markdownDescription": "The name of the Buildifier executable. This may be an absolute path, or a simple name that will be searched for on the system path. Paths starting with `@` are interpreted as Bazel targets and are run via `bazel run`. If empty, \"buildifier\" on the system path will be used.\n\nBuildifier can be downloaded from https://github.com/bazelbuild/buildtools/releases.",
+                    "scope": "machine-overridable"
+                },
+                "bazel.buildifierConfigJsonPath": {
+                    "type": "string",
+                    "default": "",
+                    "markdownDescription": "The path of the Buildifier config json file, ex: `.buildifier.json`. This may be an absolute path, or a relative path within the workspace. If this option is unset, `buildifier` will automatically look for a `.buildifier.json` file in the workspace.",
                     "scope": "machine-overridable"
                 },
                 "bazel.buildifierFixOnFormat": {
@@ -159,8 +136,8 @@
                 },
                 "bazel.queriesShareServer": {
                     "type": "boolean",
-                    "default": true,
-                    "description": "Use the same Bazel server for queries and builds. By default, vscode-bazel uses the same server for queries and builds in order to have it easier for the user to set up the plugin. However, you may experience degraded performance in Visual Studio Code for operations that require queries. You can disable this setting so that queries and builds can be executed in parallel. Keep in mind that you might get some errors after disabling this setting if you do not configure it properly. See https://github.com/bazelbuild/vscode-bazel/issues/265."
+                    "default": "true",
+                    "description": "Use the same Bazel server for queries and builds. By default, vscode-bazel uses the same server for queries and builds to make sure this extension works out-of-the-box. However, you may experience degraded performance in Visual Studio Code for operations that require queries. You can disable this setting so that queries and builds can be executed in parallel in some circumstances. See https://github.com/bazelbuild/vscode-bazel?tab=readme-ov-file#using-a-separate-output-base for more information."
                 },
                 "bazel.queryOutputBase": {
                     "type": "string",
@@ -204,26 +181,28 @@
                     "default": "...:*",
                     "description": "A [query language expression](https://bazel.build/query/language) which determines the packages displayed in the workspace tree and quick picker. The default inspects the entire workspace, but you could narrow it. For example: `//part/you/want/...:*`"
                 },
-                "bazel.lsp.enabled": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Enable the LSP (experimental)"
-                },
                 "bazel.lsp.command": {
                     "type": "string",
-                    "default": "starlark",
-                    "description": "The executable to launch for the LSP"
+                    "default": "",
+                    "description": "The executable to launch for the LSP (experimental). Providing this disables certain features in the extension on the basis that they'll be provided by this language server."
                 },
                 "bazel.lsp.args": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     },
-                    "default": [
-                        "--lsp",
-                        "--bazel"
-                    ],
+                    "default": [],
                     "description": "The arguments to pass to the LSP executable"
+                },
+                "bazel.trace.server": {
+                    "type": "string",
+                    "enum": [
+                        "off",
+                        "messages",
+                        "verbose"
+                    ],
+                    "default": "off",
+                    "description": "Trace the communication between VS Code and Bazel LSP server (language server)."
                 }
             }
         },
@@ -277,12 +256,28 @@
         ],
         "grammars": [
             {
+                "language": "bazelrc",
+                "scopeName": "source.bazelrc",
+                "path": "./syntaxes/bazelrc.tmLanguage.json"
+            },
+            {
                 "language": "starlark",
                 "scopeName": "source.starlark",
                 "path": "./syntaxes/starlark.tmLanguage.json"
             }
         ],
         "languages": [
+            {
+                "id": "bazelrc",
+                "extensions": [
+                    ".bazelrc"
+                ],
+                "filenames": [
+                    ".bazelrc",
+                    "bazel.rc"
+                ],
+                "configuration": "./syntaxes/bazelrc.configuration.json"
+            },
             {
                 "id": "starlark",
                 "aliases": [
@@ -314,39 +309,39 @@
                 },
                 {
                     "command": "bazel.buildTarget",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 },
                 {
                     "command": "bazel.buildTargetWithDebugging",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 },
                 {
                     "command": "bazel.buildAll",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 },
                 {
                     "command": "bazel.buildAllRecursive",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 },
                 {
                     "command": "bazel.runTarget",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 },
                 {
                     "command": "bazel.testTarget",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 },
                 {
                     "command": "bazel.testAll",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 },
                 {
                     "command": "bazel.testAllRecursive",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 },
                 {
                     "command": "bazel.clean",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "when": "bazel.haveWorkspace"
                 }
             ],
             "view/item/context": [
@@ -422,18 +417,36 @@
         "taskDefinitions": [
             {
                 "type": "bazel",
+                "when": "shellExecutionSupported",
                 "required": [
                     "command",
                     "targets"
                 ],
                 "properties": {
                     "command": {
+                        "description": "The Bazel command to execute (\"build\" or \"test\").",
                         "type": "string",
-                        "description": "The Bazel command to execute (\"build\" or \"test\")."
+                        "enum": [
+                            "build",
+                            "run",
+                            "test",
+                            "coverage",
+                            "clean"
+                        ]
                     },
                     "targets": {
+                        "description": "The labels of the targets to build or test.",
                         "type": "array",
-                        "description": "The labels of the targets to build or test."
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "options": {
+                        "description": "Additional command line parameters to pass to Bazel.",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
                     }
                 }
             }
@@ -442,31 +455,48 @@
             "explorer": [
                 {
                     "id": "bazelWorkspace",
-                    "name": "Bazel Build Targets",
-                    "when": "vscodeBazelHaveBazelWorkspace"
+                    "name": "Bazel Targets",
+                    "when": "bazel.haveWorkspace"
                 }
             ]
-        }
+        },
+        "viewsWelcome": [
+            {
+                "view": "bazelWorkspace",
+                "contents": "No Bazel targets found.\n[Refresh Target List](command:bazel.refreshBazelBuildTargets)",
+                "when": "bazel.haveWorkspace"
+            }
+        ]
     },
     "scripts": {
-        "check-lint": "eslint src/**/*.ts --ext .ts --config .eslintrc.js --ignore-pattern 'src/**/*.d.ts' --format stylish"
+        "check-lint": "eslint .",
+        "pretest": "./scripts/build.sh",
+        "format-check": "prettier --check .",
+        "format-fix": "prettier --write .",
+        "test": "./scripts/test.sh",
+        "package": "vsce package",
+        "update-snapshot": "./scripts/test.sh -u",
     },
     "devDependencies": {
         "@bufbuild/protoc-gen-es": "^1.7.2",
         "@connectrpc/protoc-gen-connect-es": "^1.3.0",
         "@types/long": "^4.0.0",
+        "@types/mocha": "^10.0.6",
         "@types/node": "^16.11.7",
-        "@types/vscode": "^1.85.0",
+        "@types/vscode": "^1.88.0",
         "@types/which": "^3.0.3",
-        "@typescript-eslint/eslint-plugin": "^6.13.1",
-        "@typescript-eslint/parser": "^6.13.1",
-        "@vscode/vsce": "^2.23.0",
-        "eslint": "^8.54.0",
-        "eslint-config-prettier": "^9.0.0",
-        "eslint-plugin-jsdoc": "^46.9.0",
-        "eslint-plugin-prefer-arrow": "^1.2.3",
-        "typescript": "^5.3.3",
-        "vscode-test": "^1.3.0"
+        "@vscode/test-cli": "^0.0.9",
+        "@vscode/test-electron": "^2.3.9",
+        "@vscode/vsce": "^2.24.0",
+        "eslint": "^8.57.0",
+        "eslint-config-prettier": "^9.1.0",
+        "eslint-plugin-jsdoc": "^48.2.2",
+        "js-yaml": "^4.1.0",
+        "mocha": "^10.4.0",
+        "prettier": "^3.2.5",
+        "typescript": "^5.4.4",
+        "typescript-eslint": "^7.5.0",
+        "vscode-tmgrammar-test": "^0.1.3"
     },
     "dependencies": {
         "@bufbuild/protobuf": "^1.7.2",

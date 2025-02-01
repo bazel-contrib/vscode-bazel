@@ -1,33 +1,13 @@
-# One-Time Setup
+# Releasing
 
-Make sure you have the `vsce` tool installed:
+Most of the releasing is done by [release please](https://github.com/googleapis/release-please), but there are still some manual steps required.
 
-```
-$ npm install -g vsce
-```
+## Create and Test the .vsix Package
 
-# Prepare a Release
-
-Once you have the code in the state that you want to release, make sure you've done the following:
-
-- Bump the version number in the `version` key of `package.json`.
-- Add a new section to CHANGELOG.md denoting the new release and any updates you wish to call out. This content is presented to users in the VS Code Extensions UI.
-- Tag the commit with the version number of the release:
-
-  ```
-  $ git tag x.y.z
-  ```
-
-  (This step is optional; you can also do it as part of the GitHub release. See below.)
-
-- Push these changes (including the tag) to GitHub.
-
-# Create and Test the .vsix Package
-
-From the directory containing the extension source code, run the following command:
+Check out the branch of the auto-generated release PR and, run the following command from the directory of the extension source code:
 
 ```
-$ vsce package
+$ npm run package
 ```
 
 This will compile and bundle the extension into a file named `vscode-bazel-x.y.z.vsix`, where `x.y.z` is the version number of the extension as defined in `package.json`.
@@ -44,21 +24,11 @@ Having this standalone package available before uploading the release to the Mar
 
 Once you're confident that the release works, deploy it using the steps below.
 
-# Deploy the Release
+## Deploy the Release
+
+To deploy the release, merge the auto-generated release PR. This will contain a changelog and version bump. Upon merging, this will create a github release & git tag. However, there are still some manual steps required to deploy the extension.
 
 We deploy the extension to **two** destinations:
 
-1. We create a .vsix package to upload as a GitHub release, since this is a useful archiving method and it allows users to download and roll back to a previous version of the plugin if necessary. This can be done by anyone who is a maintainer on GitHub.
-2. We publish the extension to the Visual Studio Marketplace so that it can be found in search results and downloaded from Visual Studio Code's Extensions area. This requires publishing rights for the Bazel organization on the Visual Studio Marketplace. Florian Weikert <fwe@google.com> has handled recent versions.
-
-# Creating a GitHub Release
-
-1. On the vscode-bazel Releases page, select **Draft a New Release**.
-2. Fill out the form as follows:
-   1. **Tag version**: Enter the version number of the release (in the format `x.y.z`). If you create this tag earlier (see Preparing a Release, above), that tag will be used; otherwise, it will be created for you.
-   2. **Release title**: Enter the version number and release date (for example, `x.y.z (November 28, 2018)`).
-   3. **Describe this release**: Paste the information you wrote about this version from CHANGELOG.md into this text area.
-3. Attach the `vscode-bazel-x.y.z.vsix` file to the release by dragging it or selecting it in the upload box.
-4. Once you're ready for it to be public, click **Publish release**.
-
-You can now delete the .vsix file if you wish; it will not be used when publishing to the marketplace.
+1. We create a .vsix package to upload as a GitHub release, since this is a useful archiving method and it allows users to download and roll back to a previous version of the plugin if necessary. This is automated by the "Build VS Code extension" GitHub workflow which will automatically run as soon as a new GitHub release gets created.
+2. We publish the extension to the Visual Studio Marketplace so that it can be found in search results and downloaded from Visual Studio Code's Extensions area. This is a manual step and requires publishing rights for the Bazel organization on the Visual Studio Marketplace. Florian Weikert <fwe@google.com> has handled recent versions.

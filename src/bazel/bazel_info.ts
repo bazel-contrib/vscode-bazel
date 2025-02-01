@@ -13,32 +13,50 @@
 // limitations under the License.
 
 import * as child_process from "child_process";
+import * as util from "util";
 
 import { BazelCommand } from "./bazel_command";
+
+const execFile = util.promisify(child_process.execFile);
 
 /** Provides a promise-based API around the `bazel info` command. */
 export class BazelInfo extends BazelCommand {
   /**
-   * Runs `bazel info <key>` and returns the output.
+   * Gets the info for a single key by running `bazel info <key>`.
    *
    * @param key The info key to query.
    * @returns The output of `bazel info <key>`.
    */
-  public async run(key: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-      child_process.execFile(
-        this.bazelExecutable,
-        this.execArgs([key]),
-        { cwd: this.workingDirectory },
-        (error: Error, stdout: string) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve(stdout.trim());
-          }
-        },
-      );
+  public async getOne(key: string): Promise<string> {
+    const execResult = await execFile(
+      this.bazelExecutable,
+      this.execArgs([key]),
+      {
+        cwd: this.workingDirectory,
+      },
+    );
+    return execResult.stdout.trim();
+  }
+
+  /**
+   * Runs `bazel info` and returns the output.
+   *
+   * @returns All `bazel info` entries
+   */
+  public async getAll(): Promise<Map<string, string>> {
+    const execResult = await execFile(this.bazelExecutable, this.execArgs([]), {
+      cwd: this.workingDirectory,
     });
+    const keyValues = new Map<string, string>();
+    const lines = execResult.stdout.trim().split("\n");
+    for (const line of lines) {
+      // Windows paths can have >1 ':', so can't use line.split(":", 2)
+      const splitterIndex = line.indexOf(":");
+      const key = line.substring(0, splitterIndex);
+      const value = line.substring(splitterIndex + 1);
+      keyValues.set(key.trim(), value.trim());
+    }
+    return keyValues;
   }
 
   protected bazelCommand(): string {

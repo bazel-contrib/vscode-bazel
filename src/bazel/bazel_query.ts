@@ -16,11 +16,14 @@ import * as child_process from "child_process";
 import * as crypto from "crypto";
 import * as os from "os";
 import * as path from "path";
+import * as util from "util";
 import * as vscode from "vscode";
 
 import { blaze_query } from "../protos";
 import { BazelCommand } from "./bazel_command";
 import { getBazelWorkspaceFolder } from "./bazel_utils";
+
+const execFile = util.promisify(child_process.execFile);
 
 const protoOutputOptions = [
   "--proto:output_rule_attrs=''",
@@ -106,14 +109,12 @@ export class BazelQuery extends BazelCommand {
    * Executes the command and returns a promise for the binary contents of
    * standard output.
    *
-   * @param query The query to execute.
-   * @param options
-   * @param options.ignoresErrors `true` if errors from executing the query
+   * @param options The options to pass to `bazel query`
+   * @param ignoresErrors `true` if errors from executing the query
    * should be ignored.
-   * @returns A promise that is resolved with the contents of the process's
-   * standard output, or rejected if the command fails.
+   * @returns The contents of the process's standard output
    */
-  protected run(
+  protected async run(
     options: string[],
     { ignoresErrors = false }: { ignoresErrors?: boolean } = {},
   ): Promise<Buffer> {
@@ -142,30 +143,27 @@ export class BazelQuery extends BazelCommand {
         `--output_base=${queryOutputBase}`,
       ]);
     }
-    return new Promise((resolve, reject) => {
-      const execOptions = {
-        cwd: this.workingDirectory,
-        // A null encoding causes the callback below to receive binary data as a
-        // Buffer instead of text data as strings.
-        encoding: null,
-        maxBuffer: Number.MAX_SAFE_INTEGER,
-      };
-      child_process.execFile(
-        this.bazelExecutable,
-        this.execArgs(options, additionalStartupOptions),
-        execOptions,
-        (error: Error, stdout: Buffer) => {
-          if (error) {
-            if (ignoresErrors) {
-              resolve(new Buffer(0));
-            } else {
-              reject(error);
-            }
-          } else {
-            resolve(stdout);
-          }
-        },
-      );
-    });
+    const execOptions: child_process.ExecFileOptionsWithBufferEncoding = {
+      cwd: this.workingDirectory,
+      // A null encoding causes the callback below to receive binary data as a
+      // Buffer instead of text data as strings.
+      encoding: null,
+      maxBuffer: Number.MAX_SAFE_INTEGER,
+    };
+    try {
+      return (
+        await execFile(
+          this.bazelExecutable,
+          this.execArgs(options, additionalStartupOptions),
+          execOptions,
+        )
+      ).stdout;
+    } catch (e) {
+      if (ignoresErrors) {
+        return Buffer.alloc(0);
+      } else {
+        throw e;
+      }
+    }
   }
 }

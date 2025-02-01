@@ -37,7 +37,7 @@ export interface IBazelTreeItem {
   getLabel(): string;
 
   /** Returns the icon that should be shown next to the tree item. */
-  getIcon(): vscode.ThemeIcon | string | undefined;
+  getIcon(): string | vscode.ThemeIcon;
 
   /**
    * Returns the tooltip that should be displayed when the user hovers over the

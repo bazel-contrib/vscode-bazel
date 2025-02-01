@@ -12,11 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as child_process from "child_process";
+import * as fs from "fs/promises";
+import * as path from "path";
 import * as vscode from "vscode";
 import * as which from "which";
 
-import { getDefaultBuildifierExecutablePath } from "./buildifier";
+import {
+  executeBuildifier,
+  getDefaultBuildifierExecutablePath,
+} from "./buildifier";
+
+async function fileExists(filename: string) {
+  try {
+    await fs.stat(filename);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /** The URL to load for buildifier's releases. */
 const BUILDTOOLS_RELEASES_URL =
@@ -31,36 +44,45 @@ const BUILDTOOLS_RELEASES_URL =
  */
 export async function checkBuildifierIsAvailable() {
   const buildifierExecutable = getDefaultBuildifierExecutablePath();
-  await which(buildifierExecutable)
-    .catch(async () => {
+
+  // Check if the program exists (in case it's an actual executable and not
+  // an target name starting with `@`).
+  const isTarget = buildifierExecutable.startsWith("@");
+
+  // Check if the program exists as a relative path of the workspace
+  const pathExists = await fileExists(
+    path.join(
+      vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath,
+      buildifierExecutable,
+    ),
+  );
+
+  if (!isTarget && !pathExists) {
+    try {
+      await which(buildifierExecutable);
+    } catch (e) {
       await showBuildifierDownloadPrompt("Buildifier was not found");
-    })
-    .then(() => {
-      // If we found it, make sure it's a compatible version by running
-      // buildifier on an empty input and see if it exits successfully and the
-      // output parses.
-      const process = child_process.execFile(
-        buildifierExecutable,
-        ["--format=json", "--mode=check"],
-        {},
-        (error: Error, stdout: string) => {
-          if (!error && stdout) {
-            try {
-              JSON.parse(stdout);
-              return;
-            } catch {
-              // Swallow the error; we'll display the prompt below.
-            }
-          }
-          // If no valid JSON back, we don't have a compatible version.
-          // eslint-disable-next-line @typescript-eslint/no-floating-promises
-          showBuildifierDownloadPrompt(
-            "Buildifier is too old (0.25.1 or higher is needed)",
-          );
-        },
-      );
-      process.stdin.end();
-    });
+      return;
+    }
+  }
+
+  // Make sure it's a compatible version by running
+  // buildifier on an empty input and see if it exits successfully and the
+  // output parses.
+  const { stdout } = await executeBuildifier(
+    "",
+    ["--format=json", "--mode=check"],
+    false,
+  );
+  try {
+    JSON.parse(stdout);
+  } catch {
+    // If we got no valid JSON back, we don't have a compatible version.
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    showBuildifierDownloadPrompt(
+      "Buildifier is too old (0.25.1 or higher is needed)",
+    );
+  }
 }
 
 /**
