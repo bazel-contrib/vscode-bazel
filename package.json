@@ -475,7 +475,7 @@
         "format-fix": "prettier --write .",
         "test": "./scripts/test.sh",
         "package": "vsce package",
-        "update-snapshot": "./scripts/test.sh -u",
+        "update-snapshot": "./scripts/test.sh -u"
     },
     "devDependencies": {
         "@bufbuild/protoc-gen-es": "^1.7.2",

@@ -15,7 +15,6 @@ npm_link_all_packages(name = "node_modules")
 
 ts_proto_library(
     name = "build_event_stream_ts_proto",
-    has_services = False,
     copy_files = False,
     node_modules = ":node_modules",
     proto = "@bazel//src/main/java/com/google/devtools/build/lib/buildeventstream/proto:build_event_stream_proto",
@@ -45,12 +44,12 @@ ts_project(
 filegroup(
     name = "package_srcs",
     srcs = [
-        ":ts",
-        "package.json",
         ".vscodeignore",
+        "CHANGELOG.md",
         "LICENSE",
         "README.md",
-        "CHANGELOG.md",
+        "package.json",
+        ":ts",
     ] + glob([
         "media/**/*",
         "icons/**/*",
