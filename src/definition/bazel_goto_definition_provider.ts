@@ -28,6 +28,37 @@ import { blaze_query } from "../protos";
 // LABEL_REGEX matches label strings, e.g. @r//x/y/z:abc
 const LABEL_REGEX = /"((?:@\w+)?\/\/|(?:.+\/)?[^:]*(?::[^:]+)?)"/;
 
+export async function targetToUri(
+  targetText: string,
+  workingDirectory: Uri,
+): Promise<QueryLocation | undefined> {
+  const match = LABEL_REGEX.exec(targetText);
+
+  const targetName = match[1];
+  // don't try to process visibility targets.
+  if (targetName.startsWith("//visibility")) {
+    return null;
+  }
+
+  const queryResult = await new BazelQuery(
+    getDefaultBazelExecutablePath(),
+    workingDirectory.fsPath,
+  ).queryTargets(`kind(rule, "${targetName}") + kind(file, "${targetName}")`);
+
+  if (!queryResult.target.length) {
+    return null;
+  }
+  const result = queryResult.target[0];
+  let location;
+  if (result.type === blaze_query.Target.Discriminator.RULE) {
+    location = new QueryLocation(result.rule.location);
+  } else {
+    location = new QueryLocation(result.sourceFile.location);
+  }
+
+  return location;
+}
+
 export class BazelGotoDefinitionProvider implements DefinitionProvider {
   public async provideDefinition(
     document: TextDocument,
@@ -41,35 +72,19 @@ export class BazelGotoDefinitionProvider implements DefinitionProvider {
 
     const range = document.getWordRangeAtPosition(position, LABEL_REGEX);
     const targetText = document.getText(range);
-    const match = LABEL_REGEX.exec(targetText);
 
-    const targetName = match[1];
-    // don't try to process visibility targets.
-    if (targetName.startsWith("//visibility")) {
-      return null;
-    }
+    const location = await targetToUri(targetText, Utils.dirname(document.uri));
 
-    const queryResult = await new BazelQuery(
-      getDefaultBazelExecutablePath(),
-      Utils.dirname(document.uri).fsPath,
-    ).queryTargets(`kind(rule, "${targetName}") + kind(file, "${targetName}")`);
-
-    if (!queryResult.target.length) {
-      return null;
-    }
-    const result = queryResult.target[0];
-    let location;
-    if (result.type === blaze_query.Target.Discriminator.RULE) {
-      location = new QueryLocation(result.rule.location);
-    } else {
-      location = new QueryLocation(result.sourceFile.location);
-    }
-    return [
-      {
-        originSelectionRange: range,
-        targetUri: Uri.file(location.path),
-        targetRange: location.range,
-      },
-    ];
+    return location
+      ? [
+          {
+            originSelectionRange: range,
+            targetUri: Uri.file(location.path).with({
+              fragment: `${location.line}:${location.column}`,
+            }),
+            targetRange: location.range,
+          },
+        ]
+      : null;
   }
 }
