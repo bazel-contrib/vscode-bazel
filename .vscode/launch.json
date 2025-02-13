@@ -6,11 +6,11 @@
             "type": "extensionHost",
             "request": "launch",
             "runtimeExecutable": "${execPath}",
-            "args": ["--extensionDevelopmentPath=${workspaceRoot}"],
+            "args": ["--extensionDevelopmentPath=${workspaceRoot}/bazel-bin"],
             "stopOnEntry": false,
             "sourceMaps": true,
             "outFiles": ["${workspaceRoot}/out/src/**/*.js"],
-            "preLaunchTask": "npm"
+            "preLaunchTask": "build"
         },
         {
             "name": "Launch Debug Server",

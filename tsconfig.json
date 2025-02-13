@@ -10,7 +10,7 @@
         "rootDir": ".",
         "strict": true,
         "strictNullChecks": false,
-        "allowJs": true,
+        "declaration": true,
     },
     "exclude": [
         "node_modules",
