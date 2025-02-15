@@ -194,6 +194,14 @@
                     "default": [],
                     "description": "The arguments to pass to the LSP executable"
                 },
+                "bazel.lsp.env": {
+                    "type": "object",
+                    "default": {},
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "description": "Environment variables to pass to the LSP executable"
+                },
                 "bazel.trace.server": {
                     "type": "string",
                     "enum": [

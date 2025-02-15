@@ -13,11 +13,7 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import {
-  LanguageClient,
-  LanguageClientOptions,
-  ServerOptions,
-} from "vscode-languageclient/node";
+import * as lc from "vscode-languageclient/node";
 
 import { activateTaskProvider, IBazelCommandAdapter } from "../bazel";
 import {
@@ -181,17 +177,26 @@ export function deactivate() {
 function createLsp(config: vscode.WorkspaceConfiguration) {
   const command = config.get<string>("lsp.command");
   const args = config.get<string[]>("lsp.args");
+  const env = config.get<Record<string, string>>("lsp.env");
 
-  const serverOptions: ServerOptions = {
+  const run: lc.Executable = {
     args,
     command,
+    options: {
+      env: { ...process.env, ...env },
+    },
   };
 
-  const clientOptions: LanguageClientOptions = {
+  const serverOptions: lc.ServerOptions = {
+    run,
+    debug: run,
+  };
+
+  const clientOptions: lc.LanguageClientOptions = {
     documentSelector: [{ scheme: "file", language: "starlark" }],
   };
 
-  return new LanguageClient(
+  return new lc.LanguageClient(
     "bazel",
     "Bazel LSP Client",
     serverOptions,
