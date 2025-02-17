@@ -46,7 +46,7 @@ export interface IBazelTreeItem {
   getTooltip(): string | undefined;
 
   /** Returns the command that should be executed when the item is selected. */
-  getCommand(): vscode.Command | undefined;
+  getCommand(): Promise<vscode.Command | undefined>;
 
   /**
    * Returns an identifying string that is used to filter which commands are

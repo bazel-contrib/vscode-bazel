@@ -13,3 +13,4 @@
 // limitations under the License.
 
 export * from "./bazel_workspace_tree_provider";
+export * from "./querier";

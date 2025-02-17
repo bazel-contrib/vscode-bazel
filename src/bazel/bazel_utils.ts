@@ -19,6 +19,22 @@ import { blaze_query } from "../protos";
 import { BazelQuery } from "./bazel_query";
 
 /**
+ * Get the absolute path for a queried label.
+ *
+ * The queried package path are without leading double slash, while we want to
+ * provide with leading slash.
+ *
+ * @param label The label.
+ * @returns The label in absolute path.
+ */
+export function labelFromQueriedToAbsolute(label: string): string {
+  // External packages are in form `@repo//foo/bar`.
+  // Main repo relative label are in form `foo/bar`.
+  // Main repo absolute label are in form `//foo/bar`.
+  return label.includes("//") ? label : `//${label}`;
+}
+
+/**
  * Get the package label for a build file.
  *
  * @param workspace The path to the workspace.

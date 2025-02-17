@@ -13,10 +13,11 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import { BazelWorkspaceInfo } from "../bazel";
+import { assert } from "../assert";
 import { IBazelTreeItem } from "./bazel_tree_item";
 import { BazelWorkspaceFolderTreeItem } from "./bazel_workspace_folder_tree_item";
 import { Resources } from "../extension/resources";
+import { IBazelQuerier, ProcessBazelQuerier } from "./querier";
 
 /**
  * Provides a tree of Bazel build packages and targets for the VS Code explorer
@@ -31,72 +32,76 @@ export class BazelWorkspaceTreeProvider
   public readonly onDidChangeTreeData = this.onDidChangeTreeDataEmitter.event;
 
   /** The cached toplevel items. */
-  private workspaceFolderTreeItems: BazelWorkspaceFolderTreeItem[] | undefined;
+  private workspaceFolderTreeItems?: IBazelTreeItem[];
 
   private disposables: vscode.Disposable[] = [];
 
-  public static fromExtensionContext(
+  public static async fromExtensionContext(
     context: vscode.ExtensionContext,
-  ): BazelWorkspaceTreeProvider {
-    return new BazelWorkspaceTreeProvider(
+  ): Promise<BazelWorkspaceTreeProvider> {
+    const workspaceTreeProvider = new BazelWorkspaceTreeProvider(
       Resources.fromExtensionContext(context),
+      new ProcessBazelQuerier(),
     );
-  }
 
-  /**
-   * Initializes a new tree provider with the given extension context.
-   *
-   * @param context The VS Code extension context.
-   */
-  constructor(private readonly resources: Resources) {
+    const refreshWorkspaceFolders = () =>
+      workspaceTreeProvider.refresh(vscode.workspace.workspaceFolders);
+
+    workspaceTreeProvider.disposables.push(
+      vscode.workspace.onDidChangeWorkspaceFolders(refreshWorkspaceFolders),
+    );
+
     const buildFilesWatcher = vscode.workspace.createFileSystemWatcher(
       "**/{BUILD,BUILD.bazel}",
       false,
       false,
       false,
     );
-    this.disposables.push(
+    workspaceTreeProvider.disposables.push(
       buildFilesWatcher,
-      buildFilesWatcher.onDidChange(() => this.onBuildFilesChanged()),
-      buildFilesWatcher.onDidCreate(() => this.onBuildFilesChanged()),
-      buildFilesWatcher.onDidDelete(() => this.onBuildFilesChanged()),
-      vscode.workspace.onDidChangeWorkspaceFolders(() => this.refresh()),
+      buildFilesWatcher.onDidChange(refreshWorkspaceFolders),
+      buildFilesWatcher.onDidCreate(refreshWorkspaceFolders),
+      buildFilesWatcher.onDidDelete(refreshWorkspaceFolders),
     );
 
-    this.updateWorkspaceFolderTreeItems();
+    await refreshWorkspaceFolders();
+
+    return workspaceTreeProvider;
   }
 
-  public getChildren(element?: IBazelTreeItem): Thenable<IBazelTreeItem[]> {
+  /**
+   * @param querier The interface providing the `bazel query` results.
+   */
+  constructor(
+    private readonly resources: Resources,
+    private readonly querier: IBazelQuerier,
+  ) {}
+
+  public async getChildren(
+    element?: IBazelTreeItem,
+  ): Promise<IBazelTreeItem[]> {
     // If we're given an element, we're not asking for the top-level elements,
     // so just delegate to that element to get its children.
     if (element) {
       return element.getChildren();
     }
 
-    if (this.workspaceFolderTreeItems === undefined) {
-      this.updateWorkspaceFolderTreeItems();
+    // Assuming the extension or test cases should call refresh at least once.
+    assert(this.workspaceFolderTreeItems !== undefined);
+
+    // If the user has a workspace open and there's only one folder in it, then
+    // don't show the workspace folder; just show its packages at the top level.
+    if (this.workspaceFolderTreeItems.length === 1) {
+      const folderItem = this.workspaceFolderTreeItems[0];
+      return folderItem.getChildren();
     }
 
-    if (this.workspaceFolderTreeItems && vscode.workspace.workspaceFolders) {
-      // If the user has a workspace open and there's only one folder in it,
-      // then don't show the workspace folder; just show its packages at the top
-      // level.
-      if (vscode.workspace.workspaceFolders.length === 1) {
-        const folderItem = this.workspaceFolderTreeItems[0];
-        return folderItem.getChildren();
-      }
-
-      // If the user has multiple workspace folders open, then show them as
-      // individual top level items.
-      return Promise.resolve(this.workspaceFolderTreeItems);
-    }
-
-    // If the user doesn't have a folder open in the workspace, or none of them
-    // have Bazel workspaces, don't show anything.
-    return Promise.resolve([]);
+    // If the user has multiple or no workspace folders open, then show them as
+    // individual top level items.
+    return this.workspaceFolderTreeItems;
   }
 
-  public getTreeItem(element: IBazelTreeItem): vscode.TreeItem {
+  public async getTreeItem(element: IBazelTreeItem): Promise<vscode.TreeItem> {
     const label = element.getLabel();
     const collapsibleState = element.mightHaveChildren()
       ? vscode.TreeItemCollapsibleState.Collapsed
@@ -106,51 +111,64 @@ export class BazelWorkspaceTreeProvider
     treeItem.contextValue = element.getContextValue();
     treeItem.iconPath = element.getIcon();
     treeItem.tooltip = element.getTooltip();
-    treeItem.command = element.getCommand();
+    treeItem.command = await element.getCommand();
     return treeItem;
   }
 
-  /** Forces a re-query and refresh of the tree's contents. */
-  public refresh() {
-    this.updateWorkspaceFolderTreeItems();
+  /** Forces a re-query and refresh of the tree's contents.
+   *
+   * Also for initialize or to update the tree when a BUILD file is created,
+   * deleted, or changed.
+   */
+  public async refresh(
+    workspaceFolders: readonly vscode.WorkspaceFolder[],
+  ): Promise<void> {
+    await this.updateWorkspaceFolderTreeItems(workspaceFolders);
     this.onDidChangeTreeDataEmitter.fire();
   }
 
-  /**
-   * Called to update the tree when a BUILD file is created, deleted, or
-   * changed.
-   *
-   * @param uri The file system URI of the file that changed.
-   */
-  private onBuildFilesChanged() {
-    // TODO(allevato): Look into firing the event only for tree items that are
-    // affected by the change.
-    this.refresh();
+  private async createWorkspaceFolderTreeItem(
+    workspaceFolder: vscode.WorkspaceFolder,
+  ): Promise<IBazelTreeItem | undefined> {
+    const workspaceInfo = await this.querier.queryWorkspace(workspaceFolder);
+    if (workspaceInfo === undefined) {
+      return undefined;
+    }
+    return new BazelWorkspaceFolderTreeItem(
+      this.resources,
+      this.querier,
+      workspaceInfo,
+    );
   }
 
-  /** Refresh the cached BazelWorkspaceFolderTreeItems. */
-  private updateWorkspaceFolderTreeItems() {
-    if (vscode.workspace.workspaceFolders) {
-      this.workspaceFolderTreeItems = vscode.workspace.workspaceFolders
-        .map((folder) => {
-          const workspaceInfo = BazelWorkspaceInfo.fromWorkspaceFolder(folder);
-          if (workspaceInfo) {
-            return new BazelWorkspaceFolderTreeItem(
-              this.resources,
-              workspaceInfo,
-            );
-          }
-          return undefined;
-        })
-        .filter((folder) => folder !== undefined);
-    } else {
-      this.workspaceFolderTreeItems = [];
-    }
+  private async createWorkspaceFolderTreeItems(
+    workspaceFolders: readonly vscode.WorkspaceFolder[],
+  ): Promise<IBazelTreeItem[]> {
+    const maybeWorkspaceFolderTreeItems = await Promise.all(
+      workspaceFolders.map((workspaceFolder) =>
+        this.createWorkspaceFolderTreeItem(workspaceFolder),
+      ),
+    );
+    return maybeWorkspaceFolderTreeItems.filter(
+      (folder) => folder !== undefined,
+    );
+  }
 
-    // All the UI to update based on having items.
+  /**
+   * Update the cached BazelWorkspaceFolderTreeItems and other UI components
+   * interested in.
+   */
+  private async updateWorkspaceFolderTreeItems(
+    workspaceFolders?: readonly vscode.WorkspaceFolder[],
+  ): Promise<void> {
+    this.workspaceFolderTreeItems = await this.createWorkspaceFolderTreeItems(
+      workspaceFolders ?? [],
+    );
+
+    // Updates other UI components based on the context value for Bazel
+    // workspace.
     const haveBazelWorkspace = this.workspaceFolderTreeItems.length !== 0;
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    vscode.commands.executeCommand(
+    void vscode.commands.executeCommand(
       "setContext",
       "bazel.haveWorkspace",
       haveBazelWorkspace,
