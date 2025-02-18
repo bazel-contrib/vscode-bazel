@@ -1,5 +1,19 @@
 # Change Log
 
+## [0.12.0](https://github.com/bazel-contrib/vscode-bazel/compare/v0.11.0...v0.12.0) (2025-02-18)
+
+
+### Features
+
+* Add URI handler for jumping to targets ([#431](https://github.com/bazel-contrib/vscode-bazel/issues/431)) ([7e5ee8f](https://github.com/bazel-contrib/vscode-bazel/commit/7e5ee8f3fce34043a6b82a20d3de661589ea0812))
+* **lsp:** Allow passing environment variables to the language server ([#438](https://github.com/bazel-contrib/vscode-bazel/issues/438)) ([0dc2684](https://github.com/bazel-contrib/vscode-bazel/commit/0dc2684aaa8e3ce5ae1b7e8d67e562329d3fb374))
+
+
+### Bug Fixes
+
+* Don't instantiate CompletionItemProvider when using a language server ([#440](https://github.com/bazel-contrib/vscode-bazel/issues/440)) ([7b6f85f](https://github.com/bazel-contrib/vscode-bazel/commit/7b6f85f9d08d0b6d1f1991f05e09cfcd8740407e))
+* fix starlark debugger broken in release 0.11.0 ([#432](https://github.com/bazel-contrib/vscode-bazel/issues/432)) ([#433](https://github.com/bazel-contrib/vscode-bazel/issues/433)) ([b83b99c](https://github.com/bazel-contrib/vscode-bazel/commit/b83b99c57299d003d2858d859c487b2523d233d5))
+
 ## [0.11.0](https://github.com/bazel-contrib/vscode-bazel/compare/0.10.0...v0.11.0) (2024-11-28)
 
 
