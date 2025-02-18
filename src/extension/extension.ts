@@ -46,10 +46,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
   const codeLensProvider = new BazelBuildCodeLensProvider(context);
   const buildifierDiagnostics = new BuildifierDiagnosticsManager();
-  const completionItemProvider = new BazelCompletionItemProvider();
-
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  completionItemProvider.refresh();
+  let completionItemProvider: BazelCompletionItemProvider | null = null;
 
   const config = vscode.workspace.getConfiguration("bazel");
   const lspEnabled = !!config.get<string>("lsp.command");
@@ -66,6 +63,10 @@ export async function activate(context: vscode.ExtensionContext) {
 
     await lspClient.start();
   } else {
+    completionItemProvider = new BazelCompletionItemProvider();
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    completionItemProvider.refresh();
+
     context.subscriptions.push(
       vscode.languages.registerCompletionItemProvider(
         [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
@@ -97,7 +98,7 @@ export async function activate(context: vscode.ExtensionContext) {
     ...activateWrapperCommands(),
     vscode.commands.registerCommand("bazel.refreshBazelBuildTargets", () => {
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      completionItemProvider.refresh();
+      completionItemProvider?.refresh();
       workspaceTreeProvider.refresh();
     }),
     vscode.commands.registerCommand(
