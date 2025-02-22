@@ -18,6 +18,7 @@ This extension provides support for Bazel in Visual Studio.
   in VS Code.
 - Debug Starlark code in your `.bzl` files during a build (set breakpoints, step
   through code, inspect variables, etc.)
+- URI handler to jump to targets from outside of VSCode. Example: vscode://bazelbuild.vscode-bazel//path/to/tests:target
 
 ## Configuring the Extension
 
