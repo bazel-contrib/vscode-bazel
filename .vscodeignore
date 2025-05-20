@@ -1,18 +1,40 @@
-.vscode-test/**
+# VS Code specific
 .vscode/**
-out/test/**
-scripts/**
-src/**
-test/**
-.vscode-test/
+.vscode-test/**
 
-**/*.map
+# Build and test artifacts
+out/**
+*.vsix
+*.log
+*.tsbuildinfo
 
-syntaxes/bazelrc.tmLanguage.yaml
+# Dependencies
+node_modules/
+
+# Source control
+.git/
+.github/
+
+# Project and config files
+.gitignore
+.prettierignore
+.vscode-test.js
+CODEOWNERS
+eslint.config.js
+tsconfig.json
 syntaxes/.gitignore
 
-.gitignore
+# Development files
+src/
+test/
+scripts/
+
+# Other
 AUTHORS
-CODEOWNERS
+CONTRIBUTING.md
 CONTRIBUTORS
-tsconfig.json
+RELEASE.md
+# Keep LICENSE, README.md, CHANGELOG.md, package.json and the syntaxes themselves
+# syntaxes/starlark.configuration.json
+# syntaxes/starlark.tmLanguage.json
+# syntaxes/starlark.tmLanguage.license

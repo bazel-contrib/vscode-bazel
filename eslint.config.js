@@ -18,10 +18,6 @@ module.exports = tseslint.config(
       globals: {
         ...globals.node,
       },
-      parserOptions: {
-        project: true,
-        tsconfigRootDir: __dirname,
-      },
     },
     plugins: {
       jsdoc,
