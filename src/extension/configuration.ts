@@ -32,3 +32,13 @@ export function getDefaultBazelExecutablePath(): string {
   }
   return bazelExecutable;
 }
+
+/**
+ * Checks if Bazel queries are enabled in the workspace configuration.
+ *
+ * @returns True if Bazel queries are enabled (default), false otherwise.
+ */
+export function areBazelQueriesEnabled(): boolean {
+  const bazelConfig = vscode.workspace.getConfiguration("bazel");
+  return bazelConfig.get<boolean>("enableQueries", true);
+}

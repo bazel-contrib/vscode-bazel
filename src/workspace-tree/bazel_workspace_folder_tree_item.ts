@@ -14,7 +14,10 @@
 
 import * as vscode from "vscode";
 import { BazelWorkspaceInfo, BazelQuery } from "../bazel";
-import { getDefaultBazelExecutablePath } from "../extension/configuration";
+import {
+  getDefaultBazelExecutablePath,
+  areBazelQueriesEnabled,
+} from "../extension/configuration";
 import { blaze_query } from "../protos";
 import { BazelPackageTreeItem } from "./bazel_package_tree_item";
 import { BazelTargetTreeItem } from "./bazel_target_tree_item";
@@ -150,6 +153,10 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
    * Returns a promise for an array of tree items representing build items.
    */
   private async getDirectoryItems(): Promise<IBazelTreeItem[]> {
+    if (!areBazelQueriesEnabled()) {
+      return Promise.resolve([] as IBazelTreeItem[]);
+    }
+
     // Retrieve the list of all packages underneath the current workspace
     // folder. Note that if the workspace folder is not the root of a Bazel
     // workspace but is instead a folder underneath it, we query for *only* the
