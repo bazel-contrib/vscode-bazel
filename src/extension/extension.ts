@@ -37,6 +37,7 @@ import { ProjectViewService, BuildFileDecorator, BuildIconIntegration } from "..
 import { ProjectViewManager } from "../project-view/project_view_manager";
 import { DirectoryFilterService } from "../project-view/directory_filter_service";
 import { StatusBarManager } from "../project-view/status_bar_manager";
+import { TestExplorerProvider } from "../project-view/test_explorer_provider";
 
 /**
  * Called when the extension is activated; that is, when its first command is
@@ -81,6 +82,10 @@ export async function activate(context: vscode.ExtensionContext) {
   // Initialize status bar manager
   const statusBarManager = StatusBarManager.getInstance();
   context.subscriptions.push(statusBarManager);
+
+  // Initialize test explorer provider
+  const testExplorerProvider = TestExplorerProvider.getInstance();
+  context.subscriptions.push(testExplorerProvider);
 
   const codeLensProvider = new BazelBuildCodeLensProvider(context);
   const buildifierDiagnostics = new BuildifierDiagnosticsManager();

@@ -17,6 +17,7 @@ import { ProjectViewManager } from "./project_view_manager";
 import { DirectoryFilterService } from "./directory_filter_service";
 import { ProjectViewService } from "./project_view_service";
 import { ProjectViewDashboard } from "./project_view_dashboard";
+import { TestExplorerProvider } from "./test_explorer_provider";
 
 /**
  * Status bar item priority levels
@@ -49,6 +50,7 @@ export class StatusBarManager implements vscode.Disposable {
   private directoryFilterService: DirectoryFilterService;
   private projectViewService: ProjectViewService;
   private dashboard: ProjectViewDashboard;
+  private testExplorerProvider: TestExplorerProvider;
 
   // Status bar items
   private projectViewStatusItem: vscode.StatusBarItem;
@@ -72,6 +74,7 @@ export class StatusBarManager implements vscode.Disposable {
     this.directoryFilterService = DirectoryFilterService.getInstance();
     this.projectViewService = ProjectViewService.getInstance();
     this.dashboard = ProjectViewDashboard.getInstance();
+    this.testExplorerProvider = TestExplorerProvider.getInstance();
 
     this.config = this.loadConfiguration();
     this.createStatusBarItems();
@@ -413,6 +416,22 @@ export class StatusBarManager implements vscode.Disposable {
 
       vscode.commands.registerCommand('bazel.showProjectViewDashboard', async () => {
         await this.dashboard.show(this.currentWorkspaceFolder);
+      }),
+
+      vscode.commands.registerCommand('bazel.refreshTests', async () => {
+        await this.testExplorerProvider.refreshTests();
+        vscode.window.showInformationMessage('Test discovery refreshed');
+      }),
+
+      vscode.commands.registerCommand('bazel.runProjectViewTests', async () => {
+        // This would trigger a run of all project view tests
+        // For now, show a message to use the Test Explorer
+        vscode.window.showInformationMessage('Use the Test Explorer to run tests, or run individual tests from the editor');
+      }),
+
+      vscode.commands.registerCommand('bazel.debugProjectViewTests', async () => {
+        // This would trigger debugging of project view tests
+        vscode.window.showInformationMessage('Use the Test Explorer to debug tests, or debug individual tests from the editor');
       })
     );
   }

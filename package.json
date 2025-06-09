@@ -191,6 +191,21 @@
                 "category": "Bazel",
                 "command": "bazel.showProjectViewDashboard",
                 "title": "Show Project View Dashboard"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.refreshTests",
+                "title": "Refresh Test Discovery"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.runProjectViewTests",
+                "title": "Run Project View Tests"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.debugProjectViewTests",
+                "title": "Debug Project View Tests"
             }
         ],
         "configuration": {
@@ -444,6 +459,46 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Show directory filtering recommendations in the status bar"
+                },
+                "bazel.testIntegration.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable VS Code Test Explorer integration for project view tests"
+                },
+                "bazel.testIntegration.autoRefresh": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Automatically refresh test discovery when files change"
+                },
+                "bazel.testIntegration.maxTests": {
+                    "type": "number",
+                    "default": 1000,
+                    "minimum": 10,
+                    "maximum": 10000,
+                    "description": "Maximum number of tests to discover per workspace"
+                },
+                "bazel.testIntegration.supportedFrameworks": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "junit",
+                            "testng",
+                            "pytest",
+                            "unittest",
+                            "go_test",
+                            "jest",
+                            "gtest"
+                        ]
+                    },
+                    "default": [
+                        "junit",
+                        "pytest",
+                        "go_test",
+                        "jest",
+                        "gtest"
+                    ],
+                    "description": "Test frameworks to support for automatic discovery"
                 }
             }
         },
@@ -645,6 +700,18 @@
                 },
                 {
                     "command": "bazel.showProjectViewDashboard",
+                    "when": "bazel.hasProjectView"
+                },
+                {
+                    "command": "bazel.refreshTests",
+                    "when": "bazel.hasProjectView"
+                },
+                {
+                    "command": "bazel.runProjectViewTests",
+                    "when": "bazel.hasProjectView"
+                },
+                {
+                    "command": "bazel.debugProjectViewTests",
                     "when": "bazel.hasProjectView"
                 }
             ],
