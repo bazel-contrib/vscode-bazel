@@ -48,8 +48,13 @@ export class BazelBuildIconService implements vscode.Disposable {
       "bazel.buildCurrentFile",
       () => this.handleBuildCurrentFile()
     );
+
+    const showTaskOutputCommand = vscode.commands.registerCommand(
+      "bazel.showTaskOutput",
+      () => this.showTaskOutput()
+    );
     
-    this.disposables.push(buildCurrentFileCommand);
+    this.disposables.push(buildCurrentFileCommand, showTaskOutputCommand);
   }
 
   /**
@@ -99,10 +104,33 @@ export class BazelBuildIconService implements vscode.Disposable {
   }
 
   /**
-   * Handles the build current file command.
+   * Handles the build current file command with progress reporting.
    */
   private async handleBuildCurrentFile(): Promise<void> {
+    return vscode.window.withProgress({
+      location: vscode.ProgressLocation.Notification,
+      title: "Building with Bazel",
+      cancellable: true
+    }, async (progress, token) => {
+      return this.executeBuildWithProgress(progress, token);
+    });
+  }
+
+  /**
+   * Executes the build with progress reporting.
+   */
+  private async executeBuildWithProgress(
+    progress: vscode.Progress<{ message?: string; increment?: number }>,
+    token: vscode.CancellationToken
+  ): Promise<void> {
     try {
+      // Check for cancellation
+      if (token.isCancellationRequested) {
+        return;
+      }
+
+      progress.report({ message: "Preparing build...", increment: 10 });
+
       // Get current editor and file
       const activeEditor = vscode.window.activeTextEditor;
       if (!activeEditor) {
@@ -119,6 +147,8 @@ export class BazelBuildIconService implements vscode.Disposable {
         return;
       }
 
+      progress.report({ message: "Resolving build target...", increment: 20 });
+
       // Cancel any ongoing build
       if (this.currentBuildTask) {
         this.currentBuildTask.terminate();
@@ -127,6 +157,12 @@ export class BazelBuildIconService implements vscode.Disposable {
 
       // Set building state
       this.buildIcon.setState(IconState.Building);
+
+      // Check for cancellation
+      if (token.isCancellationRequested) {
+        this.buildIcon.setState(IconState.Idle);
+        return;
+      }
 
       // Resolve target for the current file
       const resolutionOptions: TargetResolutionOptions = {
@@ -139,6 +175,8 @@ export class BazelBuildIconService implements vscode.Disposable {
         workspaceInfo,
         resolutionOptions
       );
+
+      progress.report({ message: "Starting build...", increment: 50 });
 
       if (!resolution.primaryTarget) {
         this.buildIcon.setState(IconState.Error, 5000);
@@ -197,6 +235,13 @@ export class BazelBuildIconService implements vscode.Disposable {
       this.buildIcon.setState(IconState.Error, 5000);
       throw error;
     }
+  }
+
+  /**
+   * Shows the task output panel.
+   */
+  private showTaskOutput(): void {
+    vscode.commands.executeCommand('workbench.action.tasks.showLog');
   }
 
   /**

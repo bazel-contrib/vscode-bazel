@@ -221,6 +221,16 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Whether to show the Bazel build icon in the status bar for quick file building."
+                },
+                "bazel.buildIcon.showSuccessNotifications": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show notification when build completes successfully"
+                },
+                "bazel.buildIcon.showErrorNotifications": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show notification when build fails"
                 }
             }
         },
@@ -320,6 +330,13 @@
             }
         ],
         "menus": {
+            "editor/context": [
+                {
+                    "when": "bazel.haveWorkspace",
+                    "command": "bazel.buildCurrentFile",
+                    "group": "bazel"
+                }
+            ],
             "commandPalette": [
                 {
                     "command": "bazel.copyTargetToClipboard",
@@ -432,6 +449,14 @@
                 }
             ]
         },
+        "keybindings": [
+            {
+                "command": "bazel.buildCurrentFile",
+                "key": "ctrl+shift+b",
+                "mac": "cmd+shift+b",
+                "when": "bazel.haveWorkspace"
+            }
+        ],
         "taskDefinitions": [
             {
                 "type": "bazel",

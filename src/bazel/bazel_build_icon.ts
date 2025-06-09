@@ -104,156 +104,222 @@ export class IconStateManager {
  */
 export class BazelBuildIcon implements vscode.Disposable {
   private statusBarItem: vscode.StatusBarItem;
-  private stateManager: IconStateManager;
-  private isEnabled: boolean = true;
-  private disposables: vscode.Disposable[] = [];
+  private currentState: IconState = IconState.Idle;
+  private stateTimeout?: NodeJS.Timeout;
+  private buildProgressTimer?: NodeJS.Timeout;
+  private progressFrameIndex: number = 0;
+  private readonly PROGRESS_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+  private readonly PROGRESS_INTERVAL_MS = 100; // 10fps for spinner
 
-  constructor(private context: vscode.ExtensionContext) {
+  constructor() {
     this.statusBarItem = vscode.window.createStatusBarItem(
       vscode.StatusBarAlignment.Left,
-      100 // Priority - appears before other items
+      100
     );
-    this.stateManager = new IconStateManager();
     
-    this.setupIcon();
-    this.setupConfigurationWatcher();
-    this.setupWorkspaceWatcher();
+    // Set initial state
+    this.updateDisplay();
+    this.statusBarItem.show();
+  }
+
+  /**
+   * Update the icon state with optional automatic timeout
+   */
+  public setState(state: IconState, timeoutMs?: number): void {
+    // Validate state transition
+    if (!this.isValidTransition(this.currentState, state)) {
+      console.warn(`Invalid state transition from ${this.currentState} to ${state}`);
+      return;
+    }
+
+    // Clear existing timeout and progress animation
+    this.clearStateTimeout();
+    this.clearProgressAnimation();
+
+    // Update state
+    const previousState = this.currentState;
+    this.currentState = state;
     
-    // Add to disposables
-    this.disposables.push(this.statusBarItem);
-    this.disposables.push(this.stateManager);
+    // Start progress animation for building state
+    if (state === IconState.Building) {
+      this.startProgressAnimation();
+    }
+
+    // Update display
+    this.updateDisplay();
+
+    // Set timeout if provided
+    if (timeoutMs && timeoutMs > 0) {
+      this.stateTimeout = setTimeout(() => {
+        this.setState(IconState.Idle);
+      }, timeoutMs);
+    }
+
+    // Show notification for certain state transitions
+    this.handleStateNotification(previousState, state);
   }
 
   /**
-   * Sets up the initial icon configuration.
+   * Get the current icon state
    */
-  private setupIcon(): void {
-    this.statusBarItem.command = "bazel.buildCurrentFile";
-    this.updateIcon();
+  public getState(): IconState {
+    return this.currentState;
   }
 
   /**
-   * Sets up configuration change watching.
+   * Force update the visual display
    */
-  private setupConfigurationWatcher(): void {
-    const configWatcher = vscode.workspace.onDidChangeConfiguration(e => {
-      if (e.affectsConfiguration("bazel.buildIcon.enabled")) {
-        this.updateEnabledState();
-      }
-    });
-    this.disposables.push(configWatcher);
+  public refresh(): void {
+    this.updateDisplay();
   }
 
   /**
-   * Sets up workspace change watching.
+   * Handle progress animation for building state
    */
-  private setupWorkspaceWatcher(): void {
-    const workspaceWatcher = vscode.workspace.onDidChangeWorkspaceFolders(() => {
-      this.updateVisibility();
-    });
-    this.disposables.push(workspaceWatcher);
+  private startProgressAnimation(): void {
+    this.progressFrameIndex = 0;
+    this.buildProgressTimer = setInterval(() => {
+      this.progressFrameIndex = (this.progressFrameIndex + 1) % this.PROGRESS_FRAMES.length;
+      this.updateDisplay();
+    }, this.PROGRESS_INTERVAL_MS);
   }
 
   /**
-   * Updates the enabled state based on configuration.
+   * Stop progress animation
    */
-  private updateEnabledState(): void {
-    const config = vscode.workspace.getConfiguration("bazel");
-    const enabled = config.get<boolean>("buildIcon.enabled", true);
-    
-    if (enabled !== this.isEnabled) {
-      this.isEnabled = enabled;
-      this.updateVisibility();
+  private clearProgressAnimation(): void {
+    if (this.buildProgressTimer) {
+      clearInterval(this.buildProgressTimer);
+      this.buildProgressTimer = undefined;
     }
   }
 
   /**
-   * Updates icon visibility based on workspace and configuration.
+   * Show appropriate notifications for state changes
    */
-  private async updateVisibility(): Promise<void> {
-    if (!this.isEnabled) {
-      this.stateManager.transitionTo(IconState.Disabled);
+  private handleStateNotification(previousState: IconState, newState: IconState): void {
+    const config = vscode.workspace.getConfiguration('bazel.buildIcon');
+    const showSuccessNotifications = config.get('showSuccessNotifications', true);
+    const showErrorNotifications = config.get('showErrorNotifications', true);
+
+    switch (newState) {
+      case IconState.Success:
+        if (showSuccessNotifications && previousState === IconState.Building) {
+          vscode.window.showInformationMessage('Build completed successfully! ✅', 
+            'View Output').then(action => {
+              if (action === 'View Output') {
+                vscode.commands.executeCommand('bazel.showTaskOutput');
+              }
+            });
+        }
+        break;
+      
+      case IconState.Error:
+        if (showErrorNotifications) {
+          vscode.window.showErrorMessage('Build failed! ❌', 
+            'View Output', 'Try Again').then(action => {
+              if (action === 'View Output') {
+                vscode.commands.executeCommand('bazel.showTaskOutput');
+              } else if (action === 'Try Again') {
+                vscode.commands.executeCommand('bazel.buildCurrentFile');
+              }
+            });
+        }
+        break;
+    }
+  }
+
+  /**
+   * Update the status bar display based on current state
+   */
+  private updateDisplay(): void {
+    const config = vscode.workspace.getConfiguration('bazel.buildIcon');
+    const iconEnabled = config.get('enabled', true);
+
+    if (!iconEnabled) {
       this.statusBarItem.hide();
       return;
     }
 
-    // Check if we have a Bazel workspace
-    const workspaceInfo = await BazelWorkspaceInfo.fromWorkspaceFolders();
-    if (workspaceInfo) {
-      this.stateManager.transitionTo(IconState.Idle);
-      this.statusBarItem.show();
-    } else {
-      this.stateManager.transitionTo(IconState.Disabled);
-      this.statusBarItem.hide();
-    }
-    
-    this.updateIcon();
-  }
-
-  /**
-   * Updates the icon appearance based on current state.
-   */
-  private updateIcon(): void {
-    const state = this.stateManager.getCurrentState();
-    
-    switch (state) {
+    switch (this.currentState) {
       case IconState.Idle:
-        this.statusBarItem.text = "$(tools) Bazel";
-        this.statusBarItem.tooltip = "Click to build current file with Bazel";
+        this.statusBarItem.text = '$(tools) Bazel';
+        this.statusBarItem.tooltip = 'Click to build current file with Bazel';
         this.statusBarItem.backgroundColor = undefined;
+        this.statusBarItem.color = undefined;
         break;
+
       case IconState.Building:
-        this.statusBarItem.text = "$(loading~spin) Bazel";
-        this.statusBarItem.tooltip = "Building...";
+        const spinner = this.PROGRESS_FRAMES[this.progressFrameIndex];
+        this.statusBarItem.text = `${spinner} Building...`;
+        this.statusBarItem.tooltip = 'Building target with Bazel...';
         this.statusBarItem.backgroundColor = undefined;
+        this.statusBarItem.color = new vscode.ThemeColor('statusBarItem.warningForeground');
         break;
+
       case IconState.Success:
-        this.statusBarItem.text = "$(check) Bazel";
-        this.statusBarItem.tooltip = "Build successful";
-        this.statusBarItem.backgroundColor = new vscode.ThemeColor("statusBarItem.prominentBackground");
+        this.statusBarItem.text = '$(check) Build Success';
+        this.statusBarItem.tooltip = 'Build completed successfully';
+        this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.prominentBackground');
+        this.statusBarItem.color = new vscode.ThemeColor('statusBarItem.prominentForeground');
         break;
+
       case IconState.Error:
-        this.statusBarItem.text = "$(error) Bazel";
-        this.statusBarItem.tooltip = "Build failed - click to retry";
-        this.statusBarItem.backgroundColor = new vscode.ThemeColor("statusBarItem.errorBackground");
+        this.statusBarItem.text = '$(error) Build Failed';
+        this.statusBarItem.tooltip = 'Build failed - click for details';
+        this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
+        this.statusBarItem.color = new vscode.ThemeColor('statusBarItem.errorForeground');
         break;
+
       case IconState.Disabled:
+        this.statusBarItem.text = '$(tools) Bazel (Unavailable)';
+        this.statusBarItem.tooltip = 'Bazel is not available in this workspace';
+        this.statusBarItem.backgroundColor = undefined;
+        this.statusBarItem.color = new vscode.ThemeColor('disabledForeground');
+        break;
+    }
+
+    // Set command and context menu
+    this.statusBarItem.command = 'bazel.buildCurrentFile';
+    this.statusBarItem.show();
+  }
+
+  /**
+   * Validates if a state transition is allowed.
+   */
+  private isValidTransition(from: IconState, to: IconState): boolean {
+    // Define valid transition rules
+    switch (from) {
+      case IconState.Disabled:
+        return to === IconState.Idle;
+      case IconState.Idle:
+        return to === IconState.Building || to === IconState.Disabled;
+      case IconState.Building:
+        return to === IconState.Success || to === IconState.Error || to === IconState.Idle;
+      case IconState.Success:
+      case IconState.Error:
+        return to === IconState.Idle || to === IconState.Building || to === IconState.Disabled;
       default:
-        this.statusBarItem.hide();
-        return;
+        return false;
     }
   }
 
   /**
-   * Transitions the icon to the specified state.
+   * Clear any active state timeout
    */
-  public setState(state: IconState, timeoutMs?: number): boolean {
-    const success = this.stateManager.transitionTo(state, timeoutMs);
-    if (success) {
-      this.updateIcon();
+  private clearStateTimeout(): void {
+    if (this.stateTimeout) {
+      clearTimeout(this.stateTimeout);
+      this.stateTimeout = undefined;
     }
-    return success;
   }
 
   /**
-   * Gets the current icon state.
-   */
-  public getState(): IconState {
-    return this.stateManager.getCurrentState();
-  }
-
-  /**
-   * Forces a refresh of icon visibility and state.
-   */
-  public async refresh(): Promise<void> {
-    await this.updateVisibility();
-  }
-
-  /**
-   * Disposes of the icon and cleans up resources.
+   * Dispose of resources
    */
   public dispose(): void {
-    this.disposables.forEach(disposable => disposable.dispose());
-    this.disposables = [];
+    this.clearStateTimeout();
+    this.clearProgressAnimation();
+    this.statusBarItem.dispose();
   }
 } 

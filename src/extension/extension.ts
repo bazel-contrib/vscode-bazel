@@ -46,7 +46,7 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(workspaceTreeProvider);
 
   // Initialize build icon and service
-  const buildIcon = new BazelBuildIcon(context);
+  const buildIcon = new BazelBuildIcon();
   const buildIconService = new BazelBuildIconService(context, buildIcon);
   context.subscriptions.push(buildIcon, buildIconService);
   // Initial refresh to set proper visibility
