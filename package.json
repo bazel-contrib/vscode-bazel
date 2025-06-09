@@ -110,6 +110,16 @@
                 "category": "Bazel",
                 "command": "bazel.buildCurrentFile",
                 "title": "Build Current File"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.buildFromHistory",
+                "title": "Build from History"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.clearBuildHistory",
+                "title": "Clear Build History"
             }
         ],
         "configuration": {
@@ -231,6 +241,77 @@
                     "type": "boolean",
                     "default": true,
                     "description": "Show notification when build fails"
+                },
+                "bazel.buildIcon.targetSelectionMode": {
+                    "type": "string",
+                    "enum": [
+                        "auto",
+                        "manual",
+                        "prompt"
+                    ],
+                    "default": "auto",
+                    "description": "How to select build targets: auto-detect, manual selection, or prompt user"
+                },
+                "bazel.buildIcon.showTerminalOnBuild": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Automatically show terminal output when build starts"
+                },
+                "bazel.buildIcon.enableTargetHistory": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Track and provide quick access to recently built targets"
+                },
+                "bazel.buildIcon.maxHistoryItems": {
+                    "type": "number",
+                    "default": 10,
+                    "minimum": 1,
+                    "maximum": 50,
+                    "description": "Maximum number of targets to keep in build history"
+                },
+                "bazel.buildIcon.enableCacheStatus": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Show build cache status information (experimental)"
+                },
+                "bazel.buildIcon.customCommands": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "Display name for the command"
+                            },
+                            "command": {
+                                "type": "string",
+                                "enum": [
+                                    "build",
+                                    "test",
+                                    "run"
+                                ],
+                                "description": "Bazel command to execute"
+                            },
+                            "args": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "description": "Additional arguments for the command"
+                            }
+                        },
+                        "required": [
+                            "name",
+                            "command"
+                        ]
+                    },
+                    "default": [],
+                    "description": "Custom Bazel commands available in the build icon menu"
+                },
+                "bazel.buildIcon.enableTelemetry": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Enable anonymous usage analytics to help improve the extension"
                 }
             }
         },

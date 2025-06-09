@@ -18,6 +18,7 @@ import { FileTargetResolver, TargetResolutionOptions } from "./file_target_resol
 import { BazelBuildIconAdapter } from "./bazel_build_icon_adapter";
 import { BazelWorkspaceInfo } from "./bazel_workspace_info";
 import { createBazelTask } from "./tasks";
+import { BazelBuildIconConfigManager, TargetSelectionMode, CustomCommand } from "./bazel_build_icon_config";
 
 /**
  * Service that coordinates the build icon functionality including
@@ -26,6 +27,7 @@ import { createBazelTask } from "./tasks";
 export class BazelBuildIconService implements vscode.Disposable {
   private buildIcon: BazelBuildIcon;
   private targetResolver: FileTargetResolver;
+  private configManager: BazelBuildIconConfigManager;
   private disposables: vscode.Disposable[] = [];
   private currentBuildTask: vscode.TaskExecution | null = null;
 
@@ -35,9 +37,11 @@ export class BazelBuildIconService implements vscode.Disposable {
   ) {
     this.buildIcon = buildIcon;
     this.targetResolver = new FileTargetResolver();
+    this.configManager = new BazelBuildIconConfigManager(context);
     
     this.setupCommandHandlers();
     this.setupTaskEventHandlers();
+    this.setupConfigurationHandlers();
   }
 
   /**
@@ -53,8 +57,46 @@ export class BazelBuildIconService implements vscode.Disposable {
       "bazel.showTaskOutput",
       () => this.showTaskOutput()
     );
+
+    const buildFromHistoryCommand = vscode.commands.registerCommand(
+      "bazel.buildFromHistory",
+      () => this.handleBuildFromHistory()
+    );
+
+    const clearHistoryCommand = vscode.commands.registerCommand(
+      "bazel.clearBuildHistory",
+      () => this.handleClearHistory()
+    );
     
-    this.disposables.push(buildCurrentFileCommand, showTaskOutputCommand);
+    this.disposables.push(
+      buildCurrentFileCommand, 
+      showTaskOutputCommand, 
+      buildFromHistoryCommand, 
+      clearHistoryCommand
+    );
+  }
+
+  /**
+   * Sets up configuration change handlers.
+   */
+  private setupConfigurationHandlers(): void {
+    const configChangeHandler = this.configManager.onConfigChanged(config => {
+      // Update build icon visibility based on configuration
+      if (!config.enabled) {
+        this.buildIcon.setState(IconState.Disabled);
+      } else {
+        this.buildIcon.setState(IconState.Idle);
+      }
+
+      // Record telemetry for configuration changes
+      this.configManager.recordTelemetry('configChanged', {
+        enabled: config.enabled,
+        targetSelectionMode: config.targetSelectionMode,
+        enableTargetHistory: config.enableTargetHistory
+      });
+    });
+
+    this.disposables.push(configChangeHandler);
   }
 
   /**
@@ -164,47 +206,65 @@ export class BazelBuildIconService implements vscode.Disposable {
         return;
       }
 
-      // Resolve target for the current file
-      const resolutionOptions: TargetResolutionOptions = {
-        showDisambiguationUI: true,
-        maxCacheAge: 5 * 60 * 1000 // 5 minutes
-      };
-
-      const resolution = await this.targetResolver.resolveTargetForFile(
-        filePath,
-        workspaceInfo,
-        resolutionOptions
+      // Get configuration for target selection mode
+      const config = this.configManager.getWorkspaceConfig(
+        vscode.workspace.getWorkspaceFolder(vscode.Uri.file(filePath))
       );
 
-      progress.report({ message: "Starting build...", increment: 50 });
+      // Resolve target based on configuration
+      let targetToUse: string | null = null;
 
-      if (!resolution.primaryTarget) {
-        this.buildIcon.setState(IconState.Error, 5000);
-        
-        if (resolution.error) {
+      if (config.targetSelectionMode === TargetSelectionMode.Manual) {
+        targetToUse = await this.targetResolver.manualTargetSelection(workspaceInfo);
+      } else {
+        // Auto or Prompt mode - try to resolve automatically first
+        const resolutionOptions: TargetResolutionOptions = {
+          showDisambiguationUI: config.targetSelectionMode === TargetSelectionMode.Prompt,
+          maxCacheAge: 5 * 60 * 1000 // 5 minutes
+        };
+
+        const resolution = await this.targetResolver.resolveTargetForFile(
+          filePath,
+          workspaceInfo,
+          resolutionOptions
+        );
+
+        if (resolution.primaryTarget) {
+          targetToUse = resolution.primaryTarget;
+          
+          // Show information about disambiguation if it occurred
+          if (resolution.wasDisambiguated && resolution.allTargets.length > 1) {
+            vscode.window.showInformationMessage(
+              `Building target: ${targetToUse} (selected from ${resolution.allTargets.length} options)`
+            );
+          }
+        } else if (resolution.error) {
           vscode.window.showErrorMessage(`Cannot build file: ${resolution.error}`);
         } else {
-          // Offer manual target selection as fallback
-          const manualTarget = await this.targetResolver.manualTargetSelection(workspaceInfo);
-          if (manualTarget) {
-            await this.executeBuild(workspaceInfo, manualTarget);
-          } else {
-            vscode.window.showWarningMessage("Build cancelled - no target selected");
-            this.buildIcon.setState(IconState.Idle);
-          }
+          // Fallback to manual selection
+          targetToUse = await this.targetResolver.manualTargetSelection(workspaceInfo);
         }
+      }
+
+      if (!targetToUse) {
+        vscode.window.showWarningMessage("Build cancelled - no target selected");
+        this.buildIcon.setState(IconState.Idle);
         return;
       }
 
-      // Show information about disambiguation if it occurred
-      if (resolution.wasDisambiguated && resolution.allTargets.length > 1) {
-        vscode.window.showInformationMessage(
-          `Building target: ${resolution.primaryTarget} (selected from ${resolution.allTargets.length} options)`
-        );
-      }
+      progress.report({ message: "Starting build...", increment: 50 });
+
+      // Add to history
+      this.configManager.addToHistory(targetToUse, workspaceInfo.bazelWorkspacePath);
 
       // Execute the build
-      await this.executeBuild(workspaceInfo, resolution.primaryTarget);
+      await this.executeBuild(workspaceInfo, targetToUse);
+
+      // Record telemetry
+      this.configManager.recordTelemetry('buildExecuted', {
+        targetSelectionMode: config.targetSelectionMode,
+        target: targetToUse
+      });
 
     } catch (error) {
       this.buildIcon.setState(IconState.Error, 5000);
@@ -214,10 +274,63 @@ export class BazelBuildIconService implements vscode.Disposable {
   }
 
   /**
+   * Handles building from target history.
+   */
+  private async handleBuildFromHistory(): Promise<void> {
+    const workspaceInfo = await BazelWorkspaceInfo.fromWorkspaceFolders();
+    if (!workspaceInfo) {
+      vscode.window.showErrorMessage("No Bazel workspace found");
+      return;
+    }
+
+    const history = this.configManager.getHistory(workspaceInfo.bazelWorkspacePath);
+    if (history.length === 0) {
+      vscode.window.showInformationMessage("No build history available");
+      return;
+    }
+
+    // Create quick pick items from history
+    const items = history.map(entry => ({
+      label: entry.target,
+      description: `Used ${entry.useCount} times`,
+      detail: `Last used: ${new Date(entry.lastUsed).toLocaleString()}`,
+      target: entry.target
+    }));
+
+    const selected = await vscode.window.showQuickPick(items, {
+      placeHolder: "Select a target from build history"
+    });
+
+    if (selected) {
+      await this.executeBuild(workspaceInfo, selected.target);
+      this.configManager.addToHistory(selected.target, workspaceInfo.bazelWorkspacePath);
+    }
+  }
+
+  /**
+   * Handles clearing the build history.
+   */
+  private async handleClearHistory(): Promise<void> {
+    const confirm = await vscode.window.showWarningMessage(
+      "Clear all build history?",
+      { modal: true },
+      "Clear"
+    );
+
+    if (confirm === "Clear") {
+      this.configManager.clearHistory();
+      vscode.window.showInformationMessage("Build history cleared");
+    }
+  }
+
+  /**
    * Executes a Bazel build for the specified target.
    */
   private async executeBuild(workspaceInfo: BazelWorkspaceInfo, target: string): Promise<void> {
     try {
+      // Get configuration
+      const config = this.configManager.getWorkspaceConfig(workspaceInfo.workspaceFolder);
+
       // Create adapter for the build
       const adapter = new BazelBuildIconAdapter(workspaceInfo, target);
       
@@ -230,6 +343,11 @@ export class BazelBuildIconService implements vscode.Disposable {
       // Execute the task
       const execution = await vscode.tasks.executeTask(task);
       this.currentBuildTask = execution;
+
+      // Show terminal if configured
+      if (config.showTerminalOnBuild) {
+        vscode.commands.executeCommand('workbench.action.terminal.focus');
+      }
 
     } catch (error) {
       this.buildIcon.setState(IconState.Error, 5000);
@@ -278,6 +396,13 @@ export class BazelBuildIconService implements vscode.Disposable {
   }
 
   /**
+   * Gets the configuration manager instance.
+   */
+  public getConfigManager(): BazelBuildIconConfigManager {
+    return this.configManager;
+  }
+
+  /**
    * Disposes of the service and cleans up resources.
    */
   public dispose(): void {
@@ -288,5 +413,7 @@ export class BazelBuildIconService implements vscode.Disposable {
       this.currentBuildTask.terminate();
       this.currentBuildTask = null;
     }
+
+    this.configManager.dispose();
   }
 } 

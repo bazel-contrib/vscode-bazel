@@ -14,6 +14,7 @@
 
 export * from "./bazel_build_icon";
 export * from "./bazel_build_icon_adapter";
+export * from "./bazel_build_icon_config";
 export * from "./bazel_build_icon_service";
 export * from "./bazel_command";
 export * from "./bazel_exit_code";
