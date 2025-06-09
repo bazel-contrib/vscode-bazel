@@ -146,6 +146,21 @@
                 "category": "Bazel",
                 "command": "bazel.buildCurrentFileIfInProjectView",
                 "title": "Build Current File (Project View)"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.resolveProjectViewTargets",
+                "title": "Resolve Project View Targets"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.showProjectViewStats",
+                "title": "Show Project View Statistics"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.findProjectViewTargets",
+                "title": "Find Project View Targets"
             }
         ],
         "configuration": {
@@ -503,6 +518,18 @@
                 },
                 {
                     "command": "bazel.buildCurrentFileIfInProjectView",
+                    "when": "bazel.hasProjectView"
+                },
+                {
+                    "command": "bazel.resolveProjectViewTargets",
+                    "when": "bazel.hasProjectView"
+                },
+                {
+                    "command": "bazel.showProjectViewStats",
+                    "when": "bazel.hasProjectView"
+                },
+                {
+                    "command": "bazel.findProjectViewTargets",
                     "when": "bazel.hasProjectView"
                 }
             ],

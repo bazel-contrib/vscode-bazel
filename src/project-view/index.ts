@@ -15,4 +15,6 @@
 export * from "./bazel_project_view";
 export * from "./project_view_manager";
 export * from "./build_file_decorator";
-export * from "./build_icon_integration"; 
+export * from "./build_icon_integration";
+export * from "./target_resolver";
+export * from "./project_view_service"; 

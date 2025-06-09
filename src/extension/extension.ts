@@ -33,7 +33,7 @@ import { activateCommandVariables } from "./command_variables";
 import { activateTesting } from "../test-explorer";
 import { activateWrapperCommands } from "./bazel_wrapper_commands";
 import { BazelBuildIcon, BazelBuildIconService } from "../bazel";
-import { ProjectViewManager, BuildFileDecorator, BuildIconIntegration } from "../project-view";
+import { ProjectViewService, BuildFileDecorator, BuildIconIntegration } from "../project-view";
 
 /**
  * Called when the extension is activated; that is, when its first command is
@@ -46,9 +46,10 @@ export async function activate(context: vscode.ExtensionContext) {
     BazelWorkspaceTreeProvider.fromExtensionContext(context);
   context.subscriptions.push(workspaceTreeProvider);
 
-  // Initialize project view manager
-  const projectViewManager = ProjectViewManager.getInstance();
-  context.subscriptions.push(projectViewManager);
+  // Initialize project view service (includes manager + target resolution)
+  const projectViewService = ProjectViewService.getInstance();
+  const projectViewManager = projectViewService.getProjectViewManager();
+  context.subscriptions.push(projectViewService);
 
   // Initialize build icon and service
   const buildIcon = new BazelBuildIcon();
