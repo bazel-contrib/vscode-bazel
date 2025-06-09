@@ -246,7 +246,7 @@ export class ProjectViewManager implements vscode.Disposable {
     let projectView = this.projectViews.get(key);
     
     if (!projectView) {
-      projectView = new BazelProjectView();
+      projectView = new BazelProjectView(workspaceFolder);
       this.projectViews.set(key, projectView);
     }
     
@@ -313,6 +313,22 @@ additional_languages:
   # typescript
   # python
 `;
+  }
+
+  /**
+   * Checks if a workspace has validation errors
+   */
+  public hasValidationErrors(workspaceFolder: vscode.WorkspaceFolder): boolean {
+    const projectView = this.projectViews.get(workspaceFolder.uri.toString());
+    return projectView ? projectView.hasValidationErrors() : false;
+  }
+
+  /**
+   * Gets validation errors for a workspace
+   */
+  public getValidationErrors(workspaceFolder: vscode.WorkspaceFolder): Array<{line: number, message: string}> {
+    const projectView = this.projectViews.get(workspaceFolder.uri.toString());
+    return projectView ? projectView.getValidationErrors() : [];
   }
 
   /**

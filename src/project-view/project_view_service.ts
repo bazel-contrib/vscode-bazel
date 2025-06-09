@@ -403,6 +403,33 @@ export class ProjectViewService implements vscode.Disposable {
   }
 
   /**
+   * Gets target statistics for a workspace
+   */
+  public getTargetStats(workspaceFolder: vscode.WorkspaceFolder): {
+    total: number;
+    production: number;
+    test: number;
+  } {
+    const config = this.projectViewManager.getProjectViewConfig(workspaceFolder);
+    if (!config) {
+      return { total: 0, production: 0, test: 0 };
+    }
+
+    // Get explicit targets
+    const explicitTargets = this.targetResolver.getExplicitTargets(config);
+    
+    // For derived targets, we'll need to use cached resolution results
+    // This is a simplified implementation - in practice you'd want to cache the resolution
+    const filtered = this.targetResolver.filterTestTargets(explicitTargets, config);
+    
+    return {
+      total: explicitTargets.length,
+      production: filtered.production.length,
+      test: filtered.test.length
+    };
+  }
+
+  /**
    * Dispose of resources
    */
   dispose(): void {

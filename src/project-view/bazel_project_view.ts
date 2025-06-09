@@ -70,8 +70,9 @@ export class BazelProjectView implements vscode.Disposable {
   private disposables: vscode.Disposable[] = [];
   private cachedConfig?: ProjectViewConfig;
   private lastModified?: number;
+  private validationErrors: Array<{line: number, message: string}> = [];
 
-  constructor() {
+  constructor(private workspaceFolder: vscode.WorkspaceFolder) {
     this.diagnosticCollection = vscode.languages.createDiagnosticCollection("bazelproject");
     this.disposables.push(this.diagnosticCollection);
   }
@@ -172,6 +173,22 @@ export class BazelProjectView implements vscode.Disposable {
     // Validate the final configuration
     const validationErrors = this.validateConfig(config as ProjectViewConfig);
     errors.push(...validationErrors);
+
+    // Update the validation to also track errors
+    this.validationErrors = validationErrors.map(error => ({
+      line: error.line,
+      message: error.message
+    }));
+    
+    if (validationErrors.length > 0) {
+      this.showValidationErrors(validationErrors);
+      return {
+        config: errors.some(e => e.severity === vscode.DiagnosticSeverity.Error) 
+          ? undefined 
+          : config as ProjectViewConfig,
+        errors
+      };
+    }
 
     return {
       config: errors.some(e => e.severity === vscode.DiagnosticSeverity.Error) 
@@ -574,5 +591,27 @@ export class BazelProjectView implements vscode.Disposable {
       default:
         return false;
     }
+  }
+
+  /**
+   * Checks if there are validation errors
+   */
+  public hasValidationErrors(): boolean {
+    return this.validationErrors.length > 0;
+  }
+
+  /**
+   * Gets all validation errors
+   */
+  public getValidationErrors(): Array<{line: number, message: string}> {
+    return [...this.validationErrors];
+  }
+
+  /**
+   * Shows validation errors in a VS Code notification
+   */
+  private showValidationErrors(errors: ValidationError[]): void {
+    const errorMessages = errors.map(error => error.message).join('\n');
+    vscode.window.showErrorMessage(`Validation errors:\n${errorMessages}`);
   }
 } 

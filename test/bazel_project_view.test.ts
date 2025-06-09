@@ -14,12 +14,20 @@
 
 import * as assert from "assert";
 import { BazelProjectView } from "../src/project-view/bazel_project_view";
+import * as vscode from "vscode";
 
 describe("BazelProjectView Tests", () => {
   let projectView: BazelProjectView;
 
   beforeEach(() => {
-    projectView = new BazelProjectView();
+    // Create a mock workspace folder
+    const mockWorkspaceFolder = {
+      uri: { toString: () => 'file:///test/workspace' },
+      name: 'test-workspace',
+      index: 0
+    } as vscode.WorkspaceFolder;
+    
+    projectView = new BazelProjectView(mockWorkspaceFolder);
   });
 
   afterEach(() => {

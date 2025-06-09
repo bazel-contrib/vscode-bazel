@@ -36,6 +36,7 @@ import { BazelBuildIcon, BazelBuildIconService } from "../bazel";
 import { ProjectViewService, BuildFileDecorator, BuildIconIntegration } from "../project-view";
 import { ProjectViewManager } from "../project-view/project_view_manager";
 import { DirectoryFilterService } from "../project-view/directory_filter_service";
+import { StatusBarManager } from "../project-view/status_bar_manager";
 
 /**
  * Called when the extension is activated; that is, when its first command is
@@ -76,6 +77,10 @@ export async function activate(context: vscode.ExtensionContext) {
   // Initialize directory filtering service
   const directoryFilterService = DirectoryFilterService.getInstance();
   context.subscriptions.push(directoryFilterService);
+
+  // Initialize status bar manager
+  const statusBarManager = StatusBarManager.getInstance();
+  context.subscriptions.push(statusBarManager);
 
   const codeLensProvider = new BazelBuildCodeLensProvider(context);
   const buildifierDiagnostics = new BuildifierDiagnosticsManager();

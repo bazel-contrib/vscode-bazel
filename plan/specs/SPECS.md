@@ -13,8 +13,8 @@
 | [extension-metadata.md](infrastructure/extension-metadata.md) | Infrastructure | ✅ Complete | None | Extension branding, commands, and menu structure |
 | [build-icon-integration.md](features/build-icon-integration.md) | Features | ✅ Complete | project-view-infrastructure.md | Integration with existing build icon system |
 | [directory-filtering.md](features/directory-filtering.md) | Features | ✅ Complete | project-view-infrastructure.md | File explorer directory filtering implementation |
-| [status-bar-integration.md](features/status-bar-integration.md) | Features | ⏳ Next | project-view-infrastructure.md, build-icon-integration.md | Status bar indicators and project view status |
-| [test-integration.md](features/test-integration.md) | Features | ⏳ Pending | project-view-infrastructure.md | VS Code Test Explorer integration |
+| [status-bar-integration.md](features/status-bar-integration.md) | Features | ✅ Complete | project-view-infrastructure.md, build-icon-integration.md | Status bar indicators and project view status |
+| [test-integration.md](features/test-integration.md) | Features | ⏳ Next | project-view-infrastructure.md | VS Code Test Explorer integration |
 | [command-implementation.md](features/command-implementation.md) | Features | ✅ Complete | extension-metadata.md | Project view file management commands |
 | [integration-testing.md](testing/integration-testing.md) | Testing | ⏳ Pending | All feature specs | End-to-end testing and performance validation |
 | **target-resolution.md** (BONUS) | **Features** | **✅ Complete** | **project-view-infrastructure.md** | **Smart target discovery and search system** |
@@ -66,11 +66,11 @@ Stage 4 (Depends on all features)
   - [x] project-view-infrastructure.md ✅ COMPLETE
 - [x] **Infrastructure Specifications** (1/1 completed)
   - [x] extension-metadata.md ✅ COMPLETE
-- [ ] **Feature Specifications** (3/5 completed)
+- [ ] **Feature Specifications** (4/5 completed)
   - [x] build-icon-integration.md ✅ COMPLETE
   - [x] directory-filtering.md ✅ COMPLETE
-  - [ ] status-bar-integration.md ⏳ NEXT
-  - [ ] test-integration.md
+  - [x] status-bar-integration.md ✅ COMPLETE
+  - [ ] test-integration.md ⏳ NEXT
   - [x] command-implementation.md ✅ COMPLETE
 - [ ] **Testing Specifications** (0/1 completed)
   - [ ] integration-testing.md

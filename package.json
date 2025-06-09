@@ -181,6 +181,16 @@
                 "category": "Bazel",
                 "command": "bazel.refreshDirectoryFilter",
                 "title": "Refresh Directory Filter"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.toggleStatusBar",
+                "title": "Toggle Status Bar Indicators"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.showProjectViewDashboard",
+                "title": "Show Project View Dashboard"
             }
         ],
         "configuration": {
@@ -419,6 +429,21 @@
                         "**/out"
                     ],
                     "description": "File patterns to always exclude for performance (supports glob patterns)"
+                },
+                "bazel.statusBar.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable status bar indicators for project view and directory filtering"
+                },
+                "bazel.statusBar.showPerformanceMetrics": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show performance metrics in the status bar when directory filtering is active"
+                },
+                "bazel.statusBar.showFilterRecommendations": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Show directory filtering recommendations in the status bar"
                 }
             }
         },
@@ -612,6 +637,14 @@
                 },
                 {
                     "command": "bazel.refreshDirectoryFilter",
+                    "when": "bazel.hasProjectView"
+                },
+                {
+                    "command": "bazel.toggleStatusBar",
+                    "when": "bazel.haveWorkspace"
+                },
+                {
+                    "command": "bazel.showProjectViewDashboard",
                     "when": "bazel.hasProjectView"
                 }
             ],
