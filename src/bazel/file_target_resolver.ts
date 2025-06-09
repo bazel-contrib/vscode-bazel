@@ -113,7 +113,8 @@ export class TargetCache {
    */
   public cleanup(maxAge: number = this.DEFAULT_TTL_MS): void {
     const now = Date.now();
-    for (const [key, entry] of this.cache.entries()) {
+    const entries = Array.from(this.cache.entries());
+    for (const [key, entry] of entries) {
       if (now - entry.timestamp > maxAge) {
         this.cache.delete(key);
       }
@@ -183,11 +184,12 @@ export class FileTargetResolver {
       return this.selectPrimaryTarget(targets, options.showDisambiguationUI);
 
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
       return {
         primaryTarget: null,
         allTargets: [],
         wasDisambiguated: false,
-        error: `Failed to resolve target: ${error.message}`
+        error: `Failed to resolve target: ${errorMessage}`
       };
     }
   }

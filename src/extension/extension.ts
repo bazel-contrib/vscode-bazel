@@ -32,7 +32,7 @@ import { BazelWorkspaceTreeProvider } from "../workspace-tree";
 import { activateCommandVariables } from "./command_variables";
 import { activateTesting } from "../test-explorer";
 import { activateWrapperCommands } from "./bazel_wrapper_commands";
-import { BazelBuildIcon } from "../bazel/bazel_build_icon";
+import { BazelBuildIcon, BazelBuildIconService } from "../bazel";
 
 /**
  * Called when the extension is activated; that is, when its first command is
@@ -45,9 +45,10 @@ export async function activate(context: vscode.ExtensionContext) {
     BazelWorkspaceTreeProvider.fromExtensionContext(context);
   context.subscriptions.push(workspaceTreeProvider);
 
-  // Initialize build icon
+  // Initialize build icon and service
   const buildIcon = new BazelBuildIcon(context);
-  context.subscriptions.push(buildIcon);
+  const buildIconService = new BazelBuildIconService(context, buildIcon);
+  context.subscriptions.push(buildIcon, buildIconService);
   // Initial refresh to set proper visibility
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   buildIcon.refresh();

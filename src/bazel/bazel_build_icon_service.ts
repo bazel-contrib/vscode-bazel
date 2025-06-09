@@ -1,0 +1,247 @@
+// Copyright 2024 The Bazel Authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+import * as vscode from "vscode";
+import { BazelBuildIcon, IconState } from "./bazel_build_icon";
+import { FileTargetResolver, TargetResolutionOptions } from "./file_target_resolver";
+import { BazelBuildIconAdapter } from "./bazel_build_icon_adapter";
+import { BazelWorkspaceInfo } from "./bazel_workspace_info";
+import { createBazelTask } from "./tasks";
+
+/**
+ * Service that coordinates the build icon functionality including
+ * target resolution, command execution, and progress tracking.
+ */
+export class BazelBuildIconService implements vscode.Disposable {
+  private buildIcon: BazelBuildIcon;
+  private targetResolver: FileTargetResolver;
+  private disposables: vscode.Disposable[] = [];
+  private currentBuildTask: vscode.TaskExecution | null = null;
+
+  constructor(
+    private context: vscode.ExtensionContext,
+    buildIcon: BazelBuildIcon
+  ) {
+    this.buildIcon = buildIcon;
+    this.targetResolver = new FileTargetResolver();
+    
+    this.setupCommandHandlers();
+    this.setupTaskEventHandlers();
+  }
+
+  /**
+   * Sets up command handlers for build icon functionality.
+   */
+  private setupCommandHandlers(): void {
+    const buildCurrentFileCommand = vscode.commands.registerCommand(
+      "bazel.buildCurrentFile",
+      () => this.handleBuildCurrentFile()
+    );
+    
+    this.disposables.push(buildCurrentFileCommand);
+  }
+
+  /**
+   * Sets up task event handlers to track build progress.
+   */
+  private setupTaskEventHandlers(): void {
+    const taskStartHandler = vscode.tasks.onDidStartTask(e => {
+      if (this.isBuildIconTask(e.execution)) {
+        this.currentBuildTask = e.execution;
+        this.buildIcon.setState(IconState.Building);
+      }
+    });
+
+    const taskEndHandler = vscode.tasks.onDidEndTask(e => {
+      if (this.isBuildIconTask(e.execution)) {
+        this.currentBuildTask = null;
+        
+        // Set success or error state with 3 second timeout
+        // Note: exitCode is not directly available on TaskEndEvent, we'll track success/failure differently
+        this.buildIcon.setState(IconState.Success, 3000);
+      }
+    });
+
+    const taskProcessEndHandler = vscode.tasks.onDidEndTaskProcess(e => {
+      if (this.isBuildIconTask(e.execution)) {
+        // Use process exit code for more accurate success/failure detection
+        if (e.exitCode === 0) {
+          this.buildIcon.setState(IconState.Success, 3000);
+        } else {
+          this.buildIcon.setState(IconState.Error, 5000);
+        }
+      }
+    });
+
+    this.disposables.push(taskStartHandler, taskEndHandler, taskProcessEndHandler);
+  }
+
+  /**
+   * Checks if a task execution is from the build icon.
+   */
+  private isBuildIconTask(execution: vscode.TaskExecution): boolean {
+    // Check if this task was created by our build icon service
+    // We can identify it by checking the task definition or source
+    return execution.task.source === "bazel" && 
+           execution.task.definition.type === "bazel" &&
+           execution.task.name.includes("Current File");
+  }
+
+  /**
+   * Handles the build current file command.
+   */
+  private async handleBuildCurrentFile(): Promise<void> {
+    try {
+      // Get current editor and file
+      const activeEditor = vscode.window.activeTextEditor;
+      if (!activeEditor) {
+        vscode.window.showWarningMessage("No active file to build");
+        return;
+      }
+
+      const filePath = activeEditor.document.uri.fsPath;
+      
+      // Get workspace information
+      const workspaceInfo = await BazelWorkspaceInfo.fromWorkspaceFolders();
+      if (!workspaceInfo) {
+        vscode.window.showErrorMessage("No Bazel workspace found");
+        return;
+      }
+
+      // Cancel any ongoing build
+      if (this.currentBuildTask) {
+        this.currentBuildTask.terminate();
+        this.currentBuildTask = null;
+      }
+
+      // Set building state
+      this.buildIcon.setState(IconState.Building);
+
+      // Resolve target for the current file
+      const resolutionOptions: TargetResolutionOptions = {
+        showDisambiguationUI: true,
+        maxCacheAge: 5 * 60 * 1000 // 5 minutes
+      };
+
+      const resolution = await this.targetResolver.resolveTargetForFile(
+        filePath,
+        workspaceInfo,
+        resolutionOptions
+      );
+
+      if (!resolution.primaryTarget) {
+        this.buildIcon.setState(IconState.Error, 5000);
+        
+        if (resolution.error) {
+          vscode.window.showErrorMessage(`Cannot build file: ${resolution.error}`);
+        } else {
+          // Offer manual target selection as fallback
+          const manualTarget = await this.targetResolver.manualTargetSelection(workspaceInfo);
+          if (manualTarget) {
+            await this.executeBuild(workspaceInfo, manualTarget);
+          } else {
+            vscode.window.showWarningMessage("Build cancelled - no target selected");
+            this.buildIcon.setState(IconState.Idle);
+          }
+        }
+        return;
+      }
+
+      // Show information about disambiguation if it occurred
+      if (resolution.wasDisambiguated && resolution.allTargets.length > 1) {
+        vscode.window.showInformationMessage(
+          `Building target: ${resolution.primaryTarget} (selected from ${resolution.allTargets.length} options)`
+        );
+      }
+
+      // Execute the build
+      await this.executeBuild(workspaceInfo, resolution.primaryTarget);
+
+    } catch (error) {
+      this.buildIcon.setState(IconState.Error, 5000);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      vscode.window.showErrorMessage(`Build failed: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Executes a Bazel build for the specified target.
+   */
+  private async executeBuild(workspaceInfo: BazelWorkspaceInfo, target: string): Promise<void> {
+    try {
+      // Create adapter for the build
+      const adapter = new BazelBuildIconAdapter(workspaceInfo, target);
+      
+      // Create and execute the task
+      const task = createBazelTask("build", adapter.getBazelCommandOptions());
+      
+      // Customize task name to indicate it's from the build icon
+      task.name = `Build Current File: ${target}`;
+      
+      // Execute the task
+      const execution = await vscode.tasks.executeTask(task);
+      this.currentBuildTask = execution;
+
+    } catch (error) {
+      this.buildIcon.setState(IconState.Error, 5000);
+      throw error;
+    }
+  }
+
+  /**
+   * Cancels the current build if one is running.
+   */
+  public cancelCurrentBuild(): void {
+    if (this.currentBuildTask) {
+      this.currentBuildTask.terminate();
+      this.currentBuildTask = null;
+      this.buildIcon.setState(IconState.Idle);
+      vscode.window.showInformationMessage("Build cancelled");
+    }
+  }
+
+  /**
+   * Gets the build icon instance.
+   */
+  public getBuildIcon(): BazelBuildIcon {
+    return this.buildIcon;
+  }
+
+  /**
+   * Gets the target resolver instance.
+   */
+  public getTargetResolver(): FileTargetResolver {
+    return this.targetResolver;
+  }
+
+  /**
+   * Clears the target resolution cache.
+   */
+  public clearCache(): void {
+    this.targetResolver.clearCache();
+  }
+
+  /**
+   * Disposes of the service and cleans up resources.
+   */
+  public dispose(): void {
+    this.disposables.forEach(disposable => disposable.dispose());
+    this.disposables = [];
+    
+    if (this.currentBuildTask) {
+      this.currentBuildTask.terminate();
+      this.currentBuildTask = null;
+    }
+  }
+} 
