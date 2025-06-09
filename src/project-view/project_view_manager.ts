@@ -121,7 +121,7 @@ export class ProjectViewManager implements vscode.Disposable {
    * Clears cached data and forces refresh
    */
   public async clearCache(): Promise<void> {
-    for (const projectView of this.projectViews.values()) {
+    for (const projectView of Array.from(this.projectViews.values())) {
       projectView.clearCache();
     }
     await this.refreshAllProjectViews();
