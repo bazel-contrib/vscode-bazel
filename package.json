@@ -161,6 +161,26 @@
                 "category": "Bazel",
                 "command": "bazel.findProjectViewTargets",
                 "title": "Find Project View Targets"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.enableDirectoryFiltering",
+                "title": "Enable Directory Filtering"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.disableDirectoryFiltering",
+                "title": "Disable Directory Filtering"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.showDirectoryFilterStats",
+                "title": "Show Directory Filter Statistics"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.refreshDirectoryFilter",
+                "title": "Refresh Directory Filter"
             }
         ],
         "configuration": {
@@ -353,6 +373,52 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Enable anonymous usage analytics to help improve the extension"
+                },
+                "bazel.directoryFilter.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable directory filtering based on project view configuration to improve performance in large repositories"
+                },
+                "bazel.directoryFilter.showExcluded": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Show excluded directories with visual indicators instead of hiding them completely"
+                },
+                "bazel.directoryFilter.maxDepth": {
+                    "type": "number",
+                    "default": 10,
+                    "minimum": 1,
+                    "maximum": 50,
+                    "description": "Maximum directory depth to scan for performance optimization"
+                },
+                "bazel.directoryFilter.alwaysInclude": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": [
+                        ".vscode",
+                        ".vscwb",
+                        "WORKSPACE",
+                        "WORKSPACE.bazel",
+                        "MODULE.bazel"
+                    ],
+                    "description": "Directories to always include regardless of project view configuration"
+                },
+                "bazel.directoryFilter.performanceExcludes": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": [
+                        "**/node_modules",
+                        "**/bazel-*",
+                        "**/.git",
+                        "**/build",
+                        "**/dist",
+                        "**/out"
+                    ],
+                    "description": "File patterns to always exclude for performance (supports glob patterns)"
                 }
             }
         },
@@ -530,6 +596,22 @@
                 },
                 {
                     "command": "bazel.findProjectViewTargets",
+                    "when": "bazel.hasProjectView"
+                },
+                {
+                    "command": "bazel.enableDirectoryFiltering",
+                    "when": "bazel.haveWorkspace"
+                },
+                {
+                    "command": "bazel.disableDirectoryFiltering",
+                    "when": "bazel.haveWorkspace"
+                },
+                {
+                    "command": "bazel.showDirectoryFilterStats",
+                    "when": "bazel.haveWorkspace"
+                },
+                {
+                    "command": "bazel.refreshDirectoryFilter",
                     "when": "bazel.hasProjectView"
                 }
             ],

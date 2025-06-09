@@ -34,6 +34,8 @@ import { activateTesting } from "../test-explorer";
 import { activateWrapperCommands } from "./bazel_wrapper_commands";
 import { BazelBuildIcon, BazelBuildIconService } from "../bazel";
 import { ProjectViewService, BuildFileDecorator, BuildIconIntegration } from "../project-view";
+import { ProjectViewManager } from "../project-view/project_view_manager";
+import { DirectoryFilterService } from "../project-view/directory_filter_service";
 
 /**
  * Called when the extension is activated; that is, when its first command is
@@ -46,9 +48,12 @@ export async function activate(context: vscode.ExtensionContext) {
     BazelWorkspaceTreeProvider.fromExtensionContext(context);
   context.subscriptions.push(workspaceTreeProvider);
 
-  // Initialize project view service (includes manager + target resolution)
+  // Initialize project view system
+  const projectViewManager = ProjectViewManager.getInstance();
+  context.subscriptions.push(projectViewManager);
+
+  // Initialize project view service
   const projectViewService = ProjectViewService.getInstance();
-  const projectViewManager = projectViewService.getProjectViewManager();
   context.subscriptions.push(projectViewService);
 
   // Initialize build icon and service
@@ -67,6 +72,10 @@ export async function activate(context: vscode.ExtensionContext) {
     buildIconIntegration,
     vscode.window.registerFileDecorationProvider(buildFileDecorator)
   );
+
+  // Initialize directory filtering service
+  const directoryFilterService = DirectoryFilterService.getInstance();
+  context.subscriptions.push(directoryFilterService);
 
   const codeLensProvider = new BazelBuildCodeLensProvider(context);
   const buildifierDiagnostics = new BuildifierDiagnosticsManager();
