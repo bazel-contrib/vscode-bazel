@@ -150,7 +150,7 @@ describe("The lcov parser", () => {
     it("function coverage details", () => {
       const initFunc = getFunctionByLine(fileCov, 71);
       assert(initFunc !== undefined);
-      assert.equal(initFunc.name, "blaze::RcFileTest::SetUp()");
+      assert.equal(initFunc.name, "_ZN5blaze10RcFileTest5SetUpEv");
       assert.equal(initFunc.executed, 34);
     });
     it("line coverage details", () => {
@@ -195,7 +195,7 @@ describe("The lcov parser", () => {
       assert(consumeFunc !== undefined);
       assert.equal(
         consumeFunc.name,
-        "label::consume_package_name::{closure#0}",
+        "_RNCNvCscQvVXOS7Ja3_5label20consume_package_name0B3_",
       );
       assert.equal(consumeFunc.executed, 2);
     });

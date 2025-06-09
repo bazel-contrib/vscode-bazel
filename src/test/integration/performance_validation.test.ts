@@ -380,7 +380,7 @@ excluded_directories:
             
             // Create project view with multiple target patterns
             const projectViewPath = path.join(repoPath, '.vscwb', '.bazelproject');
-            const content = `
+            const projectViewContent4 = `
 directories:
   src/
   lib/
@@ -394,23 +394,23 @@ targets:
 derive_targets_from_directories: true
 `;
             fs.mkdirSync(path.dirname(projectViewPath), { recursive: true });
-            fs.writeFileSync(projectViewPath, content);
+            fs.writeFileSync(projectViewPath, projectViewContent4);
             
             // Load project view first
-            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-            if (!workspaceFolder) {
+            const workspaceFolder2 = vscode.workspace.workspaceFolders?.[0];
+            if (!workspaceFolder2) {
                 throw new Error('No workspace folder available');
             }
-            const projectView = new BazelProjectView(workspaceFolder);
-            const content = fs.readFileSync(projectViewPath, 'utf8');
-            projectView.parse(content);
+            const projectView = new BazelProjectView(workspaceFolder2);
+            const contentStr2 = fs.readFileSync(projectViewPath, 'utf8');
+            projectView.parse(contentStr2);
             
             // Measure target resolution performance
             const resolutionMeasurement = performanceMonitor.startMeasurement('Target Resolution');
             
-            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-            const targets = workspaceFolder ? 
-                await projectViewService.getProductionTargets(workspaceFolder) : [];
+            const workspaceFolder3 = vscode.workspace.workspaceFolders?.[0];
+            const targets = workspaceFolder3 ? 
+                await projectViewService.getProductionTargets(workspaceFolder3) : [];
             
             const resolutionTime = resolutionMeasurement.end();
             
@@ -433,14 +433,14 @@ derive_targets_from_directories: true
                 await generateLargeRepository(repoPath, size);
                 
                 const projectViewPath = path.join(repoPath, '.vscwb', '.bazelproject');
-                const content = `
+                const scalingContent = `
 directories:
   .
 
 derive_targets_from_directories: true
 `;
                 fs.mkdirSync(path.dirname(projectViewPath), { recursive: true });
-                fs.writeFileSync(projectViewPath, content);
+                fs.writeFileSync(projectViewPath, scalingContent);
                 
                 const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
                 if (!workspaceFolder) {
@@ -503,8 +503,8 @@ derive_targets_from_directories: true
                     throw new Error('No workspace folder available');
                 }
                 const projectView = new BazelProjectView(workspaceFolder);
-                const content = fs.readFileSync(projectViewPath, 'utf8');
-                projectView.parse(content);
+                const readContent = fs.readFileSync(projectViewPath, 'utf8');
+                projectView.parse(readContent);
                 
                 // Clean up
                 fs.rmSync(repoPath, { recursive: true, force: true });
