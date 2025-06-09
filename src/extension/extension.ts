@@ -33,6 +33,7 @@ import { activateCommandVariables } from "./command_variables";
 import { activateTesting } from "../test-explorer";
 import { activateWrapperCommands } from "./bazel_wrapper_commands";
 import { BazelBuildIcon, BazelBuildIconService } from "../bazel";
+import { ProjectViewManager, BuildFileDecorator, BuildIconIntegration } from "../project-view";
 
 /**
  * Called when the extension is activated; that is, when its first command is
@@ -45,6 +46,10 @@ export async function activate(context: vscode.ExtensionContext) {
     BazelWorkspaceTreeProvider.fromExtensionContext(context);
   context.subscriptions.push(workspaceTreeProvider);
 
+  // Initialize project view manager
+  const projectViewManager = ProjectViewManager.getInstance();
+  context.subscriptions.push(projectViewManager);
+
   // Initialize build icon and service
   const buildIcon = new BazelBuildIcon();
   const buildIconService = new BazelBuildIconService(context, buildIcon);
@@ -52,6 +57,15 @@ export async function activate(context: vscode.ExtensionContext) {
   // Initial refresh to set proper visibility
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   buildIcon.refresh();
+
+  // Initialize build file decorator and build icon integration
+  const buildFileDecorator = new BuildFileDecorator(projectViewManager);
+  const buildIconIntegration = new BuildIconIntegration(projectViewManager, buildIconService);
+  context.subscriptions.push(
+    buildFileDecorator,
+    buildIconIntegration,
+    vscode.window.registerFileDecorationProvider(buildFileDecorator)
+  );
 
   const codeLensProvider = new BazelBuildCodeLensProvider(context);
   const buildifierDiagnostics = new BuildifierDiagnosticsManager();
@@ -114,6 +128,28 @@ export async function activate(context: vscode.ExtensionContext) {
       "bazel.copyTargetToClipboard",
       bazelCopyTargetToClipboard,
     ),
+    // Project view commands
+    vscode.commands.registerCommand("bazel.openProjectViewFile", async () => {
+      const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+      if (workspaceFolder) {
+        await projectViewManager.openProjectViewFile(workspaceFolder);
+      } else {
+        await vscode.window.showErrorMessage("No workspace folder found");
+      }
+    }),
+    vscode.commands.registerCommand("bazel.refreshProjectView", async () => {
+      await projectViewManager.refreshAllProjectViews();
+      await vscode.window.showInformationMessage("Project view refreshed");
+    }),
+    vscode.commands.registerCommand("bazel.createProjectViewFile", async () => {
+      const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+      if (workspaceFolder) {
+        await projectViewManager.createProjectViewFile(workspaceFolder);
+        await vscode.window.showInformationMessage("Project view file created");
+      } else {
+        await vscode.window.showErrorMessage("No workspace folder found");
+      }
+    }),
     // URI handler
     vscode.window.registerUriHandler({
       async handleUri(uri: vscode.Uri) {

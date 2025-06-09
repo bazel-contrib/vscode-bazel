@@ -1,72 +1,85 @@
 # Technical Specifications Overview
 
 ## Project Technical Context
-- **Language/Framework:** TypeScript VS Code Extension with Node.js runtime
-- **Architecture:** Extension-based integration using existing IBazelCommandAdapter pattern and task execution system
-- **Key Dependencies:** VS Code Extension APIs (StatusBar, Commands, Tasks), existing Bazel infrastructure (BazelWorkspaceInfo, bazel_utils, tasks.ts)
+- **Language/Framework:** TypeScript VS Code Extension with Node.js runtime  
+- **Architecture:** Extension module integration with existing Bazel infrastructure
+- **Key Dependencies:** VS Code Extension APIs, existing BazelBuildIcon components, TreeDataProvider patterns
 
 ## Specification Files
 
 | Specification | Domain | Status | Dependencies | Description |
 |---------------|---------|---------|--------------|-------------|
-| [icon-infrastructure.md](architecture/icon-infrastructure.md) | Architecture | ✅ Complete | None | StatusBar icon component and state management system |
-| [file-target-resolver.md](features/file-target-resolver.md) | Features | ✅ Complete | None | Intelligent file-to-target mapping and resolution engine |
-| [command-integration.md](features/command-integration.md) | Features | ✅ Complete | icon-infrastructure.md, file-target-resolver.md | Build command execution and adapter integration |
-| [visual-feedback.md](features/visual-feedback.md) | Features | ✅ Complete | command-integration.md | User experience enhancements and visual states |
-| [configuration-system.md](features/configuration-system.md) | Features | ✅ Complete | visual-feedback.md | Advanced configuration and customization options |
-| [testing-framework.md](testing/testing-framework.md) | Testing | ✅ Complete | file-target-resolver.md | Comprehensive test suite for all components |
-| [integration-testing.md](testing/integration-testing.md) | Testing | ✅ Complete | command-integration.md, testing-framework.md | End-to-end workflow testing |
-| [documentation-system.md](infrastructure/documentation-system.md) | Infrastructure | ✅ Complete | configuration-system.md, integration-testing.md | User and developer documentation |
-| [deployment-pipeline.md](infrastructure/deployment-pipeline.md) | Infrastructure | ✅ Complete | documentation-system.md | Release preparation and marketplace deployment |
+| [project-view-infrastructure.md](architecture/project-view-infrastructure.md) | Architecture | ⏳ Pending | None | Core project view file parsing and validation |
+| [extension-metadata.md](infrastructure/extension-metadata.md) | Infrastructure | ⏳ Pending | None | Extension branding, commands, and menu structure |
+| [build-icon-integration.md](features/build-icon-integration.md) | Features | ⏳ Pending | project-view-infrastructure.md | Integration with existing build icon system |
+| [directory-filtering.md](features/directory-filtering.md) | Features | ⏳ Pending | project-view-infrastructure.md | File explorer directory filtering implementation |
+| [status-bar-integration.md](features/status-bar-integration.md) | Features | ⏳ Pending | project-view-infrastructure.md, build-icon-integration.md | Status bar indicators and project view status |
+| [test-integration.md](features/test-integration.md) | Features | ⏳ Pending | project-view-infrastructure.md | VS Code Test Explorer integration |
+| [command-implementation.md](features/command-implementation.md) | Features | ⏳ Pending | extension-metadata.md | Project view file management commands |
+| [integration-testing.md](testing/integration-testing.md) | Testing | ⏳ Pending | All feature specs | End-to-end testing and performance validation |
 
 ## Dependency Graph
+
 ```
 Stage 1 (No dependencies)
-├── architecture/icon-infrastructure.md
-└── features/file-target-resolver.md
+├── architecture/project-view-infrastructure.md
+└── infrastructure/extension-metadata.md
 
 Stage 2 (Depends on Stage 1)
-└── features/command-integration.md
+├── features/build-icon-integration.md (requires project-view-infrastructure.md)
+├── features/directory-filtering.md (requires project-view-infrastructure.md)
+└── features/test-integration.md (requires project-view-infrastructure.md)
 
 Stage 3 (Depends on Stage 2)
-└── features/visual-feedback.md
+├── features/status-bar-integration.md (requires project-view-infrastructure.md + build-icon-integration.md)
+└── features/command-implementation.md (requires extension-metadata.md)
 
-Stage 4 (Parallel with Stage 3)
-└── testing/testing-framework.md
-
-Stage 5 (Depends on Stage 3 & 4)
-├── features/configuration-system.md
-└── testing/integration-testing.md
-
-Stage 6 (Depends on Stage 5)
-└── infrastructure/documentation-system.md
-
-Stage 7 (Depends on Stage 6)
-└── infrastructure/deployment-pipeline.md
+Stage 4 (Depends on all features)
+└── testing/integration-testing.md (requires all feature specifications)
 ```
 
 ## Implementation Workflow
-1. **Foundation Phase:** Complete icon-infrastructure.md and file-target-resolver.md simultaneously
-2. **Core Integration Phase:** Complete command-integration.md
-3. **User Experience Phase:** Complete visual-feedback.md and testing-framework.md in parallel
-4. **Advanced Features Phase:** Complete configuration-system.md and integration-testing.md
-5. **Release Phase:** Complete documentation-system.md and deployment-pipeline.md
+
+1. **Foundation Phase:** Complete architecture and infrastructure specifications
+   - Establish project view file parsing capabilities
+   - Update extension metadata and branding
+
+2. **Core Development Phase:** Parallel execution of feature specifications
+   - Build icon integration for project view targets
+   - Directory filtering for large repository performance
+   - Test integration with VS Code Test Explorer
+   - Command implementation for file management
+
+3. **Integration Phase:** Status bar integration and user experience
+   - Project view status indicators
+   - Error reporting and validation feedback
+
+4. **Validation Phase:** Execute comprehensive testing
+   - Integration testing across all components
+   - Performance testing for large repositories (600K+ files)
+   - Regression testing for existing functionality
 
 ## Progress Tracking
-- [x] **Architecture Specifications** (1/1 completed)
-- [x] **Feature Specifications** (4/4 completed)
-- [x] **Testing Specifications** (2/2 completed)
-- [x] **Infrastructure Specifications** (2/2 completed)
 
-🎉 **ALL SPECIFICATIONS COMPLETED SUCCESSFULLY!** 🎉
+- [ ] **Architecture Specifications** (0/1 completed)
+  - [ ] project-view-infrastructure.md
+- [ ] **Infrastructure Specifications** (0/1 completed)
+  - [ ] extension-metadata.md
+- [ ] **Feature Specifications** (0/5 completed)
+  - [ ] build-icon-integration.md
+  - [ ] directory-filtering.md
+  - [ ] status-bar-integration.md
+  - [ ] test-integration.md
+  - [ ] command-implementation.md
+- [ ] **Testing Specifications** (0/1 completed)
+  - [ ] integration-testing.md
 
 *Update checkboxes as specifications are completed to track overall progress.*
 
-## Development Standards
-Each specification follows the development workflow:
-1. **Create Production Code:** Implement core functionality
-2. **Create Tests:** Unit, integration, and acceptance tests
-3. **Compile/Build:** Ensure code compiles successfully
-4. **Run Tests:** Execute all tests and fix failures
-5. **Code Review & Quality:** Meet coding standards
-6. **Git Integration:** Commit changes with proper messaging 
+## Performance Targets
+
+All specifications must contribute to achieving these KPIs:
+- **Load Time:** Project explorer population <3s (baseline: >30s for full repo)
+- **Target Resolution:** <500ms for project view targets
+- **Memory Usage:** 60%+ reduction when using directory filtering
+- **Compatibility:** Zero regressions in existing Bazel extension functionality 

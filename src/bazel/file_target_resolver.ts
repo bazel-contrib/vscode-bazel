@@ -148,6 +148,11 @@ export class FileTargetResolver {
     options: TargetResolutionOptions = {}
   ): Promise<TargetResolutionResult> {
     try {
+      // Special handling for BUILD files
+      if (this.isBuildFile(filePath)) {
+        return this.resolveTargetsForBuildFile(filePath, workspaceInfo, options);
+      }
+
       // Check if file is supported
       if (!this.isSupportedFile(filePath)) {
         return {
@@ -328,6 +333,85 @@ export class FileTargetResolver {
     });
 
     return selected ? selected.label : null;
+  }
+
+  /**
+   * Checks if the file is a BUILD file (BUILD or BUILD.bazel).
+   */
+  private isBuildFile(filePath: string): boolean {
+    const parsedPath = path.parse(filePath.toLowerCase());
+    return parsedPath.name === "build" || parsedPath.name.startsWith("build.");
+  }
+
+  /**
+   * Resolves targets for BUILD files by returning all targets in the package.
+   */
+  private async resolveTargetsForBuildFile(
+    filePath: string, 
+    workspaceInfo: BazelWorkspaceInfo,
+    options: TargetResolutionOptions = {}
+  ): Promise<TargetResolutionResult> {
+    try {
+      // Get package path relative to workspace
+      const packagePath = path.relative(workspaceInfo.bazelWorkspacePath, path.dirname(filePath));
+      const packageLabel = packagePath ? `//${packagePath}` : "//";
+
+      // Try cache first
+      const cached = this.targetCache.get(filePath, options.maxCacheAge);
+      if (cached) {
+        return this.selectPrimaryTarget(cached.targets, options.showDisambiguationUI);
+      }
+
+      // Query all targets in the package
+      const targets = await this.queryTargetsInPackage(packageLabel, workspaceInfo);
+      
+      // Cache the results
+      this.targetCache.set(filePath, targets, filePath);
+
+      return this.selectPrimaryTarget(targets, options.showDisambiguationUI);
+
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return {
+        primaryTarget: null,
+        allTargets: [],
+        wasDisambiguated: false,
+        error: `Failed to resolve targets for BUILD file: ${errorMessage}`
+      };
+    }
+  }
+
+  /**
+   * Queries all targets in a package.
+   */
+  private async queryTargetsInPackage(packageLabel: string, workspaceInfo: BazelWorkspaceInfo): Promise<string[]> {
+    const query = `kind(rule, ${packageLabel}:all)`;
+    
+    const bazelQuery = new BazelQuery(
+      getDefaultBazelExecutablePath(),
+      workspaceInfo.bazelWorkspacePath
+    );
+
+    try {
+      const queryResult = await bazelQuery.queryTargets(query);
+      const targets = queryResult.target.map(target => target.rule?.name || "").filter(name => name);
+      
+      // If no specific targets found, provide default options
+      if (targets.length === 0) {
+        return [
+          `${packageLabel}:all`,
+          `${packageLabel}:*`
+        ];
+      }
+      
+      return targets;
+    } catch (error) {
+      // Fallback to common target patterns
+      return [
+        `${packageLabel}:all`,
+        `${packageLabel}:*`
+      ];
+    }
   }
 
   /**

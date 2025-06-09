@@ -1,7 +1,7 @@
 {
     "name": "vscode-bazel",
-    "displayName": "Bazel",
-    "description": "Bazel BUILD integration",
+    "displayName": "Bazel (Wix)",
+    "description": "Bazel BUILD integration at Wix",
     "version": "0.11.0",
     "publisher": "BazelBuild",
     "license": "Apache-2.0",
@@ -22,6 +22,7 @@
         "workspaceContains:**/WORKSPACE.bazel",
         "workspaceContains:**/MODULE.bazel",
         "workspaceContains:**/REPO.bazel",
+        "workspaceContains:.vscwb/.bazelproject",
         "onCommand:bazel.pickPackage",
         "onCommand:bazel.pickTarget",
         "onCommand:bazel.getTargetOutput",
@@ -120,6 +121,31 @@
                 "category": "Bazel",
                 "command": "bazel.clearBuildHistory",
                 "title": "Clear Build History"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.openProjectViewFile",
+                "title": "Open Project View File"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.refreshProjectView",
+                "title": "Refresh Project View"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.createProjectViewFile",
+                "title": "Create Project View File"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.buildProjectViewTargets",
+                "title": "Build Project View Targets"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.buildCurrentFileIfInProjectView",
+                "title": "Build Current File (Project View)"
             }
         ],
         "configuration": {
@@ -458,6 +484,26 @@
                 {
                     "command": "bazel.clean",
                     "when": "bazel.haveWorkspace"
+                },
+                {
+                    "command": "bazel.openProjectViewFile",
+                    "when": "bazel.haveWorkspace"
+                },
+                {
+                    "command": "bazel.refreshProjectView",
+                    "when": "bazel.hasProjectView"
+                },
+                {
+                    "command": "bazel.createProjectViewFile",
+                    "when": "bazel.haveWorkspace"
+                },
+                {
+                    "command": "bazel.buildProjectViewTargets",
+                    "when": "bazel.hasProjectView"
+                },
+                {
+                    "command": "bazel.buildCurrentFileIfInProjectView",
+                    "when": "bazel.hasProjectView"
                 }
             ],
             "view/item/context": [
@@ -589,6 +635,13 @@
                 "view": "bazelWorkspace",
                 "contents": "No Bazel targets found.\n[Refresh Target List](command:bazel.refreshBazelBuildTargets)",
                 "when": "bazel.haveWorkspace"
+            }
+        ],
+        "iconThemes": [
+            {
+                "id": "bazel-build-icons",
+                "label": "Bazel BUILD Icons",
+                "path": "./icons/bazel-build-icon-theme.json"
             }
         ]
     },

@@ -1,0 +1,12 @@
+<svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <!-- BUILD file icon - excluded (red accent) -->
+  <rect x="2" y="2" width="12" height="12" rx="1" fill="#F44336" stroke="#C62828" stroke-width="0.5"/>
+  <rect x="3" y="3" width="10" height="10" rx="0.5" fill="#FFFFFF"/>
+  
+  <!-- BUILD text -->
+  <text x="8" y="9" font-family="monospace" font-size="3" text-anchor="middle" fill="#C62828" font-weight="bold">B</text>
+  
+  <!-- X indicator -->
+  <circle cx="13" cy="4" r="2" fill="#F44336"/>
+  <path d="M11.5 2.5 L14.5 5.5 M14.5 2.5 L11.5 5.5" stroke="#FFFFFF" stroke-width="0.8" stroke-linecap="round"/>
+</svg> 

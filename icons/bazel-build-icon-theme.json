@@ -1,0 +1,23 @@
+{
+  "iconDefinitions": {
+    "build-default": {
+      "iconPath": "./build-default.svg"
+    },
+    "build-included": {
+      "iconPath": "./build-included.svg"
+    },
+    "build-excluded": {
+      "iconPath": "./build-excluded.svg"
+    }
+  },
+  "fileNames": {
+    "BUILD": "build-default",
+    "BUILD.bazel": "build-default"
+  },
+  "fileExtensions": {
+    "BUILD": "build-default"
+  },
+  "languageIds": {
+    "starlark": "build-default"
+  }
+}
