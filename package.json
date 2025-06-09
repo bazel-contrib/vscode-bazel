@@ -105,6 +105,11 @@
                 "command": "bazel.lsp.restart",
                 "title": "Restart language server",
                 "when": "bazel.lsp.enabled"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.buildCurrentFile",
+                "title": "Build Current File"
             }
         ],
         "configuration": {
@@ -211,6 +216,11 @@
                     ],
                     "default": "off",
                     "description": "Trace the communication between VS Code and Bazel LSP server (language server)."
+                },
+                "bazel.buildIcon.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Whether to show the Bazel build icon in the status bar for quick file building."
                 }
             }
         },
