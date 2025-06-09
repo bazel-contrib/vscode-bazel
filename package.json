@@ -599,6 +599,9 @@
         "format-check": "prettier --check .",
         "format-fix": "prettier --write .",
         "test": "./scripts/test.sh",
+        "test:integration": "./scripts/test.sh --grep \"Integration\"",
+        "test:smoke": "./scripts/test.sh --grep \"smoke\"",
+        "test:coverage": "./scripts/test.sh --coverage",
         "package": "vsce package",
         "update-snapshot": "./scripts/test.sh -u",
         "vscode:prepublish": "./scripts/build.sh",
@@ -607,6 +610,7 @@
     "devDependencies": {
         "@types/mocha": "^10.0.6",
         "@types/node": "^16.11.7",
+        "@types/sinon": "^10.0.16",
         "@types/vscode": "^1.88.0",
         "@types/which": "^3.0.3",
         "@vscode/test-cli": "^0.0.9",
@@ -618,6 +622,7 @@
         "js-yaml": "^4.1.0",
         "mocha": "^10.8.2",
         "prettier": "^3.2.5",
+        "sinon": "^15.2.0",
         "typescript": "^5.4.4",
         "typescript-eslint": "^7.5.0",
         "vscode-tmgrammar-test": "^0.1.3"
