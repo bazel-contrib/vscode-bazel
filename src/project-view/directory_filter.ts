@@ -161,23 +161,93 @@ export class DirectoryFilter implements vscode.Disposable {
     const currentExcludes = config.get<Record<string, boolean>>('exclude') || {};
     const newExcludes = { ...currentExcludes };
 
-    // Clear previous project view exclusions (marked with special comment)
-    for (const pattern in newExcludes) {
-      if (pattern.endsWith('/* Project View */')) {
-        delete newExcludes[pattern];
+    // Clear previous project view exclusions 
+    // We need to identify which exclusions we added previously
+    const projectViewConfig = this.projectViewManager.getProjectViewConfig(workspaceFolder);
+    if (projectViewConfig) {
+      // Remove common excludes that we might have added
+      const commonExcludes = [
+        'node_modules', 'dist', 'build', 'out', 'target', 'bin', 'obj', 
+        '.git', '.svn', '.hg', 'vendor', 'third_party', 'external'
+      ];
+      
+      for (const exclude of commonExcludes) {
+        // Only remove if it's not in the user's original config
+        // This is a simplified approach - ideally we'd track what we added
+        delete newExcludes[exclude];
+      }
+      
+      // Remove explicit project view exclusions
+      for (const dir of projectViewConfig.directories) {
+        if (dir.startsWith('-')) {
+          const cleanDir = dir.slice(1);
+          const normalizedDir = cleanDir.endsWith('/') ? cleanDir.slice(0, -1) : cleanDir;
+          delete newExcludes[normalizedDir];
+        }
       }
     }
 
-    // Add new project view exclusions
-    const excludedDirs = this.getExcludedDirectories(workspaceFolder);
-    for (const pattern of excludedDirs) {
-      if (pattern !== '**' && !this.config.alwaysInclude.includes(pattern)) {
-        newExcludes[`${pattern}/* Project View */`] = true;
+    // Add new project view exclusions  
+    if (projectViewConfig) {
+      try {
+        // Get all top-level directories in the workspace
+        const workspaceUri = workspaceFolder.uri;
+        const entries = await vscode.workspace.fs.readDirectory(workspaceUri);
+        const topLevelDirs = entries
+          .filter(([name, type]) => type === vscode.FileType.Directory)
+          .map(([name]) => name);
+
+        // Create set of directories that should be included
+        const includedDirs = new Set<string>();
+        
+        // Add explicitly included directories from project view
+        for (const dir of projectViewConfig.directories) {
+          if (!dir.startsWith('-')) {
+            const cleanDir = dir.endsWith('/') ? dir.slice(0, -1) : dir;
+            // Handle nested paths - include parent directories too
+            const parts = cleanDir.split('/');
+            for (let i = 0; i < parts.length; i++) {
+              const parentPath = parts.slice(0, i + 1).join('/');
+              includedDirs.add(parentPath);
+            }
+          }
+        }
+        
+        // Always include essential directories
+        for (const dir of this.config.alwaysInclude) {
+          includedDirs.add(dir);
+        }
+        
+        // Exclude top-level directories not in our include list
+        for (const topDir of topLevelDirs) {
+          if (!includedDirs.has(topDir) && !this.config.alwaysInclude.includes(topDir)) {
+            newExcludes[topDir] = true;
+          }
+        }
+        
+        // Add explicit exclusions from project view
+        for (const dir of projectViewConfig.directories) {
+          if (dir.startsWith('-')) {
+            const cleanDir = dir.slice(1); // Remove '-' prefix
+            const normalizedDir = cleanDir.endsWith('/') ? cleanDir.slice(0, -1) : cleanDir;
+            newExcludes[normalizedDir] = true;
+          }
+        }
+
+        // Update the configuration
+        await config.update('exclude', newExcludes, vscode.ConfigurationTarget.WorkspaceFolder);
+        
+        console.log('Directory filtering updated:', {
+          included: Array.from(includedDirs),
+          excluded: Object.keys(newExcludes).filter(key => newExcludes[key]),
+          workspace: workspaceFolder.name
+        });
+        
+      } catch (error) {
+        console.error('Failed to update directory filtering:', error);
+        vscode.window.showErrorMessage(`Failed to update directory filtering: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
     }
-
-    // Update the configuration
-    await config.update('exclude', newExcludes, vscode.ConfigurationTarget.WorkspaceFolder);
   }
 
   /**
@@ -189,9 +259,24 @@ export class DirectoryFilter implements vscode.Disposable {
     const newExcludes = { ...currentExcludes };
 
     // Remove all project view exclusions
-    for (const pattern in newExcludes) {
-      if (pattern.endsWith('/* Project View */')) {
-        delete newExcludes[pattern];
+    const commonExcludes = [
+      'node_modules', 'dist', 'build', 'out', 'target', 'bin', 'obj', 
+      '.git', '.svn', '.hg', 'vendor', 'third_party', 'external'
+    ];
+    
+    for (const exclude of commonExcludes) {
+      delete newExcludes[exclude];
+    }
+    
+    // Remove explicit project view exclusions if we can determine them
+    const projectViewConfig = this.projectViewManager.getProjectViewConfig(workspaceFolder);
+    if (projectViewConfig) {
+      for (const dir of projectViewConfig.directories) {
+        if (dir.startsWith('-')) {
+          const cleanDir = dir.slice(1);
+          const normalizedDir = cleanDir.endsWith('/') ? cleanDir.slice(0, -1) : cleanDir;
+          delete newExcludes[normalizedDir];
+        }
       }
     }
 

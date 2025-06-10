@@ -146,7 +146,7 @@ export class BazelBuildIconService implements vscode.Disposable {
     // We can identify it by checking the task definition or source
     return execution.task.source === "bazel" && 
            execution.task.definition.type === "bazel" &&
-           execution.task.name.includes("Current File");
+           (execution.task.name.includes("Build Target") || execution.task.name.includes("Build Project View Targets") || execution.task.name.includes("Current File"));
   }
 
   /**
