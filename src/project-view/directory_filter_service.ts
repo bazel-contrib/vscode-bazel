@@ -63,6 +63,9 @@ export class DirectoryFilterService implements vscode.Disposable {
       }
     }
     
+    // Refresh explorer to show changes immediately
+    await this.forceExplorerRefresh();
+    
     vscode.window.showInformationMessage(
       'Directory filtering enabled. File explorer will now show only project view directories.'
     );
@@ -79,6 +82,9 @@ export class DirectoryFilterService implements vscode.Disposable {
         await this.directoryFilter.restoreFileExcludes(folder);
       }
     }
+    
+    // Refresh explorer to show changes immediately
+    await this.forceExplorerRefresh();
     
     vscode.window.showInformationMessage(
       'Directory filtering disabled. File explorer will show all directories.'
@@ -124,6 +130,9 @@ export class DirectoryFilterService implements vscode.Disposable {
         await this.directoryFilter.updateFileExcludes(folder);
       }
     }
+    
+    // Refresh explorer to show changes
+    await this.forceExplorerRefresh();
     
     vscode.window.showInformationMessage('Directory filter refreshed');
   }
@@ -270,6 +279,55 @@ export class DirectoryFilterService implements vscode.Disposable {
 
       vscode.commands.registerCommand('bazel.configureDirectoryFiltering', () => {
         return this.configureDirectoryFiltering();
+      }),
+
+      // Hook into VS Code's standard explorer refresh
+      vscode.commands.registerCommand('bazel.refreshExplorerAndFiltering', async () => {
+        // First refresh our directory filtering
+        await this.refreshDirectoryFilter();
+        
+        // Then trigger standard explorer refresh
+        await this.forceExplorerRefresh();
+        
+        vscode.window.showInformationMessage('Explorer and directory filtering refreshed');
+      }),
+
+      // Debug command to test directory filtering
+      vscode.commands.registerCommand('bazel.debugDirectoryFiltering', async () => {
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder) {
+          vscode.window.showErrorMessage('No workspace folder found');
+          return;
+        }
+
+        const config = this.projectViewManager.getProjectViewConfig(workspaceFolder);
+        const stats = this.directoryFilter.getFilteringStats(workspaceFolder);
+        
+        const debugInfo = {
+          hasProjectView: !!config,
+          directories: config?.directories || [],
+          filterEnabled: stats.enabled,
+          includedDirCount: stats.includedDirectories,
+          excludedDirCount: stats.excludedDirectories,
+          currentFileExcludes: vscode.workspace.getConfiguration('files', workspaceFolder.uri).get('exclude')
+        };
+
+        console.log('Directory Filtering Debug Info:', debugInfo);
+        
+        const message = [
+          'Directory Filtering Debug:',
+          `• Project View: ${debugInfo.hasProjectView ? 'Active' : 'None'}`,
+          `• Directories: [${debugInfo.directories.join(', ')}]`,
+          `• Filter Enabled: ${debugInfo.filterEnabled}`,
+          `• Included: ${debugInfo.includedDirCount}, Excluded: ${debugInfo.excludedDirCount}`,
+          '',
+          'Check console for full details.'
+        ].join('\n');
+
+        await vscode.window.showInformationMessage(message);
+        
+        // Force a refresh after debugging
+        await this.forceExplorerRefresh();
       })
     );
   }
@@ -278,33 +336,132 @@ export class DirectoryFilterService implements vscode.Disposable {
    * Sets up event handlers
    */
   private setupEventHandlers(): void {
-    // Listen for project view changes to show filtering recommendations
+    // Listen for project view changes and sync directory filtering
     this.disposables.push(
       this.projectViewManager.onDidChangeProjectView(async (event) => {
         if (event.config) {
-          const recommendation = this.shouldRecommendFiltering(event.workspaceFolder);
+          console.log('🔔 PROJECT VIEW CHANGE EVENT TRIGGERED');
+          console.log('🔍 New directories config:', event.config.directories);
+          console.log('🔍 Workspace:', event.workspaceFolder.name);
           
-          if (recommendation.recommended && !this.directoryFilter.getFilteringStats(event.workspaceFolder).enabled) {
-            const action = await vscode.window.showInformationMessage(
-              `Directory filtering could improve performance by ${recommendation.potentialBenefit}. ${recommendation.reason}.`,
-              'Enable Filtering',
-              'Not Now'
-            );
-            
-            if (action === 'Enable Filtering') {
-              await this.enableDirectoryFiltering();
-            }
+          // Clear cache to ensure fresh data
+          this.directoryFilter.clearCache();
+          
+          // Only update filtering if it's currently enabled (don't auto-enable)
+          const isCurrentlyEnabled = this.directoryFilter.getFilteringStats(event.workspaceFolder).enabled;
+          console.log('🔍 Directory filtering currently enabled:', isCurrentlyEnabled);
+          
+          if (isCurrentlyEnabled) {
+            console.log('🔄 Updating directory filtering...');
+            // Update directory filtering to sync with new .bazelproject content
+            await this.directoryFilter.updateFileExcludes(event.workspaceFolder);
+            console.log('✅ Directory filtering synced with updated project view');
+          } else {
+            console.log('⚠️ Directory filtering not enabled, skipping sync');
           }
+        } else {
+          console.log('🔍 No project view config found in change event');
         }
       })
     );
 
     // Listen for directory filter changes
     this.disposables.push(
-      this.directoryFilter.onDidChangeFilter(() => {
-        // Could trigger UI updates here if needed
+      this.directoryFilter.onDidChangeFilter(async () => {
+        // Refresh explorer when filter changes
+        await this.forceExplorerRefresh();
       })
     );
+
+    // Listen for configuration changes to directory filter settings
+    this.disposables.push(
+      vscode.workspace.onDidChangeConfiguration(async (event) => {
+        if (event.affectsConfiguration('bazel.directoryFilter') || 
+            event.affectsConfiguration('files.exclude')) {
+          console.log('Configuration changed, refreshing directory filter');
+          await this.forceExplorerRefresh();
+        }
+      })
+    );
+  }
+
+  /**
+   * Forces VS Code file explorer to refresh using multiple methods
+   */
+  private async forceExplorerRefresh(): Promise<void> {
+    try {
+      console.log('Forcing VS Code explorer refresh...');
+      
+      // Method 1: Direct explorer refresh command
+      await vscode.commands.executeCommand('workbench.files.action.refreshFilesExplorer');
+      
+      // Method 2: Brief delay to let changes propagate
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Method 3: Force tree view refresh
+      await vscode.commands.executeCommand('workbench.view.explorer');
+      
+    } catch (error) {
+      console.log('Standard refresh failed, trying alternative methods:', error);
+      
+      try {
+        // Method 4: Force workspace folder refresh by toggling focus
+        await vscode.commands.executeCommand('workbench.view.explorer');
+        await vscode.commands.executeCommand('workbench.action.focusActiveEditorGroup');
+        
+        // Method 5: Programmatically update workspace state
+        await this.triggerWorkspaceRefresh();
+        
+      } catch (fallbackError) {
+        console.log('All refresh methods failed:', fallbackError);
+        
+        // Last resort: Show user manual refresh instruction
+        const action = await vscode.window.showWarningMessage(
+          'Directory filtering updated but explorer may need manual refresh. Try reloading the window if needed.',
+          'Reload Window',
+          'Dismiss'
+        );
+        
+        if (action === 'Reload Window') {
+          await vscode.commands.executeCommand('workbench.action.reloadWindow');
+        }
+      }
+    }
+  }
+
+  /**
+   * Triggers a programmatic workspace refresh
+   */
+  private async triggerWorkspaceRefresh(): Promise<void> {
+    if (!vscode.workspace.workspaceFolders) {
+      return;
+    }
+
+    // Create a small delay to allow VS Code to process file exclude changes
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    for (const workspaceFolder of vscode.workspace.workspaceFolders) {
+      try {
+        // Force VS Code to re-scan the workspace folder
+        const dummyFile = vscode.Uri.joinPath(workspaceFolder.uri, '.vscode-refresh-temp');
+        
+        // Create and immediately delete a temp file to trigger workspace refresh
+        await vscode.workspace.fs.writeFile(dummyFile, new Uint8Array());
+        await vscode.workspace.fs.delete(dummyFile);
+        
+      } catch (error) {
+        // Ignore errors from this fallback method
+        console.log('Workspace refresh method failed for:', workspaceFolder.name, error);
+      }
+    }
+  }
+
+  /**
+   * Refreshes VS Code file explorer to show directory changes
+   * @deprecated Use forceExplorerRefresh instead
+   */
+  private async refreshExplorer(): Promise<void> {
+    await this.forceExplorerRefresh();
   }
 
   /**

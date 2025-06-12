@@ -184,6 +184,20 @@
             },
             {
                 "category": "Bazel",
+                "command": "bazel.debugDirectoryFiltering",
+                "title": "Debug Directory Filtering"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.refreshExplorerAndFiltering",
+                "title": "Refresh Explorer and Directory Filter",
+                "icon": {
+                    "dark": "./icons/refresh-dark.svg",
+                    "light": "./icons/refresh-light.svg"
+                }
+            },
+            {
+                "category": "Bazel",
                 "command": "bazel.toggleStatusBar",
                 "title": "Toggle Status Bar Indicators"
             },
@@ -692,6 +706,10 @@
                 },
                 {
                     "command": "bazel.refreshDirectoryFilter",
+                    "when": "bazel.hasProjectView"
+                },
+                {
+                    "command": "bazel.refreshExplorerAndFiltering",
                     "when": "bazel.hasProjectView"
                 },
                 {

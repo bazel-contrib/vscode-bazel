@@ -238,7 +238,7 @@ export class StatusBarManager implements vscode.Disposable {
    * Updates directory filter status item
    */
   private updateDirectoryFilterStatus(): void {
-    if (!this.config.enabled || !this.config.showFilterRecommendations || !this.currentWorkspaceFolder) {
+    if (!this.config.enabled || !this.currentWorkspaceFolder) {
       this.directoryFilterStatusItem.hide();
       return;
     }
@@ -252,34 +252,33 @@ export class StatusBarManager implements vscode.Disposable {
     let text: string;
     let tooltip: string;
 
+    // Reset background color
+    this.directoryFilterStatusItem.backgroundColor = undefined;
+
     if (stats.enabled) {
       status = 'enabled';
-      icon = '$(filter)';
+      icon = '$(filter-filled)';
       text = `Filter (${stats.estimatedReduction})`;
       tooltip = `Directory filtering enabled. Performance improvement: ${stats.estimatedReduction}. Click to configure.`;
     } else if (recommendation.recommended) {
       status = 'recommended';
       icon = '$(lightbulb)';
-      text = 'Filter Recommended';
+      text = `Filter (${recommendation.potentialBenefit})`;
       tooltip = `Directory filtering could improve performance by ${recommendation.potentialBenefit}. Click to enable.`;
       // Highlight recommended items
       this.directoryFilterStatusItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
     } else {
       status = 'disabled';
-      icon = '$(filter-filled)';
-      text = 'No Filter';
-      tooltip = 'Directory filtering disabled. Click to configure.';
+      icon = '$(filter)';
+      text = 'Filter (0%)';
+      tooltip = 'Directory filtering disabled. Click to configure or enable.';
     }
 
     this.directoryFilterStatusItem.text = `${icon} ${text}`;
     this.directoryFilterStatusItem.tooltip = tooltip;
     
-    // Only show if there's something actionable
-    if (status === 'enabled' || status === 'recommended') {
-      this.directoryFilterStatusItem.show();
-    } else {
-      this.directoryFilterStatusItem.hide();
-    }
+    // Always show the filter button (user requested it be always visible)
+    this.directoryFilterStatusItem.show();
   }
 
   /**

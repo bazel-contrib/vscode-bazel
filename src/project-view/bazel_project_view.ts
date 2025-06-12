@@ -577,8 +577,8 @@ export class BazelProjectView implements vscode.Disposable {
         // Always allow target-like values - let the validation phase handle target format errors
         return true;
       case 'directories':
-        // Directories should look like paths (contain / or be simple names)
-        return value.includes('/') || /^[a-zA-Z0-9_-]+\/?$/.test(value) || value.startsWith('-');
+        // Directories should look like paths (contain / or be simple names), or special case "."
+        return value === '.' || value.includes('/') || /^[a-zA-Z0-9_-]+\/?$/.test(value) || value.startsWith('-');
       case 'test_sources':
         // Test sources are typically glob patterns
         return value.includes('*') || value.includes('/') || /\.(py|java|ts|js|cpp|h)$/.test(value);

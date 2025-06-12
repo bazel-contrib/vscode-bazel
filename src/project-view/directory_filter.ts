@@ -166,7 +166,7 @@ export class DirectoryFilter implements vscode.Disposable {
   }
 
   /**
-   * High-performance file excludes update with instant feedback
+   * High-performance file excludes update with proper synchronization
    */
   public async updateFileExcludes(workspaceFolder: vscode.WorkspaceFolder): Promise<void> {
     if (!this.config.enabled) {
@@ -184,24 +184,57 @@ export class DirectoryFilter implements vscode.Disposable {
     }
 
     const originalExcludes = this.originalExcludes.get(workspaceKey)!;
-    const newExcludes = { ...originalExcludes };
-
     const projectViewConfig = this.projectViewManager.getProjectViewConfig(workspaceFolder);
+    
     if (!projectViewConfig) {
       return;
     }
 
     try {
-      // Handle "." special case - include everything (no additional exclusions)
-      if (projectViewConfig.directories.includes('.')) {
-        console.log('Project view includes "." - showing all directories');
-        await config.update('exclude', originalExcludes, vscode.ConfigurationTarget.WorkspaceFolder);
-        return;
-      }
-
+      // Start with a clean copy of original excludes (this is key for proper sync!)
+      const newExcludes = { ...originalExcludes };
+      
       // Get workspace stats (cached for performance)
       const stats = await this.getWorkspaceStats(workspaceFolder);
       
+      // Handle "." special case - include everything (restore clean state)
+      if (projectViewConfig.directories.includes('.')) {
+        console.log('🔍 DEBUGGING: Project view includes "." - clearing all directory excludes');
+        console.log('🔍 Original excludes stored:', originalExcludes);
+        console.log('🔍 Current excludes in VS Code:', config.get('exclude'));
+        
+        // **FUNDAMENTAL FIX**: Don't trust originalExcludes, create a clean basic exclude set
+        // This ensures we show the complete codebase regardless of what was stored
+        const basicExcludes: Record<string, boolean> = {
+          "**/.git": true,
+          "**/.svn": true,
+          "**/.hg": true,
+          "**/CVS": true,
+          "**/.DS_Store": true,
+          "**/Thumbs.db": true,
+          "**/bazel-*": true,
+          "**/node_modules": true
+        };
+        
+        // Only add explicit exclusions that are listed with "-" prefix
+        const explicitExclusions = projectViewConfig.directories
+          .filter(dir => dir.startsWith('-'))
+          .map(dir => {
+            const cleanDir = dir.slice(1); // Remove '-' prefix
+            return cleanDir.endsWith('/') ? cleanDir.slice(0, -1) : cleanDir;
+          });
+        
+        for (const exclusion of explicitExclusions) {
+          basicExcludes[exclusion] = true;
+        }
+        
+        console.log('🔍 About to set excludes to clean basic set:', basicExcludes);
+        await config.update('exclude', basicExcludes, vscode.ConfigurationTarget.WorkspaceFolder);
+        console.log('✅ "." directory: applied clean basic excludes, full codebase should be visible');
+        this.onDidChangeFilterEmitter.fire(); 
+        return;
+      }
+
       // Create set of directories that should be included
       const includedDirs = new Set<string>();
       
@@ -223,12 +256,19 @@ export class DirectoryFilter implements vscode.Disposable {
         includedDirs.add(dir);
       }
       
-      // High-performance exclusion: only check top-level directories
-      let excludedCount = 0;
+      // **CRITICAL FIX**: Remove previously excluded directories that are now included
+      // This ensures proper sync when directories are added back to project view
       for (const topDir of stats.topLevelDirs) {
-        if (!includedDirs.has(topDir) && !this.config.alwaysInclude.includes(topDir)) {
+        const shouldInclude = includedDirs.has(topDir) || 
+                             this.config.alwaysInclude.includes(topDir) ||
+                             Array.from(includedDirs).some(includedDir => includedDir.startsWith(topDir + '/'));
+        
+        if (shouldInclude) {
+          // Remove from excludes if it was previously excluded
+          delete newExcludes[topDir];
+        } else {
+          // Add to excludes if it should be hidden
           newExcludes[topDir] = true;
-          excludedCount++;
         }
       }
       
@@ -238,17 +278,22 @@ export class DirectoryFilter implements vscode.Disposable {
           const cleanDir = dir.slice(1); // Remove '-' prefix
           const normalizedDir = cleanDir.endsWith('/') ? cleanDir.slice(0, -1) : cleanDir;
           newExcludes[normalizedDir] = true;
-          excludedCount++;
         }
       }
 
-      // Apply changes instantly (non-blocking)
+      // Apply changes with proper configuration target
       await config.update('exclude', newExcludes, vscode.ConfigurationTarget.WorkspaceFolder);
       
+      // Fire change event to trigger refresh
+      this.onDidChangeFilterEmitter.fire();
+      
       const duration = Date.now() - startTime;
-      console.log(`Directory filtering updated in ${duration}ms:`, {
-        included: Array.from(includedDirs).length,
-        excluded: excludedCount,
+      const includedCount = Array.from(includedDirs).length;
+      const excludedCount = Object.keys(newExcludes).length - Object.keys(originalExcludes).length;
+      
+      console.log(`Directory filtering synchronized in ${duration}ms:`, {
+        included: includedCount,
+        excluded: Math.max(0, excludedCount),
         total: stats.topLevelDirs.length,
         workspace: workspaceFolder.name
       });
@@ -330,7 +375,13 @@ export class DirectoryFilter implements vscode.Disposable {
     // Calculate excluded directories  
     let excludedCount = 0;
     for (const topDir of stats.topLevelDirs) {
-      if (!includedDirs.has(topDir) && !this.config.alwaysInclude.includes(topDir)) {
+      // Check if this top-level directory should be included
+      const shouldInclude = includedDirs.has(topDir) || 
+                           this.config.alwaysInclude.includes(topDir) ||
+                           // Check if any included directory is a child of this top-level directory
+                           Array.from(includedDirs).some(includedDir => includedDir.startsWith(topDir + '/'));
+      
+      if (!shouldInclude) {
         excludedCount++;
       }
     }
