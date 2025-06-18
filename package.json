@@ -149,6 +149,11 @@
                     "default": false,
                     "markdownDescription": "Whether to add a CodeLens to `BUILD`/`BUILD.bazel` files to provide actions while browsing the file."
                 },
+                "bazel.enableQueries": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "Whether to enable Bazel queries. When disabled, all query-dependent features (workspace tree, target completion, code lens, go-to-definition) will be disabled to improve performance and reduce Bazel server load."
+                },
                 "bazel.pathsToIgnore": {
                     "type": "array",
                     "items": {
