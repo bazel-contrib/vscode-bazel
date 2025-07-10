@@ -33,6 +33,8 @@ import { activateCommandVariables } from "./command_variables";
 import { activateTesting } from "../test-explorer";
 import { activateWrapperCommands } from "./bazel_wrapper_commands";
 
+export let extensionContext: vscode.ExtensionContext;
+
 /**
  * Called when the extension is activated; that is, when its first command is
  * executed.
@@ -40,6 +42,8 @@ import { activateWrapperCommands } from "./bazel_wrapper_commands";
  * @param context The extension context.
  */
 export async function activate(context: vscode.ExtensionContext) {
+  extensionContext = context;
+
   const workspaceTreeProvider =
     BazelWorkspaceTreeProvider.fromExtensionContext(context);
   context.subscriptions.push(workspaceTreeProvider);
@@ -157,6 +161,13 @@ export async function activate(context: vscode.ExtensionContext) {
     ...activateCommandVariables(),
     // Test provider
     ...activateTesting(),
+
+    // Listen for configuration changes that affect buildifier
+    vscode.workspace.onDidChangeConfiguration(async (e) => {
+      if (e.affectsConfiguration("bazel.buildifierExecutable")) {
+        await checkBuildifierIsAvailable();
+      }
+    }),
   );
 
   // Notify the user if buildifier is not available on their path (or where
