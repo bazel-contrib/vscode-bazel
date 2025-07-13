@@ -12,28 +12,76 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as fs from "fs/promises";
-import * as path from "path";
+import * as fs from "fs";
 import * as vscode from "vscode";
 import * as which from "which";
 
+import { executeBuildifier, IExecutable } from "./buildifier";
+import { getDefaultBazelExecutablePath } from "../extension/configuration";
 import {
-  executeBuildifier,
-  getDefaultBuildifierExecutablePath,
-} from "./buildifier";
-
-async function fileExists(filename: string) {
-  try {
-    await fs.stat(filename);
-    return true;
-  } catch {
-    return false;
-  }
-}
+  downloadBuildifier,
+  getBuildifierExecutablePath,
+} from "./buildifier_downloader";
+import { extensionContext } from "../extension/extension";
 
 /** The URL to load for buildifier's releases. */
 const BUILDTOOLS_RELEASES_URL =
   "https://github.com/bazelbuild/buildtools/releases";
+
+/**
+ * Gets the buildifier configuration.
+ *
+ * @returns The buildifier configuration.
+ */
+export function getBuildifierConfiguration(): string {
+  const bazelConfig = vscode.workspace.getConfiguration("bazel");
+  return bazelConfig.get<string>("buildifierExecutable", "buildifier");
+}
+
+/**
+ * Returns the path to the buildifier executable and arguments to use.
+ *
+ * This is the central point for resolving the buildifier executable. It may
+ * involve downloading a buildifier release.
+ *
+ * @returns The path to the buildifier executable and arguments to use.
+ */
+async function getBuildifierExecutable(): Promise<IExecutable> {
+  const configValue = getBuildifierConfiguration();
+  // Bazel target
+  if (configValue.startsWith("@")) {
+    return {
+      path: getDefaultBazelExecutablePath(),
+      args: ["run", configValue, "--"],
+    };
+  }
+  // Absolute path
+  if (fs.existsSync(configValue)) {
+    return { path: configValue, args: [] };
+  }
+  // File on $PATH
+  try {
+    return { path: await which(configValue), args: [] };
+  } catch (e) {
+    // nothing on PATH
+  }
+  // Release binary
+  try {
+    const dst = getBuildifierExecutablePath(configValue);
+    if (fs.existsSync(dst.fsPath)) {
+      return { path: dst.fsPath, args: [] };
+    }
+    return {
+      path: (await downloadBuildifier(configValue)).fsPath,
+      args: [],
+    };
+  } catch (e) {
+    // Can't download a release with that version
+  }
+  await showBuildifierDownloadPrompt(
+    `Did not find a buildifier for "${configValue}"`,
+  );
+}
 
 /**
  * Checks whether buildifier is available (either at the system PATH or a
@@ -43,28 +91,8 @@ const BUILDTOOLS_RELEASES_URL =
  * Download button that they can use to go to the GitHub releases page.
  */
 export async function checkBuildifierIsAvailable() {
-  const buildifierExecutable = getDefaultBuildifierExecutablePath();
-
-  // Check if the program exists (in case it's an actual executable and not
-  // an target name starting with `@`).
-  const isTarget = buildifierExecutable.startsWith("@");
-
-  // Check if the program exists as a relative path of the workspace
-  const pathExists = await fileExists(
-    path.join(
-      vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath,
-      buildifierExecutable,
-    ),
-  );
-
-  if (!isTarget && !pathExists) {
-    try {
-      await which(buildifierExecutable);
-    } catch (e) {
-      await showBuildifierDownloadPrompt("Buildifier was not found");
-      return;
-    }
-  }
+  const state = await getBuildifierExecutable();
+  await extensionContext.workspaceState.update("buildifierExecutable", state);
 
   // Make sure it's a compatible version by running
   // buildifier on an empty input and see if it exits successfully and the
