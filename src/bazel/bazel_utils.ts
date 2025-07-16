@@ -94,6 +94,52 @@ function shouldIgnorePath(fsPath: string): boolean {
 }
 
 /**
+ * Search for the path to the directory that has the specified target file,
+ * starting at fsPath.
+ *
+ * If multiple directories along the path to the file have matching files,
+ * the lowest path is returned.
+ *
+ * @param fsPath The path to a file to use as a starting point for the search.
+ * @param targetFiles The names of the files to look for
+ * @returns The path to the directory where the target file is found, or
+ * undefined if the target file is not found.
+ */
+function getTargetFolderForFile(
+  fsPath: string,
+  targetFiles: string[],
+): string | undefined {
+  if (shouldIgnorePath(fsPath)) {
+    return undefined;
+  }
+  let dirname = fsPath;
+  let iteration = 0;
+  // Fail safe in case other file systems have a base dirname that doesn't
+  // match the checks below. Having this failsafe guarantees that we don't
+  // hang in an infinite loop.
+  const maxIterations = 100;
+
+  if (fs.statSync(fsPath).isFile()) {
+    dirname = path.dirname(dirname);
+  }
+  do {
+    for (const targetFileName of targetFiles) {
+      const testPath = path.join(dirname, targetFileName);
+      try {
+        fs.accessSync(testPath, fs.constants.F_OK);
+        // file is accessible. We have found the correct directory.
+        return dirname;
+      } catch (err) {
+        // Intentionally do nothing; just try the next parent directory.
+      }
+    }
+    dirname = path.dirname(dirname);
+  } while (++iteration < maxIterations && dirname !== "" && dirname !== "/");
+
+  return undefined;
+}
+
+/**
  * Search for the path to the directory that has the Bazel WORKSPACE file for
  * the given file.
  *
@@ -105,16 +151,6 @@ function shouldIgnorePath(fsPath: string): boolean {
  * others undefined.
  */
 export function getBazelWorkspaceFolder(fsPath: string): string | undefined {
-  if (shouldIgnorePath(fsPath)) {
-    return undefined;
-  }
-  let dirname = fsPath;
-  let iteration = 0;
-  // Fail safe in case other file systems have a base dirname that doesn't
-  // match the checks below. Having this failsafe guarantees that we don't
-  // hang in an infinite loop.
-  const maxIterations = 100;
-
   // These are the names of the files that mark the root of a repository
   // or workspace.
   const REPO_ROOT_FILE_NAMES = [
@@ -124,23 +160,21 @@ export function getBazelWorkspaceFolder(fsPath: string): string | undefined {
     "WORKSPACE",
   ];
 
-  if (fs.statSync(fsPath).isFile()) {
-    dirname = path.dirname(dirname);
-  }
-  do {
-    for (const workspaceFileName of REPO_ROOT_FILE_NAMES) {
-      const workspace = path.join(dirname, workspaceFileName);
-      try {
-        fs.accessSync(workspace, fs.constants.F_OK);
-        // workspace file is accessible. We have found the Bazel workspace
-        // directory.
-        return dirname;
-      } catch (err) {
-        // Intentionally do nothing; just try the next parent directory.
-      }
-    }
-    dirname = path.dirname(dirname);
-  } while (++iteration < maxIterations && dirname !== "" && dirname !== "/");
+  return getTargetFolderForFile(fsPath, REPO_ROOT_FILE_NAMES);
+}
 
-  return undefined;
+/**
+ * Search for the path to the directory that has the BUILD.Bazel file for
+ * the given file.
+ *
+ * @param fsPath The path to a file in a Bazel workspace.
+ * @returns The Bazel path to the directory with the BUILD.Bazel if found,
+ * others undefined.
+ */
+export function getBazelPackageFolder(fsPath: string): string | undefined {
+  // These are the names of the files that mark the root of a repository
+  // or workspace.
+  const PACKAGE_FILE_NAMES = ["BUILD.bazel"];
+
+  return getTargetFolderForFile(fsPath, PACKAGE_FILE_NAMES);
 }

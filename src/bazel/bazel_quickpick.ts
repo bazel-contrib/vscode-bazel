@@ -14,10 +14,14 @@
 
 import * as vscode from "vscode";
 
-import { getDefaultBazelExecutablePath } from "../extension/configuration";
+import {
+  getDefaultBazelExecutablePath,
+  areQuickPickQueriesLimitedToNearestPackage,
+} from "../extension/configuration";
 import { IBazelCommandAdapter, IBazelCommandOptions } from "./bazel_command";
 import { BazelQuery } from "./bazel_query";
 import { BazelWorkspaceInfo } from "./bazel_workspace_info";
+import { getBazelPackageFolder } from "../bazel/bazel_utils";
 
 /**
  * Represents a Bazel target in a QuickPick items window. Implements the
@@ -86,6 +90,22 @@ export interface QuickPickParams {
 }
 
 /**
+ * Returns the working directory for Bazel commands, limited to the nearest
+ * package if configured.
+ * @returns The working directory for Bazel commands.
+ */
+function getWorkingDirectory(workspaceInfo: BazelWorkspaceInfo): string {
+  let workingDirectory = workspaceInfo.workspaceFolder.uri.fsPath;
+  const limitQueries = areQuickPickQueriesLimitedToNearestPackage();
+  if (limitQueries && vscode.window.activeTextEditor) {
+    const document = vscode.window.activeTextEditor.document;
+    const uri = document.uri;
+    workingDirectory = getBazelPackageFolder(uri.fsPath) ?? workingDirectory;
+  }
+  return workingDirectory;
+}
+
+/**
  * Runs the given bazel query command in the given bazel workspace and returns
  * the resulting array of BazelTargetQuickPick.
  *
@@ -110,7 +130,7 @@ export async function queryQuickPickTargets({
 
   const queryResult = await new BazelQuery(
     getDefaultBazelExecutablePath(),
-    workspaceInfo.workspaceFolder.uri.fsPath,
+    getWorkingDirectory(workspaceInfo),
   ).queryTargets(query ?? "//...:*");
 
   // Sort the labels so the QuickPick is ordered.
@@ -146,8 +166,8 @@ export async function queryQuickPickPackage({
 
   const packagePaths = await new BazelQuery(
     getDefaultBazelExecutablePath(),
-    workspaceInfo.workspaceFolder.uri.fsPath,
-  ).queryPackages(query ?? "//...");
+    getWorkingDirectory(workspaceInfo),
+  ).queryPackages(query ?? "...");
 
   return packagePaths.map(
     (target) => new BazelTargetQuickPick("//" + target, workspaceInfo),

@@ -32,3 +32,14 @@ export function getDefaultBazelExecutablePath(): string {
   }
   return bazelExecutable;
 }
+
+/**
+ * Returns workspace configuration to limit Bazel quick pick queries to the nearest package.
+ *
+ * @returns `true` if Bazel quick pick queries should be limited to the nearest package,
+ * `false` otherwise.
+ */
+export function areQuickPickQueriesLimitedToNearestPackage(): boolean {
+  const bazelConfig = vscode.workspace.getConfiguration("bazel");
+  return bazelConfig.get<boolean>("limitQuickPickQueriesToNearestPackage");
+}

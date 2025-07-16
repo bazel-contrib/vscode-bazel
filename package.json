@@ -149,6 +149,11 @@
                     "default": false,
                     "markdownDescription": "Whether to add a CodeLens to `BUILD`/`BUILD.bazel` files to provide actions while browsing the file."
                 },
+                "bazel.limitQuickPickQueriesToNearestPackage": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDescription": "Limit quick pick queries to the nearest package."
+                },
                 "bazel.pathsToIgnore": {
                     "type": "array",
                     "items": {
