@@ -131,7 +131,7 @@ export async function queryQuickPickTargets({
   const queryResult = await new BazelQuery(
     getDefaultBazelExecutablePath(),
     getWorkingDirectory(workspaceInfo),
-  ).queryTargets(query ?? "//...:*");
+  ).queryTargets(query ?? "...:*");
 
   // Sort the labels so the QuickPick is ordered.
   const labels = queryResult.target.map((target) => target.rule.name);
