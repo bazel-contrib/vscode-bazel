@@ -37,6 +37,12 @@ this extension does not automatically _fix_ lint warnings during formatting,
 but you can opt into this by enabling the **Bazel: Buildifier Fix on Format**
 setting.
 
+### Limiting quick pick queries to the nearest package
+
+Enabling this feature restricts quick pick queries to only operate within the closest package to the file currently active in the text editor. This helps improve query performance and relevance by avoiding unnecessary traversal of unrelated packages.   If no file is open, the extension will use the workspace root as the base package.
+
+Set `bazel.limitQuickPickQueriesToNearestPackage` to `true` to enable this feature.
+
 ### Using a separate output base
 
 By default this extension will use the default output base for running queries. This will cause builds to block queries, potentially causing degraded performance. In Bazel versions since 7.1 it is safe to disable this by changing the `bazel.queriesShareServer` setting to `false`. In earlier versions it can be safely disabled after adding the convenience symlinks to `.bazelignore`, for example:
