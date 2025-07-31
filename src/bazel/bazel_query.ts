@@ -12,18 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as child_process from "child_process";
+import { spawn } from "child_process";
 import * as crypto from "crypto";
 import * as os from "os";
 import * as path from "path";
-import * as util from "util";
 import * as vscode from "vscode";
 
 import { blaze_query } from "../protos";
 import { BazelCommand } from "./bazel_command";
 import { getBazelWorkspaceFolder } from "./bazel_utils";
-
-const execFile = util.promisify(child_process.execFile);
 
 const protoOutputOptions = [
   "--proto:output_rule_attrs=''",
@@ -54,15 +51,17 @@ export class BazelQuery extends BazelCommand {
       additionalOptions = [],
       sortByRuleName = false,
       ignoresErrors = false,
+      abortSignal,
     }: {
       additionalOptions?: string[];
       sortByRuleName?: boolean;
       ignoresErrors?: boolean;
+      abortSignal?: AbortSignal;
     } = {},
   ): Promise<blaze_query.QueryResult> {
     const buffer = await this.run(
       [query, ...additionalOptions, "--output=proto", ...protoOutputOptions],
-      { ignoresErrors },
+      { ignoresErrors, abortSignal },
     );
     const result = blaze_query.QueryResult.decode(buffer);
     if (sortByRuleName) {
@@ -90,8 +89,11 @@ export class BazelQuery extends BazelCommand {
    * @returns An sorted array of package paths containing the targets that
    * match.
    */
-  public async queryPackages(query: string): Promise<string[]> {
-    const buffer = await this.run([query, "--output=package"]);
+  public async queryPackages(
+    query: string,
+    { abortSignal }: { abortSignal?: AbortSignal } = {},
+  ): Promise<string[]> {
+    const buffer = await this.run([query, "--output=package"], { abortSignal });
     const result = buffer
       .toString("utf-8")
       .trim()
@@ -108,6 +110,7 @@ export class BazelQuery extends BazelCommand {
   /**
    * Executes the command and returns a promise for the binary contents of
    * standard output.
+   * The running process will be aborted if the abortSignal is aborted.
    *
    * @param options The options to pass to `bazel query`
    * @param ignoresErrors `true` if errors from executing the query
@@ -116,7 +119,10 @@ export class BazelQuery extends BazelCommand {
    */
   protected async run(
     options: string[],
-    { ignoresErrors = false }: { ignoresErrors?: boolean } = {},
+    {
+      ignoresErrors = false,
+      abortSignal,
+    }: { ignoresErrors?: boolean; abortSignal?: AbortSignal } = {},
   ): Promise<Buffer> {
     const bazelConfig = vscode.workspace.getConfiguration("bazel");
     const queriesShareServer = bazelConfig.get<boolean>("queriesShareServer");
@@ -143,27 +149,83 @@ export class BazelQuery extends BazelCommand {
         `--output_base=${queryOutputBase}`,
       ]);
     }
-    const execOptions: child_process.ExecFileOptionsWithBufferEncoding = {
-      cwd: this.workingDirectory,
-      // A null encoding causes the callback below to receive binary data as a
-      // Buffer instead of text data as strings.
-      encoding: null,
-      maxBuffer: Number.MAX_SAFE_INTEGER,
-    };
-    try {
-      return (
-        await execFile(
-          this.bazelExecutable,
-          this.execArgs(options, additionalStartupOptions),
-          execOptions,
-        )
-      ).stdout;
-    } catch (e) {
-      if (ignoresErrors) {
-        return Buffer.alloc(0);
-      } else {
-        throw e;
+    return new Promise<Buffer>((resolve, reject) => {
+      // eslint-disable-next-line no-console
+      console.debug(
+        `Running Bazel query with command line: ${this.bazelExecutable} ${this.execArgs(
+          options,
+          additionalStartupOptions,
+        ).join(" ")}`,
+      );
+      const child = spawn(
+        this.bazelExecutable,
+        this.execArgs(options, additionalStartupOptions),
+        {
+          cwd: this.workingDirectory,
+          stdio: ["ignore", "pipe", "pipe"],
+        },
+      );
+
+      // Handle abort signal if provided
+      const onAbort = () => {
+        try {
+          child.kill();
+          reject(new Error("Query was aborted"));
+        } catch (error: unknown) {
+          reject(error);
+        }
+      };
+
+      const cleanup = () => {
+        if (abortSignal) {
+          // Type assertion to access the non-standard removeEventListener
+          const signal = abortSignal as unknown as {
+            removeEventListener: (type: string, handler: () => void) => void;
+          };
+          signal.removeEventListener("abort", onAbort);
+        }
+      };
+
+      if (abortSignal) {
+        if (abortSignal.aborted) {
+          onAbort();
+          return;
+        }
+        // Type assertion to access the non-standard addEventListener
+        const signal = abortSignal as unknown as {
+          addEventListener: (
+            type: string,
+            handler: () => void,
+            options: { once: boolean },
+          ) => void;
+        };
+        signal.addEventListener("abort", onAbort, { once: true });
       }
-    }
+
+      const chunks: Buffer[] = [];
+      let errorOutput = "";
+
+      child.stdout?.on("data", (chunk: Buffer) => chunks.push(chunk));
+      child.stderr?.on("data", (chunk: Buffer) => {
+        errorOutput += chunk.toString();
+      });
+
+      child.on("error", (error: Error) => {
+        cleanup();
+        reject(error);
+      });
+
+      child.on("close", (code: number | null) => {
+        cleanup();
+
+        if (code === 0 || ignoresErrors) {
+          resolve(Buffer.concat(chunks));
+        } else {
+          const error = new Error(`Bazel query failed with code ${code}`);
+          (error as { stderr?: string }).stderr = errorOutput;
+          reject(error);
+        }
+      });
+    });
   }
 }

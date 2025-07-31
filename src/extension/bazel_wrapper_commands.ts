@@ -21,6 +21,7 @@ import { getBazelPackageFile } from "../bazel/bazel_utils";
 import {
   queryQuickPickTargets,
   queryQuickPickPackage,
+  showDynamicQuickPick,
 } from "../bazel/bazel_quickpick";
 import { createBazelTask } from "../bazel/tasks";
 import { blaze_query } from "../protos";
@@ -36,12 +37,11 @@ async function bazelBuildTarget(adapter: IBazelCommandAdapter | undefined) {
     // If the command adapter was unspecified, it means this command is being
     // invoked via the command palatte. Provide quickpick build targets for
     // the user to choose from.
-    const quickPick = await vscode.window.showQuickPick(
-      queryQuickPickTargets({ query: "kind('.* rule', ...)" }),
-      {
-        canPickMany: false,
-      },
-    );
+    const quickPick = await showDynamicQuickPick({
+      query: "kind('.* rule', //...)",
+      queryFunctor: queryQuickPickTargets,
+      workspaceInfo: await BazelWorkspaceInfo.fromWorkspaceFolders(),
+    });
     // If the result was undefined, the user cancelled the quick pick, so don't
     // try again.
     if (quickPick) {
@@ -68,12 +68,11 @@ async function bazelBuildTargetWithDebugging(
     // If the command adapter was unspecified, it means this command is being
     // invoked via the command palatte. Provide quickpick build targets for
     // the user to choose from.
-    const quickPick = await vscode.window.showQuickPick(
-      queryQuickPickTargets({ query: "kind('.* rule', ...)" }),
-      {
-        canPickMany: false,
-      },
-    );
+    const quickPick = await showDynamicQuickPick({
+      query: "kind('.* rule', //...)",
+      queryFunctor: queryQuickPickTargets,
+      workspaceInfo: await BazelWorkspaceInfo.fromWorkspaceFolders(),
+    });
     // If the result was undefined, the user cancelled the quick pick, so don't
     // try again.
     if (quickPick) {
@@ -136,12 +135,10 @@ async function buildPackage(
     // If the command adapter was unspecified, it means this command is being
     // invoked via the command palatte. Provide quickpick build targets for
     // the user to choose from.
-    const quickPick = await vscode.window.showQuickPick(
-      queryQuickPickPackage({}),
-      {
-        canPickMany: false,
-      },
-    );
+    const quickPick = await showDynamicQuickPick({
+      queryFunctor: queryQuickPickPackage,
+      workspaceInfo: await BazelWorkspaceInfo.fromWorkspaceFolders(),
+    });
     // If the result was undefined, the user cancelled the quick pick, so don't
     // try again.
     if (quickPick) {
@@ -171,12 +168,11 @@ async function bazelRunTarget(adapter: IBazelCommandAdapter | undefined) {
     // If the command adapter was unspecified, it means this command is being
     // invoked via the command palatte. Provide quickpick test targets for
     // the user to choose from.
-    const quickPick = await vscode.window.showQuickPick(
-      queryQuickPickTargets({ query: "kind('.* rule', ...)" }),
-      {
-        canPickMany: false,
-      },
-    );
+    const quickPick = await showDynamicQuickPick({
+      query: "kind('.* rule', //...)",
+      queryFunctor: queryQuickPickTargets,
+      workspaceInfo: await BazelWorkspaceInfo.fromWorkspaceFolders(),
+    });
     // If the result was undefined, the user cancelled the quick pick, so don't
     // try again.
     if (quickPick) {
@@ -201,12 +197,11 @@ async function bazelTestTarget(adapter: IBazelCommandAdapter | undefined) {
     // If the command adapter was unspecified, it means this command is being
     // invoked via the command palatte. Provide quickpick test targets for
     // the user to choose from.
-    const quickPick = await vscode.window.showQuickPick(
-      queryQuickPickTargets({ query: "kind('.*_test rule', ...)" }),
-      {
-        canPickMany: false,
-      },
-    );
+    const quickPick = await showDynamicQuickPick({
+      query: "kind('.*_test rule', //...)",
+      queryFunctor: queryQuickPickTargets,
+      workspaceInfo: await BazelWorkspaceInfo.fromWorkspaceFolders(),
+    });
     // If the result was undefined, the user cancelled the quick pick, so don't
     // try again.
     if (quickPick) {
@@ -250,12 +245,10 @@ async function testPackage(
     // If the command adapter was unspecified, it means this command is being
     // invoked via the command palatte. Provide quickpick build targets for
     // the user to choose from.
-    const quickPick = await vscode.window.showQuickPick(
-      queryQuickPickPackage({}),
-      {
-        canPickMany: false,
-      },
-    );
+    const quickPick = await showDynamicQuickPick({
+      queryFunctor: queryQuickPickPackage,
+      workspaceInfo: await BazelWorkspaceInfo.fromWorkspaceFolders(),
+    });
     // If the result was undefined, the user cancelled the quick pick, so don't
     // try again.
     if (quickPick) {
@@ -341,10 +334,11 @@ async function bazelGoToBuildFile() {
  */
 async function bazelGoToLabel(target_info?: blaze_query.ITarget | undefined) {
   if (!target_info) {
-    const quickPick = await vscode.window.showQuickPick(
-      queryQuickPickTargets({ query: "kind('.* rule', ...)" }),
-      { canPickMany: false },
-    );
+    const quickPick = await showDynamicQuickPick({
+      query: "kind('.* rule', //...)",
+      queryFunctor: queryQuickPickTargets,
+      workspaceInfo: await BazelWorkspaceInfo.fromWorkspaceFolders(),
+    });
     // If the result was undefined, the user cancelled the quick pick
     if (!quickPick) {
       return;
