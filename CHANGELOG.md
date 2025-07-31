@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.13.0](https://github.com/bazel-contrib/vscode-bazel/compare/v0.12.0...v0.13.0) (2025-07-31)
+
+
+### Features
+
+* **navigation:** Add "Jump to Build File" command ([#462](https://github.com/bazel-contrib/vscode-bazel/issues/462)) ([66f699c](https://github.com/bazel-contrib/vscode-bazel/commit/66f699c945fd3e8720590bfe03f49818a66c0d61)), closes [#178](https://github.com/bazel-contrib/vscode-bazel/issues/178)
+
 ## [0.12.0](https://github.com/bazel-contrib/vscode-bazel/compare/v0.11.0...v0.12.0) (2025-07-13)
 
 
