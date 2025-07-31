@@ -88,6 +88,11 @@
             },
             {
                 "category": "Bazel",
+                "command": "bazel.jumpToBuildFile",
+                "title": "Jump to BUILD file"
+            },
+            {
+                "category": "Bazel",
                 "command": "bazel.refreshBazelBuildTargets",
                 "title": "Refresh Bazel Build Targets",
                 "icon": {
@@ -349,6 +354,10 @@
                 },
                 {
                     "command": "bazel.clean",
+                    "when": "bazel.haveWorkspace"
+                },
+                {
+                    "command": "bazel.jumpToBuildFile",
                     "when": "bazel.haveWorkspace"
                 }
             ],
