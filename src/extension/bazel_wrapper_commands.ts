@@ -332,6 +332,42 @@ async function bazelJumpToBuildFile() {
 }
 
 /**
+ * Jumps to the BUILD file location for the specified label.
+ *
+ * This command finds the BUILD file location for the specified label and opens
+ * it in the editor.
+ */
+async function bazelJumpToLabel() {
+  const quickPick = await vscode.window.showQuickPick(
+    queryQuickPickTargets({ query: "kind('.* rule', ...)" }),
+    {
+      canPickMany: false,
+    },
+  );
+  // If the result was undefined, the user cancelled the quick pick, so don't
+  // try again.
+  if (!quickPick) {
+    return;
+  }
+
+  // Open the BUILD file
+  const location = quickPick.getTargetInfo().rule.location;
+  const [filePath, line, column] = location.split(":");
+  const position = new vscode.Position(
+    parseInt(line, 10) - 1, // Convert to 0-based line number
+    parseInt(column || "0", 10) - 1, // Convert to 0-based column number, default to 0
+  );
+
+  // Open the document and reveal the position
+  const document = await vscode.workspace.openTextDocument(
+    vscode.Uri.file(filePath),
+  );
+  await vscode.window.showTextDocument(document, {
+    selection: new vscode.Range(position, position),
+  });
+}
+
+/**
  * Activate all user-facing commands which simply wrap Bazel commands
  * such as `build`, `clean`, etc.
  */
@@ -359,5 +395,6 @@ export function activateWrapperCommands(): vscode.Disposable[] {
       "bazel.jumpToBuildFile",
       bazelJumpToBuildFile,
     ),
+    vscode.commands.registerCommand("bazel.jumpToLabel", bazelJumpToLabel),
   ];
 }
