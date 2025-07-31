@@ -137,7 +137,16 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
         countMap.set(line, countMap.has(line));
         return countMap;
       }, new Map<number, boolean>());
-    for (const target of queryResult.target) {
+    // Sort targets by length first, then alphabetically
+    // This ensures shorter names (often main targets) appear first, with consistent ordering within each length group
+    const sortedTargets = [...queryResult.target].sort((a, b) => {
+      const lengthDiff = a.rule.name.length - b.rule.name.length;
+      return lengthDiff !== 0
+        ? lengthDiff
+        : a.rule.name.localeCompare(b.rule.name);
+    });
+
+    for (const target of sortedTargets) {
       const location = new QueryLocation(target.rule.location);
       const targetName = target.rule.name;
       const ruleClass = target.rule.ruleClass;
