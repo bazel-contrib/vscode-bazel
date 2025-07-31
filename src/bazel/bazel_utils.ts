@@ -94,49 +94,36 @@ function shouldIgnorePath(fsPath: string): boolean {
 }
 
 /**
- * Search for the path to the directory that has the Bazel WORKSPACE file for
- * the given file.
+ * Finds the nearest ancestor file with any of the specified names.
  *
- * If multiple directories along the path to the file have files called
- * "WORKSPACE", the lowest path is returned.
- *
- * @param fsPath The path to a file in a Bazel workspace.
- * @returns The path to the directory with the Bazel WORKSPACE file if found,
- * others undefined.
+ * @param startPath The starting path to search from
+ * @param filenames Array of filenames to search for
+ * @returns The full path to the first matching file found, or undefined if not found
  */
-export function getBazelWorkspaceFolder(fsPath: string): string | undefined {
-  if (shouldIgnorePath(fsPath)) {
+function findAncestorFile(
+  startPath: string,
+  filenames: string[],
+): string | undefined {
+  if (shouldIgnorePath(startPath)) {
     return undefined;
   }
-  let dirname = fsPath;
+
+  let dirname = startPath;
   let iteration = 0;
-  // Fail safe in case other file systems have a base dirname that doesn't
-  // match the checks below. Having this failsafe guarantees that we don't
-  // hang in an infinite loop.
-  const maxIterations = 100;
+  const maxIterations = 100; // Fail-safe to prevent infinite loops
 
-  // These are the names of the files that mark the root of a repository
-  // or workspace.
-  const REPO_ROOT_FILE_NAMES = [
-    "MODULE.bazel",
-    "REPO.bazel",
-    "WORKSPACE.bazel",
-    "WORKSPACE",
-  ];
-
-  if (fs.statSync(fsPath).isFile()) {
+  if (fs.statSync(startPath).isFile()) {
     dirname = path.dirname(dirname);
   }
+
   do {
-    for (const workspaceFileName of REPO_ROOT_FILE_NAMES) {
-      const workspace = path.join(dirname, workspaceFileName);
+    for (const filename of filenames) {
+      const filePath = path.join(dirname, filename);
       try {
-        fs.accessSync(workspace, fs.constants.F_OK);
-        // workspace file is accessible. We have found the Bazel workspace
-        // directory.
-        return dirname;
+        fs.accessSync(filePath, fs.constants.F_OK);
+        return filePath;
       } catch (err) {
-        // Intentionally do nothing; just try the next parent directory.
+        // File not found, continue to next filename
       }
     }
     dirname = path.dirname(dirname);
@@ -144,3 +131,58 @@ export function getBazelWorkspaceFolder(fsPath: string): string | undefined {
 
   return undefined;
 }
+
+/**
+ * Search for the path to the directory that has the Bazel WORKSPACE file for
+ * the given file.
+ *
+ * If multiple directories along the path to the file have workspace files,
+ * the lowest path is returned.
+ *
+ * @param fsPath The path to a file in a Bazel workspace.
+ * @returns The path to the directory with the Bazel workspace file if found,
+ * otherwise undefined.
+ */
+export function getBazelWorkspaceFolder(fsPath: string): string | undefined {
+  const workspaceFile = findAncestorFile(fsPath, [
+    "MODULE.bazel",
+    "REPO.bazel",
+    "WORKSPACE.bazel",
+    "WORKSPACE",
+  ]);
+  return workspaceFile ? path.dirname(workspaceFile) : undefined;
+}
+
+/**
+ * Finds the nearest Bazel package file (BUILD or BUILD.bazel) for the given file path
+ * by searching up the directory tree, but only if it's within the current Bazel workspace.
+ *
+ * @param fsPath The path to a file in a Bazel package.
+ * @returns The path to the BUILD file, or undefined if not found or outside the workspace.
+ */
+export function getBazelPackageFile(fsPath: string): string | undefined {
+  const buildFile = findAncestorFile(fsPath, ["BUILD", "BUILD.bazel"]);
+  if (!buildFile) {
+    return undefined;
+  }
+  const workspaceRoot = getBazelWorkspaceFolder(fsPath);
+  if (!workspaceRoot) {
+    return undefined; // Not in a Bazel workspace
+  }
+  if (!buildFile.startsWith(workspaceRoot)) {
+    return undefined; // Build file is outside the workspace
+  }
+  return buildFile;
+}
+
+/**
+ * Finds the nearest Bazel package folder for the given file path
+ * by searching up the directory tree.
+ *
+ * @param fsPath The path to a file in a Bazel package.
+ * @returns The path to the package folder, or undefined if not found.
+ */
+export const getBazelPackageFolder = (fsPath: string): string | undefined => {
+  const pkgFile = getBazelPackageFile(fsPath);
+  return pkgFile ? path.dirname(pkgFile) : undefined;
+};

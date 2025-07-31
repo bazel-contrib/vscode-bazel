@@ -17,6 +17,7 @@ import * as vscode from "vscode";
 import { getDefaultBazelExecutablePath } from "../extension/configuration";
 import { IBazelCommandAdapter, IBazelCommandOptions } from "./bazel_command";
 import { BazelQuery } from "./bazel_query";
+import { blaze_query } from "../protos";
 import { BazelWorkspaceInfo } from "./bazel_workspace_info";
 
 /**
@@ -34,14 +35,34 @@ export class BazelTargetQuickPick
   private readonly workspaceInfo: BazelWorkspaceInfo;
 
   /**
+   * The full target information from the Bazel query.
+   * This is optional as it might not always be available.
+   */
+  private readonly targetInfo?: blaze_query.ITarget;
+
+  /**
    * Initializes a new Bazel QuickPick target.
    * @param label The fully qualified bazel target label.
    * @param workspaceInfo Information about the workspace in which the target
    * should be built.
+   * @param targetInfo Optional full target information from the Bazel query.
    */
-  constructor(label: string, workspaceInfo: BazelWorkspaceInfo) {
+  constructor(
+    label: string,
+    workspaceInfo: BazelWorkspaceInfo,
+    targetInfo?: blaze_query.ITarget,
+  ) {
     this.targetLabel = label;
     this.workspaceInfo = workspaceInfo;
+    this.targetInfo = targetInfo;
+  }
+
+  /**
+   * Gets the full target information if available.
+   * @returns The full target information or undefined if not available.
+   */
+  public getTargetInfo(): blaze_query.ITarget | undefined {
+    return this.targetInfo;
   }
 
   get alwaysShow(): boolean {
@@ -83,6 +104,8 @@ export interface QuickPickParams {
   query?: string;
   // The bazel workspace to run the bazel command from.
   workspaceInfo?: BazelWorkspaceInfo;
+  // The abort signal to use for the query.
+  abortSignal?: AbortSignal;
 }
 
 /**
@@ -96,6 +119,7 @@ export interface QuickPickParams {
 export async function queryQuickPickTargets({
   query,
   workspaceInfo,
+  abortSignal,
 }: QuickPickParams): Promise<BazelTargetQuickPick[]> {
   if (workspaceInfo === undefined) {
     // Ask the user to pick a workspace, if we don't have one, yet
@@ -111,14 +135,15 @@ export async function queryQuickPickTargets({
   const queryResult = await new BazelQuery(
     getDefaultBazelExecutablePath(),
     workspaceInfo.workspaceFolder.uri.fsPath,
-  ).queryTargets(query ?? "//...:*");
+  ).queryTargets(query ?? "//...:*", { abortSignal });
 
   // Sort the labels so the QuickPick is ordered.
-  const labels = queryResult.target.map((target) => target.rule.name);
-  labels.sort();
-  return labels.map(
-    (target) => new BazelTargetQuickPick(target, workspaceInfo),
-  );
+  return queryResult.target
+    .sort((a, b) => a.rule.name.localeCompare(b.rule.name))
+    .map(
+      (target) =>
+        new BazelTargetQuickPick(target.rule.name, workspaceInfo, target),
+    );
 }
 
 /**
@@ -132,6 +157,7 @@ export async function queryQuickPickTargets({
 export async function queryQuickPickPackage({
   query,
   workspaceInfo,
+  abortSignal,
 }: QuickPickParams): Promise<BazelTargetQuickPick[]> {
   if (workspaceInfo === undefined) {
     // Ask the user to pick a workspace, if we don't have one, yet
@@ -147,9 +173,108 @@ export async function queryQuickPickPackage({
   const packagePaths = await new BazelQuery(
     getDefaultBazelExecutablePath(),
     workspaceInfo.workspaceFolder.uri.fsPath,
-  ).queryPackages(query ?? "//...");
+  ).queryPackages(query ?? "//...", { abortSignal });
 
-  return packagePaths.map(
-    (target) => new BazelTargetQuickPick("//" + target, workspaceInfo),
-  );
+  // Sort the labels so the QuickPick is ordered.
+  return packagePaths
+    .sort()
+    .map((target) => new BazelTargetQuickPick("//" + target, workspaceInfo));
+}
+
+/**
+ * Shows a QuickPick of Bazel labels that dynamically updates its items based on the user's input.
+ *
+ * @param options Configuration options for the QuickPick
+ * @returns A promise that resolves with the selected BazelTargetQuickPick, or undefined if no selection was made
+ */
+export function showDynamicQuickPick(options: {
+  query?: string;
+  queryFunctor: (params: QuickPickParams) => Promise<BazelTargetQuickPick[]>;
+  workspaceInfo?: BazelWorkspaceInfo;
+}): Promise<BazelTargetQuickPick | undefined> {
+  const quickPick = vscode.window.createQuickPick<BazelTargetQuickPick>();
+  quickPick.title = "Select a Bazel target";
+  quickPick.placeholder = "Start typing to search for targets...";
+  quickPick.matchOnDescription = true;
+  quickPick.matchOnDetail = true;
+
+  let abortController: AbortController | undefined = new AbortController();
+  let timeout: NodeJS.Timeout | undefined;
+
+  const updateQuickOptions = async (value: string): Promise<void> => {
+    // Cancel any previous query
+    abortController?.abort();
+
+    // Store the current abort controller to ensure we don't cancel a new query
+    const currentAbortController = new AbortController();
+    abortController = currentAbortController;
+
+    // Show loading state
+    quickPick.busy = true;
+    quickPick.items = [];
+
+    // Process the input: keep everything before the last slash and add '...'
+    const newQuery = value.includes("/")
+      ? options.query.replace(
+          "//...",
+          `${value.substring(0, value.lastIndexOf("/"))}/...`,
+        )
+      : options.query;
+
+    try {
+      const items = await options.queryFunctor({
+        query: newQuery,
+        workspaceInfo: options.workspaceInfo,
+        abortSignal: currentAbortController.signal,
+      });
+      quickPick.items = items;
+    } catch (error) {
+      if (error instanceof Error && error.message === "Query was aborted") {
+        return; // Ignore abort errors
+      }
+      // For other errors, show an empty list
+      // eslint-disable-next-line no-console
+      console.error("Error querying Bazel targets:", error);
+      quickPick.items = [];
+    } finally {
+      quickPick.busy = false;
+    }
+  };
+
+  // Update items when the user types, but only after a short delay
+  // to debounce the query execution after the last keystroke
+  quickPick.onDidChangeValue((value) => {
+    if (timeout) {
+      clearTimeout(timeout); // Clear any pending updates
+      timeout = undefined;
+    }
+    timeout = setTimeout(() => {
+      void updateQuickOptions(value);
+    }, 300); // wait 300ms before updating
+  });
+
+  // Show the QuickPick and trigger initial update
+  quickPick.show();
+  void updateQuickOptions("");
+
+  // Return a promise that resolves when the picker is hidden or an item is selected
+  return new Promise<BazelTargetQuickPick | undefined>((resolvePromise) => {
+    quickPick.onDidAccept(() => {
+      abortController?.abort();
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+      const selectedItem = quickPick.activeItems[0];
+      quickPick.hide();
+      resolvePromise(selectedItem);
+    });
+
+    quickPick.onDidHide(() => {
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+      quickPick.dispose();
+      resolvePromise(undefined);
+    });
+  });
 }
