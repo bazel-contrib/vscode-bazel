@@ -14,14 +14,15 @@
 
 import * as vscode from "vscode";
 
-import { IBazelCommandAdapter } from "../bazel";
-import {
-  BazelWorkspaceInfo,
-  createBazelTask,
-  queryQuickPickPackage,
-  queryQuickPickTargets,
-} from "../bazel";
+import { IBazelCommandAdapter } from "../bazel/bazel_command";
+import { BazelWorkspaceInfo } from "../bazel/bazel_workspace_info";
 import { getDefaultBazelExecutablePath } from "./configuration";
+import { getBazelPackageFile } from "../bazel/bazel_utils";
+import {
+  queryQuickPickTargets,
+  queryQuickPickPackage,
+} from "../bazel/bazel_quickpick";
+import { createBazelTask } from "../bazel/tasks";
 
 /**
  * Builds a Bazel target and streams output to the terminal.
@@ -299,6 +300,38 @@ async function bazelClean() {
 }
 
 /**
+ * Jumps to the BUILD file for the current package.
+ *
+ * This command finds the nearest BUILD or BUILD.bazel file in the current file's
+ * directory or any parent directory and opens it in the editor. The search is
+ * limited to the current Bazel workspace.
+ */
+async function bazelJumpToBuildFile() {
+  const currentEditor = vscode.window.activeTextEditor;
+  if (!currentEditor) {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    vscode.window.showInformationMessage(
+      "Please open a file to jump to its BUILD file.",
+    );
+    return;
+  }
+
+  const filePath = currentEditor.document.uri.fsPath;
+  const buildFilePath = getBazelPackageFile(filePath);
+  if (!buildFilePath) {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    vscode.window.showInformationMessage(
+      "No BUILD or BUILD.bazel file found in any parent directory.",
+    );
+    return;
+  }
+
+  // Open the BUILD file
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  await vscode.window.showTextDocument(vscode.Uri.file(buildFilePath));
+}
+
+/**
  * Activate all user-facing commands which simply wrap Bazel commands
  * such as `build`, `clean`, etc.
  */
@@ -322,5 +355,9 @@ export function activateWrapperCommands(): vscode.Disposable[] {
       bazelTestAllRecursive,
     ),
     vscode.commands.registerCommand("bazel.clean", bazelClean),
+    vscode.commands.registerCommand(
+      "bazel.jumpToBuildFile",
+      bazelJumpToBuildFile,
+    ),
   ];
 }
