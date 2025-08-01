@@ -23,6 +23,7 @@ import {
   queryQuickPickPackage,
 } from "../bazel/bazel_quickpick";
 import { createBazelTask } from "../bazel/tasks";
+import { blaze_query } from "../protos";
 
 /**
  * Builds a Bazel target and streams output to the terminal.
@@ -332,6 +333,42 @@ async function bazelJumpToBuildFile() {
 }
 
 /**
+ * Jumps to the BUILD file location for the specified label.
+ *
+ * This command finds the BUILD file location for the specified label and opens
+ * it in the editor.
+ * @param target_info Optional target information to jump to directly, bypassing the quick pick
+ */
+async function bazelJumpToLabel(target_info?: blaze_query.ITarget | undefined) {
+  if (!target_info) {
+    const quickPick = await vscode.window.showQuickPick(
+      queryQuickPickTargets({ query: "kind('.* rule', ...)" }),
+      { canPickMany: false },
+    );
+    // If the result was undefined, the user cancelled the quick pick
+    if (!quickPick) {
+      return;
+    }
+    target_info = quickPick.getTargetInfo();
+  }
+
+  const location = target_info.rule.location;
+  const [filePath, line, column] = location.split(":");
+  const position = new vscode.Position(
+    parseInt(line, 10) - 1, // Convert to 0-based line number
+    parseInt(column || "0", 10) - 1, // Convert to 0-based column number, default to 0
+  );
+
+  // Open the document and reveal the position
+  const document = await vscode.workspace.openTextDocument(
+    vscode.Uri.file(filePath),
+  );
+  await vscode.window.showTextDocument(document, {
+    selection: new vscode.Range(position, position),
+  });
+}
+
+/**
  * Activate all user-facing commands which simply wrap Bazel commands
  * such as `build`, `clean`, etc.
  */
@@ -359,5 +396,6 @@ export function activateWrapperCommands(): vscode.Disposable[] {
       "bazel.jumpToBuildFile",
       bazelJumpToBuildFile,
     ),
+    vscode.commands.registerCommand("bazel.jumpToLabel", bazelJumpToLabel),
   ];
 }

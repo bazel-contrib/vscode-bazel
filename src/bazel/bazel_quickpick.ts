@@ -17,6 +17,7 @@ import * as vscode from "vscode";
 import { getDefaultBazelExecutablePath } from "../extension/configuration";
 import { IBazelCommandAdapter, IBazelCommandOptions } from "./bazel_command";
 import { BazelQuery } from "./bazel_query";
+import { blaze_query } from "../protos";
 import { BazelWorkspaceInfo } from "./bazel_workspace_info";
 
 /**
@@ -34,14 +35,34 @@ export class BazelTargetQuickPick
   private readonly workspaceInfo: BazelWorkspaceInfo;
 
   /**
+   * The full target information from the Bazel query.
+   * This is optional as it might not always be available.
+   */
+  private readonly targetInfo?: blaze_query.ITarget;
+
+  /**
    * Initializes a new Bazel QuickPick target.
    * @param label The fully qualified bazel target label.
    * @param workspaceInfo Information about the workspace in which the target
    * should be built.
+   * @param targetInfo Optional full target information from the Bazel query.
    */
-  constructor(label: string, workspaceInfo: BazelWorkspaceInfo) {
+  constructor(
+    label: string,
+    workspaceInfo: BazelWorkspaceInfo,
+    targetInfo?: blaze_query.ITarget,
+  ) {
     this.targetLabel = label;
     this.workspaceInfo = workspaceInfo;
+    this.targetInfo = targetInfo;
+  }
+
+  /**
+   * Gets the full target information if available.
+   * @returns The full target information or undefined if not available.
+   */
+  public getTargetInfo(): blaze_query.ITarget | undefined {
+    return this.targetInfo;
   }
 
   get alwaysShow(): boolean {
@@ -114,11 +135,12 @@ export async function queryQuickPickTargets({
   ).queryTargets(query ?? "//...:*");
 
   // Sort the labels so the QuickPick is ordered.
-  const labels = queryResult.target.map((target) => target.rule.name);
-  labels.sort();
-  return labels.map(
-    (target) => new BazelTargetQuickPick(target, workspaceInfo),
-  );
+  return queryResult.target
+    .sort((a, b) => a.rule.name.localeCompare(b.rule.name))
+    .map(
+      (target) =>
+        new BazelTargetQuickPick(target.rule.name, workspaceInfo, target),
+    );
 }
 
 /**
@@ -149,7 +171,8 @@ export async function queryQuickPickPackage({
     workspaceInfo.workspaceFolder.uri.fsPath,
   ).queryPackages(query ?? "//...");
 
-  return packagePaths.map(
-    (target) => new BazelTargetQuickPick("//" + target, workspaceInfo),
-  );
+  // Sort the labels so the QuickPick is ordered.
+  return packagePaths
+    .sort()
+    .map((target) => new BazelTargetQuickPick("//" + target, workspaceInfo));
 }
