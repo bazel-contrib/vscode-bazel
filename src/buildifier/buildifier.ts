@@ -18,7 +18,7 @@ import * as util from "util";
 import * as vscode from "vscode";
 
 import { IBuildifierResult, IBuildifierWarning } from "./buildifier_result";
-import { getDefaultBazelExecutablePath } from "../extension/configuration";
+import { extensionContext } from "../extension/extension";
 
 const execFile = util.promisify(child_process.execFile);
 type PromiseExecFileException = child_process.ExecFileException & {
@@ -165,25 +165,6 @@ export function getBuildifierFileType(fsPath: string): BuildifierFileType {
 }
 
 /**
- * Gets the path to the buildifier executable specified by the workspace
- * configuration, if present.
- *
- * @returns The path to the buildifier executable specified in the workspace
- * configuration, or just "buildifier" if not present (in which case the
- * system path will be searched).
- */
-export function getDefaultBuildifierExecutablePath(): string {
-  // Try to retrieve the executable from VS Code's settings. If it's not set,
-  // just use "buildifier" as the default and get it from the system PATH.
-  const bazelConfig = vscode.workspace.getConfiguration("bazel");
-  const buildifierExecutable = bazelConfig.get<string>("buildifierExecutable");
-  if (buildifierExecutable.length === 0) {
-    return "buildifier";
-  }
-  return buildifierExecutable;
-}
-
-/**
  * Gets the path to the buildifier json configuration file specified by the
  * workspace configuration, if present.
  *
@@ -193,6 +174,15 @@ export function getDefaultBuildifierExecutablePath(): string {
 export function getDefaultBuildifierJsonConfigPath(): string {
   const bazelConfig = vscode.workspace.getConfiguration("bazel");
   return bazelConfig.get<string>("buildifierConfigJsonPath", "");
+}
+
+/** A description of an executable and the arguments to pass to it. */
+export interface IExecutable {
+  /** The path to the executable. */
+  path: string;
+
+  /** The arguments that should be passed to the executable. */
+  args: string[];
 }
 
 /**
@@ -210,16 +200,18 @@ export async function executeBuildifier(
   acceptNonSevereErrors: boolean,
 ): Promise<{ stdout: string; stderr: string }> {
   // Determine the executable
-  let executable = getDefaultBuildifierExecutablePath();
+  const state = extensionContext.workspaceState.get<IExecutable>(
+    "buildifierExecutable",
+  );
+  if (state !== undefined) {
+    return Promise.reject("No buildifier executable set.");
+  }
+  const { path: executable, args: execArgs } = state;
+  args = execArgs.concat(args);
+
   const buildifierConfigJsonPath = getDefaultBuildifierJsonConfigPath();
   if (buildifierConfigJsonPath.length !== 0) {
-    args = ["--config", buildifierConfigJsonPath, ...args];
-  }
-  // Paths starting with an `@` are referring to Bazel targets
-  if (executable.startsWith("@")) {
-    const targetName = executable;
-    executable = getDefaultBazelExecutablePath();
-    args = ["run", targetName, "--", ...args];
+    args.push("--config", buildifierConfigJsonPath);
   }
   const execOptions = {
     maxBuffer: Number.MAX_SAFE_INTEGER,
