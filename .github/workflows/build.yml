@@ -44,6 +44,12 @@ jobs:
       - name: Install system dependencies
         run: sudo apt install -y binutils rustfilt
 
+      - uses: bazel-contrib/setup-bazel@0.15.0
+        with:
+          bazelisk-cache: true
+          disk-cache: false
+          repository-cache: false
+
       - run: xvfb-run -a npm test
         if: runner.os == 'Linux'
 
