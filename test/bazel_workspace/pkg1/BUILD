@@ -15,3 +15,7 @@ py_binary(
     visibility=["//visibility:public"],  # Full label on purpose
     deps=["//pkg1"],  # Short package label on purpose
 )
+filegroup(
+    name="foo",
+    srcs=["subfolder/foo.txt"],
+)
