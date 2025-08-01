@@ -16,7 +16,7 @@ This extension provides support for Bazel in Visual Studio.
 - **Bazel Task** definitions for `tasks.json`
 - **Coverage Support** showing coverage results from `bazel coverage` directly
   in VS Code.
-- **Code Navigation** to jump to BUILD files
+- **Code Navigation** to jump to BUILD files or labels
 - Debug Starlark code in your `.bzl` files during a build (set breakpoints, step
   through code, inspect variables, etc.)
 - URI handler to jump to targets from outside of VSCode. (Example: vscode://bazelbuild.vscode-bazel//path/to/tests:target)
