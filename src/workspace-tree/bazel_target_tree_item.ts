@@ -28,12 +28,16 @@ export class BazelTargetTreeItem
    * Initializes a new tree item with the given query result representing a
    * build target.
    *
+   * @param resources The resources for the extension.
+   * @param workspaceInfo The workspace information.
+   * @param parent The parent tree item of this item.
    * @param target An object representing a build target that was produced by a
    * query.
    */
   constructor(
     private readonly resources: Resources,
     private readonly workspaceInfo: BazelWorkspaceInfo,
+    private readonly parent: IBazelTreeItem,
     private readonly target: blaze_query.ITarget,
   ) {}
 
@@ -43,6 +47,14 @@ export class BazelTargetTreeItem
 
   public getChildren(): Thenable<IBazelTreeItem[]> {
     return Promise.resolve([]);
+  }
+
+  public getParent(): vscode.ProviderResult<IBazelTreeItem> {
+    return this.parent;
+  }
+
+  public getPackagePath(): string {
+    return this.parent.getPackagePath();
   }
 
   public getLabel(): string {
