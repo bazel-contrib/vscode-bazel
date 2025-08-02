@@ -102,7 +102,7 @@
             },
             {
                 "category": "Bazel",
-                "command": "bazel.copyTargetToClipboard",
+                "command": "bazel.copyLabelToClipboard",
                 "title": "Copy Label to Clipboard"
             },
             {
@@ -317,8 +317,8 @@
         "menus": {
             "commandPalette": [
                 {
-                    "command": "bazel.copyTargetToClipboard",
-                    "when": "false"
+                    "command": "bazel.copyLabelToClipboard",
+                    "when": "bazel.haveWorkspace"
                 },
                 {
                     "command": "bazel.buildTarget",
@@ -413,12 +413,12 @@
                     "group": "build"
                 },
                 {
-                    "command": "bazel.copyTargetToClipboard",
+                    "command": "bazel.copyLabelToClipboard",
                     "when": "view == bazelWorkspace && viewItem == rule",
                     "group": "build"
                 },
                 {
-                    "command": "bazel.copyTargetToClipboard",
+                    "command": "bazel.copyLabelToClipboard",
                     "when": "view == bazelWorkspace && viewItem == testRule",
                     "group": "build"
                 }

@@ -15,7 +15,7 @@
 import * as vscode from "vscode";
 import * as lc from "vscode-languageclient/node";
 
-import { activateTaskProvider, IBazelCommandAdapter } from "../bazel";
+import { activateTaskProvider } from "../bazel";
 import {
   BuildifierDiagnosticsManager,
   BuildifierFormatProvider,
@@ -101,10 +101,6 @@ export async function activate(context: vscode.ExtensionContext) {
       completionItemProvider?.refresh();
       workspaceTreeProvider.refresh();
     }),
-    vscode.commands.registerCommand(
-      "bazel.copyTargetToClipboard",
-      bazelCopyTargetToClipboard,
-    ),
     // URI handler
     vscode.window.registerUriHandler({
       async handleUri(uri: vscode.Uri) {
@@ -203,20 +199,4 @@ function createLsp(config: vscode.WorkspaceConfiguration) {
     serverOptions,
     clientOptions,
   );
-}
-
-/**
- * Copies a target to the clipboard.
- */
-function bazelCopyTargetToClipboard(adapter: IBazelCommandAdapter | undefined) {
-  if (adapter === undefined) {
-    // This command should not be enabled in the commands palette, so adapter
-    // should always be present.
-    return;
-  }
-  // This can only be called on single targets, so we can assume there is only
-  // one of them.
-  const target = adapter.getBazelCommandOptions().targets[0];
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  vscode.env.clipboard.writeText(target);
 }
