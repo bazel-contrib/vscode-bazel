@@ -41,14 +41,19 @@ jobs:
         run: npm run check-lint
 
       # Required for the test cases
-      - name: Install system dependencies
-        run: sudo apt install -y binutils rustfilt
-
       - uses: bazel-contrib/setup-bazel@0.15.0
         with:
           bazelisk-cache: true
           disk-cache: false
           repository-cache: false
+          module-root: ${{ github.workspace }}/test/bazel_workspace
+
+      - name: Build Bazel workspace to assure it is working & warm up cache
+        run: bazel build //...
+        working-directory: ${{ github.workspace }}/test/bazel_workspace/
+
+      - name: Install system dependencies
+        run: sudo apt install -y binutils rustfilt
 
       - run: xvfb-run -a npm test
         if: runner.os == 'Linux'

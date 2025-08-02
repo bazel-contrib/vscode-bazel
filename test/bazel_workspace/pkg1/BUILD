@@ -5,5 +5,5 @@ py_binary(
 )
 filegroup(
     name="foo",
-    srcs=["foobar.txt"],
+    srcs=["subfolder/foo.txt"],
 )
