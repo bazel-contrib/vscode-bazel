@@ -23,7 +23,7 @@ interface TestCase {
   expectedBuildFile: string | null; // null means no BUILD file should be found
 }
 
-describe("Jump to Build File", () => {
+describe("Go to Build File", () => {
   const workspacePath = path.join(
     __dirname,
     "..",
@@ -82,7 +82,7 @@ describe("Jump to Build File", () => {
       assertEditorIsActive(sourceFile);
 
       // WHEN
-      await vscode.commands.executeCommand("bazel.jumpToBuildFile");
+      await vscode.commands.executeCommand("bazel.goToBuildFile");
 
       // THEN
       const expectedFile = expectedBuildFile || sourceFile;
@@ -100,7 +100,7 @@ describe("Jump to Build File", () => {
       errorShown = true;
     });
 
-    await vscode.commands.executeCommand("bazel.jumpToBuildFile");
+    await vscode.commands.executeCommand("bazel.goToBuildFile");
 
     // THEN
     assert.strictEqual(
