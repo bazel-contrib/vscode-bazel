@@ -93,6 +93,11 @@
             },
             {
                 "category": "Bazel",
+                "command": "bazel.jumpToLabel",
+                "title": "Jump to Bazel Label"
+            },
+            {
+                "category": "Bazel",
                 "command": "bazel.refreshBazelBuildTargets",
                 "title": "Refresh Bazel Build Targets",
                 "icon": {
@@ -358,6 +363,10 @@
                 },
                 {
                     "command": "bazel.jumpToBuildFile",
+                    "when": "bazel.haveWorkspace"
+                },
+                {
+                    "command": "bazel.jumpToLabel",
                     "when": "bazel.haveWorkspace"
                 }
             ],
