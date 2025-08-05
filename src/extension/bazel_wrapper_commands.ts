@@ -301,18 +301,18 @@ async function bazelClean() {
 }
 
 /**
- * Jumps to the BUILD file for the current package.
+ * Navigates to the BUILD file for the current package.
  *
  * This command finds the nearest BUILD or BUILD.bazel file in the current file's
  * directory or any parent directory and opens it in the editor. The search is
  * limited to the current Bazel workspace.
  */
-async function bazelJumpToBuildFile() {
+async function bazelGoToBuildFile() {
   const currentEditor = vscode.window.activeTextEditor;
   if (!currentEditor) {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     vscode.window.showInformationMessage(
-      "Please open a file to jump to its BUILD file.",
+      "Please open a file to go to its BUILD file.",
     );
     return;
   }
@@ -333,13 +333,13 @@ async function bazelJumpToBuildFile() {
 }
 
 /**
- * Jumps to the BUILD file location for the specified label.
+ * Navigates to the BUILD file location for the specified label.
  *
  * This command finds the BUILD file location for the specified label and opens
  * it in the editor.
- * @param target_info Optional target information to jump to directly, bypassing the quick pick
+ * @param target_info Optional target information to go to directly, bypassing the quick pick
  */
-async function bazelJumpToLabel(target_info?: blaze_query.ITarget | undefined) {
+async function bazelGoToLabel(target_info?: blaze_query.ITarget | undefined) {
   if (!target_info) {
     const quickPick = await vscode.window.showQuickPick(
       queryQuickPickTargets({ query: "kind('.* rule', ...)" }),
@@ -392,10 +392,7 @@ export function activateWrapperCommands(): vscode.Disposable[] {
       bazelTestAllRecursive,
     ),
     vscode.commands.registerCommand("bazel.clean", bazelClean),
-    vscode.commands.registerCommand(
-      "bazel.jumpToBuildFile",
-      bazelJumpToBuildFile,
-    ),
-    vscode.commands.registerCommand("bazel.jumpToLabel", bazelJumpToLabel),
+    vscode.commands.registerCommand("bazel.goToBuildFile", bazelGoToBuildFile),
+    vscode.commands.registerCommand("bazel.goToLabel", bazelGoToLabel),
   ];
 }

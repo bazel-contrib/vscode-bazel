@@ -72,7 +72,7 @@ export class BazelTargetTreeItem
         { selection: location.range },
       ],
       command: "vscode.open",
-      title: "Jump to Build Target",
+      title: "Go to Build Target",
     };
   }
 

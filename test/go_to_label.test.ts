@@ -37,7 +37,7 @@ function assertEditorIsActive(
   );
 }
 
-describe("Jump to Label", () => {
+describe("Go to Label", () => {
   const workspacePath = path.join(
     __dirname,
     "..",
@@ -50,7 +50,7 @@ describe("Jump to Label", () => {
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
   });
 
-  it("should jump to correct line in BUILD file", async () => {
+  it("should go to correct line in BUILD file", async () => {
     // GIVEN
     const targetLabel = "//pkg1:main";
     const expectedFile = path.join(workspacePath, "pkg1", "BUILD");
@@ -64,7 +64,7 @@ describe("Jump to Label", () => {
     });
 
     // WHEN
-    await vscode.commands.executeCommand("bazel.jumpToLabel", mockTargetInfo);
+    await vscode.commands.executeCommand("bazel.goToLabel", mockTargetInfo);
 
     // THEN
     assertEditorIsActive(expectedFile, expectedLine, expectedCharacter);
