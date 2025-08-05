@@ -1,5 +1,18 @@
 # Change Log
 
+## [0.13.0](https://github.com/bazel-contrib/vscode-bazel/compare/v0.12.0...v0.13.0) (2025-08-05)
+
+
+### Features
+
+* **navigation:** Add "Jump to Build File" command ([#462](https://github.com/bazel-contrib/vscode-bazel/issues/462)) ([66f699c](https://github.com/bazel-contrib/vscode-bazel/commit/66f699c945fd3e8720590bfe03f49818a66c0d61)), closes [#178](https://github.com/bazel-contrib/vscode-bazel/issues/178)
+* **navigation:** add "Jump To Label" command ([bc2abea](https://github.com/bazel-contrib/vscode-bazel/commit/bc2abeaffedbe0a0d7d218679d0a7fc54ea868e0))
+
+
+### Bug Fixes
+
+* Use "go to" instead of "jump" ([#468](https://github.com/bazel-contrib/vscode-bazel/issues/468)) ([30bf975](https://github.com/bazel-contrib/vscode-bazel/commit/30bf975b7954a7323c315c476ebfe6584b9d1609))
+
 ## [0.12.0](https://github.com/bazel-contrib/vscode-bazel/compare/v0.11.0...v0.12.0) (2025-07-13)
 
 
