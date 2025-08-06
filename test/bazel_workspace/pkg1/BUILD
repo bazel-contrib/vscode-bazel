@@ -3,3 +3,7 @@ py_binary(
     srcs = ["main.py"],
     visibility = ["//visibility:public"],
 )
+filegroup(
+    name="foo",
+    srcs=["subfolder/foo.txt"],
+)
