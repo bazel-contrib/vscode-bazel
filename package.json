@@ -88,8 +88,13 @@
             },
             {
                 "category": "Bazel",
-                "command": "bazel.jumpToBuildFile",
-                "title": "Jump to BUILD file"
+                "command": "bazel.goToBuildFile",
+                "title": "Go to BUILD file"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.goToLabel",
+                "title": "Go to Label"
             },
             {
                 "category": "Bazel",
@@ -357,7 +362,11 @@
                     "when": "bazel.haveWorkspace"
                 },
                 {
-                    "command": "bazel.jumpToBuildFile",
+                    "command": "bazel.goToBuildFile",
+                    "when": "bazel.haveWorkspace"
+                },
+                {
+                    "command": "bazel.goToLabel",
                     "when": "bazel.haveWorkspace"
                 }
             ],

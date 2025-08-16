@@ -23,6 +23,7 @@ import {
   queryQuickPickPackage,
 } from "../bazel/bazel_quickpick";
 import { createBazelTask } from "../bazel/tasks";
+import { blaze_query } from "../protos";
 
 /**
  * Builds a Bazel target and streams output to the terminal.
@@ -300,18 +301,18 @@ async function bazelClean() {
 }
 
 /**
- * Jumps to the BUILD file for the current package.
+ * Navigates to the BUILD file for the current package.
  *
  * This command finds the nearest BUILD or BUILD.bazel file in the current file's
  * directory or any parent directory and opens it in the editor. The search is
  * limited to the current Bazel workspace.
  */
-async function bazelJumpToBuildFile() {
+async function bazelGoToBuildFile() {
   const currentEditor = vscode.window.activeTextEditor;
   if (!currentEditor) {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     vscode.window.showInformationMessage(
-      "Please open a file to jump to its BUILD file.",
+      "Please open a file to go to its BUILD file.",
     );
     return;
   }
@@ -329,6 +330,42 @@ async function bazelJumpToBuildFile() {
   // Open the BUILD file
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   await vscode.window.showTextDocument(vscode.Uri.file(buildFilePath));
+}
+
+/**
+ * Navigates to the BUILD file location for the specified label.
+ *
+ * This command finds the BUILD file location for the specified label and opens
+ * it in the editor.
+ * @param target_info Optional target information to go to directly, bypassing the quick pick
+ */
+async function bazelGoToLabel(target_info?: blaze_query.ITarget | undefined) {
+  if (!target_info) {
+    const quickPick = await vscode.window.showQuickPick(
+      queryQuickPickTargets({ query: "kind('.* rule', ...)" }),
+      { canPickMany: false },
+    );
+    // If the result was undefined, the user cancelled the quick pick
+    if (!quickPick) {
+      return;
+    }
+    target_info = quickPick.getTargetInfo();
+  }
+
+  const location = target_info.rule.location;
+  const [filePath, line, column] = location.split(":");
+  const position = new vscode.Position(
+    parseInt(line, 10) - 1, // Convert to 0-based line number
+    parseInt(column || "0", 10) - 1, // Convert to 0-based column number, default to 0
+  );
+
+  // Open the document and reveal the position
+  const document = await vscode.workspace.openTextDocument(
+    vscode.Uri.file(filePath),
+  );
+  await vscode.window.showTextDocument(document, {
+    selection: new vscode.Range(position, position),
+  });
 }
 
 /**
@@ -355,9 +392,7 @@ export function activateWrapperCommands(): vscode.Disposable[] {
       bazelTestAllRecursive,
     ),
     vscode.commands.registerCommand("bazel.clean", bazelClean),
-    vscode.commands.registerCommand(
-      "bazel.jumpToBuildFile",
-      bazelJumpToBuildFile,
-    ),
+    vscode.commands.registerCommand("bazel.goToBuildFile", bazelGoToBuildFile),
+    vscode.commands.registerCommand("bazel.goToLabel", bazelGoToLabel),
   ];
 }
