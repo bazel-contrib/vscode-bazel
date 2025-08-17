@@ -60,7 +60,8 @@ function groupCommandsByType(lenses: LensInfo[]): Record<string, string[]> {
     if (!command || !command.arguments?.[0]) return;
 
     const title = command.title || "";
-    const target: string = command.arguments[0].targets?.[0] || "";
+    const target: string =
+      (command.arguments[0] as { targets: string[] }).targets?.[0] || "";
 
     // Extract just the command name (first word) from the title
     const commandName = title.split(" ")[0];
