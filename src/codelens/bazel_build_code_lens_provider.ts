@@ -156,7 +156,7 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
 
       // All targets support target copying and building.
       commands.push({
-        commandString: "bazel.copyTargetToClipboard",
+        commandString: "bazel.copyLabelToClipboard",
         name: "Copy",
       });
       commands.push({
