@@ -89,13 +89,22 @@ export async function activate(context: vscode.ExtensionContext) {
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   vscode.commands.executeCommand("setContext", "bazel.lsp.enabled", lspEnabled);
 
+  // Create and register the tree view
+  const treeView = vscode.window.createTreeView("bazelWorkspace", {
+    treeDataProvider: workspaceTreeProvider,
+    showCollapseAll: true,
+  });
+  workspaceTreeProvider.setTreeView(treeView);
+
   context.subscriptions.push(
-    vscode.window.registerTreeDataProvider(
-      "bazelWorkspace",
-      workspaceTreeProvider,
-    ),
+    treeView,
     // Commands
     ...activateWrapperCommands(),
+
+    // Register command to manually refresh the tree view
+    vscode.commands.registerCommand("bazel.workspaceTree.refresh", () => {
+      workspaceTreeProvider.refresh();
+    }),
     vscode.commands.registerCommand("bazel.refreshBazelBuildTargets", () => {
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
       completionItemProvider?.refresh();
