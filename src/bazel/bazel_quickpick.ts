@@ -14,7 +14,10 @@
 
 import * as vscode from "vscode";
 
-import { getDefaultBazelExecutablePath } from "../extension/configuration";
+import {
+  getDefaultBazelExecutablePath,
+  areBazelQueriesEnabled,
+} from "../extension/configuration";
 import { IBazelCommandAdapter, IBazelCommandOptions } from "./bazel_command";
 import { BazelQuery } from "./bazel_query";
 import { blaze_query } from "../protos";
@@ -118,6 +121,10 @@ export async function queryQuickPickTargets({
   query,
   workspaceInfo,
 }: QuickPickParams): Promise<BazelTargetQuickPick[]> {
+  if (!areBazelQueriesEnabled()) {
+    return [];
+  }
+
   if (workspaceInfo === undefined) {
     // Ask the user to pick a workspace, if we don't have one, yet
     workspaceInfo = await pickBazelWorkspace();
@@ -155,6 +162,10 @@ export async function queryQuickPickPackage({
   query,
   workspaceInfo,
 }: QuickPickParams): Promise<BazelTargetQuickPick[]> {
+  if (!areBazelQueriesEnabled()) {
+    return [];
+  }
+
   if (workspaceInfo === undefined) {
     // Ask the user to pick a workspace, if we don't have one, yet
     workspaceInfo = await pickBazelWorkspace();
