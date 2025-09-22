@@ -292,3 +292,64 @@ export function showDynamicQuickPick({
     });
   });
 }
+
+/** Maximum length for target display names before truncation */
+const MAX_TARGET_DISPLAY_LENGTH = 80;
+
+/**
+ * Creates a formatted display name for a target with proper truncation
+ */
+function formatTargetDisplayName(
+  target: string,
+  maxLabelLength: number = MAX_TARGET_DISPLAY_LENGTH,
+): string {
+  const shortName = target.includes(":") ? target.split(":")[1] : target;
+  // Truncate from the beginning if the name is too long (keep the end visible)
+  return shortName.length > maxLabelLength
+    ? "..." + shortName.slice(-(maxLabelLength - 3))
+    : shortName;
+}
+
+/**
+ * Creates QuickPick items for targets with consistent formatting
+ */
+export function createTargetQuickPickItems(targets: string[]): {
+  label: string;
+  description: string;
+  target: string;
+}[] {
+  return targets.map((target) => ({
+    label: formatTargetDisplayName(target),
+    description: target, // Full target path as description
+    target,
+  }));
+}
+
+/**
+ * Shows a QuickPick for multiple targets and returns the selected target
+ * @param targets Array of target strings to choose from
+ * @param commandName Name of the command for display purposes
+ * @returns Promise that resolves to the selected target string, or undefined if cancelled
+ */
+export async function showTargetQuickPick(
+  targets: string[],
+  commandName: string,
+): Promise<string | undefined> {
+  if (targets.length === 0) {
+    return undefined;
+  }
+
+  if (targets.length === 1) {
+    return targets[0];
+  }
+
+  // Show QuickPick for multiple targets
+  const quickPickItems = createTargetQuickPickItems(targets);
+
+  const selectedItem = await vscode.window.showQuickPick(quickPickItems, {
+    placeHolder: `Select target to ${commandName.toLowerCase()}`,
+    canPickMany: false,
+  });
+
+  return selectedItem?.target;
+}
