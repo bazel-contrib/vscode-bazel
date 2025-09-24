@@ -229,7 +229,7 @@ export function showDynamicQuickPick(options: {
       });
       quickPick.items = items;
     } catch (error) {
-      if (error instanceof Error && error.message === "Query was aborted") {
+      if (error instanceof Error && error.name === "AbortError") {
         return; // Ignore abort errors
       }
       // For other errors, show an empty list

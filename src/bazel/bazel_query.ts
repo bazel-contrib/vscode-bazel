@@ -17,7 +17,6 @@ import * as crypto from "crypto";
 import * as os from "os";
 import * as path from "path";
 import * as vscode from "vscode";
-
 import { blaze_query } from "../protos";
 import { BazelCommand } from "./bazel_command";
 import { getBazelWorkspaceFolder } from "./bazel_utils";
@@ -170,7 +169,11 @@ export class BazelQuery extends BazelCommand {
       const onAbort = () => {
         try {
           child.kill();
-          reject(new Error("Query was aborted"));
+          const abortError = new Error("The operation was aborted") as Error & {
+            name: string;
+          };
+          abortError.name = "AbortError";
+          reject(abortError);
         } catch (error: unknown) {
           reject(error);
         }
@@ -178,11 +181,7 @@ export class BazelQuery extends BazelCommand {
 
       const cleanup = () => {
         if (abortSignal) {
-          // Type assertion to access the non-standard removeEventListener
-          const signal = abortSignal as unknown as {
-            removeEventListener: (type: string, handler: () => void) => void;
-          };
-          signal.removeEventListener("abort", onAbort);
+          abortSignal.removeEventListener("abort", onAbort);
         }
       };
 
@@ -191,15 +190,7 @@ export class BazelQuery extends BazelCommand {
           onAbort();
           return;
         }
-        // Type assertion to access the non-standard addEventListener
-        const signal = abortSignal as unknown as {
-          addEventListener: (
-            type: string,
-            handler: () => void,
-            options: { once: boolean },
-          ) => void;
-        };
-        signal.addEventListener("abort", onAbort, { once: true });
+        abortSignal.addEventListener("abort", onAbort, { once: true });
       }
 
       const chunks: Buffer[] = [];
