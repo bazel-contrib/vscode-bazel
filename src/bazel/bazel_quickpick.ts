@@ -184,11 +184,21 @@ export async function queryQuickPickPackage({
 /**
  * Shows a QuickPick of Bazel labels that dynamically updates its items based on the user's input.
  *
- * @param options Configuration options for the QuickPick
+ * Configuration options:
+ * @param options.initialPattern Initial pattern to use (e.g., "//...")
+ * @param options.queryBuilder Function that builds a Bazel query from a pattern (e.g. `pattern => "kind('.* rule', ${pattern})"`)
+ * @param options.queryFunctor Function that executes the query and returns the quick pick items
+ * @param options.workspaceInfo Workspace information for the Bazel project
  * @returns A promise that resolves with the selected BazelTargetQuickPick, or undefined if no selection was made
  */
-export function showDynamicQuickPick(options: {
-  query?: string;
+export function showDynamicQuickPick({
+  initialPattern,
+  queryBuilder,
+  queryFunctor,
+  workspaceInfo,
+}: {
+  initialPattern: string;
+  queryBuilder: (pattern: string) => string;
   queryFunctor: (params: QuickPickParams) => Promise<BazelTargetQuickPick[]>;
   workspaceInfo?: BazelWorkspaceInfo;
 }): Promise<BazelTargetQuickPick | undefined> {
@@ -201,7 +211,9 @@ export function showDynamicQuickPick(options: {
   let abortController: AbortController | undefined = new AbortController();
   let timeout: NodeJS.Timeout | undefined;
 
-  const updateQuickOptions = async (value: string): Promise<void> => {
+  const updateQuickOptions = async (
+    currentUserInput: string,
+  ): Promise<void> => {
     // Cancel any previous query
     abortController?.abort();
 
@@ -213,18 +225,20 @@ export function showDynamicQuickPick(options: {
     quickPick.busy = true;
     quickPick.items = [];
 
-    // Process the input: keep everything before the last slash and add '...'
-    const newQuery = value.includes("/")
-      ? options.query.replace(
-          "//...",
-          `${value.substring(0, value.lastIndexOf("/"))}/...`,
-        )
-      : options.query;
+    // Process the input: keep everything before the last separator (either / or :) and add '/...'
+    let pattern = initialPattern;
+    const lastSlashIndex = currentUserInput.lastIndexOf("/");
+    const lastColonIndex = currentUserInput.lastIndexOf(":");
+    const lastSeparatorIndex = Math.max(lastSlashIndex, lastColonIndex);
+    if (lastSeparatorIndex !== -1) {
+      pattern = `${currentUserInput.substring(0, lastSeparatorIndex)}/...`;
+    }
+    const newQuery = queryBuilder(pattern);
 
     try {
-      const items = await options.queryFunctor({
+      const items = await queryFunctor({
         query: newQuery,
-        workspaceInfo: options.workspaceInfo,
+        workspaceInfo,
         abortSignal: currentAbortController.signal,
       });
       quickPick.items = items;

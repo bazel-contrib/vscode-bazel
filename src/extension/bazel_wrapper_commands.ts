@@ -38,7 +38,8 @@ async function bazelBuildTarget(adapter: IBazelCommandAdapter | undefined) {
     // invoked via the command palatte. Provide quickpick build targets for
     // the user to choose from.
     const quickPick = await showDynamicQuickPick({
-      query: "kind('.* rule', //...)",
+      initialPattern: "//...",
+      queryBuilder: (pattern) => `kind('.* rule', ${pattern})`,
       queryFunctor: queryQuickPickTargets,
       workspaceInfo: await BazelWorkspaceInfo.fromWorkspaceFolders(),
     });
@@ -69,7 +70,8 @@ async function bazelBuildTargetWithDebugging(
     // invoked via the command palatte. Provide quickpick build targets for
     // the user to choose from.
     const quickPick = await showDynamicQuickPick({
-      query: "kind('.* rule', //...)",
+      initialPattern: "//...",
+      queryBuilder: (pattern) => `kind('.* rule', ${pattern})`,
       queryFunctor: queryQuickPickTargets,
       workspaceInfo: await BazelWorkspaceInfo.fromWorkspaceFolders(),
     });
@@ -136,6 +138,8 @@ async function buildPackage(
     // invoked via the command palatte. Provide quickpick build targets for
     // the user to choose from.
     const quickPick = await showDynamicQuickPick({
+      initialPattern: "//...",
+      queryBuilder: (pattern) => pattern,
       queryFunctor: queryQuickPickPackage,
       workspaceInfo: await BazelWorkspaceInfo.fromWorkspaceFolders(),
     });
@@ -169,7 +173,8 @@ async function bazelRunTarget(adapter: IBazelCommandAdapter | undefined) {
     // invoked via the command palatte. Provide quickpick test targets for
     // the user to choose from.
     const quickPick = await showDynamicQuickPick({
-      query: "kind('.* rule', //...)",
+      initialPattern: "//...",
+      queryBuilder: (pattern) => `kind('.* rule', ${pattern})`,
       queryFunctor: queryQuickPickTargets,
       workspaceInfo: await BazelWorkspaceInfo.fromWorkspaceFolders(),
     });
@@ -198,7 +203,8 @@ async function bazelTestTarget(adapter: IBazelCommandAdapter | undefined) {
     // invoked via the command palatte. Provide quickpick test targets for
     // the user to choose from.
     const quickPick = await showDynamicQuickPick({
-      query: "kind('.*_test rule', //...)",
+      initialPattern: "//...",
+      queryBuilder: (pattern) => `kind('.* rule', ${pattern})`,
       queryFunctor: queryQuickPickTargets,
       workspaceInfo: await BazelWorkspaceInfo.fromWorkspaceFolders(),
     });
@@ -246,6 +252,8 @@ async function testPackage(
     // invoked via the command palatte. Provide quickpick build targets for
     // the user to choose from.
     const quickPick = await showDynamicQuickPick({
+      initialPattern: "//...",
+      queryBuilder: (pattern) => pattern,
       queryFunctor: queryQuickPickPackage,
       workspaceInfo: await BazelWorkspaceInfo.fromWorkspaceFolders(),
     });
@@ -335,7 +343,8 @@ async function bazelGoToBuildFile() {
 async function bazelGoToLabel(target_info?: blaze_query.ITarget | undefined) {
   if (!target_info) {
     const quickPick = await showDynamicQuickPick({
-      query: "kind('.* rule', //...)",
+      initialPattern: "//...",
+      queryBuilder: (pattern) => `kind('.* rule', ${pattern})`,
       queryFunctor: queryQuickPickTargets,
       workspaceInfo: await BazelWorkspaceInfo.fromWorkspaceFolders(),
     });
