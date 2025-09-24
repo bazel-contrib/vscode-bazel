@@ -38,7 +38,7 @@ export class BuildifierDiagnosticsManager implements vscode.Disposable {
    * and window events so that diagnostics are updated live.
    */
   constructor() {
-    let didChangeTextTimer: NodeJS.Timer | null;
+    let didChangeTextTimer: NodeJS.Timeout | null;
 
     vscode.workspace.onDidChangeTextDocument((e) => {
       if (didChangeTextTimer) {
