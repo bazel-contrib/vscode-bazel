@@ -13,11 +13,16 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
+import * as path from "path";
 
 import { IBazelCommandAdapter } from "../bazel/bazel_command";
 import { BazelWorkspaceInfo } from "../bazel/bazel_workspace_info";
 import { getDefaultBazelExecutablePath } from "./configuration";
-import { getBazelPackageFile } from "../bazel/bazel_utils";
+import {
+  getBazelPackageFile,
+  getBazelWorkspaceFolder,
+  getBazelPackageFolder,
+} from "../bazel/bazel_utils";
 import {
   queryQuickPickTargets,
   queryQuickPickPackage,
@@ -372,6 +377,80 @@ async function bazelGoToLabel(target_info?: blaze_query.ITarget | undefined) {
 }
 
 /**
+ * Copies the Bazel label to the clipboard.
+ *
+ * If no adapter is provided, it will find the label under the cursor in the
+ * active editor, validate it, and copy it to the clipboard. If the label is a
+ * short form (missing the target name), it will be expanded to the full label.
+ */
+function bazelCopyLabelToClipboard(adapter: IBazelCommandAdapter | undefined) {
+  let label: string;
+
+  if (adapter !== undefined) {
+    // Called from a command adapter, so we can assume there is only one target.
+    label = adapter.getBazelCommandOptions().targets[0];
+  } else {
+    // Called from command palette
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) {
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      vscode.window.showInformationMessage(
+        "Please open a file to copy a label from.",
+      );
+      return;
+    }
+
+    const document = editor.document;
+    const position = editor.selection.active;
+    const wordRange = document.getWordRangeAtPosition(
+      position,
+      /(?<![^"'])[a-zA-Z0-9_/:.-@]+(?![^"'])/,
+    );
+
+    if (!wordRange) {
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      vscode.window.showInformationMessage(
+        "No label found at cursor position.",
+      );
+      return;
+    }
+
+    label = document.getText(wordRange);
+
+    // If the label doesn't start with //, prepend the current package
+    if (!label.startsWith("//") && !label.startsWith("@")) {
+      const filePath = document.uri.fsPath;
+      const packagePath = getBazelPackageFolder(filePath);
+      if (!packagePath) {
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        vscode.window.showErrorMessage("Not in a Bazel package.");
+        return;
+      }
+
+      // Get the package relative to workspace
+      const workspaceRoot = getBazelWorkspaceFolder(filePath);
+      const relativePackage = path.relative(workspaceRoot, packagePath) || ".";
+      label = `//${relativePackage}${label.startsWith(":") ? "" : ":"}${label}`;
+    }
+
+    // Handle the case where the target name is omitted
+    // (e.g., "//foo/bar" instead of "//foo/bar:bar")
+    if (!label.includes(":")) {
+      const parts = label.split("/");
+      const lastPart = parts[parts.length - 1];
+      if (lastPart && lastPart !== "...") {
+        // Don't expand "//..."
+        label = `${label}:${lastPart}`;
+      }
+    }
+  }
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  vscode.env.clipboard.writeText(label);
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  vscode.window.showInformationMessage(`Copied to clipboard: ${label}`);
+}
+
+/**
  * Activate all user-facing commands which simply wrap Bazel commands
  * such as `build`, `clean`, etc.
  */
@@ -397,5 +476,9 @@ export function activateWrapperCommands(): vscode.Disposable[] {
     vscode.commands.registerCommand("bazel.clean", bazelClean),
     vscode.commands.registerCommand("bazel.goToBuildFile", bazelGoToBuildFile),
     vscode.commands.registerCommand("bazel.goToLabel", bazelGoToLabel),
+    vscode.commands.registerCommand(
+      "bazel.copyLabelToClipboard",
+      bazelCopyLabelToClipboard,
+    ),
   ];
 }
