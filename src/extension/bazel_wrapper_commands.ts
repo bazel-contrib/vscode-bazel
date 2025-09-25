@@ -29,6 +29,43 @@ import {
 } from "../bazel/bazel_quickpick";
 import { createBazelTask } from "../bazel/tasks";
 import { blaze_query } from "../protos";
+import { CodeLensCommandAdapter } from "../codelens/code_lens_command_adapter";
+
+/**
+ * Helper function to execute Bazel commands with common pattern:
+ * 1. Check if adapter is undefined → show QuickPick
+ * 2. Get command options from adapter
+ * 3. Create Bazel task
+ * 4. Execute task
+ */
+async function executeBazelCommand(
+  command: "build" | "clean" | "coverage" | "test" | "run",
+  quickPickQuery: string,
+  adapter: IBazelCommandAdapter | undefined,
+  commandFunction: (adapter: IBazelCommandAdapter | undefined) => Promise<void>,
+) {
+  if (adapter === undefined) {
+    // If the command adapter was unspecified, it means this command is being
+    // invoked via the command palatte. Provide quickpick targets for
+    // the user to choose from.
+    const quickPick = await vscode.window.showQuickPick(
+      queryQuickPickTargets({ query: quickPickQuery }),
+      {
+        canPickMany: false,
+      },
+    );
+    // If the result was undefined, the user cancelled the quick pick, so don't
+    // try again.
+    if (quickPick) {
+      await commandFunction(quickPick);
+    }
+    return;
+  }
+  const commandOptions = adapter.getBazelCommandOptions();
+  const task = createBazelTask(command, commandOptions);
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  vscode.tasks.executeTask(task);
+}
 
 /**
  * Builds a Bazel target and streams output to the terminal.
@@ -37,27 +74,25 @@ import { blaze_query } from "../protos";
  * which the command's arguments will be determined.
  */
 async function bazelBuildTarget(adapter: IBazelCommandAdapter | undefined) {
-  if (adapter === undefined) {
-    // If the command adapter was unspecified, it means this command is being
-    // invoked via the command palatte. Provide quickpick build targets for
-    // the user to choose from.
-    const quickPick = await vscode.window.showQuickPick(
-      queryQuickPickTargets({ query: "kind('.* rule', ...)" }),
-      {
-        canPickMany: false,
-      },
-    );
-    // If the result was undefined, the user cancelled the quick pick, so don't
-    // try again.
-    if (quickPick) {
-      await bazelBuildTarget(quickPick);
+  // Handle multiple targets with picker
+  if (adapter) {
+    const commandOptions = adapter.getBazelCommandOptions();
+    if (commandOptions.targets.length > 1) {
+      return bazelMultipleTargetCommand(
+        commandOptions.workspaceInfo,
+        commandOptions.targets,
+        "Build target",
+        bazelBuildTarget,
+      );
     }
-    return;
   }
-  const commandOptions = adapter.getBazelCommandOptions();
-  const task = createBazelTask("build", commandOptions);
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  vscode.tasks.executeTask(task);
+
+  await executeBazelCommand(
+    "build",
+    "kind('.* rule', ...)",
+    adapter,
+    bazelBuildTarget,
+  );
 }
 
 /**
@@ -172,27 +207,25 @@ async function buildPackage(
  * which the command's arguments will be determined.
  */
 async function bazelRunTarget(adapter: IBazelCommandAdapter | undefined) {
-  if (adapter === undefined) {
-    // If the command adapter was unspecified, it means this command is being
-    // invoked via the command palatte. Provide quickpick test targets for
-    // the user to choose from.
-    const quickPick = await vscode.window.showQuickPick(
-      queryQuickPickTargets({ query: "kind('.* rule', ...)" }),
-      {
-        canPickMany: false,
-      },
-    );
-    // If the result was undefined, the user cancelled the quick pick, so don't
-    // try again.
-    if (quickPick) {
-      await bazelRunTarget(quickPick);
+  // Handle multiple targets with picker
+  if (adapter) {
+    const commandOptions = adapter.getBazelCommandOptions();
+    if (commandOptions.targets.length > 1) {
+      return bazelMultipleTargetCommand(
+        commandOptions.workspaceInfo,
+        commandOptions.targets,
+        "Run target",
+        bazelRunTarget,
+      );
     }
-    return;
   }
-  const commandOptions = adapter.getBazelCommandOptions();
-  const task = createBazelTask("run", commandOptions);
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  vscode.tasks.executeTask(task);
+
+  await executeBazelCommand(
+    "run",
+    "kind('.* rule', ...)",
+    adapter,
+    bazelRunTarget,
+  );
 }
 
 /**
@@ -202,27 +235,25 @@ async function bazelRunTarget(adapter: IBazelCommandAdapter | undefined) {
  * which the command's arguments will be determined.
  */
 async function bazelTestTarget(adapter: IBazelCommandAdapter | undefined) {
-  if (adapter === undefined) {
-    // If the command adapter was unspecified, it means this command is being
-    // invoked via the command palatte. Provide quickpick test targets for
-    // the user to choose from.
-    const quickPick = await vscode.window.showQuickPick(
-      queryQuickPickTargets({ query: "kind('.*_test rule', ...)" }),
-      {
-        canPickMany: false,
-      },
-    );
-    // If the result was undefined, the user cancelled the quick pick, so don't
-    // try again.
-    if (quickPick) {
-      await bazelTestTarget(quickPick);
+  // Handle multiple targets with picker
+  if (adapter) {
+    const commandOptions = adapter.getBazelCommandOptions();
+    if (commandOptions.targets.length > 1) {
+      return bazelMultipleTargetCommand(
+        commandOptions.workspaceInfo,
+        commandOptions.targets,
+        "Test target",
+        bazelTestTarget,
+      );
     }
-    return;
   }
-  const commandOptions = adapter.getBazelCommandOptions();
-  const task = createBazelTask("test", commandOptions);
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  vscode.tasks.executeTask(task);
+
+  await executeBazelCommand(
+    "test",
+    "kind('.*_test rule', ...)",
+    adapter,
+    bazelTestTarget,
+  );
 }
 
 /**
@@ -380,12 +411,65 @@ async function bazelGoToLabel(target_info?: blaze_query.ITarget | undefined) {
  * active editor, validate it, and copy it to the clipboard. If the label is a
  * short form (missing the target name), it will be expanded to the full label.
  */
-function bazelCopyLabelToClipboard(adapter: IBazelCommandAdapter | undefined) {
+function bazelCopyLabelToClipboard(
+  workspaceInfoOrAdapter: BazelWorkspaceInfo | IBazelCommandAdapter | undefined,
+  targetsOrUndefined?: { targets: string[] } | string,
+) {
+  // Handle multiple targets with picker when using IBazelCommandAdapter
+  if (
+    workspaceInfoOrAdapter !== undefined &&
+    !(workspaceInfoOrAdapter instanceof BazelWorkspaceInfo)
+  ) {
+    const adapter = workspaceInfoOrAdapter;
+    const commandOptions = adapter.getBazelCommandOptions();
+    if (commandOptions.targets.length > 1) {
+      return bazelMultipleTargetCommand(
+        commandOptions.workspaceInfo,
+        commandOptions.targets,
+        "Copy label",
+        bazelCopyLabelToClipboard,
+      );
+    }
+  }
+
   let label: string;
 
-  if (adapter !== undefined) {
-    // Called from a command adapter, so we can assume there is only one target.
-    label = adapter.getBazelCommandOptions().targets[0];
+  // Handle new unified format: [bazelWorkspaceInfo, { targets: targetArray }]
+  if (
+    workspaceInfoOrAdapter instanceof BazelWorkspaceInfo &&
+    targetsOrUndefined
+  ) {
+    const targets =
+      typeof targetsOrUndefined === "string"
+        ? [targetsOrUndefined]
+        : (targetsOrUndefined as { targets: string[] }).targets;
+
+    if (targets.length === 1) {
+      // Single target - copy directly
+      label = targets[0];
+    } else {
+      // Multiple targets - show selection dialog
+      return bazelMultipleTargetCommand(
+        workspaceInfoOrAdapter,
+        targets,
+        "Copy target label to clipboard",
+        (adapter: IBazelCommandAdapter) => {
+          const target = adapter.getBazelCommandOptions().targets[0];
+          // eslint-disable-next-line @typescript-eslint/no-floating-promises
+          vscode.env.clipboard.writeText(target);
+          // eslint-disable-next-line @typescript-eslint/no-floating-promises
+          vscode.window.showInformationMessage(
+            `Copied to clipboard: ${target}`,
+          );
+        },
+      );
+    }
+  } else if (
+    workspaceInfoOrAdapter !== undefined &&
+    !(workspaceInfoOrAdapter instanceof BazelWorkspaceInfo)
+  ) {
+    // Handle old format: IBazelCommandAdapter
+    label = workspaceInfoOrAdapter.getBazelCommandOptions().targets[0];
   } else {
     // Called from command palette
     const editor = vscode.window.activeTextEditor;
@@ -445,6 +529,71 @@ function bazelCopyLabelToClipboard(adapter: IBazelCommandAdapter | undefined) {
   vscode.env.clipboard.writeText(label);
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   vscode.window.showInformationMessage(`Copied to clipboard: ${label}`);
+}
+
+/** Maximum length for target display names before truncation */
+const MAX_TARGET_DISPLAY_LENGTH = 80;
+
+/**
+ * Creates a formatted display name for a target with proper truncation
+ */
+function formatTargetDisplayName(
+  target: string,
+  maxLabelLength: number = MAX_TARGET_DISPLAY_LENGTH,
+): string {
+  const shortName = target.includes(":") ? target.split(":")[1] : target;
+  // Truncate from the beginning if the name is too long (keep the end visible)
+  return shortName.length > maxLabelLength
+    ? "..." + shortName.slice(-(maxLabelLength - 3))
+    : shortName;
+}
+
+/**
+ * Creates QuickPick items for targets with consistent formatting
+ */
+function createTargetQuickPickItems(targets: string[]): {
+  label: string;
+  description: string;
+  target: string;
+}[] {
+  return targets.map((target) => ({
+    label: formatTargetDisplayName(target),
+    description: target, // Full target path as description
+    target,
+  }));
+}
+
+/**
+ * Shows a QuickPick for multiple targets and executes the selected command
+ */
+async function bazelMultipleTargetCommand(
+  workspaceInfo: BazelWorkspaceInfo,
+  targets: string[],
+  commandName: string,
+  commandFunction: (adapter: IBazelCommandAdapter) => Promise<void> | void,
+): Promise<void> {
+  if (targets.length === 1) {
+    // If only one target, execute directly using CodeLensCommandAdapter
+    const adapter = new CodeLensCommandAdapter(workspaceInfo, [targets[0]]);
+    await commandFunction(adapter);
+    return;
+  }
+
+  // Show QuickPick for multiple targets
+  const quickPickItems = createTargetQuickPickItems(targets);
+
+  const selectedItem = await vscode.window.showQuickPick(quickPickItems, {
+    placeHolder: `Select target to ${commandName.toLowerCase()}`,
+    canPickMany: false,
+  });
+
+  if (selectedItem) {
+    // Use CodeLensCommandAdapter instead of inline adapter creation
+    const adapter = new CodeLensCommandAdapter(workspaceInfo, [
+      selectedItem.target,
+    ]);
+    await commandFunction(adapter);
+  }
 }
 
 /**

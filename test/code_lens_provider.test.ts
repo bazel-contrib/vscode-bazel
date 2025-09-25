@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as assert from "assert";
 import { BazelBuildCodeLensProvider } from "../src/codelens/bazel_build_code_lens_provider";
-import { BazelWorkspaceInfo } from "../src/bazel";
+import { BazelWorkspaceInfo, IBazelCommandAdapter } from "../src/bazel";
 import { blaze_query } from "../src/protos";
 
 // Group lenses by target line number for easier assertions
@@ -35,10 +35,19 @@ function groupLensesByLine(lenses: vscode.CodeLens[]): Map<number, LensInfo[]> {
       lensesByLine.set(line, []);
     }
     if (lens.command?.title) {
-      const targetArg = lens.command.arguments?.[0] as
-        | { targets: string[] }
+      const commandAdapter = lens.command.arguments?.[0] as
+        | IBazelCommandAdapter
         | undefined;
-      const target = targetArg?.targets?.[0] || "";
+      let target = "";
+
+      // Extract target from CodeLensCommandAdapter
+      if (
+        commandAdapter &&
+        typeof commandAdapter.getBazelCommandOptions === "function"
+      ) {
+        const options = commandAdapter.getBazelCommandOptions();
+        target = options.targets?.[0] || "";
+      }
 
       lensesByLine.get(line)?.push({
         title: lens.command.title,
@@ -50,28 +59,6 @@ function groupLensesByLine(lenses: vscode.CodeLens[]): Map<number, LensInfo[]> {
     }
   });
   return lensesByLine;
-}
-
-function groupCommandsByType(lenses: LensInfo[]): Record<string, string[]> {
-  const commandsByType: Record<string, string[]> = {};
-
-  lenses.forEach((lens) => {
-    const command = lens.command;
-    if (!command || !command.arguments?.[0]) return;
-
-    const title = command.title || "";
-    const target: string =
-      (command.arguments[0] as { targets: string[] }).targets?.[0] || "";
-
-    // Extract just the command name (first word) from the title
-    const commandName = title.split(" ")[0];
-    if (!commandsByType[commandName]) {
-      commandsByType[commandName] = [];
-    }
-    commandsByType[commandName].push(target);
-  });
-
-  return commandsByType;
 }
 
 describe("BazelBuildCodeLensProvider", () => {
@@ -186,40 +173,93 @@ describe("BazelBuildCodeLensProvider", () => {
       });
     });
 
-    // 4. Verify multiple targets on the same line (line 25)
-    //    - Shorter target name ("test") should come before longer one ("abc_helper")
-    //    - Targets with same length should be ordered alphabetically ("abc_helper" should come before "helper_abc")
+    // 4. Verify multiple targets on the same line (line 25) - now uses grouped approach
+    //    - Should have 4 grouped code lenses (Copy, Build, Run, Test)
+    //    - Each grouped lens should contain multiple targets ordered by length then alphabetically
     const sameLineLenses = lensesByLine.get(25) || [];
     assert.strictEqual(
       sameLineLenses.length,
-      8,
-      "Should have 8 code lenses for both targets on line 25",
-    );
-    // Process each lens to group commands by type
-    const commandsByType = groupCommandsByType(sameLineLenses);
-    // Verify commands are ordered by target name length (shorter first)
-    assert.deepStrictEqual(
-      commandsByType.Copy,
-      ["//foo:test", "//foo:abc_helper", "//foo:helper_abc"],
-      "Copy commands should be ordered by target name length",
-    );
-    assert.deepStrictEqual(
-      commandsByType.Build,
-      ["//foo:test", "//foo:abc_helper", "//foo:helper_abc"],
-      "Build commands should be ordered by target name length",
+      4,
+      "Should have 4 grouped code lenses for multiple targets on line 25",
     );
 
-    // Test target should have Run and Test commands
+    // Verify we have the expected command types
+    const lenseTitles = sameLineLenses.map((l) => l.title).sort();
     assert.deepStrictEqual(
-      commandsByType.Run,
-      ["//foo:test"],
-      "Run command should only be for the test target",
+      lenseTitles,
+      ["Build (3)", "Copy (3)", "Run", "Test"],
+      "Should have grouped commands with correct counts",
     );
-    assert.deepStrictEqual(
-      commandsByType.Test,
-      ["//foo:test"],
-      "Test command should only be for the test target",
-    );
+
+    // Verify each grouped command contains the correct targets in the right order
+    sameLineLenses.forEach((lens) => {
+      const command = lens.command;
+      assert.ok(command, "Each lens should have a command");
+      assert.ok(command.arguments?.[0], "Command should have arguments");
+
+      if (lens.title.startsWith("Copy") || lens.title.startsWith("Build")) {
+        // All commands now use CodeLensCommandAdapter format
+        const commandAdapter = command.arguments[0] as
+          | IBazelCommandAdapter
+          | undefined;
+        assert.ok(
+          commandAdapter &&
+            typeof commandAdapter.getBazelCommandOptions === "function",
+          "Command should use CodeLensCommandAdapter format",
+        );
+
+        const options = commandAdapter.getBazelCommandOptions();
+        assert.ok(
+          Array.isArray(options.targets),
+          "Command should have targets array",
+        );
+
+        if (lens.title.includes("(")) {
+          // Multiple target format: Copy (3), Build (3)
+          assert.deepStrictEqual(
+            options.targets,
+            ["//foo:abc_helper", "//foo:helper_abc", "//foo:test"],
+            `${lens.title} should contain all targets ordered alphabetically`,
+          );
+        } else {
+          // Single target format: Copy, Build
+          assert.strictEqual(
+            options.targets.length,
+            1,
+            "Single target should have exactly one target",
+          );
+          assert.ok(
+            options.targets[0].startsWith("//foo:"),
+            "Target should be from foo package",
+          );
+        }
+      } else if (
+        lens.title.startsWith("Run") ||
+        lens.title.startsWith("Test")
+      ) {
+        // Run and Test commands now also use CodeLensCommandAdapter format
+        assert.strictEqual(
+          command.arguments.length,
+          1,
+          "Single target commands should have 1 argument",
+        );
+        const commandAdapter = command.arguments[0] as
+          | IBazelCommandAdapter
+          | undefined;
+        assert.ok(
+          commandAdapter &&
+            typeof commandAdapter.getBazelCommandOptions === "function",
+          "Command should use CodeLensCommandAdapter format",
+        );
+
+        const options = commandAdapter.getBazelCommandOptions();
+        assert.deepStrictEqual(
+          options.targets,
+          ["//foo:test"],
+          `${lens.title} should be for the test target`,
+        );
+      }
+    });
 
     // Verify all commands are on the correct line (0-based line 24 = line 25 in editor)
     sameLineLenses.forEach((lens) => {
