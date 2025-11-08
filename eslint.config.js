@@ -1,32 +1,35 @@
 // @ts-check
 
 const globals = require("globals");
-const eslint = require("@eslint/js");
-const tseslint = require("typescript-eslint");
+const tseslint = require("@typescript-eslint/eslint-plugin");
+const tseslintParser = require("@typescript-eslint/parser");
 const jsdoc = require("eslint-plugin-jsdoc");
-const eslintConfigPrettier = require("eslint-config-prettier");
 
-module.exports = tseslint.config(
-  eslint.configs.recommended,
-  ...tseslint.configs.recommendedTypeChecked,
-  eslintConfigPrettier,
+module.exports = [
+  // Global ignores
   {
     ignores: ["out/", "src/protos/protos.js", "src/protos/protos.d.ts"],
   },
+
+  // TypeScript configuration
   {
+    files: ["**/*.ts", "**/*.tsx"],
     languageOptions: {
       globals: {
         ...globals.node,
       },
+      parser: tseslintParser,
       parserOptions: {
         project: true,
         tsconfigRootDir: __dirname,
       },
     },
     plugins: {
+      "@typescript-eslint": tseslint,
       jsdoc,
     },
     rules: {
+      // TypeScript rules
       "@typescript-eslint/adjacent-overload-signatures": "error",
       "@typescript-eslint/array-type": [
         "error",
@@ -34,37 +37,10 @@ module.exports = tseslint.config(
           default: "array",
         },
       ],
-      "@typescript-eslint/ban-types": [
-        "error",
-        {
-          types: {
-            Object: {
-              message: "Avoid using the `Object` type. Did you mean `object`?",
-            },
-            Function: {
-              message:
-                "Avoid using the `Function` type. Prefer a specific function " +
-                "type, like `() => void`.",
-            },
-            // eslint-disable-next-line id-denylist
-            Boolean: {
-              message:
-                "Avoid using the `Boolean` type. Did you mean `boolean`?",
-            },
-            // eslint-disable-next-line id-denylist
-            Number: {
-              message: "Avoid using the `Number` type. Did you mean `number`?",
-            },
-            // eslint-disable-next-line id-denylist
-            String: {
-              message: "Avoid using the `String` type. Did you mean `string`?",
-            },
-            Symbol: {
-              message: "Avoid using the `Symbol` type. Did you mean `symbol`?",
-            },
-          },
-        },
-      ],
+      // These rules replace the deprecated @typescript-eslint/ban-types rule
+      "@typescript-eslint/no-empty-object-type": "error",
+      "@typescript-eslint/no-unsafe-function-type": "error",
+      "@typescript-eslint/no-wrapper-object-types": "error",
       "@typescript-eslint/consistent-type-assertions": "error",
       "@typescript-eslint/dot-notation": "error",
       "@typescript-eslint/explicit-function-return-type": "off",
@@ -107,6 +83,8 @@ module.exports = tseslint.config(
       ],
       "@typescript-eslint/typedef": "off",
       "@typescript-eslint/unified-signatures": "error",
+
+      // Base ESLint rules
       complexity: "off",
       "constructor-super": "error",
       "dot-notation": "off",
@@ -174,15 +152,25 @@ module.exports = tseslint.config(
       "valid-typeof": "off",
     },
   },
+
+  // Configuration for config files
   {
     // `@eslint/js` is currently missing type information.
     // Re-enable the type checks as soon as we have type infos.
     // For vscode-test.js, we also don't use TypeScript, yet.
     files: ["eslint.config.js", ".vscode-test.js"],
-    extends: [tseslint.configs.disableTypeChecked],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+    plugins: {
+      "@typescript-eslint": tseslint,
+      jsdoc,
+    },
     rules: {
       // Re-enable as soon as we are using ES modules for the config files.
-      "@typescript-eslint/no-var-requires": "off",
+      "@typescript-eslint/no-require-imports": "off",
     },
   },
-);
+];
