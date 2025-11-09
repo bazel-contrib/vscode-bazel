@@ -13,6 +13,8 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
+import { existsSync } from "fs";
+import { join } from "path";
 import { BazelWorkspaceInfo, BazelQuery } from "../bazel";
 import { getDefaultBazelExecutablePath } from "../extension/configuration";
 import { blaze_query } from "../protos";
@@ -178,22 +180,30 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
       "",
     );
 
-    // Now collect any targets in the directory also (this can fail since
-    // there might not be a BUILD files at this level (but down levels)).
-    const queryResult = await new BazelQuery(
-      getDefaultBazelExecutablePath(),
-      workspacePath,
-    ).queryTargets(`:all`, {
-      ignoresErrors: true,
-      sortByRuleName: true,
-    });
-    const targets = queryResult.target.map((target: blaze_query.ITarget) => {
-      return new BazelTargetTreeItem(
-        this.resources,
-        this.workspaceInfo,
-        target,
-      );
-    });
+    let targets: BazelTargetTreeItem[] = [];
+    // Only get root targets if the root package is present
+    const rootBuildFile =
+      existsSync(join(workspacePath, "BUILD")) ||
+      existsSync(join(workspacePath, "BUILD.bazel"));
+
+    if (rootBuildFile) {
+      // Replace ...:* with :all in queryExpression
+      const queryExpressionRoot = queryExpression.replace(/\.{3}:\*/g, ':all');
+      const queryResult = await new BazelQuery(
+        getDefaultBazelExecutablePath(),
+        workspacePath,
+      ).queryTargets(queryExpressionRoot, {
+        ignoresErrors: true,
+        sortByRuleName: true,
+      });
+      targets = queryResult.target.map((target: blaze_query.ITarget) => {
+        return new BazelTargetTreeItem(
+          this.resources,
+          this.workspaceInfo,
+          target,
+        );
+      });
+    }
 
     return Promise.resolve((topLevelItems as IBazelTreeItem[]).concat(targets));
   }
