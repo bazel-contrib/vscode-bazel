@@ -71,7 +71,7 @@ export async function checkBuildifierIsAvailable() {
   // output parses.
   const { stdout } = await executeBuildifier(
     "",
-    ["--format=json", "--mode=check"],
+    ["--format=json", "--mode=check", "--lint=check"],
     false,
   );
   try {
