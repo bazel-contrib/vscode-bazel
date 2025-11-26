@@ -33,6 +33,9 @@ export interface IBazelTreeItem {
   /** Returns a promise for the children of the tree item. */
   getChildren(): Thenable<IBazelTreeItem[]>;
 
+  /** Returns the parent of the tree item. */
+  getParent(): vscode.ProviderResult<IBazelTreeItem>;
+
   /** Returns the text label of the tree item. */
   getLabel(): string;
 
@@ -44,6 +47,14 @@ export interface IBazelTreeItem {
    * tree item.
    */
   getTooltip(): string | undefined;
+
+  /**
+   * Returns the package path of the tree item.
+   * For workspace folders, this returns an empty string.
+   * For packages, this returns the path relative to the workspace root.
+   * For targets, this returns the path of the package that contains the target.
+   */
+  getPackagePath(): string;
 
   /** Returns the command that should be executed when the item is selected. */
   getCommand(): vscode.Command | undefined;
