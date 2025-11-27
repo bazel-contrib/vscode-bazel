@@ -210,10 +210,11 @@ export function showDynamicQuickPick({
 
   let abortController: AbortController | undefined = new AbortController();
   let timeout: NodeJS.Timeout | undefined;
+  let resolveProgressNotification: (() => void) | undefined;
 
-  const updateQuickOptions = async (
-    currentUserInput: string,
-  ): Promise<void> => {
+  const executeQuery = async (
+    query: string,
+  ): Promise<BazelTargetQuickPick[] | undefined> => {
     // Cancel any previous query
     abortController?.abort();
 
@@ -221,10 +222,62 @@ export function showDynamicQuickPick({
     const currentAbortController = new AbortController();
     abortController = currentAbortController;
 
-    // Show loading state
-    quickPick.busy = true;
-    quickPick.items = [];
+    try {
+      const items = await queryFunctor({
+        query,
+        workspaceInfo,
+        abortSignal: currentAbortController.signal,
+      });
+      return items;
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        return undefined; // Ignore abort errors
+      }
+      // For other errors, show an empty list
+      vscode.window.showErrorMessage("Error querying Bazel targets: " + error);
+      return [];
+    }
+  };
 
+  const showProgressNotification = (
+    isLoading: boolean,
+    message: string = "",
+    disableUI: boolean = false,
+  ) => {
+    quickPick.busy = isLoading;
+    quickPick.enabled = !(disableUI && isLoading);
+
+    // Resolve any existing progress to close the notification
+    if (resolveProgressNotification) {
+      resolveProgressNotification();
+      resolveProgressNotification = undefined;
+    }
+
+    if (isLoading) {
+      // Show progress in activity bar
+      vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: message,
+          cancellable: true,
+        },
+        (_, token) => {
+          return new Promise<void>((resolve) => {
+            resolveProgressNotification = resolve;
+            token.onCancellationRequested(() => {
+              abortController?.abort();
+              resolve();
+            });
+            quickPick.onDidHide(() => resolve());
+          });
+        },
+      );
+    }
+  };
+
+  const updateQuickOptions = async (
+    currentUserInput: string,
+  ): Promise<void> => {
     // Process the input: keep everything before the last separator (either / or :) and add '/...'
     let pattern = initialPattern;
     const lastSlashIndex = currentUserInput.lastIndexOf("/");
@@ -235,23 +288,15 @@ export function showDynamicQuickPick({
     }
     const newQuery = queryBuilder(pattern);
 
+    showProgressNotification(true, "Refining list of targets...", false);
     try {
-      const items = await queryFunctor({
-        query: newQuery,
-        workspaceInfo,
-        abortSignal: currentAbortController.signal,
-      });
-      quickPick.items = items;
-    } catch (error) {
-      if (error instanceof Error && error.name === "AbortError") {
-        return; // Ignore abort errors
+      const items = await executeQuery(newQuery);
+      if (items !== undefined) {
+        // Only update if not aborted
+        quickPick.items = items;
       }
-      // For other errors, show an empty list
-      // eslint-disable-next-line no-console
-      console.error("Error querying Bazel targets:", error);
-      quickPick.items = [];
     } finally {
-      quickPick.busy = false;
+      showProgressNotification(false);
     }
   };
 
@@ -273,15 +318,35 @@ export function showDynamicQuickPick({
 
   // Return a promise that resolves when the picker is hidden or an item is selected
   return new Promise<BazelTargetQuickPick | undefined>((resolvePromise) => {
-    quickPick.onDidAccept(() => {
+    const handleAccept = async () => {
       abortController?.abort();
       if (timeout) {
         clearTimeout(timeout);
       }
-      const selectedItem = quickPick.activeItems[0];
-      quickPick.hide();
-      resolvePromise(selectedItem);
-    });
+
+      let selectedItem: BazelTargetQuickPick | undefined =
+        quickPick.activeItems[0];
+      if (!selectedItem) {
+        // If no item is selected but there's user input, try to find a matching target
+        const userInput = quickPick.value.trim();
+        if (userInput) {
+          showProgressNotification(true, "Finding requested target...", true);
+          try {
+            const items = await executeQuery(userInput);
+            selectedItem = items?.[0]; // Return first item or undefined if none
+          } finally {
+            showProgressNotification(false);
+          }
+        }
+      }
+
+      if (selectedItem) {
+        quickPick.hide();
+        resolvePromise(selectedItem);
+      }
+    };
+
+    quickPick.onDidAccept(handleAccept);
 
     quickPick.onDidHide(() => {
       if (timeout) {
