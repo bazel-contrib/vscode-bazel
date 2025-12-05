@@ -71,7 +71,9 @@ export async function checkBuildifierIsAvailable() {
   // output parses.
   const { stdout } = await executeBuildifier(
     "",
-    ["--format=json", "--mode=check", "--lint=check"],
+    // specify the --lint value even though of is the default in case 
+    // a .buildifer.json with a different value is present
+    ["--format=json", "--mode=check", "--lint=off"],
     false,
   );
   try {
