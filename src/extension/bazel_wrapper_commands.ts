@@ -27,9 +27,62 @@ import {
   queryQuickPickTargets,
   queryQuickPickPackage,
   showDynamicQuickPick,
+  showTargetQuickPick,
 } from "../bazel/bazel_quickpick";
 import { createBazelTask } from "../bazel/tasks";
 import { blaze_query } from "../protos";
+import { CodeLensCommandAdapter } from "../codelens/code_lens_command_adapter";
+
+/**
+ * Unified target selection logic that handles all 3 use cases:
+ * 1. Command palette without target (adapter undefined) → prompt user
+ * 2. Internal command with single target (adapter defined, one target) → no querying
+ * 3. CodeLens with multiple targets (adapter defined, multiple targets) → prompt from given targets
+ *
+ * @param adapter The command adapter, undefined for command palette usage
+ * @param quickPickQuery Query string for command palette target selection
+ * @param commandName Display name for the command (e.g., "Build target")
+ * @returns Promise that resolves to IBazelCommandAdapter with single target, or undefined if cancelled
+ */
+async function selectSingleTarget(
+  adapter: IBazelCommandAdapter | undefined,
+  quickPickQuery: string,
+  commandName: string,
+): Promise<IBazelCommandAdapter | undefined> {
+  // Use Case 1: Command palette without target (adapter undefined) → prompt user
+  if (adapter === undefined) {
+    const quickPick = await showDynamicQuickPick({
+      initialPattern: "//...",
+      queryBuilder: (pattern) => quickPickQuery.replace("...", pattern),
+      queryFunctor: queryQuickPickTargets,
+      workspaceInfo: await BazelWorkspaceInfo.fromWorkspaceFolders(),
+    });
+    // If the result was undefined, the user cancelled the quick pick
+    return quickPick;
+  }
+
+  const commandOptions = adapter.getBazelCommandOptions();
+
+  // Single target - use as-is
+  if (commandOptions.targets.length <= 1) {
+    return adapter;
+  }
+
+  // Multiple targets - let user choose
+  const selectedTarget = await showTargetQuickPick(
+    commandOptions.targets,
+    commandName,
+  );
+
+  if (!selectedTarget) {
+    return undefined;
+  }
+
+  // Create adapter with selected target
+  return new CodeLensCommandAdapter(commandOptions.workspaceInfo, [
+    selectedTarget,
+  ]);
+}
 
 /**
  * Builds a Bazel target and streams output to the terminal.
@@ -38,24 +91,17 @@ import { blaze_query } from "../protos";
  * which the command's arguments will be determined.
  */
 async function bazelBuildTarget(adapter: IBazelCommandAdapter | undefined) {
-  if (adapter === undefined) {
-    // If the command adapter was unspecified, it means this command is being
-    // invoked via the command palatte. Provide quickpick build targets for
-    // the user to choose from.
-    const quickPick = await showDynamicQuickPick({
-      initialPattern: "//...",
-      queryBuilder: (pattern) => `kind('.* rule', ${pattern})`,
-      queryFunctor: queryQuickPickTargets,
-      workspaceInfo: await BazelWorkspaceInfo.fromWorkspaceFolders(),
-    });
-    // If the result was undefined, the user cancelled the quick pick, so don't
-    // try again.
-    if (quickPick) {
-      await bazelBuildTarget(quickPick);
-    }
-    return;
+  const selectedAdapter = await selectSingleTarget(
+    adapter,
+    "kind('.* rule', ...)",
+    "Build target",
+  );
+
+  if (!selectedAdapter) {
+    return; // User cancelled
   }
-  const commandOptions = adapter.getBazelCommandOptions();
+
+  const commandOptions = selectedAdapter.getBazelCommandOptions();
   const task = createBazelTask("build", commandOptions);
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   vscode.tasks.executeTask(task);
@@ -167,33 +213,39 @@ async function buildPackage(
 }
 
 /**
+ * Creates and executes a Bazel task.
+ *
+ * @param adapter The command adapter with target
+ * @param commandType The Bazel command type (build, test, run)
+ */
+function executeBazelTask(
+  adapter: IBazelCommandAdapter,
+  commandType: "build" | "test" | "run",
+): void {
+  const commandOptions = adapter.getBazelCommandOptions();
+  const task = createBazelTask(commandType, commandOptions);
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  vscode.tasks.executeTask(task);
+}
+
+/**
  * Runs a Bazel target and streams output to the terminal.
  *
  * @param adapter An object that implements {@link IBazelCommandAdapter} from
  * which the command's arguments will be determined.
  */
 async function bazelRunTarget(adapter: IBazelCommandAdapter | undefined) {
-  if (adapter === undefined) {
-    // If the command adapter was unspecified, it means this command is being
-    // invoked via the command palatte. Provide quickpick test targets for
-    // the user to choose from.
-    const quickPick = await showDynamicQuickPick({
-      initialPattern: "//...",
-      queryBuilder: (pattern) => `kind('.* rule', ${pattern})`,
-      queryFunctor: queryQuickPickTargets,
-      workspaceInfo: await BazelWorkspaceInfo.fromWorkspaceFolders(),
-    });
-    // If the result was undefined, the user cancelled the quick pick, so don't
-    // try again.
-    if (quickPick) {
-      await bazelRunTarget(quickPick);
-    }
-    return;
+  const selectedAdapter = await selectSingleTarget(
+    adapter,
+    "kind('.* rule', ...)",
+    "Run target",
+  );
+
+  if (!selectedAdapter) {
+    return; // User cancelled
   }
-  const commandOptions = adapter.getBazelCommandOptions();
-  const task = createBazelTask("run", commandOptions);
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  vscode.tasks.executeTask(task);
+
+  executeBazelTask(selectedAdapter, "run");
 }
 
 /**
@@ -203,27 +255,17 @@ async function bazelRunTarget(adapter: IBazelCommandAdapter | undefined) {
  * which the command's arguments will be determined.
  */
 async function bazelTestTarget(adapter: IBazelCommandAdapter | undefined) {
-  if (adapter === undefined) {
-    // If the command adapter was unspecified, it means this command is being
-    // invoked via the command palatte. Provide quickpick test targets for
-    // the user to choose from.
-    const quickPick = await showDynamicQuickPick({
-      initialPattern: "//...",
-      queryBuilder: (pattern) => `kind('.* rule', ${pattern})`,
-      queryFunctor: queryQuickPickTargets,
-      workspaceInfo: await BazelWorkspaceInfo.fromWorkspaceFolders(),
-    });
-    // If the result was undefined, the user cancelled the quick pick, so don't
-    // try again.
-    if (quickPick) {
-      await bazelTestTarget(quickPick);
-    }
-    return;
+  const selectedAdapter = await selectSingleTarget(
+    adapter,
+    "kind('.*_test rule', ...)",
+    "Test target",
+  );
+
+  if (!selectedAdapter) {
+    return; // User cancelled
   }
-  const commandOptions = adapter.getBazelCommandOptions();
-  const task = createBazelTask("test", commandOptions);
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  vscode.tasks.executeTask(task);
+
+  executeBazelTask(selectedAdapter, "test");
 }
 
 /**
@@ -377,77 +419,106 @@ async function bazelGoToLabel(target_info?: blaze_query.ITarget | undefined) {
 }
 
 /**
- * Copies the Bazel label to the clipboard.
+ * Copies a label to clipboard and shows confirmation message.
+ */
+function copyLabelToClipboard(label: string): void {
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  vscode.env.clipboard.writeText(label);
+  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  vscode.window.showInformationMessage(`Copied to clipboard: ${label}`);
+}
+
+/**
+ * Extracts label from cursor position in active editor.
+ */
+function extractLabelFromCursor(): string | undefined {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    vscode.window.showInformationMessage(
+      "Please open a file to copy a label from.",
+    );
+    return undefined;
+  }
+
+  const document = editor.document;
+  const position = editor.selection.active;
+  const wordRange = document.getWordRangeAtPosition(
+    position,
+    /(?<![^"'])[a-zA-Z0-9_/:.-@]+(?![^"'])/,
+  );
+
+  if (!wordRange) {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    vscode.window.showInformationMessage("No label found at cursor position.");
+    return undefined;
+  }
+
+  let label = document.getText(wordRange);
+
+  // If the label doesn't start with //, prepend the current package
+  if (!label.startsWith("//") && !label.startsWith("@")) {
+    const filePath = document.uri.fsPath;
+    const packagePath = getBazelPackageFolder(filePath);
+    if (!packagePath) {
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      vscode.window.showErrorMessage("Not in a Bazel package.");
+      return undefined;
+    }
+
+    // Get the package relative to workspace
+    const workspaceRoot = getBazelWorkspaceFolder(filePath);
+    const relativePackage = path.relative(workspaceRoot, packagePath) || ".";
+    label = `//${relativePackage}${label.startsWith(":") ? "" : ":"}${label}`;
+  }
+
+  // Handle the case where the target name is omitted
+  // (e.g., "//foo/bar" instead of "//foo/bar:bar")
+  if (!label.includes(":")) {
+    const parts = label.split("/");
+    const lastPart = parts[parts.length - 1];
+    if (lastPart && lastPart !== "...") {
+      // Don't expand "//..."
+      label = `${label}:${lastPart}`;
+    }
+  }
+
+  return label;
+}
+
+/**
+ * Copies the Bazel label to the clipboard using the new linear architecture.
  *
  * If no adapter is provided, it will find the label under the cursor in the
  * active editor, validate it, and copy it to the clipboard. If the label is a
  * short form (missing the target name), it will be expanded to the full label.
  */
-function bazelCopyLabelToClipboard(adapter: IBazelCommandAdapter | undefined) {
-  let label: string;
-
-  if (adapter !== undefined) {
-    // Called from a command adapter, so we can assume there is only one target.
-    label = adapter.getBazelCommandOptions().targets[0];
-  } else {
-    // Called from command palette
-    const editor = vscode.window.activeTextEditor;
-    if (!editor) {
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      vscode.window.showInformationMessage(
-        "Please open a file to copy a label from.",
-      );
-      return;
+async function bazelCopyLabelToClipboard(
+  adapter?: IBazelCommandAdapter,
+): Promise<void> {
+  // Use Case 1: Command palette without target (adapter undefined) → extract from cursor
+  if (adapter === undefined) {
+    const cursorLabel = extractLabelFromCursor();
+    if (cursorLabel) {
+      copyLabelToClipboard(cursorLabel);
     }
-
-    const document = editor.document;
-    const position = editor.selection.active;
-    const wordRange = document.getWordRangeAtPosition(
-      position,
-      /(?<![^"'])[a-zA-Z0-9_/:.-@]+(?![^"'])/,
-    );
-
-    if (!wordRange) {
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      vscode.window.showInformationMessage(
-        "No label found at cursor position.",
-      );
-      return;
-    }
-
-    label = document.getText(wordRange);
-
-    // If the label doesn't start with //, prepend the current package
-    if (!label.startsWith("//") && !label.startsWith("@")) {
-      const filePath = document.uri.fsPath;
-      const packagePath = getBazelPackageFolder(filePath);
-      if (!packagePath) {
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
-        vscode.window.showErrorMessage("Not in a Bazel package.");
-        return;
-      }
-
-      // Get the package relative to workspace
-      const workspaceRoot = getBazelWorkspaceFolder(filePath);
-      const relativePackage = path.relative(workspaceRoot, packagePath) || ".";
-      label = `//${relativePackage}${label.startsWith(":") ? "" : ":"}${label}`;
-    }
-
-    // Handle the case where the target name is omitted
-    // (e.g., "//foo/bar" instead of "//foo/bar:bar")
-    if (!label.includes(":")) {
-      const parts = label.split("/");
-      const lastPart = parts[parts.length - 1];
-      if (lastPart && lastPart !== "...") {
-        // Don't expand "//..."
-        label = `${label}:${lastPart}`;
-      }
-    }
+    return;
   }
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  vscode.env.clipboard.writeText(label);
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  vscode.window.showInformationMessage(`Copied to clipboard: ${label}`);
+
+  // Use Case 2 & 3: Handle adapter with single or multiple targets
+  const selectedAdapter = await selectSingleTarget(
+    adapter,
+    "kind('.* rule', ...)",
+    "Copy label",
+  );
+
+  if (!selectedAdapter) {
+    return; // User cancelled
+  }
+
+  const commandOptions = selectedAdapter.getBazelCommandOptions();
+  const targetLabel = commandOptions.targets[0];
+  copyLabelToClipboard(targetLabel);
 }
 
 /**

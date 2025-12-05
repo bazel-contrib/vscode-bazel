@@ -20,26 +20,24 @@ import { getDefaultBazelExecutablePath } from "../extension/configuration";
 import { blaze_query } from "../protos";
 import { CodeLensCommandAdapter } from "./code_lens_command_adapter";
 
-/** Computes the shortened name of a Bazel target.
+/**
+ * Groups of Bazel targets organized by the actions they support.
+ * Used by the CodeLens provider to determine which actions to display for each target.
  *
- * For example, if the target name starts with `//foo/bar/baz:fizbuzz`,
- * the target's short name will be `fizzbuzz`.
- *
- * This allows our code lens suggestions to avoid filling users' screen with
- * redundant path information.
- *
- * @param targetName The unshortened name of the target.
- * @returns The shortened name of the target.
+ * @interface ActionGroups
+ * @property {string[]} copy - Targets that support copying their label to clipboard (all target types)
+ * @property {string[]} build - Targets that support build operations (libraries, binaries, tests)
+ * @property {string[]} test - Targets that support test execution (test rules only)
+ * @property {string[]} run - Targets that support run operations (executable binaries only)
  */
-function getTargetShortName(targetName: string): string {
-  const colonFragments = targetName.split(":");
-  if (colonFragments.length !== 2) {
-    return targetName;
-  }
-  return colonFragments[1];
+interface ActionGroups {
+  copy: string[];
+  build: string[];
+  test: string[];
+  run: string[];
 }
 
-/** Provids CodeLenses for targets in Bazel BUILD files. */
+/** Provides CodeLenses for targets in Bazel BUILD files. */
 export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
   public onDidChangeCodeLenses: vscode.Event<void>;
 
@@ -117,8 +115,9 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
    * Takes the result of a Bazel query for targets defined in a package and
    * returns a list of CodeLens for the BUILD file in that package.
    *
-   * @param bazelWorkspaceDirectory The Bazel workspace directory.
-   * @param queryResult The result of the bazel query.
+   * @param bazelWorkspaceInfo The Bazel workspace information containing workspace path and context
+   * @param queryResult The result of the bazel query containing target definitions
+   * @returns A new array of CodeLens objects for the BUILD file
    */
   private computeCodeLenses(
     bazelWorkspaceInfo: BazelWorkspaceInfo,
@@ -126,50 +125,108 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
   ): vscode.CodeLens[] {
     const result: vscode.CodeLens[] = [];
 
-    interface LensCommand {
-      commandString: string;
-      name: string;
-    }
-
-    const useTargetMap = queryResult.target
-      .map((t) => new QueryLocation(t.rule.location).line)
-      .reduce((countMap, line) => {
-        countMap.set(line, countMap.has(line));
-        return countMap;
-      }, new Map<number, boolean>());
-    // Sort targets by length first, then alphabetically
-    // This ensures shorter names (often main targets) appear first, with consistent ordering within each length group
+    // Sort targets alphabetically
     const sortedTargets = [...queryResult.target].sort((a, b) => {
-      const lengthDiff = a.rule.name.length - b.rule.name.length;
-      return lengthDiff !== 0
-        ? lengthDiff
-        : a.rule.name.localeCompare(b.rule.name);
+      return a.rule.name.localeCompare(b.rule.name);
     });
 
+    // Group targets by line number to handle multiple targets on same line
+    const targetsByLine = new Map<number, typeof sortedTargets>();
     for (const target of sortedTargets) {
       const location = new QueryLocation(target.rule.location);
+      const line = location.line;
+      if (!targetsByLine.has(line)) {
+        targetsByLine.set(line, []);
+      }
+      targetsByLine.get(line)?.push(target);
+    }
+
+    // Process each line's targets
+    for (const [, targets] of targetsByLine) {
+      this.createCodeLensesForTargetsOnSameLine(
+        targets,
+        bazelWorkspaceInfo,
+        result,
+      );
+    }
+
+    return result;
+  }
+
+  /**
+   * Creates CodeLens objects for targets on the same line.
+   *
+   * @param targets Array of Bazel targets found on the same line in the BUILD file
+   * @param bazelWorkspaceInfo Workspace context information for command creation
+   * @param result Output array that will be modified in-place to include new CodeLens objects
+   */
+  private createCodeLensesForTargetsOnSameLine(
+    targets: blaze_query.ITarget[],
+    bazelWorkspaceInfo: BazelWorkspaceInfo,
+    result: vscode.CodeLens[],
+  ): void {
+    const location = new QueryLocation(targets[0].rule.location);
+
+    const actionGroups = this.groupTargetsByAction(targets);
+
+    this.createCodeLens(
+      "Copy",
+      "bazel.copyLabelToClipboard",
+      actionGroups.copy,
+      location,
+      bazelWorkspaceInfo,
+      result,
+    );
+    this.createCodeLens(
+      "Build",
+      "bazel.buildTarget",
+      actionGroups.build,
+      location,
+      bazelWorkspaceInfo,
+      result,
+    );
+    this.createCodeLens(
+      "Test",
+      "bazel.testTarget",
+      actionGroups.test,
+      location,
+      bazelWorkspaceInfo,
+      result,
+    );
+    this.createCodeLens(
+      "Run",
+      "bazel.runTarget",
+      actionGroups.run,
+      location,
+      bazelWorkspaceInfo,
+      result,
+    );
+  }
+
+  /**
+   * Groups targets by the actions they support based on Bazel rule types.
+   * Uses rule naming conventions to determine which actions are available.
+   *
+   * @param targets Array of Bazel targets to classify by supported actions
+   * @returns ActionGroups object with targets organized by action type
+   */
+  private groupTargetsByAction(targets: blaze_query.ITarget[]): ActionGroups {
+    const copyTargets: string[] = [];
+    const buildTargets: string[] = [];
+    const testTargets: string[] = [];
+    const runTargets: string[] = [];
+
+    for (const target of targets) {
       const targetName = target.rule.name;
       const ruleClass = target.rule.ruleClass;
-      const targetShortName = getTargetShortName(targetName);
 
-      const commands: LensCommand[] = [];
-
-      // All targets support target copying and building.
-      commands.push({
-        commandString: "bazel.copyLabelToClipboard",
-        name: "Copy",
-      });
-      commands.push({
-        commandString: "bazel.buildTarget",
-        name: "Build",
-      });
+      // All targets support copying and building
+      copyTargets.push(targetName);
+      buildTargets.push(targetName);
 
       // Only test targets support testing.
       if (ruleClass.endsWith("_test") || ruleClass === "test_suite") {
-        commands.push({
-          commandString: "bazel.testTarget",
-          name: "Test",
-        });
+        testTargets.push(targetName);
       }
 
       // Targets which are not libraries may support running.
@@ -180,28 +237,51 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
       // first running the `analysis` phase, so we use a heuristic instead.
       const ruleIsLibrary = ruleClass.endsWith("_library");
       if (!ruleIsLibrary) {
-        commands.push({
-          commandString: "bazel.runTarget",
-          name: "Run",
-        });
-      }
-
-      for (const command of commands) {
-        const tooltip = `${command.name} ${targetShortName}`;
-        const title = useTargetMap.get(location.line) ? tooltip : command.name;
-        result.push(
-          new vscode.CodeLens(location.range, {
-            arguments: [
-              new CodeLensCommandAdapter(bazelWorkspaceInfo, [targetName]),
-            ],
-            command: command.commandString,
-            title,
-            tooltip,
-          }),
-        );
+        runTargets.push(targetName);
       }
     }
 
-    return result;
+    return {
+      copy: copyTargets,
+      build: buildTargets,
+      test: testTargets,
+      run: runTargets,
+    };
+  }
+
+  /**
+   * Creates a CodeLens for a specific action type if targets are available.
+   * Title shows action name with count for multiple targets.
+   *
+   * @param actionName Display name for the action (e.g., "Build", "Test", "Run", "Copy")
+   * @param command VS Code command identifier to execute when CodeLens is clicked
+   * @param targets Array of target names that support this action
+   * @param location Source location information for CodeLens positioning
+   * @param bazelWorkspaceInfo Workspace context for command adapter creation
+   * @param result Output array that will be modified in-place to include the new CodeLens
+   */
+  private createCodeLens(
+    actionName: string,
+    command: string,
+    targets: string[],
+    location: QueryLocation,
+    bazelWorkspaceInfo: BazelWorkspaceInfo,
+    result: vscode.CodeLens[],
+  ): void {
+    if (targets.length === 0) {
+      return;
+    }
+
+    const title =
+      targets.length === 1 ? actionName : `${actionName} (${targets.length})`;
+
+    result.push(
+      new vscode.CodeLens(location.range, {
+        arguments: [new CodeLensCommandAdapter(bazelWorkspaceInfo, targets)],
+        command,
+        title,
+        tooltip: `${actionName} target - ${targets.length} targets available`,
+      }),
+    );
   }
 }
