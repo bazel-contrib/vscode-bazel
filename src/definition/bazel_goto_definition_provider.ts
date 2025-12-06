@@ -22,7 +22,10 @@ import {
 } from "vscode";
 import { Utils } from "vscode-uri";
 import { BazelQuery, BazelWorkspaceInfo, QueryLocation } from "../bazel";
-import { getDefaultBazelExecutablePath } from "../extension/configuration";
+import {
+  getDefaultBazelExecutablePath,
+  areBazelQueriesEnabled,
+} from "../extension/configuration";
 import { blaze_query } from "../protos";
 
 // LABEL_REGEX matches label strings, e.g. @r//x/y/z:abc
@@ -32,6 +35,10 @@ export async function targetToUri(
   targetText: string,
   workingDirectory: Uri,
 ): Promise<QueryLocation | undefined> {
+  if (!areBazelQueriesEnabled()) {
+    return null;
+  }
+
   const match = LABEL_REGEX.exec(targetText);
 
   const targetName = match[1];
