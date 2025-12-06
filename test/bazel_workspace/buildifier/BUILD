@@ -1,0 +1,1 @@
+load("//foo.bzl", "unused")
