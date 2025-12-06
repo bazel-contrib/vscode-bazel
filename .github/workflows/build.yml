@@ -27,6 +27,11 @@ jobs:
         with:
           cache: "npm"
 
+      - name: Install buildifier
+        uses: ./.github/actions/install-buildifier
+        with:
+          version: "8.2.1"
+
       - name: Install Javascript dependencies
         run: npm ci
 
