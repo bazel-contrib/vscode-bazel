@@ -37,18 +37,18 @@ export type BuildifierFileType = "build" | "bzl" | "workspace" | "default";
  *
  * @param fileContent The BUILD or .bzl file content to process, which is sent
  * via stdin.
- * @param type Indicates whether to treat the file content as a BUILD file or a
- * .bzl file.
+ * @param filePath The path to the file being formatted, relative to the
+ * workspace root.
  * @param applyLintFixes If true, lint warnings with automatic fixes will be
  * fixed as well.
  * @returns The formatted file content.
  */
 export async function buildifierFormat(
   fileContent: string,
-  type: BuildifierFileType,
+  filePath: string,
   applyLintFixes: boolean,
 ): Promise<string> {
-  const args = [`--mode=fix`, `--type=${type}`];
+  const args = [`--mode=fix`, `--path=${filePath}`];
   if (applyLintFixes) {
     args.push(`--lint=fix`);
   }
@@ -61,14 +61,14 @@ export async function buildifierFormat(
  *
  * @param fileContent The BUILD or .bzl file content to process, which is sent
  * via stdin.
- * @param type Indicates whether to treat the file content as a BUILD file or a
- * .bzl file.
+ * @param filePath The path to the file being formatted, relative to the
+ * workspace root.
  * @param lintMode Indicates whether to warn about lint findings or fix them.
  * @returns The fixed content.
  */
 export async function buildifierLint(
   fileContent: string,
-  type: BuildifierFileType,
+  filePath: string,
   lintMode: "fix",
 ): Promise<string>;
 
@@ -78,26 +78,26 @@ export async function buildifierLint(
  *
  * @param fileContent The BUILD or .bzl file content to process, which is sent
  * via stdin.
- * @param type Indicates whether to treat the file content as a BUILD file or a
- * .bzl file.
+ * @param filePath The path to the file being formatted, relative to the
+ * workspace root.
  * @param lintMode Indicates whether to warn about lint findings or fix them.
  * @returns An array of objects representing the lint issues that occurred.
  */
 export async function buildifierLint(
   fileContent: string,
-  type: BuildifierFileType,
+  filePath: string,
   lintMode: "warn",
 ): Promise<IBuildifierWarning[]>;
 
 export async function buildifierLint(
   fileContent: string,
-  type: BuildifierFileType,
+  filePath: string,
   lintMode: BuildifierLintMode,
 ): Promise<string | IBuildifierWarning[]> {
   const args = [
     `--format=json`,
     `--mode=check`,
-    `--type=${type}`,
+    `--path=${filePath}`,
     `--lint=${lintMode}`,
   ];
   const outputs = await executeBuildifier(fileContent, args, true);
@@ -107,61 +107,13 @@ export async function buildifierLint(
     case "warn": {
       const result = JSON.parse(outputs.stdout) as IBuildifierResult;
       for (const file of result.files) {
-        if (file.filename === "<stdin>") {
+        if (file.filename === filePath) {
           return file.warnings;
         }
       }
       return [];
     }
   }
-}
-
-/**
- * Returns the file type of a file with the given path.
- *
- * @param fsPath The file path, whose extension and basename are used to
- * determine the file type.
- * @returns The buildifier type of the file.
- */
-export function getBuildifierFileType(fsPath: string): BuildifierFileType {
-  // TODO(bazelbuild/buildtools#475, bazelbuild/buildtools#681): Switch to
-  // `--path=<path>` rather than duplicate the logic from buildifier. The
-  // catch is `--path` was already documented, but didn't work with stdin
-  // until bazelbuild/buildtools#681, so we'd need to dual code path testing
-  // --version to decide how to do things; so it likely is better to just
-  // ignore things until the support has been out a while.
-
-  // NOTE: The implementation here should be kept in sync with buildifier's
-  // automatic format detection (see:
-  // https://github.com/bazelbuild/buildtools/blob/d39e4d/build/lex.go#L88)
-  // so that user actions in the IDE are consistent with the behavior they
-  // would see running buildifier on the command line.
-  const raw = fsPath.toLowerCase();
-  let parsedPath = path.parse(raw);
-  if (parsedPath.ext === ".oss") {
-    parsedPath = path.parse(parsedPath.name);
-  }
-  switch (parsedPath.ext) {
-    case ".bzl":
-      return "bzl";
-    case ".sky":
-      return "default";
-  }
-  if (
-    parsedPath.ext === ".build" ||
-    parsedPath.name === "build" ||
-    parsedPath.name.startsWith("build.")
-  ) {
-    return "build";
-  }
-  if (
-    parsedPath.ext === ".workspace" ||
-    parsedPath.name === "workspace" ||
-    parsedPath.name.startsWith("workspace.")
-  ) {
-    return "workspace";
-  }
-  return "default";
 }
 
 /**

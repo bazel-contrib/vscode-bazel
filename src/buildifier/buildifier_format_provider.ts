@@ -13,7 +13,9 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import { buildifierFormat, getBuildifierFileType } from "./buildifier";
+import * as path from "path";
+import { buildifierFormat } from "./buildifier";
+import { BazelWorkspaceInfo } from "../bazel";
 
 /**
  * Provides document formatting functionality for Bazel files by invoking
@@ -29,11 +31,15 @@ export class BuildifierFormatProvider
     const applyLintFixes = bazelConfig.get<boolean>("buildifierFixOnFormat");
 
     const fileContent = document.getText();
-    const type = getBuildifierFileType(document.uri.fsPath);
+    const workspaceInfo = BazelWorkspaceInfo.fromDocument(document);
+    const workspaceRelativePath = path.relative(
+      workspaceInfo.bazelWorkspacePath,
+      document.uri.fsPath,
+    );
     try {
       const formattedContent = await buildifierFormat(
         fileContent,
-        type,
+        workspaceRelativePath,
         applyLintFixes,
       );
       if (formattedContent === fileContent) {
