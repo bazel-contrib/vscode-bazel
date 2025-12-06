@@ -210,10 +210,12 @@ export function showDynamicQuickPick({
 
   let abortController: AbortController | undefined = new AbortController();
   let timeout: NodeJS.Timeout | undefined;
+  let statusBarMessage: vscode.Disposable | undefined;
+  let isValidating: boolean = false;
 
-  const updateQuickOptions = async (
-    currentUserInput: string,
-  ): Promise<void> => {
+  const executeQuery = async (
+    query: string,
+  ): Promise<BazelTargetQuickPick[] | undefined> => {
     // Cancel any previous query
     abortController?.abort();
 
@@ -221,38 +223,66 @@ export function showDynamicQuickPick({
     const currentAbortController = new AbortController();
     abortController = currentAbortController;
 
-    // Show loading state
-    quickPick.busy = true;
-    quickPick.items = [];
-
-    // Process the input: keep everything before the last separator (either / or :) and add '/...'
-    let pattern = initialPattern;
-    const lastSlashIndex = currentUserInput.lastIndexOf("/");
-    const lastColonIndex = currentUserInput.lastIndexOf(":");
-    const lastSeparatorIndex = Math.max(lastSlashIndex, lastColonIndex);
-    if (lastSeparatorIndex !== -1) {
-      pattern = `${currentUserInput.substring(0, lastSeparatorIndex)}/...`;
-    }
-    const newQuery = queryBuilder(pattern);
-
     try {
       const items = await queryFunctor({
-        query: newQuery,
+        query,
         workspaceInfo,
         abortSignal: currentAbortController.signal,
       });
-      quickPick.items = items;
+      return items;
     } catch (error) {
       if (error instanceof Error && error.name === "AbortError") {
-        return; // Ignore abort errors
+        return undefined; // Ignore abort errors
       }
       // For other errors, show an empty list
-      // eslint-disable-next-line no-console
-      console.error("Error querying Bazel targets:", error);
-      quickPick.items = [];
-    } finally {
-      quickPick.busy = false;
+      vscode.window.showErrorMessage("Error querying Bazel targets: " + error);
+      return [];
     }
+  };
+
+  const updateQuickOptions = async (
+    currentUserInput: string,
+  ): Promise<BazelTargetQuickPick[] | undefined> => {
+    quickPick.busy = true;
+
+    // Process the input: keep everything before the last separator (either / or :) and add '/...'
+    let pattern = initialPattern;
+    if (isValidating) {
+      // Edge case: User has given us a label before the quickpick was filled. Let's validate it.
+      statusBarMessage?.dispose();
+      statusBarMessage = vscode.window.setStatusBarMessage(
+        `$(loading~spin) Bazel: Validating your label...`,
+      );
+      quickPick.enabled = false;
+      pattern = currentUserInput;
+    } else {
+      // Normal case: user is typing in the quickpick, we update the list of items
+      quickPick.enabled = true;
+      statusBarMessage?.dispose();
+      statusBarMessage = vscode.window.setStatusBarMessage(
+        `$(loading~spin) Bazel: Querying for targets...`,
+      );
+      const lastSlashIndex = currentUserInput.lastIndexOf("/");
+      const lastColonIndex = currentUserInput.lastIndexOf(":");
+      const lastSeparatorIndex = Math.max(lastSlashIndex, lastColonIndex);
+      if (lastSeparatorIndex !== -1) {
+        pattern = `${currentUserInput.substring(0, lastSeparatorIndex)}/...`;
+      }
+    }
+    const newQuery = queryBuilder(pattern);
+
+    const items = await executeQuery(newQuery);
+    if (items === undefined) {
+      // Query was aborted. Restore quickpick
+      quickPick.enabled = true;
+    } else {
+      // Happy path: update quickpick and cleanup
+      quickPick.items = items;
+      quickPick.busy = false;
+      statusBarMessage?.dispose();
+      statusBarMessage = undefined;
+    }
+    return items;
   };
 
   // Update items when the user types, but only after a short delay
@@ -263,7 +293,9 @@ export function showDynamicQuickPick({
       timeout = undefined;
     }
     timeout = setTimeout(() => {
-      void updateQuickOptions(value);
+      if (!isValidating) {
+        void updateQuickOptions(value);
+      }
     }, 300); // wait 300ms before updating
   });
 
@@ -273,17 +305,35 @@ export function showDynamicQuickPick({
 
   // Return a promise that resolves when the picker is hidden or an item is selected
   return new Promise<BazelTargetQuickPick | undefined>((resolvePromise) => {
-    quickPick.onDidAccept(() => {
+    const handleAccept = async () => {
+      isValidating = true;
       abortController?.abort();
       if (timeout) {
         clearTimeout(timeout);
       }
-      const selectedItem = quickPick.activeItems[0];
-      quickPick.hide();
-      resolvePromise(selectedItem);
-    });
+
+      let selectedItem: BazelTargetQuickPick | undefined =
+        quickPick.activeItems[0];
+      if (!selectedItem) {
+        // If no item is selected but there's user input, try to find a matching target
+        const userInput = quickPick.value.trim();
+        if (userInput) {
+          const items = await updateQuickOptions(userInput);
+          selectedItem = items?.[0];
+        }
+      }
+      isValidating = false;
+      if (selectedItem) {
+        quickPick.hide();
+        resolvePromise(selectedItem);
+      }
+    };
+
+    quickPick.onDidAccept(handleAccept);
 
     quickPick.onDidHide(() => {
+      statusBarMessage?.dispose();
+      statusBarMessage = undefined;
       if (timeout) {
         clearTimeout(timeout);
       }
