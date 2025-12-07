@@ -277,7 +277,7 @@ export class BazelWorkspaceTreeProvider
       const packageItem = this.getPackageTreeItemFromUri(fileUri);
       if (packageItem) {
         this.lastSelectedUri = fileUri;
-        await this.revealTreeItem(packageItem as IBazelTreeItem);
+        await this.revealTreeItem(packageItem);
       }
     } catch (error) {
       // eslint-disable-next-line no-console

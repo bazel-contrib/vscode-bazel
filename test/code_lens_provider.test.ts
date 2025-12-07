@@ -24,7 +24,7 @@ function createMockTarget(
       ruleClass,
       location: `path/to/file:${line}:1`,
     },
-  } as unknown as blaze_query.Target;
+  } as blaze_query.Target;
 }
 
 function groupLensesByLine(lenses: vscode.CodeLens[]): Map<number, LensInfo[]> {
@@ -65,7 +65,7 @@ describe("BazelBuildCodeLensProvider", () => {
   let provider: BazelBuildCodeLensProvider;
   const mockContext = {
     subscriptions: [],
-  } as unknown as vscode.ExtensionContext;
+  } as vscode.ExtensionContext;
 
   beforeEach(() => {
     provider = new BazelBuildCodeLensProvider(mockContext);

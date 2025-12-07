@@ -66,7 +66,7 @@ export class BazelPackageTreeItem
       return new BazelTargetTreeItem(
         this.resources,
         this.workspaceInfo,
-        this as unknown as IBazelTreeItem,
+        this,
         target,
       );
     });

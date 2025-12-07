@@ -194,7 +194,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     // workspace without the performance penalty of querying the entire
     // workspace.
     if (!this.workspaceInfo) {
-      return Promise.resolve([] as IBazelTreeItem[]);
+      return Promise.resolve([]);
     }
     const workspacePath = this.workspaceInfo.workspaceFolder.uri.fsPath;
     const packagePaths = await new BazelQuery(
@@ -227,7 +227,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
       return new BazelTargetTreeItem(
         this.resources,
         this.workspaceInfo,
-        this as unknown as IBazelTreeItem,
+        this,
         target,
       );
     });
