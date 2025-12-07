@@ -36,7 +36,7 @@ export class BazelWorkspaceTreeProvider
   public workspaceFolderTreeItems: BazelWorkspaceFolderTreeItem[] | undefined =
     undefined;
   private treeView: vscode.TreeView<IBazelTreeItem> | undefined = undefined;
-  private disposables: vscode.Disposable[] | undefined = undefined;
+  private disposables: vscode.Disposable[] = [];
 
   // Track the last selected file URI to avoid unnecessary updates
   private lastSelectedUri: vscode.Uri | undefined = undefined;
@@ -63,11 +63,6 @@ export class BazelWorkspaceTreeProvider
       false,
       false,
     );
-
-    // Initialize disposables array if it's not already initialized
-    if (!this.disposables) {
-      this.disposables = [];
-    }
 
     this.disposables.push(
       buildFilesWatcher,
@@ -185,11 +180,8 @@ export class BazelWorkspaceTreeProvider
   }
 
   public dispose() {
-    if (this.disposables) {
-      for (const disposable of this.disposables) {
-        disposable.dispose();
-      }
-      this.disposables = undefined;
+    for (const disposable of this.disposables) {
+      disposable.dispose();
     }
   }
 
