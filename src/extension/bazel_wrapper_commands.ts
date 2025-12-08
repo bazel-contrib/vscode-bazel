@@ -52,7 +52,6 @@ async function selectSingleTarget(
   // Use Case 1: Command palette without target (adapter undefined) → prompt user
   if (adapter === undefined) {
     const quickPick = await showDynamicQuickPick({
-      initialPattern: "//...",
       queryBuilder: (pattern) => quickPickQuery.replace("...", pattern),
       queryFunctor: queryQuickPickTargets,
       workspaceInfo: await BazelWorkspaceInfo.fromWorkspaceFolders(),
@@ -121,7 +120,6 @@ async function bazelBuildTargetWithDebugging(
     // invoked via the command palatte. Provide quickpick build targets for
     // the user to choose from.
     const quickPick = await showDynamicQuickPick({
-      initialPattern: "//...",
       queryBuilder: (pattern) => `kind('.* rule', ${pattern})`,
       queryFunctor: queryQuickPickTargets,
       workspaceInfo: await BazelWorkspaceInfo.fromWorkspaceFolders(),
@@ -189,7 +187,6 @@ async function buildPackage(
     // invoked via the command palatte. Provide quickpick build targets for
     // the user to choose from.
     const quickPick = await showDynamicQuickPick({
-      initialPattern: "//...",
       queryBuilder: (pattern) => pattern,
       queryFunctor: queryQuickPickPackage,
       workspaceInfo: await BazelWorkspaceInfo.fromWorkspaceFolders(),
@@ -299,7 +296,6 @@ async function testPackage(
     // invoked via the command palatte. Provide quickpick build targets for
     // the user to choose from.
     const quickPick = await showDynamicQuickPick({
-      initialPattern: "//...",
       queryBuilder: (pattern) => pattern,
       queryFunctor: queryQuickPickPackage,
       workspaceInfo: await BazelWorkspaceInfo.fromWorkspaceFolders(),
@@ -390,7 +386,6 @@ async function bazelGoToBuildFile() {
 async function bazelGoToLabel(target_info?: blaze_query.ITarget | undefined) {
   if (!target_info) {
     const quickPick = await showDynamicQuickPick({
-      initialPattern: "//...",
       queryBuilder: (pattern) => `kind('.* rule', ${pattern})`,
       queryFunctor: queryQuickPickTargets,
       workspaceInfo: await BazelWorkspaceInfo.fromWorkspaceFolders(),
