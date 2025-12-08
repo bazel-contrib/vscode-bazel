@@ -33,6 +33,9 @@ import { activateCommandVariables } from "./command_variables";
 import { activateTesting } from "../test-explorer";
 import { activateWrapperCommands } from "./bazel_wrapper_commands";
 
+// Global reference to the workspace tree provider for testing
+export let _workspaceTreeProvider: BazelWorkspaceTreeProvider;
+
 /**
  * Called when the extension is activated; that is, when its first command is
  * executed.
@@ -40,17 +43,21 @@ import { activateWrapperCommands } from "./bazel_wrapper_commands";
  * @param context The extension context.
  */
 export async function activate(context: vscode.ExtensionContext) {
-  const workspaceTreeProvider =
+  // Initialize the workspace tree provider
+  _workspaceTreeProvider =
     BazelWorkspaceTreeProvider.fromExtensionContext(context);
-  context.subscriptions.push(workspaceTreeProvider);
+  context.subscriptions.push(_workspaceTreeProvider);
 
+  // Initialize other components
   const codeLensProvider = new BazelBuildCodeLensProvider(context);
   const buildifierDiagnostics = new BuildifierDiagnosticsManager();
   let completionItemProvider: BazelCompletionItemProvider | null = null;
 
+  // Initialize other parts of the extension
   const config = vscode.workspace.getConfiguration("bazel");
   const lspEnabled = !!config.get<string>("lsp.command");
 
+  // Set up LSP if enabled
   if (lspEnabled) {
     const lspClient = createLsp(config);
 
@@ -89,17 +96,26 @@ export async function activate(context: vscode.ExtensionContext) {
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   vscode.commands.executeCommand("setContext", "bazel.lsp.enabled", lspEnabled);
 
+  // Create and register the tree view
+  const treeView = vscode.window.createTreeView("bazelWorkspace", {
+    treeDataProvider: _workspaceTreeProvider,
+    showCollapseAll: true,
+  });
+  _workspaceTreeProvider.setTreeView(treeView);
+
   context.subscriptions.push(
-    vscode.window.registerTreeDataProvider(
-      "bazelWorkspace",
-      workspaceTreeProvider,
-    ),
+    treeView,
     // Commands
     ...activateWrapperCommands(),
+
+    // Register command to manually refresh the tree view
+    vscode.commands.registerCommand("bazel.workspaceTree.refresh", () => {
+      _workspaceTreeProvider.refresh();
+    }),
     vscode.commands.registerCommand("bazel.refreshBazelBuildTargets", () => {
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
       completionItemProvider?.refresh();
-      workspaceTreeProvider.refresh();
+      _workspaceTreeProvider.refresh();
     }),
     // URI handler
     vscode.window.registerUriHandler({

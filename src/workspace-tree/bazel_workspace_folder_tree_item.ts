@@ -24,6 +24,12 @@ import { Resources } from "../extension/resources";
 /** A tree item representing a workspace folder. */
 export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
   /**
+   * Stores all BazelPackageTreeItems in sorted order (by path length and in descending order).
+   * This is used to find the most specific match for a given file path.
+   */
+  private sortedPackageTreeItems: BazelPackageTreeItem[] = [];
+
+  /**
    * Initializes a new tree item with the given workspace folder.
    *
    * @param workspaceFolder The workspace folder that the tree item represents.
@@ -31,7 +37,9 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
   constructor(
     private readonly resources: Resources,
     private readonly workspaceInfo: BazelWorkspaceInfo,
-  ) {}
+  ) {
+    void this.getDirectoryItems(); // Initialize the tree items
+  }
 
   public mightHaveChildren(): boolean {
     return true;
@@ -39,6 +47,10 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
 
   public getChildren(): Promise<IBazelTreeItem[]> {
     return this.getDirectoryItems();
+  }
+
+  public getParent(): vscode.ProviderResult<IBazelTreeItem> {
+    return undefined;
   }
 
   public getLabel(): string {
@@ -61,6 +73,31 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     return "workspaceFolder";
   }
 
+  public getWorkspaceInfo(): BazelWorkspaceInfo {
+    return this.workspaceInfo;
+  }
+
+  public getPackagePath(): string {
+    return "";
+  }
+
+  /**
+   * Finds the package that contains the given relative file path.
+   * Uses the presorted list of package items for efficient lookups.
+   * Find the first package that is a prefix of the relative path
+   *
+   * @param relativeFilePath The filepath relative to the workspace folder.
+   * @returns The package tree item that contains the given relative file path,
+   * or undefined if no such package exists.
+   */
+  public getClosestPackageTreeItem(
+    relativeFilePath: string,
+  ): BazelPackageTreeItem | undefined {
+    return this.sortedPackageTreeItems.find((pkg) =>
+      relativeFilePath.startsWith(pkg.getPackagePath()),
+    );
+  }
+
   /**
    * Recursively creates the tree items that represent packages found in a Bazel
    * query.
@@ -73,16 +110,15 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
    * common prefixes should be searched.
    * @param treeItems An array into which the tree items created at this level
    * in the tree will be pushed.
-   * @param parentPackagePath The parent package path of the items being created
-   * by this call, which is used to trim the package prefix from labels in
-   * the tree items.
+   * @param parent The parent tree item of the items being created by this call,
+   * which is used to trim the package prefix from labels in the tree items.
    */
   private buildPackageTree(
     packagePaths: string[],
     startIndex: number,
     endIndex: number,
     treeItems: BazelPackageTreeItem[],
-    parentPackagePath: string,
+    parent: IBazelTreeItem,
   ) {
     // We can assume that the caller has sorted the packages, so we scan them to
     // find groupings into which we should traverse more deeply. For example, if
@@ -128,8 +164,8 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
       const item = new BazelPackageTreeItem(
         this.resources,
         this.workspaceInfo,
+        parent,
         packagePath,
-        parentPackagePath,
       );
       treeItems.push(item);
       this.buildPackageTree(
@@ -137,7 +173,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
         groupStart + 1,
         groupEnd,
         item.directSubpackages,
-        packagePath,
+        item,
       );
 
       // Move our index to start looking for more groups in the next iteration
@@ -158,7 +194,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     // workspace without the performance penalty of querying the entire
     // workspace.
     if (!this.workspaceInfo) {
-      return Promise.resolve([] as IBazelTreeItem[]);
+      return Promise.resolve([]);
     }
     const workspacePath = this.workspaceInfo.workspaceFolder.uri.fsPath;
     const packagePaths = await new BazelQuery(
@@ -175,7 +211,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
       0,
       packagePaths.length,
       topLevelItems,
-      "",
+      this,
     );
 
     // Now collect any targets in the directory also (this can fail since
@@ -191,10 +227,37 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
       return new BazelTargetTreeItem(
         this.resources,
         this.workspaceInfo,
+        this,
         target,
       );
     });
 
+    // Cache all packages after building the tree
+    this.collectAndSortPackageTreeItems(topLevelItems);
+
     return Promise.resolve((topLevelItems as IBazelTreeItem[]).concat(targets));
+  }
+
+  /**
+   * Collect, sort and store packages for later lookup
+   */
+  private collectAndSortPackageTreeItems(items: BazelPackageTreeItem[]): void {
+    this.sortedPackageTreeItems = [];
+    this.collectAllPackageTreeItems(items);
+    this.sortedPackageTreeItems.sort(
+      (a, b) => b.getPackagePath().length - a.getPackagePath().length,
+    );
+  }
+
+  /**
+   * Recursively collect all children of type BazelPackageTreeItem
+   */
+  private collectAllPackageTreeItems(items: BazelPackageTreeItem[]): void {
+    for (const item of items) {
+      this.sortedPackageTreeItems.push(item);
+      if (item.directSubpackages) {
+        this.collectAllPackageTreeItems(item.directSubpackages);
+      }
+    }
   }
 }
