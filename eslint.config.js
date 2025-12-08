@@ -8,7 +8,14 @@ const jsdoc = require("eslint-plugin-jsdoc");
 module.exports = [
   // Global ignores
   {
-    ignores: ["out/", "src/protos/protos.js", "src/protos/protos.d.ts"],
+    ignores: [
+      "out/",
+      "src/protos/protos.js",
+      "src/protos/protos.d.ts",
+      ".vscode-test/",
+      "node_modules/",
+      "dist/",
+    ],
   },
 
   // TypeScript configuration
