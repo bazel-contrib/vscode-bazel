@@ -40,18 +40,16 @@ describe("buildifier", () => {
 
     assert.deepEqual(diagnostics, [
       {
-        code: "load",
-        message:
-          'Loaded symbol "unused" is unused. Please remove it.\n' +
-          "To disable the warning, add '@unused' in a comment.",
+        code: "unused-variable",
+        message: 'Variable "_foo" is unused. Please remove it.',
         range: {
           a: {
-            a: 0,
-            b: 19,
+            a: 1,
+            b: 0,
           },
           b: {
-            a: 0,
-            b: 25,
+            a: 1,
+            b: 4,
           },
         },
         severity: 1,

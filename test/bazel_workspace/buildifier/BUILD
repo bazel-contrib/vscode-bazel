@@ -1,1 +1,2 @@
-load("//foo.bzl", "unused")
+# Causes an unused assignment linting error.
+_foo = ""
