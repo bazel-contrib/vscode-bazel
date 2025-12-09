@@ -77,6 +77,7 @@ describe("Bazel Workspace Tree", function (this: Mocha.Suite) {
   it("should match workspace structure", async () => {
     await verifyTreeStructure(
       {
+        "//buildifier": {},
         "//pkg1": {
           ":foo  (filegroup)": {},
           ":main  (py_binary)": {},
@@ -103,6 +104,7 @@ describe("Bazel Workspace Tree", function (this: Mocha.Suite) {
     // THEN
     await verifyTreeStructure(
       {
+        "//buildifier": {},
         "//pkg1": {
           ":foo  (filegroup)": {},
           ":main  (py_binary)": {},

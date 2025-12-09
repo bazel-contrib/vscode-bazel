@@ -13,7 +13,9 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import { buildifierLint, getBuildifierFileType } from "./buildifier";
+import * as path from "path";
+import { buildifierLint } from "./buildifier";
+import { BazelWorkspaceInfo } from "../bazel";
 
 /**
  * The delay to wait for the user to finish typing before invoking buildifier to
@@ -31,7 +33,7 @@ export class BuildifierDiagnosticsManager implements vscode.Disposable {
    * Disposables registered by the manager that should be disposed when the
    * manager itself is disposed.
    */
-  private disposables: vscode.Disposable[];
+  private disposables: vscode.Disposable[] = [];
 
   /**
    * Initializes a new buildifier diagnostics manager and hooks into workspace
@@ -40,24 +42,28 @@ export class BuildifierDiagnosticsManager implements vscode.Disposable {
   constructor() {
     let didChangeTextTimer: NodeJS.Timeout | null;
 
-    vscode.workspace.onDidChangeTextDocument((e) => {
-      if (didChangeTextTimer) {
-        clearTimeout(didChangeTextTimer);
-      }
-      didChangeTextTimer = setTimeout(() => {
+    this.disposables.push(
+      vscode.workspace.onDidChangeTextDocument((e) => {
+        if (didChangeTextTimer) {
+          clearTimeout(didChangeTextTimer);
+        }
+        didChangeTextTimer = setTimeout(() => {
+          // eslint-disable-next-line @typescript-eslint/no-floating-promises
+          this.updateDiagnostics(e.document);
+          didChangeTextTimer = null;
+        }, DIAGNOSTICS_ON_TYPE_DELAY_MILLIS);
+      }),
+    );
+
+    this.disposables.push(
+      vscode.window.onDidChangeActiveTextEditor((e) => {
+        if (!e) {
+          return;
+        }
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         this.updateDiagnostics(e.document);
-        didChangeTextTimer = null;
-      }, DIAGNOSTICS_ON_TYPE_DELAY_MILLIS);
-    });
-
-    vscode.window.onDidChangeActiveTextEditor((e) => {
-      if (!e) {
-        return;
-      }
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      this.updateDiagnostics(e.document);
-    });
+      }),
+    );
 
     // If there is an active window at the time the manager is created, make
     // sure its diagnostics are computed.
@@ -75,9 +81,15 @@ export class BuildifierDiagnosticsManager implements vscode.Disposable {
    */
   public async updateDiagnostics(document: vscode.TextDocument) {
     if (document.languageId === "starlark") {
+      const workspaceInfo = BazelWorkspaceInfo.fromDocument(document);
+      const workspaceRelativePath = path.relative(
+        workspaceInfo.bazelWorkspacePath,
+        document.uri.fsPath,
+      );
+
       const warnings = await buildifierLint(
         document.getText(),
-        getBuildifierFileType(document.uri.fsPath),
+        workspaceRelativePath,
         "warn",
       );
 

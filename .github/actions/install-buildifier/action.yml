@@ -1,0 +1,18 @@
+name: "Install Buildifier"
+description: "Downloads and installs buildifier for Linux"
+
+inputs:
+  version:
+    description: "Buildifier version to install"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - run: |
+        VERSION="${{ inputs.version }}"
+        BUILDIFIER_URL="https://github.com/bazelbuild/buildtools/releases/download/v${VERSION}/buildifier-linux-amd64"
+        curl -L -o /tmp/buildifier "${BUILDIFIER_URL}"
+        chmod +x /tmp/buildifier
+        sudo mv /tmp/buildifier /usr/local/bin/buildifier
+      shell: bash
