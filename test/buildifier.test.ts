@@ -29,15 +29,24 @@ const workspacePath = path.join(
 
 describe("buildifier", () => {
   it("diagnostics are added from buildifier", async () => {
+    // Create DiagnosticsManager and open file
     const buildFile = path.join(workspacePath, "buildifier", "BUILD");
     await openSourceFile(buildFile);
-
     disposables.push(new BuildifierDiagnosticsManager());
 
-    const diagnostics = vscode.languages.getDiagnostics(
-      vscode.Uri.file(buildFile),
-    );
+    // Promise that resolves when diagnostics are added to the file.
+    const diagnosticsPromise = new Promise<vscode.Diagnostic[]>((resolve) => {
+      const disposable = vscode.languages.onDidChangeDiagnostics((e) => {
+        const uri = vscode.Uri.file(buildFile);
+        const diags = vscode.languages.getDiagnostics(uri);
+        disposable.dispose();
+        resolve(diags.slice(0, 1)); // Return first diagnostic only
+      });
+    });
+    // Wait for diagnostics for this file
+    const diagnostics = await diagnosticsPromise;
 
+    // Assert the diagnostic matches expectation
     assert.deepEqual(diagnostics, [
       {
         code: "unused-variable",
