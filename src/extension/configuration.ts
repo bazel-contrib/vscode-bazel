@@ -22,5 +22,10 @@ import * as vscode from "vscode";
  * configuration, or its default.
  */
 export function getDefaultBazelExecutablePath(): string {
-  return vscode.workspace.getConfiguration("bazel").get<string>("executable");
+  return (
+    vscode.workspace
+      .getConfiguration("bazel")
+      .get<string>("executable")
+      .trim() || "bazel"
+  );
 }
