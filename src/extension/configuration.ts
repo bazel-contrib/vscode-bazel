@@ -16,19 +16,16 @@ import * as vscode from "vscode";
 
 /**
  * Gets the path to the Bazel executable specified by the workspace
- * configuration, if present.
+ * configuration.
  *
  * @returns The path to the Bazel executable specified in the workspace
- * configuration, or just "bazel" if not present (in which case the system path
- * will be searched).
+ * configuration, or its default.
  */
 export function getDefaultBazelExecutablePath(): string {
-  // Try to retrieve the executable from VS Code's settings. If it's not set,
-  // just use "bazel" as the default and get it from the system PATH.
-  const bazelConfig = vscode.workspace.getConfiguration("bazel");
-  const bazelExecutable = bazelConfig.get<string>("executable");
-  if (bazelExecutable.length === 0) {
-    return "bazel";
-  }
-  return bazelExecutable;
+  return (
+    vscode.workspace
+      .getConfiguration("bazel")
+      .get<string>("executable")
+      .trim() || "bazel"
+  );
 }
