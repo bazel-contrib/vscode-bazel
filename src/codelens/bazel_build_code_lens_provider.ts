@@ -16,7 +16,10 @@ import * as vscode from "vscode";
 
 import { BazelWorkspaceInfo, QueryLocation } from "../bazel";
 import { getTargetsForBuildFile } from "../bazel";
-import { getDefaultBazelExecutablePath } from "../extension/configuration";
+import {
+  getDefaultBazelExecutablePath,
+  areBazelQueriesEnabled,
+} from "../extension/configuration";
 import { blaze_query } from "../protos";
 import { CodeLensCommandAdapter } from "./code_lens_command_adapter";
 
@@ -67,7 +70,10 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
     );
 
     vscode.workspace.onDidChangeConfiguration((change) => {
-      if (change.affectsConfiguration("bazel.enableCodeLens")) {
+      if (
+        change.affectsConfiguration("bazel.enableCodeLens") ||
+        change.affectsConfiguration("bazel.enableQueries")
+      ) {
         this.onDidChangeCodeLensesEmitter.fire();
       }
     });
@@ -86,6 +92,10 @@ export class BazelBuildCodeLensProvider implements vscode.CodeLensProvider {
     const bazelConfig = vscode.workspace.getConfiguration("bazel");
     const enableCodeLens = bazelConfig.get<boolean>("enableCodeLens");
     if (!enableCodeLens) {
+      return [];
+    }
+
+    if (!areBazelQueriesEnabled()) {
       return [];
     }
 
