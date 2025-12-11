@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.13.1](https://github.com/bazel-contrib/vscode-bazel/compare/v0.13.0...v0.13.1) (2025-12-11)
+
+
+### Bug Fixes
+
+* **worskpace-tree:** Do not reveal treeview when not visible. ([#493](https://github.com/bazel-contrib/vscode-bazel/issues/493)) ([fd034ea](https://github.com/bazel-contrib/vscode-bazel/commit/fd034ea4123d82d9537c4e344264d610c07c6fdd))
+
 ## [0.13.0](https://github.com/bazel-contrib/vscode-bazel/compare/v0.12.0...v0.13.0) (2025-12-09)
 
 
