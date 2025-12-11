@@ -172,9 +172,12 @@ export function getBuildifierFileType(fsPath: string): BuildifierFileType {
  * configuration, or its default.
  */
 export function getDefaultBuildifierExecutablePath(): string {
-  return vscode.workspace
-    .getConfiguration("bazel")
-    .get<string>("buildifierExecutable");
+  return (
+    vscode.workspace
+      .getConfiguration("bazel")
+      .get<string>("buildifierExecutkable")
+      .trim() || "buildifier"
+  );
 }
 
 /**
@@ -187,7 +190,8 @@ export function getDefaultBuildifierExecutablePath(): string {
 export function getDefaultBuildifierJsonConfigPath(): string {
   return vscode.workspace
     .getConfiguration("bazel")
-    .get<string>("buildifierConfigJsonPath");
+    .get<string>("buildifierConfigJsonPath")
+    .trim();
 }
 
 /**
