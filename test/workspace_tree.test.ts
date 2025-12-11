@@ -122,18 +122,21 @@ describe("Bazel Workspace Tree", function (this: Mocha.Suite) {
     );
   });
 
-  it("selects the right tree item when file is opened", async () => {
-    // GIVEN
+  it("does not select tree item when bazel view is hidden", async () => {
+    // GIVEN another view is active (Search) instead of the Explorer
+    await vscode.commands.executeCommand("workbench.view.search");
     assert.strictEqual(
       workspaceTreeProvider.lastRevealedTreeItem?.getLabel(),
       undefined,
     );
+
     // WHEN opening a file in the workspace
     await openSourceFile(path.join(workspacePath, "pkg1", "BUILD"));
-    // THEN the tree item is selected
+
+    // THEN the Bazel workspace tree selection should not change
     assert.strictEqual(
       workspaceTreeProvider.lastRevealedTreeItem?.getLabel(),
-      "//pkg1",
+      undefined,
     );
   });
 });

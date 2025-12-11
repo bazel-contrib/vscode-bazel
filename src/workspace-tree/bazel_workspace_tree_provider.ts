@@ -247,6 +247,10 @@ export class BazelWorkspaceTreeProvider
    * Synchronizes the tree view selection with the currently active editor.
    */
   public async syncSelectedTreeItem(): Promise<void> {
+    if (!this.treeView || !this.treeView.visible) {
+      return; // Do not reveal if the Bazel tree view is not visible
+    }
+
     if (!this.workspaceFolderTreeItems?.length) {
       return; // No workspace folders
     }
