@@ -21,7 +21,7 @@ import {
   BuildifierFormatProvider,
   checkBuildifierIsAvailable,
 } from "../buildifier";
-import { BazelBuildCodeLensProvider } from "../codelens";
+import { CodeLensFeature } from "../codelens/code_lens_feature";
 import { BazelCompletionItemProvider } from "../completion-provider";
 import {
   BazelGotoDefinitionProvider,
@@ -59,7 +59,7 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(_workspaceTreeProvider);
 
   // Initialize other components
-  const codeLensProvider = new BazelBuildCodeLensProvider(context);
+  context.subscriptions.push(CodeLensFeature.create(context));
   const buildifierDiagnostics = new BuildifierDiagnosticsManager();
   let completionItemProvider: BazelCompletionItemProvider | null = null;
   let lspClient: lc.LanguageClient | undefined;
@@ -180,11 +180,6 @@ export async function activate(context: vscode.ExtensionContext) {
         }
       },
     }),
-    // CodeLens provider for BUILD files
-    vscode.languages.registerCodeLensProvider(
-      [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
-      codeLensProvider,
-    ),
     // Buildifier formatting support
     vscode.languages.registerDocumentFormattingEditProvider(
       [
