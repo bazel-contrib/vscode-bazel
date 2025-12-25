@@ -440,7 +440,7 @@ function extractLabelFromCursor(): string | undefined {
   const position = editor.selection.active;
   const wordRange = document.getWordRangeAtPosition(
     position,
-    /(?<![^"'])[a-zA-Z0-9_/:.-@]+(?![^"'])/,
+    /(?<![^"'])[a-zA-Z0-9_/:.\-@]+(?![^"'])/,
   );
 
   if (!wordRange) {
