@@ -127,7 +127,7 @@ export function getDefaultBuildifierExecutablePath(): string {
   return (
     vscode.workspace
       .getConfiguration("bazel")
-      .get<string>("buildifierExecutkable")
+      .get<string>("buildifierExecutable")
       .trim() || "buildifier"
   );
 }
