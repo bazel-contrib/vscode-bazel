@@ -123,13 +123,13 @@
             "properties": {
                 "bazel.executable": {
                     "type": "string",
-                    "default": "",
+                    "default": "bazel",
                     "description": "The name of the Bazel executable. This may be an absolute path, or a simple name that will be searched for on the system path. If empty, \"bazel\" on the system path will be used.",
                     "scope": "machine-overridable"
                 },
                 "bazel.buildifierExecutable": {
                     "type": "string",
-                    "default": "",
+                    "default": "buildifier",
                     "markdownDescription": "The name of the Buildifier executable. This may be an absolute path, or a simple name that will be searched for on the system path. Paths starting with `@` are interpreted as Bazel targets and are run via `bazel run`. If empty, \"buildifier\" on the system path will be used.\n\nBuildifier can be downloaded from https://github.com/bazelbuild/buildtools/releases.",
                     "scope": "machine-overridable"
                 },

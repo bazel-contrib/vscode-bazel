@@ -118,33 +118,32 @@ export async function buildifierLint(
 
 /**
  * Gets the path to the buildifier executable specified by the workspace
- * configuration, if present.
+ * configuration.
  *
  * @returns The path to the buildifier executable specified in the workspace
- * configuration, or just "buildifier" if not present (in which case the
- * system path will be searched).
+ * configuration, or its default.
  */
 export function getDefaultBuildifierExecutablePath(): string {
-  // Try to retrieve the executable from VS Code's settings. If it's not set,
-  // just use "buildifier" as the default and get it from the system PATH.
-  const bazelConfig = vscode.workspace.getConfiguration("bazel");
-  const buildifierExecutable = bazelConfig.get<string>("buildifierExecutable");
-  if (buildifierExecutable.length === 0) {
-    return "buildifier";
-  }
-  return buildifierExecutable;
+  return (
+    vscode.workspace
+      .getConfiguration("bazel")
+      .get<string>("buildifierExecutable")
+      .trim() || "buildifier"
+  );
 }
 
 /**
  * Gets the path to the buildifier json configuration file specified by the
- * workspace configuration, if present.
+ * workspace configuration.
  *
  * @returns The path to the buildifier json configuration file specified in the
- * workspace configuration, or an empty string if not present.
+ * workspace configuration, or its default.
  */
 export function getDefaultBuildifierJsonConfigPath(): string {
-  const bazelConfig = vscode.workspace.getConfiguration("bazel");
-  return bazelConfig.get<string>("buildifierConfigJsonPath", "");
+  return vscode.workspace
+    .getConfiguration("bazel")
+    .get<string>("buildifierConfigJsonPath")
+    .trim();
 }
 
 /**
