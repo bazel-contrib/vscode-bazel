@@ -58,7 +58,6 @@ export class BuildifierFormatProvider
       ];
       return edits;
     } catch (err: any) {
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       vscode.window.showErrorMessage(`${err}`);
     }
   }

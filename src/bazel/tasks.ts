@@ -71,7 +71,6 @@ class BazelTaskProvider implements vscode.TaskProvider {
     // Infer `BazelWorkspaceInfo` from `scope`
     const workspaceInfo = await getWorkspaceInfoFromTask(task.scope);
     if (!workspaceInfo) {
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       vscode.window.showInformationMessage(
         "Please open a Bazel workspace folder to use this task.",
       );
@@ -139,13 +138,12 @@ async function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
   // Show a notification that the build is finished
   if (bazelTaskInfo) {
     if (rawExitCode !== 0) {
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       vscode.window.showErrorMessage(
         `Bazel ${command} failed: ${exitCodeToUserString(exitCode)}`,
       );
     } else {
       const timeInSeconds = measurePerformance(bazelTaskInfo.startTime);
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+
       vscode.window.showInformationMessage(
         `Bazel ${command} completed successfully in ${timeInSeconds} seconds.`,
       );
@@ -178,7 +176,6 @@ async function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
       const covFileBytes = await vscode.workspace.fs.readFile(covFileUri);
       const covFileStr = new TextDecoder("utf8").decode(covFileBytes);
       if (covFileStr.trim() === "") {
-        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         vscode.window.showWarningMessage(
           "The generated LCOV coverage file was empty.\n" +
             "Please ensure your toolchain is correctly setup and " +
@@ -191,7 +188,6 @@ async function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
         await showLcovCoverage(description, executionRoot, covFileStr);
       }
     } catch (e: any) {
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       vscode.window.showErrorMessage(
         `Unable to open coverage report from ${covFilePath}:\n${e}`,
       );

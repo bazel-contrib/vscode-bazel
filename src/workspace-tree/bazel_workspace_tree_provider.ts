@@ -171,7 +171,7 @@ export class BazelWorkspaceTreeProvider
 
     // All the UI to update based on having items.
     const haveBazelWorkspace = this.workspaceFolderTreeItems.length !== 0;
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+
     vscode.commands.executeCommand(
       "setContext",
       "bazel.haveWorkspace",

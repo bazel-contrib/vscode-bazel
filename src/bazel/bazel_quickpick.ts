@@ -127,7 +127,6 @@ export async function queryQuickPickTargets({
   }
 
   if (workspaceInfo === undefined) {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     vscode.window.showErrorMessage("Failed to find a Bazel workspace");
     return [];
   }
@@ -165,7 +164,6 @@ export async function queryQuickPickPackage({
   }
 
   if (workspaceInfo === undefined) {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     vscode.window.showErrorMessage("Failed to find a Bazel workspace");
     return [];
   }

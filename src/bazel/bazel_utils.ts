@@ -84,7 +84,6 @@ function shouldIgnorePath(fsPath: string): boolean {
         return true;
       }
     } catch (err) {
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       vscode.window.showErrorMessage(
         "pathsToIgnore value isn't a valid regex: " + escape(pathRegex),
       );

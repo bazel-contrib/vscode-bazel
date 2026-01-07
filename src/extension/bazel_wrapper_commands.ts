@@ -102,7 +102,7 @@ async function bazelBuildTarget(adapter: IBazelCommandAdapter | undefined) {
 
   const commandOptions = selectedAdapter.getBazelCommandOptions();
   const task = createBazelTask("build", commandOptions);
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+
   vscode.tasks.executeTask(task);
 }
 
@@ -143,7 +143,6 @@ async function bazelBuildTargetWithDebugging(
     .concat(commandOptions.targets)
     .concat(commandOptions.options);
 
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
   vscode.debug.startDebugging(undefined, {
     args: fullArgs,
     bazelCommand: "build",
@@ -205,7 +204,7 @@ async function buildPackage(
     workspaceInfo: commandOptions.workspaceInfo,
   };
   const task = createBazelTask("build", allCommandOptions);
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+
   vscode.tasks.executeTask(task);
 }
 
@@ -221,7 +220,7 @@ function executeBazelTask(
 ): void {
   const commandOptions = adapter.getBazelCommandOptions();
   const task = createBazelTask(commandType, commandOptions);
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+
   vscode.tasks.executeTask(task);
 }
 
@@ -314,7 +313,7 @@ async function testPackage(
     workspaceInfo: commandOptions.workspaceInfo,
   };
   const task = createBazelTask("test", allCommandOptions);
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+
   vscode.tasks.executeTask(task);
 }
 
@@ -328,7 +327,6 @@ async function testPackage(
 async function bazelClean() {
   const workspaceInfo = await BazelWorkspaceInfo.fromWorkspaceFolders();
   if (!workspaceInfo) {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     vscode.window.showInformationMessage(
       "Please open a Bazel workspace folder to use this command.",
     );
@@ -340,7 +338,7 @@ async function bazelClean() {
     targets: [],
     workspaceInfo,
   });
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+
   vscode.tasks.executeTask(task);
 }
 
@@ -354,7 +352,6 @@ async function bazelClean() {
 async function bazelGoToBuildFile() {
   const currentEditor = vscode.window.activeTextEditor;
   if (!currentEditor) {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     vscode.window.showInformationMessage(
       "Please open a file to go to its BUILD file.",
     );
@@ -364,7 +361,6 @@ async function bazelGoToBuildFile() {
   const filePath = currentEditor.document.uri.fsPath;
   const buildFilePath = getBazelPackageFile(filePath);
   if (!buildFilePath) {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     vscode.window.showInformationMessage(
       "No BUILD or BUILD.bazel file found in any parent directory.",
     );
@@ -372,7 +368,7 @@ async function bazelGoToBuildFile() {
   }
 
   // Open the BUILD file
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+
   await vscode.window.showTextDocument(vscode.Uri.file(buildFilePath));
 }
 
@@ -417,9 +413,8 @@ async function bazelGoToLabel(target_info?: blaze_query.ITarget | undefined) {
  * Copies a label to clipboard and shows confirmation message.
  */
 function copyLabelToClipboard(label: string): void {
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
   vscode.env.clipboard.writeText(label);
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+
   vscode.window.showInformationMessage(`Copied to clipboard: ${label}`);
 }
 
@@ -429,7 +424,6 @@ function copyLabelToClipboard(label: string): void {
 function extractLabelFromCursor(): string | undefined {
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     vscode.window.showInformationMessage(
       "Please open a file to copy a label from.",
     );
@@ -444,7 +438,6 @@ function extractLabelFromCursor(): string | undefined {
   );
 
   if (!wordRange) {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     vscode.window.showInformationMessage("No label found at cursor position.");
     return undefined;
   }
@@ -456,7 +449,6 @@ function extractLabelFromCursor(): string | undefined {
     const filePath = document.uri.fsPath;
     const packagePath = getBazelPackageFolder(filePath);
     if (!packagePath) {
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       vscode.window.showErrorMessage("Not in a Bazel package.");
       return undefined;
     }

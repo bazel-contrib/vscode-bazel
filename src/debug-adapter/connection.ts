@@ -154,7 +154,6 @@ export class BazelDebugConnection extends EventEmitter {
     let event: skylark_debugging.DebugEvent = null;
     this.append(chunk);
 
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       try {
         event = skylark_debugging.DebugEvent.decodeDelimited(this.reader);
