@@ -18,6 +18,7 @@ jobs:
   build_vscode_ext:
     name: Build VS Code extension
     runs-on: ubuntu-latest
+    if: ${{ github.repository == 'bazel-contrib/vscode-bazel' }} # Allow CI-runs only for events from/to this repository
     steps:
       - name: Checkout
         uses: actions/checkout@v6
