@@ -93,7 +93,7 @@ export async function activate(context: vscode.ExtensionContext) {
       ),
     );
   }
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+
   vscode.commands.executeCommand("setContext", "bazel.lsp.enabled", lspEnabled);
 
   // Create and register the tree view

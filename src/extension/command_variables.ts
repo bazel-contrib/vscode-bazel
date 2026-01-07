@@ -77,7 +77,7 @@ async function bazelGetTargetOutput(
   }
   const workspaceInfo = await BazelWorkspaceInfo.fromWorkspaceFolders();
   if (!workspaceInfo) {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+
     vscode.window.showInformationMessage(
       "Please open a Bazel workspace folder to use this command.",
     );
@@ -113,7 +113,7 @@ async function bazelGetTargetOutput(
 async function bazelInfo(key: string): Promise<string> {
   const workspaceInfo = await BazelWorkspaceInfo.fromWorkspaceFolders();
   if (!workspaceInfo) {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+
     vscode.window.showInformationMessage(
       "Please open a Bazel workspace folder to use this command.",
     );
@@ -159,7 +159,7 @@ async function wrapQuickPick(
 ): Promise<string | undefined> {
   const workspaceInfo = await BazelWorkspaceInfo.fromWorkspaceFolders();
   if (!workspaceInfo) {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+
     vscode.window.showInformationMessage(
       "Please open a Bazel workspace folder to use this command.",
     );
