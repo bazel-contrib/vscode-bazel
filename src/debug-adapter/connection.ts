@@ -154,7 +154,6 @@ export class BazelDebugConnection extends EventEmitter {
     let event: skylark_debugging.DebugEvent = null;
     this.append(chunk);
 
-
     while (true) {
       try {
         event = skylark_debugging.DebugEvent.decodeDelimited(this.reader);

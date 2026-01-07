@@ -143,7 +143,6 @@ async function bazelBuildTargetWithDebugging(
     .concat(commandOptions.targets)
     .concat(commandOptions.options);
 
-
   vscode.debug.startDebugging(undefined, {
     args: fullArgs,
     bazelCommand: "build",
@@ -328,7 +327,6 @@ async function testPackage(
 async function bazelClean() {
   const workspaceInfo = await BazelWorkspaceInfo.fromWorkspaceFolders();
   if (!workspaceInfo) {
-
     vscode.window.showInformationMessage(
       "Please open a Bazel workspace folder to use this command.",
     );
@@ -354,7 +352,6 @@ async function bazelClean() {
 async function bazelGoToBuildFile() {
   const currentEditor = vscode.window.activeTextEditor;
   if (!currentEditor) {
-
     vscode.window.showInformationMessage(
       "Please open a file to go to its BUILD file.",
     );
@@ -364,7 +361,6 @@ async function bazelGoToBuildFile() {
   const filePath = currentEditor.document.uri.fsPath;
   const buildFilePath = getBazelPackageFile(filePath);
   if (!buildFilePath) {
-
     vscode.window.showInformationMessage(
       "No BUILD or BUILD.bazel file found in any parent directory.",
     );
@@ -417,7 +413,6 @@ async function bazelGoToLabel(target_info?: blaze_query.ITarget | undefined) {
  * Copies a label to clipboard and shows confirmation message.
  */
 function copyLabelToClipboard(label: string): void {
-
   vscode.env.clipboard.writeText(label);
 
   vscode.window.showInformationMessage(`Copied to clipboard: ${label}`);
@@ -429,7 +424,6 @@ function copyLabelToClipboard(label: string): void {
 function extractLabelFromCursor(): string | undefined {
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
-
     vscode.window.showInformationMessage(
       "Please open a file to copy a label from.",
     );
@@ -444,7 +438,6 @@ function extractLabelFromCursor(): string | undefined {
   );
 
   if (!wordRange) {
-
     vscode.window.showInformationMessage("No label found at cursor position.");
     return undefined;
   }
@@ -456,7 +449,6 @@ function extractLabelFromCursor(): string | undefined {
     const filePath = document.uri.fsPath;
     const packagePath = getBazelPackageFolder(filePath);
     if (!packagePath) {
-
       vscode.window.showErrorMessage("Not in a Bazel package.");
       return undefined;
     }

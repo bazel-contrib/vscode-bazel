@@ -58,7 +58,6 @@ export class BuildifierFormatProvider
       ];
       return edits;
     } catch (err: any) {
-
       vscode.window.showErrorMessage(`${err}`);
     }
   }

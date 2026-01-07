@@ -127,7 +127,6 @@ export async function queryQuickPickTargets({
   }
 
   if (workspaceInfo === undefined) {
-
     vscode.window.showErrorMessage("Failed to find a Bazel workspace");
     return [];
   }
@@ -165,7 +164,6 @@ export async function queryQuickPickPackage({
   }
 
   if (workspaceInfo === undefined) {
-
     vscode.window.showErrorMessage("Failed to find a Bazel workspace");
     return [];
   }

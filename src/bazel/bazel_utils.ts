@@ -84,7 +84,6 @@ function shouldIgnorePath(fsPath: string): boolean {
         return true;
       }
     } catch (err) {
-
       vscode.window.showErrorMessage(
         "pathsToIgnore value isn't a valid regex: " + escape(pathRegex),
       );
