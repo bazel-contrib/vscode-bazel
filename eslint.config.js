@@ -24,11 +24,14 @@ module.exports = [
     languageOptions: {
       globals: {
         ...globals.node,
+        vscode: "readonly",
       },
       parser: tseslintParser,
       parserOptions: {
         project: true,
         tsconfigRootDir: __dirname,
+        ecmaVersion: "latest",
+        sourceType: "module",
       },
     },
     plugins: {
@@ -94,7 +97,6 @@ module.exports = [
       // Base ESLint rules
       complexity: "off",
       "constructor-super": "error",
-      "dot-notation": "off",
       eqeqeq: ["error", "smart"],
       "guard-for-in": "error",
       "id-denylist": [
@@ -128,20 +130,12 @@ module.exports = [
       "no-console": "error",
       "no-debugger": "error",
       "no-empty": "error",
-      "no-empty-function": "off",
       "no-eval": "error",
       "no-fallthrough": "off",
       "no-invalid-this": "off",
-      "no-new-wrappers": "error",
-      "no-shadow": "off",
       "no-throw-literal": "error",
       "no-trailing-spaces": "error",
-      "no-undef-init": "error",
-      "no-underscore-dangle": "off",
-      "no-unsafe-finally": "error",
-      "no-unused-expressions": "off",
       "no-unused-labels": "error",
-      "no-use-before-define": "off",
       "no-var": "error",
       "object-shorthand": "error",
       "one-var": ["error", "never"],
