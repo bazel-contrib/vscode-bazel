@@ -38,12 +38,12 @@ jobs:
       - name: Check formatting
         run: npm run format-check
 
-      # Has to happen before `check-lint`, because we need the generated protobuf types
+      # Has to happen before `lint-check`, because we need the generated protobuf types
       - name: Compile the extension
         run: npm run compile
 
       - name: Lint
-        run: npm run check-lint
+        run: npm run lint-check
 
       - uses: bazel-contrib/setup-bazel@0.16.0
         with:

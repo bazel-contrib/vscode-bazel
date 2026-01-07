@@ -495,7 +495,8 @@
         ]
     },
     "scripts": {
-        "check-lint": "eslint .",
+        "lint-check": "eslint .",
+        "lint-fix": "eslint . --fix",
         "compile": "./scripts/build.sh",
         "pretest": "./scripts/build.sh",
         "format-check": "prettier --check .",
