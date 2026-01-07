@@ -516,7 +516,7 @@
         "@typescript-eslint/parser": "^8.44.1",
         "@vscode/test-cli": "^0.0.12",
         "@vscode/test-electron": "^2.3.9",
-        "@vscode/vsce": "^2.24.0",
+        "@vscode/vsce": "^3.0.0",
         "eslint": "^8.57.0",
         "eslint-config-prettier": "^9.1.0",
         "eslint-plugin-jsdoc": "^48.2.2",
