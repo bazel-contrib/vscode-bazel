@@ -21,7 +21,7 @@ import {
   BuildifierFormatProvider,
   checkBuildifierIsAvailable,
 } from "../buildifier";
-import { BazelBuildCodeLensProvider } from "../codelens";
+import { CodeLensFeature } from "../codelens/code_lens_feature";
 import { BazelCompletionItemProvider } from "../completion-provider";
 import {
   BazelGotoDefinitionProvider,
@@ -32,9 +32,11 @@ import { BazelWorkspaceTreeProvider } from "../workspace-tree";
 import { activateCommandVariables } from "./command_variables";
 import { activateTesting } from "../test-explorer";
 import { activateWrapperCommands } from "./bazel_wrapper_commands";
+import { Logger } from "./logger";
 
 // Global reference to the workspace tree provider for testing
 export let _workspaceTreeProvider: BazelWorkspaceTreeProvider;
+let _logger: Logger;
 
 /**
  * Called when the extension is activated; that is, when its first command is
@@ -43,13 +45,21 @@ export let _workspaceTreeProvider: BazelWorkspaceTreeProvider;
  * @param context The extension context.
  */
 export async function activate(context: vscode.ExtensionContext) {
+  // Initialize Logger and showOutput command
+  _logger = new Logger("Bazel");
+  context.subscriptions.push(
+    vscode.commands.registerCommand("bazel.showOutput", () => {
+      Logger.show();
+    }),
+  );
+
   // Initialize the workspace tree provider
   _workspaceTreeProvider =
     BazelWorkspaceTreeProvider.fromExtensionContext(context);
   context.subscriptions.push(_workspaceTreeProvider);
 
   // Initialize other components
-  const codeLensProvider = new BazelBuildCodeLensProvider(context);
+  context.subscriptions.push(CodeLensFeature.create(context, _logger));
   const buildifierDiagnostics = new BuildifierDiagnosticsManager();
   let completionItemProvider: BazelCompletionItemProvider | null = null;
 
@@ -144,11 +154,6 @@ export async function activate(context: vscode.ExtensionContext) {
         }
       },
     }),
-    // CodeLens provider for BUILD files
-    vscode.languages.registerCodeLensProvider(
-      [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
-      codeLensProvider,
-    ),
     // Buildifier formatting support
     vscode.languages.registerDocumentFormattingEditProvider(
       [
@@ -180,11 +185,15 @@ export async function activate(context: vscode.ExtensionContext) {
   // Targets" tree view.
   // eslint-disable-next-line @typescript-eslint/no-floating-promises
   checkBuildifierIsAvailable();
+
+  _logger.info("Bazel extension activated");
 }
 
 /** Called when the extension is deactivated. */
 export function deactivate() {
   // Nothing to do here.
+  _logger.info("Bazel extension deactivated");
+  Logger.disposeAll();
 }
 
 function createLsp(config: vscode.WorkspaceConfiguration) {
