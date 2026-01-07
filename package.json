@@ -519,7 +519,7 @@
         "@vscode/vsce": "^3.0.0",
         "eslint": "^8.57.0",
         "eslint-config-prettier": "^10.0.0",
-        "eslint-plugin-jsdoc": "^48.2.2",
+        "eslint-plugin-jsdoc": "^61.0.0",
         "js-yaml": "^4.1.1",
         "mocha": "^11.0.0",
         "prettier": "^3.2.5",
