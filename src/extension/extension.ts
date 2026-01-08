@@ -52,6 +52,39 @@ export async function activate(context: vscode.ExtensionContext) {
   const codeLensProvider = new BazelBuildCodeLensProvider(context);
   const buildifierDiagnostics = new BuildifierDiagnosticsManager();
   let completionItemProvider: BazelCompletionItemProvider | null = null;
+  let lspClient: lc.LanguageClient | undefined;
+
+  async function startLspFromCurrentConfig() {
+    const currentConfig = vscode.workspace.getConfiguration("bazel");
+    const lspCommand = !!currentConfig.get<string>("lsp.command");
+
+    if (!lspCommand) {
+      void vscode.window.showErrorMessage(
+        "Bazel LSP command (bazel.lsp.command) is not configured.",
+      );
+      return;
+    }
+
+    if (lspClient) {
+      try {
+        await lspClient.stop();
+      } catch {
+        // Ignore errors while stopping a previous client instance.
+      }
+    }
+
+    const newClient = createLsp(currentConfig);
+    lspClient = newClient;
+    context.subscriptions.push(newClient);
+
+    try {
+      await lspClient.start();
+    } catch (error: any) {
+      void vscode.window.showErrorMessage(
+        `Failed to start Bazel language server. Error: ${error.message}`,
+      );
+    }
+  }
 
   // Initialize other parts of the extension
   const config = vscode.workspace.getConfiguration("bazel");
@@ -59,16 +92,12 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Set up LSP if enabled
   if (lspEnabled) {
-    const lspClient = createLsp(config);
-
     context.subscriptions.push(
-      lspClient,
-      vscode.commands.registerCommand("bazel.lsp.restart", () =>
-        lspClient.restart(),
-      ),
+      vscode.commands.registerCommand("bazel.lsp.restart", async () => {
+        await startLspFromCurrentConfig();
+      }),
     );
-
-    await lspClient.start();
+    await startLspFromCurrentConfig();
   } else {
     completionItemProvider = new BazelCompletionItemProvider();
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
