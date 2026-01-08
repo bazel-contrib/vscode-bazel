@@ -533,6 +533,6 @@
         "vscode-debugprotocol": "^1.37.0",
         "vscode-languageclient": "^9.0.1",
         "vscode-uri": "^3.0.2",
-        "which": "^4.0.0"
+        "which": "^6.0.0"
     }
 }

@@ -24,7 +24,14 @@ import {
 
 async function fileExists(filename: string) {
   try {
-    await fs.stat(filename);
+    // First check if file exists and is a regular file
+    const stats = await fs.stat(filename);
+    if (!stats.isFile()) {
+      return false;
+    }
+
+    // Then check if it's executable by trying to access it
+    await fs.access(filename, fs.constants.X_OK);
     return true;
   } catch {
     return false;
@@ -41,8 +48,10 @@ const BUILDTOOLS_RELEASES_URL =
  *
  * If not available, a warning message will be presented to the user with a
  * Download button that they can use to go to the GitHub releases page.
+ *
+ * @returns absolute path to the found buildifier executable, or null if not found
  */
-export async function checkBuildifierIsAvailable() {
+export async function checkBuildifierIsAvailable(): Promise<string | null> {
   const buildifierExecutable = getDefaultBuildifierExecutablePath();
 
   // Check if the program exists (in case it's an actual executable and not
@@ -50,19 +59,24 @@ export async function checkBuildifierIsAvailable() {
   const isTarget = buildifierExecutable.startsWith("@");
 
   // Check if the program exists as a relative path of the workspace
-  const pathExists = await fileExists(
-    path.join(
-      vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath,
-      buildifierExecutable,
-    ),
-  );
+  const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath;
+  const relativePath = path.join(workspacePath || "", buildifierExecutable);
+  const relativePathExists = await fileExists(relativePath);
 
-  if (!isTarget && !pathExists) {
+  let executablePath: string;
+  if (relativePathExists) {
+    executablePath = relativePath;
+  } else if (isTarget) {
+    // For Bazel targets, use the target name as-is
+    executablePath = buildifierExecutable;
+  } else {
+    // Try to find the executable in the system PATH
     try {
-      await which(buildifierExecutable);
+      executablePath = await which(buildifierExecutable);
     } catch (e) {
-      await showBuildifierDownloadPrompt("Buildifier was not found");
-      return;
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      showBuildifierDownloadPrompt("Buildifier was not found");
+      return null;
     }
   }
 
@@ -78,12 +92,14 @@ export async function checkBuildifierIsAvailable() {
   );
   try {
     JSON.parse(stdout);
+    return executablePath;
   } catch {
     // If we got no valid JSON back, we don't have a compatible version.
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     showBuildifierDownloadPrompt(
       "Buildifier is too old (0.25.1 or higher is needed)",
     );
+    return null;
   }
 }
 

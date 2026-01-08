@@ -1,0 +1,2 @@
+#!/bin/bash
+echo 'Some output that is not valid JSON'
