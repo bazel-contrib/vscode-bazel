@@ -30,24 +30,17 @@ describe("buildifier_availability", () => {
     process.env.PATH = buildifierDirPath + path.delimiter + process.env.PATH;
   }
 
-  async function removeVscodeSettings(): Promise<void> {
-    await fs.rm(path.join(testWorkspace, ".vscode"), {
-      recursive: true,
-      force: true,
-    });
-  }
-
   beforeEach(async () => {
     // Restore original PATH before each test
     process.env.PATH = originalPath;
-    // Remove vscode settings
-    await removeVscodeSettings();
+    // Restore vscode settings
+    await setBuildifierExecutableConfig(undefined);
   });
   afterEach(async () => {
     // Restore original PATH before each test
     process.env.PATH = originalPath;
-    // Remove vscode settings
-    await removeVscodeSettings();
+    // Restore vscode settings
+    await setBuildifierExecutableConfig(undefined);
   });
 
   describe("checkBuildifierIsAvailable", () => {

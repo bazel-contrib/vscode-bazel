@@ -1,4 +1,6 @@
 #!/bin/bash
+# Read all input from stdin to prevent EPIPE errors
+cat > /dev/null
 echo '{
   "success": false,
   "files": [
