@@ -1,0 +1,12 @@
+#!/bin/bash
+echo '{
+  "success": false,
+  "files": [
+    {
+      "filename": "<stdin>",
+      "formatted": false,
+      "valid": true,
+      "warnings": []
+    }
+  ]
+}'
