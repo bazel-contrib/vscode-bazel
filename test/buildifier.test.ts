@@ -10,24 +10,24 @@ async function openSourceFile(sourceFile: string) {
   await vscode.window.showTextDocument(doc, vscode.ViewColumn.One, false);
 }
 
-let disposables: vscode.Disposable[] = [];
-
-afterEach(() => {
-  for (const disposable of disposables) {
-    disposable.dispose();
-  }
-  disposables = [];
-});
-
-const workspacePath = path.join(
-  __dirname,
-  "..",
-  "..",
-  "test",
-  "bazel_workspace",
-);
-
 describe("buildifier", () => {
+  let disposables: vscode.Disposable[] = [];
+
+  afterEach(() => {
+    for (const disposable of disposables) {
+      disposable.dispose();
+    }
+    disposables = [];
+  });
+
+  const workspacePath = path.join(
+    __dirname,
+    "..",
+    "..",
+    "test",
+    "bazel_workspace",
+  );
+
   it("diagnostics are added from buildifier", async () => {
     // Create DiagnosticsManager and open file
     const buildFile = path.join(workspacePath, "buildifier", "BUILD");
