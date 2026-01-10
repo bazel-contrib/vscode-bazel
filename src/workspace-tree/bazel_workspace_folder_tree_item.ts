@@ -30,16 +30,16 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
   private sortedPackageTreeItems: BazelPackageTreeItem[] = [];
 
   /**
-   * Initializes a new tree item with the given workspace folder.
+   * Creates a new tree item with the given workspace folder.
+   * Tree gets initialized on demand.
    *
-   * @param workspaceFolder The workspace folder that the tree item represents.
+   * @param resources The resources for the extension.
+   * @param workspaceInfo The workspace information for the Bazel project.
    */
   constructor(
     private readonly resources: Resources,
     private readonly workspaceInfo: BazelWorkspaceInfo,
-  ) {
-    void this.getDirectoryItems(); // Initialize the tree items
-  }
+  ) {}
 
   public mightHaveChildren(): boolean {
     return true;
