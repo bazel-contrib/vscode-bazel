@@ -13,12 +13,18 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-
 import { getDefaultBazelExecutablePath } from "../extension/configuration";
 import { IBazelCommandAdapter, IBazelCommandOptions } from "./bazel_command";
 import { BazelQuery } from "./bazel_query";
 import { blaze_query } from "../protos";
 import { BazelWorkspaceInfo } from "./bazel_workspace_info";
+import {
+  getBazelPackageFile,
+  getBazelWorkspaceFolder,
+  getBuildFileLineWithSourceFilePath,
+  getPackageLabelForBuildFile,
+  getTargetNameAtBuildFileLocation,
+} from "./bazel_utils";
 
 /**
  * Represents a Bazel target in a QuickPick items window. Implements the
@@ -97,6 +103,57 @@ async function pickBazelWorkspace(): Promise<BazelWorkspaceInfo | undefined> {
     const document = vscode.window.activeTextEditor.document;
     return BazelWorkspaceInfo.fromDocument(document);
   }
+}
+
+/**
+ * Guesses the label of interest for the current active editor file and cursor position.
+ * Returns undefined if not possible to determine.
+ */
+export function guessLabelOfInterest(
+  currentFilePath: string | undefined,
+  currentLine: number | undefined,
+): string | undefined {
+  // Do we have a file path?
+  if (!currentFilePath) {
+    return undefined;
+  }
+
+  // Are we in a Bazel workspace?
+  const workspaceFolder = getBazelWorkspaceFolder(currentFilePath);
+  if (!workspaceFolder) {
+    return undefined;
+  }
+
+  // Can we find the corresponding BUILD file?
+  const buildFile = getBazelPackageFile(currentFilePath);
+  if (!buildFile) {
+    return undefined;
+  }
+  const packageLabel = getPackageLabelForBuildFile(workspaceFolder, buildFile);
+
+  // Can we find the relevant line inside the BUILD file?
+  let lineOfInterest: number | undefined = undefined;
+  if (currentFilePath === buildFile) {
+    lineOfInterest = currentLine;
+  } else {
+    lineOfInterest = getBuildFileLineWithSourceFilePath(
+      buildFile,
+      currentFilePath,
+    );
+  }
+  if (!lineOfInterest) {
+    return packageLabel + ":";
+  }
+
+  // Determine target name based of line of interest
+  const targetName = getTargetNameAtBuildFileLocation(
+    buildFile,
+    lineOfInterest,
+  );
+  if (targetName) {
+    return `${packageLabel}:${targetName}`;
+  }
+  return packageLabel + ":";
 }
 
 export interface QuickPickParams {
@@ -197,14 +254,24 @@ export function showDynamicQuickPick({
   queryFunctor: (params: QuickPickParams) => Promise<BazelTargetQuickPick[]>;
   workspaceInfo?: BazelWorkspaceInfo;
 }): Promise<BazelTargetQuickPick | undefined> {
+  const quickPick = vscode.window.createQuickPick<BazelTargetQuickPick>();
+  quickPick.title = "Select a Bazel target";
+  quickPick.matchOnDescription = true;
+  quickPick.matchOnDetail = true;
+
+  // By default the quick pick is empty and we use the query expression from the settings.
+  quickPick.placeholder = "Start typing to search for targets...";
   const initialPattern: string = vscode.workspace
     .getConfiguration("bazel.commandLine")
     .get("queryExpression");
-  const quickPick = vscode.window.createQuickPick<BazelTargetQuickPick>();
-  quickPick.title = "Select a Bazel target";
-  quickPick.placeholder = "Start typing to search for targets...";
-  quickPick.matchOnDescription = true;
-  quickPick.matchOnDetail = true;
+  // But if we can guess the label of interest from the current cursor position, we use it to improve the starting point
+  const guessedLabelOfInterest = guessLabelOfInterest(
+    vscode.window.activeTextEditor?.document.uri.fsPath,
+    vscode.window.activeTextEditor?.selection.active.line,
+  );
+  if (guessedLabelOfInterest) {
+    quickPick.value = guessedLabelOfInterest;
+  }
 
   let abortController: AbortController | undefined = new AbortController();
   let timeout: NodeJS.Timeout | undefined;
