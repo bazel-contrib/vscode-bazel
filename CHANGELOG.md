@@ -1,5 +1,13 @@
 # Change Log
 
+## [0.13.2](https://github.com/bazel-contrib/vscode-bazel/compare/v0.13.1...v0.13.2) (2026-01-10)
+
+
+### Bug Fixes
+
+* **config:** Make default values for executables user-visible ([#489](https://github.com/bazel-contrib/vscode-bazel/issues/489)) ([529f5ad](https://github.com/bazel-contrib/vscode-bazel/commit/529f5ade95725b7f7b669e6832d473864c4d35f2))
+* **deps:** update dependency which to v6 ([#536](https://github.com/bazel-contrib/vscode-bazel/issues/536)) ([a7af391](https://github.com/bazel-contrib/vscode-bazel/commit/a7af3913ebaf6f2ded2a17c19cf824d31ea58621))
+
 ## [0.13.1](https://github.com/bazel-contrib/vscode-bazel/compare/v0.13.0...v0.13.1) (2025-12-11)
 
 
