@@ -17,10 +17,24 @@ function assertEditorIsActive(expectedPath: string) {
   assert.strictEqual(activeEditorBefore.document.uri.fsPath, expectedPath);
 }
 
+function assertCursorPosition(expectedLine: number) {
+  const activeEditor = vscode.window.activeTextEditor;
+  if (!activeEditor) {
+    throw new Error("No active editor found");
+  }
+  const position = activeEditor.selection.active;
+  assert.strictEqual(
+    position.line + 1, // Convert 0-based to 1-based for readability
+    expectedLine,
+    `Expected cursor to be on line ${expectedLine}, but found on line ${position.line + 1}`,
+  );
+}
+
 interface TestCase {
   name: string;
   sourceFile: string;
   expectedBuildFile: string | null; // null means no BUILD file should be found
+  expectedLineNumber?: number; // line number where the file should be referenced (1-based)
 }
 
 describe("Go to Build File", () => {
@@ -37,11 +51,13 @@ describe("Go to Build File", () => {
       name: "should find BUILD file from package root",
       sourceFile: path.join(workspacePath, "pkg1", "main.py"),
       expectedBuildFile: path.join(workspacePath, "pkg1", "BUILD"),
+      expectedLineNumber: 10, // line with srcs=["main.py"]
     },
     {
       name: "should find BUILD file from a packages subfolder",
       sourceFile: path.join(workspacePath, "pkg1", "subfolder", "foo.txt"),
       expectedBuildFile: path.join(workspacePath, "pkg1", "BUILD"),
+      expectedLineNumber: 20, // line with srcs=["subfolder/foo.txt"]
     },
     {
       name: "should find BUILD file from a subpackage folder",
@@ -53,6 +69,7 @@ describe("Go to Build File", () => {
         "foobar.txt",
       ),
       expectedBuildFile: path.join(workspacePath, "pkg2", "sub-pkg", "BUILD"),
+      expectedLineNumber: 3, // line with srcs=["subfolder/foobar.txt"]
     },
     {
       name: "should not change active file if already at BUILD file",
@@ -75,20 +92,27 @@ describe("Go to Build File", () => {
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
   });
 
-  testCases.forEach(({ name, sourceFile, expectedBuildFile }) => {
-    it(name, async () => {
-      // GIVEN
-      await openSourceFile(sourceFile);
-      assertEditorIsActive(sourceFile);
+  testCases.forEach(
+    ({ name, sourceFile, expectedBuildFile, expectedLineNumber }) => {
+      it(name, async () => {
+        // GIVEN
+        await openSourceFile(sourceFile);
+        assertEditorIsActive(sourceFile);
 
-      // WHEN
-      await vscode.commands.executeCommand("bazel.goToBuildFile");
+        // WHEN
+        await vscode.commands.executeCommand("bazel.goToBuildFile");
 
-      // THEN
-      const expectedFile = expectedBuildFile || sourceFile;
-      assertEditorIsActive(expectedFile);
-    });
-  });
+        // THEN
+        const expectedFile = expectedBuildFile || sourceFile;
+        assertEditorIsActive(expectedFile);
+
+        // If we found a BUILD file, verify the cursor is on the correct line
+        if (expectedBuildFile && expectedLineNumber !== undefined) {
+          assertCursorPosition(expectedLineNumber);
+        }
+      });
+    },
+  );
 
   it("should show error when no editor is active", async () => {
     // GIVEN
