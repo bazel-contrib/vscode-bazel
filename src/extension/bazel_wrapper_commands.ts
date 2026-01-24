@@ -17,7 +17,11 @@ import * as path from "path";
 
 import { IBazelCommandAdapter } from "../bazel/bazel_command";
 import { BazelWorkspaceInfo } from "../bazel/bazel_workspace_info";
-import { getDefaultBazelExecutablePath } from "./configuration";
+import {
+  getCommandArgs,
+  getDefaultBazelExecutablePath,
+  getStartupOptions,
+} from "./configuration";
 import {
   getBazelPackageFile,
   getBazelWorkspaceFolder,
@@ -132,10 +136,8 @@ async function bazelBuildTargetWithDebugging(
     }
     return;
   }
-  const bazelConfigCmdLine =
-    vscode.workspace.getConfiguration("bazel.commandLine");
-  const startupOptions = bazelConfigCmdLine.get<string[]>("startupOptions");
-  const commandArgs = bazelConfigCmdLine.get<string[]>("commandArgs");
+  const startupOptions = getStartupOptions();
+  const commandArgs = getCommandArgs();
 
   const commandOptions = adapter.getBazelCommandOptions();
 

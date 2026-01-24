@@ -26,6 +26,30 @@ export function getDefaultBazelExecutablePath(): string {
     vscode.workspace
       .getConfiguration("bazel")
       .get<string>("executable")
-      .trim() || "bazel"
+      ?.trim() ?? "bazel"
+  );
+}
+
+export function getStartupOptions(): string[] {
+  return (
+    vscode.workspace
+      .getConfiguration("bazel.commandLine")
+      .get<string[]>("startupOptions") ?? []
+  );
+}
+
+export function getCommandArgs(): string[] {
+  return (
+    vscode.workspace
+      .getConfiguration("bazel.commandLine")
+      .get<string[]>("commandArgs") ?? []
+  );
+}
+
+export function getQueryExpression(): string {
+  return (
+    vscode.workspace
+      .getConfiguration("bazel.commandLine")
+      .get<string>("queryExpression") ?? "...:*"
   );
 }
