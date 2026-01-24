@@ -43,6 +43,13 @@ export class BazelWorkspaceTreeProvider
   // For testing, keep track of last revealed tree item
   public lastRevealedTreeItem: IBazelTreeItem | undefined = undefined;
 
+  // Debouncing timeout to reduce refresh frequency
+  private refreshTimeout: NodeJS.Timeout | undefined = undefined;
+  // Flag to avoid running multiple refreshes in parallel
+  private isCurrentlyRefreshing: boolean = false;
+  // Flag to track if a refresh is necessary when the tree view becomes visible
+  private runRefreshWhenTreeViewBecomesVisible: boolean = false;
+
   public static fromExtensionContext(
     context: vscode.ExtensionContext,
   ): BazelWorkspaceTreeProvider {
@@ -66,9 +73,9 @@ export class BazelWorkspaceTreeProvider
 
     this.disposables.push(
       buildFilesWatcher,
-      buildFilesWatcher.onDidChange(() => this.onBuildFilesChanged()),
-      buildFilesWatcher.onDidCreate(() => this.onBuildFilesChanged()),
-      buildFilesWatcher.onDidDelete(() => this.onBuildFilesChanged()),
+      buildFilesWatcher.onDidChange(() => this.queueRefresh()),
+      buildFilesWatcher.onDidCreate(() => this.queueRefresh()),
+      buildFilesWatcher.onDidDelete(() => this.queueRefresh()),
       vscode.workspace.onDidChangeWorkspaceFolders(() => this.refresh()),
       vscode.window.onDidChangeActiveTextEditor(() =>
         this.syncSelectedTreeItem(),
@@ -132,22 +139,60 @@ export class BazelWorkspaceTreeProvider
     return treeItem;
   }
 
-  /** Forces a re-query and refresh of the tree's contents. */
+  /**
+   * Forces a re-query and refresh of the tree's contents.
+   * This method is called both directly and through the debounced queue.
+   * Handles lazy loading by checking tree visibility.
+   */
   public refresh() {
-    this.updateWorkspaceFolderTreeItems();
-    this.onDidChangeTreeDataEmitter.fire();
+    if (!this.isTreeViewVisible()) {
+      this.runRefreshWhenTreeViewBecomesVisible = true;
+      return;
+    }
+
+    try {
+      this.isCurrentlyRefreshing = true;
+      this.runRefreshWhenTreeViewBecomesVisible = false;
+      this.updateWorkspaceFolderTreeItems();
+      this.onDidChangeTreeDataEmitter.fire();
+    } finally {
+      this.isCurrentlyRefreshing = false;
+    }
   }
 
   /**
-   * Called to update the tree when a BUILD file is created, deleted, or
-   * changed.
-   *
-   * @param uri The file system URI of the file that changed.
+   * Queues a refresh operation with debouncing to handle rapid file changes.
+   * This ensures that the last change is always picked up while avoiding
+   * excessive refresh operations during bulk operations like git checkout.
+   * Called when BUILD files are created, deleted, or changed.
    */
-  private onBuildFilesChanged() {
-    // TODO(allevato): Look into firing the event only for tree items that are
-    // affected by the change.
-    this.refresh();
+  private queueRefresh(): void {
+    // Clear and restart any existing timeout
+    if (this.refreshTimeout) {
+      clearTimeout(this.refreshTimeout);
+    }
+
+    // Set a timeout to perform refresh after a short delay
+    // This avoids excessive refreshes during bulk operations like git checkout
+    this.refreshTimeout = setTimeout(() => {
+      this.refreshTimeout = undefined;
+      if (this.isCurrentlyRefreshing) {
+        // We don't want to run multiple refreshes in parallel,
+        // but we want to ensure that the last change is always picked up,
+        // so just queue another refresh.
+        this.queueRefresh();
+      } else {
+        this.refresh();
+      }
+    }, 500); // Wait 500ms after the last change
+  }
+
+  /**
+   * Checks if the tree view is currently visible.
+   * Used for lazy loading to avoid unnecessary refreshes.
+   */
+  private isTreeViewVisible(): boolean {
+    return this.treeView?.visible === true;
   }
 
   /** Refresh the cached BazelWorkspaceFolderTreeItems. */
@@ -180,6 +225,12 @@ export class BazelWorkspaceTreeProvider
   }
 
   public dispose() {
+    // Clear any pending timeout
+    if (this.refreshTimeout) {
+      clearTimeout(this.refreshTimeout);
+      this.refreshTimeout = undefined;
+    }
+
     for (const disposable of this.disposables) {
       disposable.dispose();
     }
@@ -191,6 +242,24 @@ export class BazelWorkspaceTreeProvider
    */
   public setTreeView(treeView: vscode.TreeView<IBazelTreeItem>): void {
     this.treeView = treeView;
+
+    // Set up visibility change handler for lazy loading
+    this.disposables.push(
+      this.treeView.onDidChangeVisibility(() => {
+        this.onTreeViewVisibilityChanged();
+      }),
+    );
+  }
+
+  /**
+   * Handles tree view visibility changes for lazy loading.
+   * When the tree becomes visible and there's a pending refresh, performs the refresh.
+   */
+  private onTreeViewVisibilityChanged(): void {
+    if (this.isTreeViewVisible() && this.runRefreshWhenTreeViewBecomesVisible) {
+      // Tree became visible and we have a pending refresh
+      this.refresh();
+    }
   }
 
   /**
@@ -247,8 +316,8 @@ export class BazelWorkspaceTreeProvider
    * Synchronizes the tree view selection with the currently active editor.
    */
   public async syncSelectedTreeItem(): Promise<void> {
-    if (!this.treeView || !this.treeView.visible) {
-      return; // Do not reveal if the Bazel tree view is not visible
+    if (!this.isTreeViewVisible()) {
+      return; // Do not sync if the Bazel tree view is not visible
     }
 
     if (!this.workspaceFolderTreeItems?.length) {

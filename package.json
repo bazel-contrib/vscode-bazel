@@ -2,7 +2,7 @@
     "name": "vscode-bazel",
     "displayName": "Bazel",
     "description": "Bazel BUILD integration",
-    "version": "0.13.1",
+    "version": "0.13.2",
     "publisher": "BazelBuild",
     "license": "Apache-2.0",
     "repository": {
@@ -520,7 +520,7 @@
         "@vscode/vsce": "^3.0.0",
         "eslint": "^9.0.0",
         "eslint-config-prettier": "^10.0.0",
-        "eslint-plugin-jsdoc": "^61.0.0",
+        "eslint-plugin-jsdoc": "^62.0.0",
         "js-yaml": "^4.1.1",
         "mocha": "^11.0.0",
         "prettier": "^3.2.5",
@@ -533,6 +533,6 @@
         "vscode-debugprotocol": "^1.37.0",
         "vscode-languageclient": "^9.0.1",
         "vscode-uri": "^3.0.2",
-        "which": "^4.0.0"
+        "which": "^6.0.0"
     }
 }

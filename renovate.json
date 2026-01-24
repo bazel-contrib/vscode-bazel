@@ -1,6 +1,12 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "config:recommended",
+    "schedule:weekly",
+    "group:definitelyTyped",
+    "group:githubArtifactActions",
+    "group:test",
+    "group:unitTest",
+    "security:minimumReleaseAgeNpm"
   ]
 }
