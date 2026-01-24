@@ -2,13 +2,13 @@ name: Build VS Code extension
 
 on:
   push:
+    branches: [main]
   pull_request:
-  release:
-    types: [published]
 
 permissions:
   # Write permissions needed for publishing the release
   contents: write
+  pull-requests: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
@@ -74,11 +74,16 @@ jobs:
           path: vscode-bazel-*.vsix
           if-no-files-found: error
 
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          release-type: node
+
       - name: Upload Release Artifact
-        if: ${{ github.event_name == 'release' }}
+        if: ${{ steps.release.outputs.release_created }}
         shell: bash
         run: |
           filename=`echo vscode-bazel-*.vsix`;
-          gh release upload ${{ github.event.release.tag_name }} "$filename"
+          gh release upload ${{ steps.release.outputs.tag_name }} "$filename"
         env:
           GH_TOKEN: ${{ github.token }}
