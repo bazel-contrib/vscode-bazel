@@ -19,8 +19,17 @@ set -eu
 # Move into the top-level directory of the project.
 cd "$(dirname "${BASH_SOURCE[0]}")/.." > /dev/null
 
-# Regression test for bazelrc grammar
-vscode-tmgrammar-snap "$@" test/example.bazelrc
+# Only regenerate the .js and .t.ds file if the protos have changed (i.e.,
+# it's a fresh checkout or update_protos.sh has been executed again and
+# deleted the old generated files). This shaves several seconds off the
+# extension's build time.
+if [[ ! -f src/protos/protos.js ]] ; then
+  sed -e "s#^#src/protos/#" src/protos/protos_list.txt | \
+      xargs npx pbjs -t static-module -o src/protos/protos.js
+fi
+if [[ ! -f src/protos/protos.d.ts ]] ; then
+  npx pbts -o src/protos/protos.d.ts src/protos/protos.js
+fi
 
-# Java Script tests
-vscode-test
+# Convert yaml language definition to json form requred by vscode.
+npx js-yaml syntaxes/bazelrc.tmLanguage.yaml > syntaxes/bazelrc.tmLanguage.json
