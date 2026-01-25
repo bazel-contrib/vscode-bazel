@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as fs from "fs/promises";
 import * as path from "path";
 import * as child_process from "child_process";
-import * as which from "which";
+import which from "which";
 import * as util from "util";
 import { assert } from "../assert";
 

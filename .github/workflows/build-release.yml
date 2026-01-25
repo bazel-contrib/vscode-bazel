@@ -39,9 +39,8 @@ jobs:
       - name: Check formatting
         run: npm run format-check
 
-      # Has to happen before `lint-check`, because we need the generated protobuf types
-      - name: Compile the extension
-        run: npm run compile
+      - name: Prepare protobufs
+        run: npm run prebuild
 
       - name: Lint
         run: npm run lint-check

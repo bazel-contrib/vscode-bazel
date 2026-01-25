@@ -35,7 +35,23 @@ import { activateWrapperCommands } from "./bazel_wrapper_commands";
 import { registerLogger, logInfo, logError, showOutputChannel } from "./logger";
 
 // Global reference to the workspace tree provider for testing
-export let _workspaceTreeProvider: BazelWorkspaceTreeProvider;
+declare global {
+  var bazelWorkspaceTreeProvider: BazelWorkspaceTreeProvider | undefined;
+}
+
+// Clean way to access the provider for testing
+export function getWorkspaceTreeProviderForTesting():
+  | BazelWorkspaceTreeProvider
+  | undefined {
+  return (globalThis as any).bazelWorkspaceTreeProvider;
+}
+
+// Also set a global variable that can be accessed from tests
+export function storeWorkspaceTreeProviderForTesting(
+  provider: BazelWorkspaceTreeProvider,
+) {
+  (globalThis as any).bazelWorkspaceTreeProvider = provider;
+}
 
 /**
  * Called when the extension is activated; that is, when its first command is
@@ -54,8 +70,12 @@ export async function activate(context: vscode.ExtensionContext) {
   );
 
   // Initialize the workspace tree provider
-  _workspaceTreeProvider =
+  const _workspaceTreeProvider =
     BazelWorkspaceTreeProvider.fromExtensionContext(context);
+
+  // Set the global reference for testing
+  storeWorkspaceTreeProviderForTesting(_workspaceTreeProvider);
+
   context.subscriptions.push(_workspaceTreeProvider);
 
   // Initialize other components
