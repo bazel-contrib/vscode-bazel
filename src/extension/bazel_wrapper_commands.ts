@@ -22,6 +22,7 @@ import {
   getBazelPackageFile,
   getBazelWorkspaceFolder,
   getBazelPackageFolder,
+  getBuildFileLineWithSourceFilePath,
 } from "../bazel/bazel_utils";
 import {
   queryQuickPickTargets,
@@ -346,8 +347,10 @@ async function bazelClean() {
  * Navigates to the BUILD file for the current package.
  *
  * This command finds the nearest BUILD or BUILD.bazel file in the current file's
- * directory or any parent directory and opens it in the editor. The search is
- * limited to the current Bazel workspace.
+ * directory or any parent directory and opens it in the editor.
+ * It attempts to select the correct line in the BUILD file based on a search for
+ * a mentioning of the current file's path.
+ * The search is limited to the current Bazel workspace.
  */
 async function bazelGoToBuildFile() {
   const currentEditor = vscode.window.activeTextEditor;
@@ -368,8 +371,21 @@ async function bazelGoToBuildFile() {
   }
 
   // Open the BUILD file
+  const editor = await vscode.window.showTextDocument(
+    vscode.Uri.file(buildFilePath),
+  );
 
-  await vscode.window.showTextDocument(vscode.Uri.file(buildFilePath));
+  // Move cursor to the line with the reference it found
+  const line = getBuildFileLineWithSourceFilePath(buildFilePath, filePath);
+  if (line === undefined) {
+    return;
+  }
+  const position = new vscode.Position(line, 0);
+  editor.selection = new vscode.Selection(position, position);
+  editor.revealRange(
+    new vscode.Range(position, position),
+    vscode.TextEditorRevealType.InCenter,
+  );
 }
 
 /**
