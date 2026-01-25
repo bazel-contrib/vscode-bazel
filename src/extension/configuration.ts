@@ -15,6 +15,31 @@
 import * as vscode from "vscode";
 
 /**
+ * Gets a configuration value, returning the default set in the package.json if
+ * the value is not set or falsey.
+ * @param section The section that contains the configuration, as is passed to vscode.workspace.getConfiguration.
+ * @param name The name of the configuration item within the section.
+ * @returns The configuration value, or its default.
+ */
+function getConfigurationWithDefault<T>(section: string, name: string): T {
+  const config = vscode.workspace.getConfiguration(section);
+
+  const value = config.get<T>(name);
+
+  if (!value) {
+    const info = config.inspect<T>(name);
+
+    if (info.defaultValue == null) {
+      throw new Error(`No default value for configuration ${section}.${name}`);
+    }
+
+    return info.defaultValue;
+  } else {
+    return value;
+  }
+}
+
+/**
  * Gets the path to the Bazel executable specified by the workspace
  * configuration.
  *
@@ -22,34 +47,26 @@ import * as vscode from "vscode";
  * configuration, or its default.
  */
 export function getDefaultBazelExecutablePath(): string {
-  return (
-    vscode.workspace
-      .getConfiguration("bazel")
-      .get<string>("executable")
-      ?.trim() ?? "bazel"
-  );
+  return getConfigurationWithDefault<string>("bazel", "executable").trim();
 }
 
 export function getStartupOptions(): string[] {
-  return (
-    vscode.workspace
-      .getConfiguration("bazel.commandLine")
-      .get<string[]>("startupOptions") ?? []
+  return getConfigurationWithDefault<string[]>(
+    "bazel.commandLine",
+    "startupOptions",
   );
 }
 
 export function getCommandArgs(): string[] {
-  return (
-    vscode.workspace
-      .getConfiguration("bazel.commandLine")
-      .get<string[]>("commandArgs") ?? []
+  return getConfigurationWithDefault<string[]>(
+    "bazel.commandLine",
+    "commandArgs",
   );
 }
 
 export function getQueryExpression(): string {
-  return (
-    vscode.workspace
-      .getConfiguration("bazel.commandLine")
-      .get<string>("queryExpression") ?? "...:*"
+  return getConfigurationWithDefault<string>(
+    "bazel.commandLine",
+    "queryExpression",
   );
 }
