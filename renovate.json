@@ -6,6 +6,7 @@
     "group:definitelyTyped",
     "group:githubArtifactActions",
     "group:test",
-    "group:unitTest"
+    "group:unitTest",
+    "security:minimumReleaseAgeNpm"
   ]
 }

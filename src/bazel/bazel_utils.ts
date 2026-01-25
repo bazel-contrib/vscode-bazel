@@ -185,3 +185,110 @@ export const getBazelPackageFolder = (fsPath: string): string | undefined => {
   const pkgFile = getBazelPackageFile(fsPath);
   return pkgFile ? path.dirname(pkgFile) : undefined;
 };
+
+/**
+ * Returns the line number where the source file is mentioned in the build file.
+ * @param buildFilePath The path to the build file.
+ * @param sourceFilePath The path to the source file.
+ * @returns The line number where the source file is mentioned, or undefined if not found.
+ */
+export function getBuildFileLineWithSourceFilePath(
+  buildFilePath: string,
+  sourceFilePath: string,
+): number | undefined {
+  // Find the line number where the current editors file is mentioned
+  const relativeSourcePath = path.relative(
+    path.dirname(buildFilePath),
+    sourceFilePath,
+  );
+  const buildFileContent = fs
+    .readFileSync(buildFilePath, "utf8")
+    .trim()
+    .replace(/\r\n|\r/g, "\n")
+    .split("\n");
+  for (let i = 0; i < buildFileContent.length; i++) {
+    if (buildFileContent[i].includes(relativeSourcePath)) {
+      return i;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Finds the target name for a given line number in a BUILD file
+ * @param buildFilePath The path to the build file.
+ * @param lineNumber - The line number (1-based)
+ * @returns The target name or undefined if not inside any target
+ */
+export function getTargetNameAtBuildFileLocation(
+  buildFilePath: string,
+  lineNumber: number,
+): string | undefined {
+  const buildFileContent = fs
+    .readFileSync(buildFilePath, "utf8")
+    .trim()
+    .replace(/\r\n|\r/g, "\n")
+    .split("\n");
+  let currentTarget: string | undefined = undefined;
+  let currentTargetStartLine: number = -1;
+  let currentTargetEndLine: number = -1;
+  let braceDepth = 0;
+
+  for (let i = 0; i < buildFileContent.length; i++) {
+    const line = buildFileContent[i];
+    const trimmedLine = line.trim();
+
+    // Skip empty lines and comments
+    if (!trimmedLine || trimmedLine.startsWith("#")) {
+      continue;
+    }
+
+    // Check if this line starts a new target (function call)
+    const targetMatch = trimmedLine.match(/^(\w+)\s*\(/);
+    if (targetMatch) {
+      // If we were in a target before, close it
+      if (braceDepth === 0 && currentTarget !== undefined) {
+        currentTargetEndLine = i - 1;
+      }
+
+      // Start new target
+      currentTarget = undefined;
+      currentTargetStartLine = i;
+      braceDepth = 1; // We've seen an opening parenthesis
+
+      // Look for name attribute in the same line
+      const nameMatch = trimmedLine.match(/name\s*=\s*["']([^"']+)["']/);
+      if (nameMatch) {
+        currentTarget = nameMatch[1];
+      }
+    }
+    // Handle closing parenthesis
+    else if (trimmedLine.includes(")") && braceDepth > 0) {
+      braceDepth--;
+      if (braceDepth === 0 && currentTarget !== undefined) {
+        currentTargetEndLine = i;
+      }
+    }
+    // Handle opening parenthesis
+    else if (trimmedLine.includes("(") && braceDepth > 0) {
+      braceDepth++;
+    }
+    // Look for name attribute inside the target
+    else if (braceDepth > 0 && currentTarget === undefined) {
+      const nameMatch = trimmedLine.match(/name\s*=\s*["']([^"']+)["']/);
+      if (nameMatch) {
+        currentTarget = nameMatch[1];
+      }
+    }
+
+    // Check if the requested line is within the current target
+    if (
+      lineNumber >= currentTargetStartLine &&
+      lineNumber <= currentTargetEndLine
+    ) {
+      return currentTarget;
+    }
+  }
+
+  return undefined;
+}
