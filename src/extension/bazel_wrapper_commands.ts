@@ -22,6 +22,7 @@ import {
   getBazelPackageFile,
   getBazelWorkspaceFolder,
   getBazelPackageFolder,
+  getBuildFileLineWithSourceFilePath,
 } from "../bazel/bazel_utils";
 import {
   queryQuickPickTargets,
@@ -374,20 +375,17 @@ async function bazelGoToBuildFile() {
     vscode.Uri.file(buildFilePath),
   );
 
-  // Find the line number where the current file is referenced
-  const relativePath = path.relative(path.dirname(buildFilePath), filePath);
-  for (let i = 0; i < editor.document.lineCount; i++) {
-    if (editor.document.lineAt(i).text.includes(relativePath)) {
-      // Move cursor to the line with the reference it found
-      const position = new vscode.Position(i, 0);
-      editor.selection = new vscode.Selection(position, position);
-      editor.revealRange(
-        new vscode.Range(position, position),
-        vscode.TextEditorRevealType.InCenter,
-      );
-      break;
-    }
+  // Move cursor to the line with the reference it found
+  const line = getBuildFileLineWithSourceFilePath(buildFilePath, filePath);
+  if (line === undefined) {
+    return;
   }
+  const position = new vscode.Position(line, 0);
+  editor.selection = new vscode.Selection(position, position);
+  editor.revealRange(
+    new vscode.Range(position, position),
+    vscode.TextEditorRevealType.InCenter,
+  );
 }
 
 /**

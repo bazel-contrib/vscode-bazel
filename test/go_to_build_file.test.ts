@@ -69,7 +69,7 @@ describe("Go to Build File", () => {
         "foobar.txt",
       ),
       expectedBuildFile: path.join(workspacePath, "pkg2", "sub-pkg", "BUILD"),
-      expectedLineNumber: 3, // line with srcs=["subfolder/foobar.txt"]
+      expectedLineNumber: 5, // line with srcs=["subfolder/foobar.txt"]
     },
     {
       name: "should not change active file if already at BUILD file",
