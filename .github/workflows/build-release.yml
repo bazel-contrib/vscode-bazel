@@ -2,7 +2,7 @@ name: Build VS Code extension
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   pull_request:
 
 permissions:
@@ -76,11 +76,12 @@ jobs:
 
       - uses: googleapis/release-please-action@v4
         id: release
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
         with:
           release-type: node
 
       - name: Upload Release Artifact
-        if: ${{ steps.release.outputs.release_created }}
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && steps.release.outputs.release_created }}
         shell: bash
         run: |
           filename=`echo vscode-bazel-*.vsix`;
