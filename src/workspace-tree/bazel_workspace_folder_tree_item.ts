@@ -14,7 +14,10 @@
 
 import * as vscode from "vscode";
 import { BazelWorkspaceInfo, BazelQuery } from "../bazel";
-import { getDefaultBazelExecutablePath } from "../extension/configuration";
+import {
+  getDefaultBazelExecutablePath,
+  getQueryExpression,
+} from "../extension/configuration";
 import { blaze_query } from "../protos";
 import { BazelPackageTreeItem } from "./bazel_package_tree_item";
 import { BazelTargetTreeItem } from "./bazel_target_tree_item";
@@ -54,15 +57,15 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
   }
 
   public getLabel(): string {
-    return this.workspaceInfo.workspaceFolder.name;
+    return this.workspaceInfo.workspaceFolder?.name ?? "Unknown Workspace";
   }
 
   public getIcon(): vscode.ThemeIcon {
     return vscode.ThemeIcon.Folder;
   }
 
-  public getTooltip(): string {
-    return this.workspaceInfo.workspaceFolder.uri.fsPath;
+  public getTooltip(): string | undefined {
+    return this.workspaceInfo.workspaceFolder?.uri.fsPath;
   }
 
   public getCommand(): vscode.Command | undefined {
@@ -193,18 +196,14 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     // have a VS Code workspace that is pointed at a subpackage of a large
     // workspace without the performance penalty of querying the entire
     // workspace.
-    if (!this.workspaceInfo) {
+    if (!this.workspaceInfo || !this.workspaceInfo.workspaceFolder) {
       return Promise.resolve([]);
     }
     const workspacePath = this.workspaceInfo.workspaceFolder.uri.fsPath;
     const packagePaths = await new BazelQuery(
       getDefaultBazelExecutablePath(),
       workspacePath,
-    ).queryPackages(
-      vscode.workspace
-        .getConfiguration("bazel.commandLine")
-        .get("queryExpression"),
-    );
+    ).queryPackages(getQueryExpression());
     const topLevelItems: BazelPackageTreeItem[] = [];
     this.buildPackageTree(
       packagePaths,
