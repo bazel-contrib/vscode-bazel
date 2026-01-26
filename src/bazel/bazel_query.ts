@@ -35,7 +35,6 @@ export class BazelQuery extends BazelCommand {
    * that match.
    *
    * @param query The query to execute.
-   * @param options
    * @param options.additionalOptions Additional command line options that
    * should be passed just to this specific invocation of the query.
    * @param options.sortByRuleName If `true`, the results from the query will
@@ -86,14 +85,30 @@ export class BazelQuery extends BazelCommand {
    * that match.
    *
    * @param query The query to execute.
+   * @param options
+   * @param options.additionalOptions Additional command line options that
+   * should be passed just to this specific invocation of the query.
+   * @param options.abortSignal The abort signal to use for the query.
    * @returns An sorted array of package paths containing the targets that
    * match.
    */
   public async queryPackages(
     query: string,
-    { abortSignal }: { abortSignal?: AbortSignal } = {},
+    {
+      additionalOptions = [],
+      abortSignal,
+    }: {
+      additionalOptions?: string[];
+      abortSignal?: AbortSignal;
+    } = {},
   ): Promise<string[]> {
-    const buffer = await this.run([query, "--output=package"], { abortSignal });
+    const bazelConfig = vscode.workspace.getConfiguration("bazel");
+    const configOptions =
+      bazelConfig.get<string[]>("queryPackagesOptions") ?? [];
+    const allOptions = [...configOptions, ...additionalOptions];
+    const buffer = await this.run([query, ...allOptions, "--output=package"], {
+      abortSignal,
+    });
     const result = buffer
       .toString("utf-8")
       .trim()
@@ -210,6 +225,23 @@ export class BazelQuery extends BazelCommand {
 
       child.on("close", (code: number | null) => {
         cleanup();
+
+        // Check if --keep_going is in the options
+        const hasKeepGoing = options.some(
+          (opt) => opt === "--keep_going" || opt.startsWith("--keep_going="),
+        );
+
+        // Handle exit code 3 with --keep_going as a partial success
+        if (code === 3 && hasKeepGoing) {
+          vscode.window.showWarningMessage(
+            "Partial success, but the query encountered 1 or more errors " +
+              "in the input BUILD file set and therefore the results of " +
+              "the operation are not 100% reliable. This is likely due " +
+              "to a --keep_going option on the command line.",
+          );
+          resolve(Buffer.concat(chunks));
+          return;
+        }
 
         if (code === 0 || ignoresErrors) {
           resolve(Buffer.concat(chunks));
