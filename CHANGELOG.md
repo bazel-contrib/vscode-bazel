@@ -1,5 +1,18 @@
 # Change Log
 
+## [0.14.0](https://github.com/bazel-contrib/vscode-bazel/compare/v0.13.2...v0.14.0) (2026-01-26)
+
+
+### Features
+
+* **navigation:** Improve "Go to BUILD file" command ([#506](https://github.com/bazel-contrib/vscode-bazel/issues/506)) ([1a559fe](https://github.com/bazel-contrib/vscode-bazel/commit/1a559fe26307dd53b0cf160b7dab90634ac03c4f))
+* **quickpick:** Prepopulate quickpick with current package path ([#543](https://github.com/bazel-contrib/vscode-bazel/issues/543)) ([bfae85d](https://github.com/bazel-contrib/vscode-bazel/commit/bfae85d012449850c92c3f80ca866fff3eb230e4))
+
+
+### Bug Fixes
+
+* **lsp:** Allow manual restarts of the lsp client after initialization error. ([#498](https://github.com/bazel-contrib/vscode-bazel/issues/498)) ([f311f41](https://github.com/bazel-contrib/vscode-bazel/commit/f311f41ec2081e1114e50d12c01cc3b673a702b0))
+
 ## [0.13.2](https://github.com/bazel-contrib/vscode-bazel/compare/v0.13.1...v0.13.2) (2026-01-20)
 
 
