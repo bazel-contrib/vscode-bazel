@@ -6,7 +6,7 @@ import {
   logError,
   logWarn,
   logInfo,
-  logVerbose,
+  logDebug,
 } from "../src/extension/logger";
 
 describe("The logger", () => {
@@ -156,7 +156,7 @@ describe("The logger", () => {
 
   it("logs verbose correctly", () => {
     disposable = registerLogger("test-log", mockContext);
-    logVerbose("verbose message");
+    logDebug("verbose message");
     const calls = (mockLogChannel as any)._calls;
     const debugCall = calls.find(
       (c: { method: string }) => c.method === "debug",
@@ -191,7 +191,7 @@ describe("The logger", () => {
     logError("unregistered error");
     logWarn("unregistered warn");
     logInfo("unregistered info");
-    logVerbose("unregistered verbose");
+    logDebug("unregistered verbose");
     // Should not throw - just silently do nothing
     assert.ok(true, "Logging without registration should not throw");
   });
