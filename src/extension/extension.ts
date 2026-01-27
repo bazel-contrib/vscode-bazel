@@ -45,10 +45,7 @@ export let _workspaceTreeProvider: BazelWorkspaceTreeProvider;
  */
 export async function activate(context: vscode.ExtensionContext) {
   // Setup logging
-  const outputChannel = vscode.window.createOutputChannel("Bazel VSCode", {
-    log: true,
-  });
-  context.subscriptions.push(outputChannel, registerLogger(outputChannel));
+  registerLogger("Bazel VSCode", context);
   logInfo("Extension activated successfully.");
 
   // Initialize the workspace tree provider
@@ -222,6 +219,7 @@ export async function activate(context: vscode.ExtensionContext) {
 /** Called when the extension is deactivated. */
 export function deactivate() {
   // Nothing to do here.
+  logInfo("Extension deactivated.");
 }
 
 function createLsp(config: vscode.WorkspaceConfiguration) {

@@ -15,7 +15,8 @@
 // Logging module inspired heavily by the vscode-black-formatter extension
 // https://github.com/microsoft/vscode-black-formatter/blob/main/src/common/logging.ts
 import * as util from "util";
-import { Disposable, LogOutputChannel } from "vscode";
+import * as vscode from "vscode";
+import { Disposable, ExtensionContext, LogOutputChannel } from "vscode";
 
 type Arguments = unknown[];
 
@@ -46,25 +47,46 @@ class OutputChannelLogger {
 let channel: OutputChannelLogger | undefined;
 
 /**
- * Registers the logger with the given LogOutputChannel.
- * Returns a Disposable that can be used to clean up the logger.
+ * Registers the logger by creating an output channel and registering it with
+ * the extension context. Returns a Disposable that can be used to clean up
+ * the logger.
  *
- * Usage:
- *   import { logInfo, logError } from './logging';
- *   logInfo('Hello, world!');
- *   logError(new Error('Something went wrong'));
+ * Setup (usually in the extension `activate()`):
+ * import { logInfo, logError } from './logging';
+ * registerLogger('<Output Channel Name>', context);
  *
- * @param logChannel The LogOutputChannel to use for logging.
+ * Usage (anywhere in the extension):
+ * import { logInfo, logError } from './logging';
+ * logInfo('Hello, world!');
+ * logError(new Error('Something went wrong'));
+ *
+ * @param name The name of the output channel.
+ * @param context The ExtensionContext to register the logger with.
  * @returns A Disposable for cleanup.
  */
-export function registerLogger(logChannel: LogOutputChannel): Disposable {
-  channel = new OutputChannelLogger(logChannel);
-  channel.logInfo("Logger initialized");
-  return {
+export function registerLogger(
+  name: string,
+  context: ExtensionContext,
+): Disposable {
+  const outputChannel: LogOutputChannel = vscode.window.createOutputChannel(
+    name,
+    {
+      log: true,
+    },
+  );
+  context.subscriptions.push(outputChannel);
+
+  channel = new OutputChannelLogger(outputChannel);
+  channel.logInfo("Logger initialized.");
+
+  const loggerDisposable: Disposable = {
     dispose: () => {
       channel = undefined;
     },
   };
+  context.subscriptions.push(loggerDisposable);
+
+  return loggerDisposable;
 }
 
 export function log(...args: Arguments): void {
