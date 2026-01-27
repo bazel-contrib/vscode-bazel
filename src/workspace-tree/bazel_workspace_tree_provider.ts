@@ -19,6 +19,7 @@ import { IBazelTreeItem } from "./bazel_tree_item";
 import { BazelWorkspaceFolderTreeItem } from "./bazel_workspace_folder_tree_item";
 import { BazelPackageTreeItem } from "./bazel_package_tree_item";
 import { Resources } from "../extension/resources";
+import { logError } from "../extension/logger";
 
 /**
  * Provides a tree of Bazel build packages and targets for the VS Code explorer
@@ -274,8 +275,7 @@ export class BazelWorkspaceTreeProvider
         expand: true,
       });
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("Failed to reveal tree item:", error);
+      logError("Failed to reveal tree item:", error);
       this.lastRevealedTreeItem = undefined;
     }
   }
@@ -345,8 +345,7 @@ export class BazelWorkspaceTreeProvider
         await this.revealTreeItem(packageItem);
       }
     } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error("Error syncing selected tree item:", error);
+      logError("Error syncing selected tree item:", error);
     }
   }
 }

@@ -39,7 +39,7 @@ class OutputChannelLogger {
     this.logChannel.info(util.format(...data));
   }
 
-  public logVerbose(...data: Arguments): void {
+  public logDebug(...data: Arguments): void {
     this.logChannel.debug(util.format(...data));
   }
 }
@@ -105,6 +105,6 @@ export function logInfo(...args: Arguments): void {
   channel?.logInfo(...args);
 }
 
-export function logVerbose(...args: Arguments): void {
-  channel?.logVerbose(...args);
+export function logDebug(...args: Arguments): void {
+  channel?.logDebug(...args);
 }

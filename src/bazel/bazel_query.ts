@@ -20,6 +20,7 @@ import * as vscode from "vscode";
 import { blaze_query } from "../protos";
 import { BazelCommand } from "./bazel_command";
 import { getBazelWorkspaceFolder } from "./bazel_utils";
+import { logDebug } from "../extension/logger";
 
 const protoOutputOptions = [
   "--proto:output_rule_attrs=''",
@@ -149,8 +150,7 @@ export class BazelQuery extends BazelCommand {
       ]);
     }
     return new Promise<Buffer>((resolve, reject) => {
-      // eslint-disable-next-line no-console
-      console.debug(
+      logDebug(
         `Running Bazel query with command line: ${this.bazelExecutable} ${this.execArgs(
           options,
           additionalStartupOptions,
