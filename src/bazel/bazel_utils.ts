@@ -111,8 +111,13 @@ function findAncestorFile(
   let iteration = 0;
   const maxIterations = 100; // Fail-safe to prevent infinite loops
 
-  if (fs.statSync(startPath).isFile()) {
-    dirname = path.dirname(dirname);
+  try {
+    if (fs.statSync(startPath).isFile()) {
+      dirname = path.dirname(dirname);
+    }
+  } catch (err) {
+    // File doesn't exist, start searching from the directory itself
+    dirname = path.dirname(startPath);
   }
 
   do {
