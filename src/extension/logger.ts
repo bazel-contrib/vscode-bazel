@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Logging module inspired heavily by the vscode-black-formatter extension.
+// Logging module inspired heavily by the vscode-black-formatter extension
 // https://github.com/microsoft/vscode-black-formatter/blob/main/src/common/logging.ts
 import * as util from "util";
 import { Disposable, LogOutputChannel } from "vscode";
@@ -49,11 +49,17 @@ let channel: OutputChannelLogger | undefined;
  * Registers the logger with the given LogOutputChannel.
  * Returns a Disposable that can be used to clean up the logger.
  *
+ * Usage:
+ *   import { logInfo, logError } from './logging';
+ *   logInfo('Hello, world!');
+ *   logError(new Error('Something went wrong'));
+ *
  * @param logChannel The LogOutputChannel to use for logging.
  * @returns A Disposable for cleanup.
  */
 export function registerLogger(logChannel: LogOutputChannel): Disposable {
   channel = new OutputChannelLogger(logChannel);
+  channel.logInfo("Logger initialized");
   return {
     dispose: () => {
       channel = undefined;
@@ -61,37 +67,22 @@ export function registerLogger(logChannel: LogOutputChannel): Disposable {
   };
 }
 
-/**
- * Logs a message (appends to output channel).
- */
 export function log(...args: Arguments): void {
   channel?.log(...args);
 }
 
-/**
- * Logs an error message.
- */
 export function logError(...args: Arguments): void {
   channel?.logError(...args);
 }
 
-/**
- * Logs a warning message.
- */
 export function logWarn(...args: Arguments): void {
   channel?.logWarn(...args);
 }
 
-/**
- * Logs an info message.
- */
 export function logInfo(...args: Arguments): void {
   channel?.logInfo(...args);
 }
 
-/**
- * Logs a verbose/debug message.
- */
 export function logVerbose(...args: Arguments): void {
   channel?.logVerbose(...args);
 }
