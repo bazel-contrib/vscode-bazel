@@ -11,13 +11,16 @@ import {
 
 describe("The logger", () => {
   let mockLogChannel: vscode.LogOutputChannel;
+  let mockContext: vscode.ExtensionContext;
   let disposable: vscode.Disposable;
+  let originalCreateOutputChannel: typeof vscode.window.createOutputChannel;
 
   beforeEach(() => {
     // Track calls to the mock methods
     const calls: { method: string; message: string }[] = [];
 
     // Create a mock LogOutputChannel
+    /* eslint-disable @typescript-eslint/no-empty-function */
     mockLogChannel = {
       name: "test-log",
       append: () => {},
@@ -49,19 +52,32 @@ describe("The logger", () => {
         dispose: () => {},
       })) as unknown as vscode.Event<vscode.LogLevel>,
     } as vscode.LogOutputChannel;
+    /* eslint-enable @typescript-eslint/no-empty-function */
 
     // Store calls for assertions
     (mockLogChannel as any)._calls = calls;
+
+    // Create a mock ExtensionContext
+    const subscriptions: vscode.Disposable[] = [];
+    mockContext = {
+      subscriptions,
+    } as vscode.ExtensionContext;
+
+    // Mock vscode.window.createOutputChannel to return our mock channel
+    originalCreateOutputChannel = vscode.window.createOutputChannel;
+    (vscode.window.createOutputChannel as any) = () => mockLogChannel;
   });
 
   afterEach(() => {
+    // Restore original createOutputChannel
+    vscode.window.createOutputChannel = originalCreateOutputChannel;
     if (disposable) {
       disposable.dispose();
     }
   });
 
   it("registers logger successfully", () => {
-    disposable = registerLogger(mockLogChannel);
+    disposable = registerLogger("test-log", mockContext);
     assert.ok(disposable, "registerLogger should return a disposable");
     const calls = (mockLogChannel as any)._calls;
     assert.strictEqual(
@@ -81,7 +97,7 @@ describe("The logger", () => {
   });
 
   it("logs messages correctly", () => {
-    disposable = registerLogger(mockLogChannel);
+    disposable = registerLogger("test-log", mockContext);
     log("test message");
     const calls = (mockLogChannel as any)._calls;
     const logCall = calls.find(
@@ -96,7 +112,7 @@ describe("The logger", () => {
   });
 
   it("logs errors correctly", () => {
-    disposable = registerLogger(mockLogChannel);
+    disposable = registerLogger("test-log", mockContext);
     logError("error message");
     const calls = (mockLogChannel as any)._calls;
     const errorCall = calls.find(
@@ -111,7 +127,7 @@ describe("The logger", () => {
   });
 
   it("logs warnings correctly", () => {
-    disposable = registerLogger(mockLogChannel);
+    disposable = registerLogger("test-log", mockContext);
     logWarn("warning message");
     const calls = (mockLogChannel as any)._calls;
     const warnCall = calls.find((c: { method: string }) => c.method === "warn");
@@ -124,7 +140,7 @@ describe("The logger", () => {
   });
 
   it("logs info correctly", () => {
-    disposable = registerLogger(mockLogChannel);
+    disposable = registerLogger("test-log", mockContext);
     logInfo("info message");
     const calls = (mockLogChannel as any)._calls;
     const infoCalls = calls.filter(
@@ -139,7 +155,7 @@ describe("The logger", () => {
   });
 
   it("logs verbose correctly", () => {
-    disposable = registerLogger(mockLogChannel);
+    disposable = registerLogger("test-log", mockContext);
     logVerbose("verbose message");
     const calls = (mockLogChannel as any)._calls;
     const debugCall = calls.find(
@@ -154,7 +170,7 @@ describe("The logger", () => {
   });
 
   it("handles dispose correctly", () => {
-    disposable = registerLogger(mockLogChannel);
+    disposable = registerLogger("test-log", mockContext);
     log("before dispose");
     disposable.dispose();
     log("after dispose");
