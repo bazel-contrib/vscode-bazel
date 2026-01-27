@@ -123,7 +123,9 @@ async function demangleNameUsingFilter(
   mangled: string,
 ): Promise<string | undefined> {
   if (execPath === null) return undefined;
-  const unmangled = (await execFile(execPath, [mangled])).stdout.trim();
+  // c++filt needs the -n flag to properly demangle names that start with underscore
+  const args = execPath.includes("c++filt") ? ["-n", mangled] : [mangled];
+  const unmangled = (await execFile(execPath, args)).stdout.trim();
   // If unmangling failed, return undefined, so we can fallback to another demangler.
   if (!unmangled || unmangled === mangled) return undefined;
   return unmangled;
