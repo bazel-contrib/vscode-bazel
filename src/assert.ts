@@ -14,12 +14,12 @@ export function assert(value: boolean): asserts value {
       // user with error messages.
       assertionFailureReported = true;
       // Log an `Error` object which will include the stack trace
-      logError("Assertion violated", false, new Error("Assertion violated."));
-
-      vscode.window.showErrorMessage(
+      logError(
         "Assertion violated. This is a programming error.\n" +
           "Please file a bug at " +
           "https://github.com/bazelbuild/vscode-bazel/issues",
+        true,
+        new Error("Assertion violated."),
       );
     }
     throw new Error("Assertion violated.");
