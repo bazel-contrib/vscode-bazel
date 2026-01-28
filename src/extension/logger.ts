@@ -70,6 +70,39 @@ export function registerLogger(
 }
 
 /**
+ * Internal helper function to log messages with a specific log level.
+ *
+ * @param logMethod The channel method to use for logging (e.g., channel.error, channel.warn).
+ * @param level The VS Code log level for user messages.
+ * @param message A short summary message that will be logged first.
+ * @param showMessage Whether to show the message to the user in a message window (default: false).
+ * @param args Additional information to include in the detailed log output (will be passed to util.format).
+ */
+function logWithLevel(
+  logMethod: (message: string) => void,
+  level: vscode.LogLevel,
+  message: string,
+  showMessage: boolean = false,
+  ...args: Arguments
+): void {
+  if (!channel) {
+    return;
+  }
+
+  // Log the detailed message to the output channel
+  let detailedMessage = message;
+  if (args.length > 0) {
+    detailedMessage += " Details:\n" + util.format(...args);
+  }
+  logMethod(detailedMessage);
+
+  // Show user message if requested
+  if (showMessage) {
+    void showUserMessage(message, level);
+  }
+}
+
+/**
  * Logs a message to the output channel.
  *
  * @param message A short summary message that will be logged first.
@@ -81,19 +114,13 @@ export function log(
   showMessage: boolean = false,
   ...args: Arguments
 ): void {
-  if (!channel) {
-    return;
-  }
-  // Log the short summary message first
-  channel.appendLine(message);
-  // Show user message if requested
-  if (showMessage) {
-    void showUserMessage(message, vscode.LogLevel.Info);
-  }
-  // Log detailed output if provided
-  if (args.length > 0) {
-    channel.appendLine(util.format(...args));
-  }
+  logWithLevel(
+    (msg) => channel!.appendLine(msg),
+    vscode.LogLevel.Info,
+    message,
+    showMessage,
+    ...args,
+  );
 }
 
 /**
@@ -108,19 +135,13 @@ export function logError(
   showMessage: boolean = false,
   ...args: Arguments
 ): void {
-  if (!channel) {
-    return;
-  }
-  // Log the short summary message first
-  channel.error(message);
-  // Show user message if requested
-  if (showMessage) {
-    void showUserMessage(message, vscode.LogLevel.Error);
-  }
-  // Log detailed output if provided
-  if (args.length > 0) {
-    channel.error(util.format(...args));
-  }
+  logWithLevel(
+    (msg) => channel!.error(msg),
+    vscode.LogLevel.Error,
+    message,
+    showMessage,
+    ...args,
+  );
 }
 
 /**
@@ -135,19 +156,13 @@ export function logWarn(
   showMessage: boolean = false,
   ...args: Arguments
 ): void {
-  if (!channel) {
-    return;
-  }
-  // Log the short summary message first
-  channel.warn(message);
-  // Show user message if requested
-  if (showMessage) {
-    void showUserMessage(message, vscode.LogLevel.Warning);
-  }
-  // Log detailed output if provided
-  if (args.length > 0) {
-    channel.warn(util.format(...args));
-  }
+  logWithLevel(
+    (msg) => channel!.warn(msg),
+    vscode.LogLevel.Warning,
+    message,
+    showMessage,
+    ...args,
+  );
 }
 
 /**
@@ -162,19 +177,13 @@ export function logInfo(
   showMessage: boolean = false,
   ...args: Arguments
 ): void {
-  if (!channel) {
-    return;
-  }
-  // Log the short summary message first
-  channel.info(message);
-  // Show user message if requested
-  if (showMessage) {
-    void showUserMessage(message, vscode.LogLevel.Info);
-  }
-  // Log detailed output if provided
-  if (args.length > 0) {
-    channel.info(util.format(...args));
-  }
+  logWithLevel(
+    (msg) => channel!.info(msg),
+    vscode.LogLevel.Info,
+    message,
+    showMessage,
+    ...args,
+  );
 }
 
 /**
@@ -189,19 +198,13 @@ export function logDebug(
   showMessage: boolean = false,
   ...args: Arguments
 ): void {
-  if (!channel) {
-    return;
-  }
-  // Log the short summary message first
-  channel.debug(message);
-  // Show user message if requested
-  if (showMessage) {
-    void showUserMessage(message, vscode.LogLevel.Debug);
-  }
-  // Log detailed output if provided
-  if (args.length > 0) {
-    channel.debug(util.format(...args));
-  }
+  logWithLevel(
+    (msg) => channel!.debug(msg),
+    vscode.LogLevel.Debug,
+    message,
+    showMessage,
+    ...args,
+  );
 }
 
 /**

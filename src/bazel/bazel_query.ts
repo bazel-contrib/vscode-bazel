@@ -20,11 +20,7 @@ import * as vscode from "vscode";
 import { blaze_query } from "../protos";
 import { BazelCommand } from "./bazel_command";
 import { getBazelWorkspaceFolder } from "./bazel_utils";
-import {
-  logDebug,
-  logError,
-  showErrorMessageWithOutput,
-} from "../extension/logger";
+import { logDebug, logError } from "../extension/logger";
 
 const protoOutputOptions = [
   "--proto:output_rule_attrs=''",
@@ -219,11 +215,10 @@ export class BazelQuery extends BazelCommand {
           resolve(Buffer.concat(chunks));
         } else {
           const errorMessage = `Bazel query failed with code ${code}.`;
-          logError(errorMessage, false, `Error: %s`, errorOutput);
-          const error = new Error(errorMessage);
-          (error as { stderr?: string }).stderr = errorOutput;
+          // Log the error message with the full error output
+          logError(errorMessage, true, "Query command output: %s", errorOutput);
 
-          reject(error);
+          reject();
         }
       });
     });
