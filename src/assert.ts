@@ -14,7 +14,7 @@ export function assert(value: boolean): asserts value {
       // user with error messages.
       assertionFailureReported = true;
       // Log an `Error` object which will include the stack trace
-      logError(new Error("Assertion violated."));
+      logError("Assertion violated", false, new Error("Assertion violated."));
 
       vscode.window.showErrorMessage(
         "Assertion violated. This is a programming error.\n" +
