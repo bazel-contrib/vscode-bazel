@@ -225,16 +225,28 @@ export function showOutputChannel(): void {
 }
 
 /**
- * Map of log levels to their corresponding VS Code window message functions.
+ * Gets the VS Code window message function for a given log level.
+ * This is done dynamically to support testing with mocked functions.
+ *
+ * @param level The log level.
+ * @returns The corresponding message function, or undefined if not supported.
  */
-const LOG_LEVEL_TO_MESSAGE_FUNC: Map<
-  vscode.LogLevel,
-  (message: string, ...items: string[]) => Thenable<string | undefined>
-> = new Map([
-  [vscode.LogLevel.Error, vscode.window.showErrorMessage],
-  [vscode.LogLevel.Warning, vscode.window.showWarningMessage],
-  [vscode.LogLevel.Info, vscode.window.showInformationMessage],
-]);
+function getMessageFunctionForLevel(
+  level: vscode.LogLevel,
+):
+  | ((message: string, ...items: string[]) => Thenable<string | undefined>)
+  | undefined {
+  switch (level) {
+    case vscode.LogLevel.Error:
+      return vscode.window.showErrorMessage;
+    case vscode.LogLevel.Warning:
+      return vscode.window.showWarningMessage;
+    case vscode.LogLevel.Info:
+      return vscode.window.showInformationMessage;
+    default:
+      return undefined;
+  }
+}
 
 /**
  * Shows an user message with an "Details" button that opens the output channel.
@@ -248,8 +260,8 @@ function showUserMessage(
   message: string,
   level: vscode.LogLevel,
 ): Thenable<string | undefined> {
-  // Use the map to get the message function for the log level
-  const messageFunc = LOG_LEVEL_TO_MESSAGE_FUNC.get(level);
+  // Get the message function dynamically for the log level
+  const messageFunc = getMessageFunctionForLevel(level);
   if (!messageFunc) {
     return Promise.resolve(undefined);
   }
