@@ -275,7 +275,7 @@ export class BazelWorkspaceTreeProvider
         expand: true,
       });
     } catch (error) {
-      logError("Failed to reveal tree item:", error);
+      logError("Failed to reveal tree item", false, error);
       this.lastRevealedTreeItem = undefined;
     }
   }
@@ -345,7 +345,7 @@ export class BazelWorkspaceTreeProvider
         await this.revealTreeItem(packageItem);
       }
     } catch (error) {
-      logError("Error syncing selected tree item:", error);
+      logError("Error syncing selected tree item", false, error);
     }
   }
 }

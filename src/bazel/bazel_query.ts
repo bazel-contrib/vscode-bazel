@@ -20,7 +20,11 @@ import * as vscode from "vscode";
 import { blaze_query } from "../protos";
 import { BazelCommand } from "./bazel_command";
 import { getBazelWorkspaceFolder } from "./bazel_utils";
-import { logDebug } from "../extension/logger";
+import {
+  logDebug,
+  logError,
+  showErrorMessageWithOutput,
+} from "../extension/logger";
 
 const protoOutputOptions = [
   "--proto:output_rule_attrs=''",
@@ -151,7 +155,9 @@ export class BazelQuery extends BazelCommand {
     }
     return new Promise<Buffer>((resolve, reject) => {
       logDebug(
-        `Running Bazel query with command line: ${this.bazelExecutable} ${this.execArgs(
+        "Running Bazel query",
+        false,
+        `Command line: ${this.bazelExecutable} ${this.execArgs(
           options,
           additionalStartupOptions,
         ).join(" ")}`,
@@ -212,8 +218,11 @@ export class BazelQuery extends BazelCommand {
         if (code === 0 || ignoresErrors) {
           resolve(Buffer.concat(chunks));
         } else {
-          const error = new Error(`Bazel query failed with code ${code}`);
+          const errorMessage = `Bazel query failed with code ${code}.`;
+          logError(errorMessage, false, `Error: %s`, errorOutput);
+          const error = new Error(errorMessage);
           (error as { stderr?: string }).stderr = errorOutput;
+
           reject(error);
         }
       });

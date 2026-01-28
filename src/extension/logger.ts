@@ -20,31 +20,9 @@ import { Disposable, ExtensionContext, LogOutputChannel } from "vscode";
 
 type Arguments = unknown[];
 
-class OutputChannelLogger {
-  constructor(private readonly logChannel: LogOutputChannel) {}
-
-  public log(...data: Arguments): void {
-    this.logChannel.appendLine(util.format(...data));
-  }
-
-  public logError(...data: Arguments): void {
-    this.logChannel.error(util.format(...data));
-  }
-
-  public logWarn(...data: Arguments): void {
-    this.logChannel.warn(util.format(...data));
-  }
-
-  public logInfo(...data: Arguments): void {
-    this.logChannel.info(util.format(...data));
-  }
-
-  public logDebug(...data: Arguments): void {
-    this.logChannel.debug(util.format(...data));
-  }
-}
-
-let channel: OutputChannelLogger | undefined;
+const DETAILS_ACTION = "Details";
+let channel: LogOutputChannel | undefined;
+let outputChannelName: string | undefined;
 
 /**
  * Registers the logger by creating an output channel and registering it with
@@ -58,7 +36,7 @@ let channel: OutputChannelLogger | undefined;
  * Usage (anywhere in the extension):
  * import { logInfo, logError } from './logging';
  * logInfo('Hello, world!');
- * logError(new Error('Something went wrong'));
+ * logError('Operation failed', true, 'Error details:', error);
  *
  * @param name The name of the output channel.
  * @param context The ExtensionContext to register the logger with.
@@ -76,12 +54,14 @@ export function registerLogger(
   );
   context.subscriptions.push(outputChannel);
 
-  channel = new OutputChannelLogger(outputChannel);
-  channel.logInfo("Logger initialized.");
+  outputChannelName = name;
+  channel = outputChannel;
+  channel.info("Logger initialized.");
 
   const loggerDisposable: Disposable = {
     dispose: () => {
       channel = undefined;
+      outputChannelName = undefined;
     },
   };
   context.subscriptions.push(loggerDisposable);
@@ -89,22 +69,192 @@ export function registerLogger(
   return loggerDisposable;
 }
 
-export function log(...args: Arguments): void {
-  channel?.log(...args);
+/**
+ * Logs a message to the output channel.
+ *
+ * @param message A short summary message that will be logged first.
+ * @param showMessage Whether to show the message to the user in a message window (default: false).
+ * @param args Additional information to include in the detailed log output (will be passed to util.format).
+ */
+export function log(
+  message: string,
+  showMessage: boolean = false,
+  ...args: Arguments
+): void {
+  if (!channel) {
+    return;
+  }
+  // Log the short summary message first
+  channel.appendLine(message);
+  // Show user message if requested
+  if (showMessage) {
+    void showUserMessage(message, vscode.LogLevel.Info);
+  }
+  // Log detailed output if provided
+  if (args.length > 0) {
+    channel.appendLine(util.format(...args));
+  }
 }
 
-export function logError(...args: Arguments): void {
-  channel?.logError(...args);
+/**
+ * Logs an error message to the output channel.
+ *
+ * @param message A short summary message that will be logged first.
+ * @param showMessage Whether to show the message to the user in a message window (default: false).
+ * @param args Additional information to include in the detailed log output (will be passed to util.format).
+ */
+export function logError(
+  message: string,
+  showMessage: boolean = false,
+  ...args: Arguments
+): void {
+  if (!channel) {
+    return;
+  }
+  // Log the short summary message first
+  channel.error(message);
+  // Show user message if requested
+  if (showMessage) {
+    void showUserMessage(message, vscode.LogLevel.Error);
+  }
+  // Log detailed output if provided
+  if (args.length > 0) {
+    channel.error(util.format(...args));
+  }
 }
 
-export function logWarn(...args: Arguments): void {
-  channel?.logWarn(...args);
+/**
+ * Logs a warning message to the output channel.
+ *
+ * @param message A short summary message that will be logged first.
+ * @param showMessage Whether to show the message to the user in a message window (default: false).
+ * @param args Additional information to include in the detailed log output (will be passed to util.format).
+ */
+export function logWarn(
+  message: string,
+  showMessage: boolean = false,
+  ...args: Arguments
+): void {
+  if (!channel) {
+    return;
+  }
+  // Log the short summary message first
+  channel.warn(message);
+  // Show user message if requested
+  if (showMessage) {
+    void showUserMessage(message, vscode.LogLevel.Warning);
+  }
+  // Log detailed output if provided
+  if (args.length > 0) {
+    channel.warn(util.format(...args));
+  }
 }
 
-export function logInfo(...args: Arguments): void {
-  channel?.logInfo(...args);
+/**
+ * Logs an info message to the output channel.
+ *
+ * @param message A short summary message that will be logged first.
+ * @param showMessage Whether to show the message to the user in a message window (default: false).
+ * @param args Additional information to include in the detailed log output (will be passed to util.format).
+ */
+export function logInfo(
+  message: string,
+  showMessage: boolean = false,
+  ...args: Arguments
+): void {
+  if (!channel) {
+    return;
+  }
+  // Log the short summary message first
+  channel.info(message);
+  // Show user message if requested
+  if (showMessage) {
+    void showUserMessage(message, vscode.LogLevel.Info);
+  }
+  // Log detailed output if provided
+  if (args.length > 0) {
+    channel.info(util.format(...args));
+  }
 }
 
-export function logDebug(...args: Arguments): void {
-  channel?.logDebug(...args);
+/**
+ * Logs a debug message to the output channel.
+ *
+ * @param message A short summary message that will be logged first.
+ * @param showMessage Whether to show the message to the user in a message window (default: false).
+ * @param args Additional information to include in the detailed log output (will be passed to util.format).
+ */
+export function logDebug(
+  message: string,
+  showMessage: boolean = false,
+  ...args: Arguments
+): void {
+  if (!channel) {
+    return;
+  }
+  // Log the short summary message first
+  channel.debug(message);
+  // Show user message if requested
+  if (showMessage) {
+    void showUserMessage(message, vscode.LogLevel.Debug);
+  }
+  // Log detailed output if provided
+  if (args.length > 0) {
+    channel.debug(util.format(...args));
+  }
+}
+
+/**
+ * Shows the output channel in the VS Code Output panel.
+ * This is useful for displaying error messages with a link to open the output.
+ */
+export function showOutputChannel(): void {
+  if (channel) {
+    channel.show(true);
+  } else if (outputChannelName) {
+    // Fallback: if channel is not initialized but we know the name,
+    // create a temporary reference to show it
+    const tempChannel = vscode.window.createOutputChannel(outputChannelName, {
+      log: true,
+    });
+    tempChannel.show(true);
+  }
+}
+
+/**
+ * Map of log levels to their corresponding VS Code window message functions.
+ */
+const LOG_LEVEL_TO_MESSAGE_FUNC: Map<
+  vscode.LogLevel,
+  (message: string, ...items: string[]) => Thenable<string | undefined>
+> = new Map([
+  [vscode.LogLevel.Error, vscode.window.showErrorMessage],
+  [vscode.LogLevel.Warning, vscode.window.showWarningMessage],
+  [vscode.LogLevel.Info, vscode.window.showInformationMessage],
+]);
+
+/**
+ * Shows an user message with an "Details" button that opens the output channel.
+ * Returns a promise that resolves to the action selected by the user, or undefined if dismissed.
+ *
+ * @param message The user message to display.
+ * @param level The level of the message.
+ * @returns A promise that resolves to the selected action or undefined.
+ */
+function showUserMessage(
+  message: string,
+  level: vscode.LogLevel,
+): Thenable<string | undefined> {
+  // Use the map to get the message function for the log level
+  const messageFunc = LOG_LEVEL_TO_MESSAGE_FUNC.get(level);
+  if (!messageFunc) {
+    return Promise.resolve(undefined);
+  }
+
+  return messageFunc(message, DETAILS_ACTION).then((action) => {
+    if (action === DETAILS_ACTION) {
+      showOutputChannel();
+    }
+    return action;
+  });
 }
