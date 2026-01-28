@@ -20,7 +20,7 @@ import * as vscode from "vscode";
 import { blaze_query } from "../protos";
 import { BazelCommand } from "./bazel_command";
 import { getBazelWorkspaceFolder } from "./bazel_utils";
-import { logDebug, logError } from "../extension/logger";
+import { logDebug, logError, logWarn } from "../extension/logger";
 
 const protoOutputOptions = [
   "--proto:output_rule_attrs=''",
@@ -58,8 +58,12 @@ export class BazelQuery extends BazelCommand {
       abortSignal?: AbortSignal;
     } = {},
   ): Promise<blaze_query.QueryResult> {
+    const bazelConfig = vscode.workspace.getConfiguration("bazel");
+    const configOptions =
+      bazelConfig.get<string[]>("queryOptions.targets") ?? [];
+    const allOptions = [...configOptions, ...additionalOptions];
     const buffer = await this.run(
-      [query, ...additionalOptions, "--output=proto", ...protoOutputOptions],
+      [query, ...allOptions, "--output=proto", ...protoOutputOptions],
       { ignoresErrors, abortSignal },
     );
     const result = blaze_query.QueryResult.decode(buffer);
@@ -104,7 +108,7 @@ export class BazelQuery extends BazelCommand {
   ): Promise<string[]> {
     const bazelConfig = vscode.workspace.getConfiguration("bazel");
     const configOptions =
-      bazelConfig.get<string[]>("queryPackagesOptions") ?? [];
+      bazelConfig.get<string[]>("queryOptions.packages") ?? [];
     const allOptions = [...configOptions, ...additionalOptions];
     const buffer = await this.run([query, ...allOptions, "--output=package"], {
       abortSignal,
@@ -233,7 +237,10 @@ export class BazelQuery extends BazelCommand {
 
         // Handle exit code 3 with --keep_going as a partial success
         if (code === 3 && hasKeepGoing) {
-          vscode.window.showWarningMessage(
+          logWarn(
+            "Bazel query was partially successful (if you are using git " +
+              "sparse-checkout, this may be expected).",
+            true,
             "Partial success, but the query encountered 1 or more errors " +
               "in the input BUILD file set and therefore the results of " +
               "the operation are not 100% reliable. This is likely due " +
