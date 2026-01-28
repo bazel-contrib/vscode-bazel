@@ -196,7 +196,7 @@
                     "default": "...:*",
                     "description": "A [query language expression](https://bazel.build/query/language) which determines the packages displayed in the workspace tree and quick picker. The default inspects the entire workspace, but you could narrow it. For example: `//part/you/want/...:*`"
                 },
-                "bazel.queryPackagesOptions": {
+                "bazel.queryOptions.packages": {
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -204,6 +204,15 @@
                     "uniqueItems": true,
                     "default": [],
                     "markdownDescription": "A list of additional command line options to pass to `bazel query` when querying packages. Useful for scenarios like git sparse-checkout where `--keep_going` can help handle missing packages. One option per entry, no shell escaping is needed."
+                },
+                "bazel.queryOptions.targets": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "uniqueItems": true,
+                    "default": [],
+                    "markdownDescription": "A list of additional command line options to pass to `bazel query` when querying targets. Useful for scenarios like git sparse-checkout where `--keep_going` can help handle missing packages. One option per entry, no shell escaping is needed."
                 },
                 "bazel.lsp.command": {
                     "type": "string",
