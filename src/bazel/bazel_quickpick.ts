@@ -25,6 +25,7 @@ import {
   getPackageLabelForBuildFile,
   getTargetNameAtBuildFileLocation,
 } from "./bazel_utils";
+import { logError } from "../extension/logger";
 
 /**
  * Represents a Bazel target in a QuickPick items window. Implements the
@@ -184,7 +185,7 @@ export async function queryQuickPickTargets({
   }
 
   if (workspaceInfo === undefined) {
-    vscode.window.showErrorMessage("Failed to find a Bazel workspace");
+    logError("Failed to find a Bazel workspace", true);
     return [];
   }
 
@@ -221,7 +222,7 @@ export async function queryQuickPickPackage({
   }
 
   if (workspaceInfo === undefined) {
-    vscode.window.showErrorMessage("Failed to find a Bazel workspace");
+    logError("Failed to find a Bazel workspace", true);
     return [];
   }
 
@@ -300,7 +301,7 @@ export function showDynamicQuickPick({
         return undefined; // Ignore abort errors
       }
       // For other errors, show an empty list
-      vscode.window.showErrorMessage("Error querying Bazel targets: " + error);
+      logError("Error querying Bazel targets", true, error);
       return [];
     }
   };

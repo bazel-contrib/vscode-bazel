@@ -19,6 +19,7 @@ import { BazelWorkspaceInfo } from "./bazel_workspace_info";
 import { exitCodeToUserString, parseExitCode } from "./bazel_exit_code";
 import { BazelInfo } from "./bazel_info";
 import { showLcovCoverage } from "../test-explorer";
+import { logError, logWarn, logInfo } from "../extension/logger";
 
 export const TASK_TYPE = "bazel";
 
@@ -71,9 +72,7 @@ class BazelTaskProvider implements vscode.TaskProvider {
     // Infer `BazelWorkspaceInfo` from `scope`
     const workspaceInfo = await getWorkspaceInfoFromTask(task.scope);
     if (!workspaceInfo) {
-      vscode.window.showInformationMessage(
-        "Please open a Bazel workspace folder to use this task.",
-      );
+      logInfo("Please open a Bazel workspace folder to use this task.", true);
       return;
     }
 
@@ -138,14 +137,16 @@ async function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
   // Show a notification that the build is finished
   if (bazelTaskInfo) {
     if (rawExitCode !== 0) {
-      vscode.window.showErrorMessage(
+      logError(
         `Bazel ${command} failed: ${exitCodeToUserString(exitCode)}`,
+        true,
       );
     } else {
       const timeInSeconds = measurePerformance(bazelTaskInfo.startTime);
 
-      vscode.window.showInformationMessage(
+      logInfo(
         `Bazel ${command} completed successfully in ${timeInSeconds} seconds.`,
+        true,
       );
     }
   }
@@ -176,10 +177,11 @@ async function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
       const covFileBytes = await vscode.workspace.fs.readFile(covFileUri);
       const covFileStr = new TextDecoder("utf8").decode(covFileBytes);
       if (covFileStr.trim() === "") {
-        vscode.window.showWarningMessage(
+        logWarn(
           "The generated LCOV coverage file was empty.\n" +
             "Please ensure your toolchain is correctly setup and " +
             "the instrumentation filters are set correctly.",
+          true,
         );
       } else {
         // The `bazel coverage` runs the build/test/coverage in sandboxes with
@@ -188,9 +190,7 @@ async function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
         await showLcovCoverage(description, executionRoot, covFileStr);
       }
     } catch (e: any) {
-      vscode.window.showErrorMessage(
-        `Unable to open coverage report from ${covFilePath}:\n${e}`,
-      );
+      logError("Unable to open coverage report", true, covFilePath, e);
     }
   }
 }
