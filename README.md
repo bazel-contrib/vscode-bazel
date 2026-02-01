@@ -6,7 +6,7 @@ This extension provides support for Bazel in Visual Studio.
 
 ## Features
 
-- Syntax highlighting
+- **Syntax highlighting**
 - **Bazel Targets** tree displays the build packages/targets in your
   workspace
 - **CodeLens** links in BUILD files to directly launch a build or test by simply
@@ -17,9 +17,9 @@ This extension provides support for Bazel in Visual Studio.
 - **Coverage Support** showing coverage results from `bazel coverage` directly
   in VS Code.
 - **Code Navigation** to go to BUILD files or labels
-- Debug Starlark code in your `.bzl` files during a build (set breakpoints, step
+- **Starlark Debugger** to debug Starlark code in your `.bzl` files during analysis phase (set breakpoints, step
   through code, inspect variables, etc.)
-- URI handler to go to targets from outside of VSCode. (Example: vscode://bazelbuild.vscode-bazel//path/to/tests:target)
+- **URI handler** to go to targets from outside of VSCode. (Example: vscode://bazelbuild.vscode-bazel//path/to/tests:target)
 
 ## Configuring the Extension
 
@@ -52,19 +52,23 @@ See [#216](https://github.com/bazelbuild/vscode-bazel/issues/216) and [bazelbuil
 
 ## Using the Starlark Debugger
 
-Currently, the Starlark Debugger can be used by right-clicking a build target in
-the **Bazel Build Targets** view and selecting "Build Target with Starlark
-Debugger". This will start the build inside the Visual Studio Code debugger
-(output will be redirected to the Debug Console pane) and it will pause on any
-breakpoints hit during execution.
+The Starlark Debugger is designed to help you understand and debug Starlark code execution during Bazel's analysis phase.
+It's particularly useful when working with macros, rule implementations, or aspects - giving you insight into how your build configuration is processed.
 
-When a Bazel thread is paused, you can step through Starlark code, add watch
-expressions, and execute arbitrary statements by typing them in the input area
-of the Debug Console.
+To start debugging, simply right-click any build target in the **Bazel Build Targets** view and select "Build Target with Starlark Debugger".
+Or use the command palette and search for "Bazel: Build Target with Starlark Debugger".
+This launches the Bazel build within Visual Studio Code's debugger, redirecting output to the Debug Console pane and automatically pausing at any breakpoints you've set.
 
-Clicking the "Stop" button in the debugger will kill the Bazel process being
-debugger, allowing you to halt the current build. The Bazel server, however,
-will continue running.
+**Helpful tips for effective debugging:**
+
+- The debugger activates when Bazel evaluates Starlark code. With the flags automatically applied by the extension, your Starlark code will be reanalyzed each debugging session, ensuring breakpoints are consistently hit.
+- Set breakpoints directly in `*.bzl` files next to line numbers where your Starlark functions are implemented.
+- For builds requiring specific configuration arguments, use the `bazel.commandLine.commandArgs` setting to add them.
+
+Once debugging is active and Bazel pauses, you can step through your Starlark code, add watch expressions in VSCode's Debug pane to monitor variables, and execute statements directly in the Debug Console input area.
+
+To stop the debugging session, click the "Stop" button in the debugger.
+This terminates the current Bazel process while keeping the Bazel server running for future builds.
 
 ## Using a language server (experimental)
 
