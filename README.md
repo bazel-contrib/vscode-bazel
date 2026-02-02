@@ -1,6 +1,6 @@
 # Bazel plugin for Visual Studio Code
 
-[![Build Status](https://badge.buildkite.com/ecab448484315779ec28a95f8501b7f77a9a2abfc787037d5e.svg?branch=master)](https://buildkite.com/bazel/vscode-bazel-vs-bazel)
+[![Build Status](https://github.com/bazel-contrib/vscode-bazel/actions/workflows/build-release.yml/badge.svg)](https://github.com/bazel-contrib/vscode-bazel/actions/workflows/build-release.yml)
 
 This extension provides support for Bazel in Visual Studio.
 
