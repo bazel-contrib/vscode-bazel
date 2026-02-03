@@ -142,9 +142,10 @@ async function bazelBuildTargetWithDebugging(
 
   const fullArgs = commandArgs
     .concat(commandOptions.targets)
+    .concat(["--notrack_incremental_state"])
     .concat(commandOptions.options);
 
-  vscode.debug.startDebugging(undefined, {
+  const debugStarted = await vscode.debug.startDebugging(undefined, {
     args: fullArgs,
     bazelCommand: "build",
     bazelExecutablePath: getDefaultBazelExecutablePath(),
@@ -154,6 +155,11 @@ async function bazelBuildTargetWithDebugging(
     request: "launch",
     type: "bazel-launch-build",
   });
+
+  // Automatically show the debug view when debugging starts
+  if (debugStarted) {
+    await vscode.commands.executeCommand("workbench.view.debug");
+  }
 }
 
 /**

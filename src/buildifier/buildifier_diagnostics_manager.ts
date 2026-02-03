@@ -82,6 +82,11 @@ export class BuildifierDiagnosticsManager implements vscode.Disposable {
   public async updateDiagnostics(document: vscode.TextDocument) {
     if (document.languageId === "starlark") {
       const workspaceInfo = BazelWorkspaceInfo.fromDocument(document);
+      if (!workspaceInfo) {
+        // eslint-disable-next-line no-console
+        console.warn("No workspace info found for document", document.uri);
+        return;
+      }
       const workspaceRelativePath = path.relative(
         workspaceInfo.bazelWorkspacePath,
         document.uri.fsPath,
