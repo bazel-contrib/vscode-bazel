@@ -13,7 +13,11 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import { getDefaultBazelExecutablePath } from "../extension/configuration";
+import {
+  getCommandArgs,
+  getDefaultBazelExecutablePath,
+  getStartupOptions,
+} from "../extension/configuration";
 import { IBazelCommandOptions } from "./bazel_command";
 import { BazelWorkspaceInfo } from "./bazel_workspace_info";
 import { exitCodeToUserString, parseExitCode } from "./bazel_exit_code";
@@ -24,8 +28,10 @@ export const TASK_TYPE = "bazel";
 
 /** Information about a running Bazel task. */
 export class BazelTaskInfo {
-  /** start time (for internal performance tracking). */
-  public startTime: [number, number];
+  /**
+   * @param startTime start time (for internal performance tracking).
+   */
+  constructor(public readonly startTime: [number, number]) {}
 }
 
 /**
@@ -87,7 +93,7 @@ class BazelTaskProvider implements vscode.TaskProvider {
 async function getWorkspaceInfoFromTask(
   scope: vscode.WorkspaceFolder | vscode.TaskScope,
 ) {
-  let workspaceInfo: BazelWorkspaceInfo;
+  let workspaceInfo: BazelWorkspaceInfo | undefined;
   if (
     scope === vscode.TaskScope.Global ||
     scope === vscode.TaskScope.Workspace
@@ -108,9 +114,7 @@ function onTaskStart(event: vscode.TaskStartEvent) {
     return;
   }
   const definition = task.definition as BazelTaskDefinition;
-  const bazelTaskInfo = new BazelTaskInfo();
-  bazelTaskInfo.startTime = process.hrtime();
-  definition.bazelTaskInfo = bazelTaskInfo;
+  definition.bazelTaskInfo = new BazelTaskInfo(process.hrtime());
 }
 
 /**
@@ -219,17 +223,13 @@ export function createBazelTaskFromDefinition(
   workspaceInfo: BazelWorkspaceInfo,
 ): vscode.Task {
   const command = taskDefinition.command;
-  const bazelConfigCmdLine =
-    vscode.workspace.getConfiguration("bazel.commandLine");
-  const startupOptions = bazelConfigCmdLine.get<string[]>("startupOptions");
+  const startupOptions = getStartupOptions();
   const addCommandArgs =
     command === "build" ||
     command === "test" ||
     command === "coverage" ||
     command === "run";
-  const commandArgs = addCommandArgs
-    ? bazelConfigCmdLine.get<string[]>("commandArgs")
-    : [];
+  const commandArgs = addCommandArgs ? getCommandArgs() : [];
 
   const implicitArgs = [] as string[];
   let commandDescription: string;
@@ -262,7 +262,7 @@ export function createBazelTaskFromDefinition(
   }
 
   const args = startupOptions
-    .concat([command as string])
+    .concat([command])
     .concat(commandArgs)
     .concat(implicitArgs)
     .concat(taskDefinition.options ?? [])

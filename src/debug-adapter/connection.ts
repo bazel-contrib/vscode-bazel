@@ -27,16 +27,16 @@ import { skylark_debugging } from "../protos";
  */
 export class BazelDebugConnection extends EventEmitter {
   /** The socket used to connect to the debugging server in Bazel. */
-  private socket: net.Socket;
+  private socket: net.Socket | null = null;
 
   /**
    * A buffer that stores data read from the socket until a complete message is
    * available.
    */
-  private buffer: Buffer;
+  private buffer: Buffer = Buffer.alloc(0);
 
   /** Reads protobuf messages from the buffer. */
-  private reader: protobuf.Reader;
+  private reader: protobuf.Reader = protobuf.Reader.create(this.buffer);
 
   /**
    * A monotonically increasing sequence number used to uniquely identify
@@ -73,7 +73,6 @@ export class BazelDebugConnection extends EventEmitter {
   ) {
     super();
 
-    this.buffer = null;
     this.tryToConnect(host, port);
   }
 
@@ -88,10 +87,17 @@ export class BazelDebugConnection extends EventEmitter {
   public sendRequest(
     options: skylark_debugging.IDebugRequest,
   ): Promise<skylark_debugging.IDebugEvent> {
-    options.sequenceNumber = this.sequenceNumber++;
+    if (!this.socket) {
+      return Promise.reject(
+        new Error("Not connected to the Bazel debug server."),
+      );
+    }
+
+    const sequenceNumber = this.sequenceNumber++;
+    options.sequenceNumber = sequenceNumber;
 
     const promise = new Promise<skylark_debugging.IDebugEvent>((resolve) => {
-      this.pendingResolvers.set(options.sequenceNumber.toString(), resolve);
+      this.pendingResolvers.set(sequenceNumber.toString(), resolve);
     });
 
     const request = skylark_debugging.DebugRequest.create(options);
@@ -151,7 +157,7 @@ export class BazelDebugConnection extends EventEmitter {
    * @param chunk A chunk of bytes from the socket.
    */
   private consumeChunk(chunk: Buffer) {
-    let event: skylark_debugging.DebugEvent = null;
+    let event: skylark_debugging.DebugEvent | null = null;
     this.append(chunk);
 
     while (true) {
@@ -183,18 +189,14 @@ export class BazelDebugConnection extends EventEmitter {
 
   /** Appends a chunk of data to the buffer, resizing it as needed. */
   private append(chunk: Buffer) {
-    if (!this.buffer) {
-      this.buffer = chunk;
-    } else {
-      // The reader's position indicates where it last stopped trying to read
-      // data from the buffer. In the event of an unsuccessful read, this tells
-      // us how much data is in the buffer.
-      const pos = this.reader.pos;
-      const newBuffer = Buffer.alloc(pos + chunk.byteLength);
-      this.buffer.copy(newBuffer, 0);
-      chunk.copy(newBuffer, pos);
-      this.buffer = newBuffer;
-    }
+    // The reader's position indicates where it last stopped trying to read
+    // data from the buffer. In the event of an unsuccessful read, this tells
+    // us how much data is in the buffer.
+    const pos = this.reader.pos;
+    const newBuffer = Buffer.alloc(pos + chunk.byteLength);
+    this.buffer.copy(newBuffer, 0);
+    chunk.copy(newBuffer, pos);
+    this.buffer = newBuffer;
     this.reader = protobuf.Reader.create(this.buffer);
   }
 
