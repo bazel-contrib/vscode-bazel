@@ -15,7 +15,7 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 import * as vscode from "vscode";
-import * as which from "which";
+import which from "which";
 
 import {
   executeBuildifier,
