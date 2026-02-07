@@ -206,12 +206,7 @@ export function logDebug(
  * This is useful for displaying error messages with a link to open the output.
  */
 export function showOutputChannel(): void {
-  // Fallback: if channel is not initialized but we know the name,
-  // create a temporary reference to show it
-  const tempChannel = vscode.window.createOutputChannel(OUTPUT_CHANNEL_NAME, {
-    log: true,
-  });
-  tempChannel.show(true);
+  channel!.show(true);
 }
 
 /**

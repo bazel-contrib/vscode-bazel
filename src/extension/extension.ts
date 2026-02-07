@@ -32,7 +32,7 @@ import { BazelWorkspaceTreeProvider } from "../workspace-tree";
 import { activateCommandVariables } from "./command_variables";
 import { activateTesting } from "../test-explorer";
 import { activateWrapperCommands } from "./bazel_wrapper_commands";
-import { registerLogger, logInfo, logError } from "./logger";
+import { registerLogger, logInfo, logError, showOutputChannel } from "./logger";
 
 // Global reference to the workspace tree provider for testing
 export let _workspaceTreeProvider: BazelWorkspaceTreeProvider;
@@ -45,8 +45,13 @@ export let _workspaceTreeProvider: BazelWorkspaceTreeProvider;
  */
 export async function activate(context: vscode.ExtensionContext) {
   // Setup logging
-  registerLogger(context);
+  const logger = registerLogger(context);
   logInfo("Extension activated successfully.");
+  context.subscriptions.push(
+    vscode.commands.registerCommand("bazel.showOutputChannel", () => {
+      showOutputChannel();
+    }),
+  );
 
   // Initialize the workspace tree provider
   _workspaceTreeProvider =
