@@ -16,6 +16,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { buildifierFormat } from "./buildifier";
 import { BazelWorkspaceInfo } from "../bazel";
+import { logError } from "../extension/logger";
 
 /**
  * Provides document formatting functionality for Bazel files by invoking
@@ -58,7 +59,7 @@ export class BuildifierFormatProvider
       ];
       return edits;
     } catch (err: any) {
-      vscode.window.showErrorMessage(`${err}`);
+      logError("Buildifier formatting failed", true, err);
     }
   }
 }
