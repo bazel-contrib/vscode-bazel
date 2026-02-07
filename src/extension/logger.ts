@@ -20,9 +20,9 @@ import { Disposable, ExtensionContext, LogOutputChannel } from "vscode";
 
 type Arguments = unknown[];
 
+const OUTPUT_CHANNEL_NAME = "Bazel";
 const DETAILS_ACTION = "Details";
 let channel: LogOutputChannel | undefined;
-let outputChannelName: string | undefined;
 
 /**
  * Registers the logger by creating an output channel and registering it with
@@ -31,37 +31,31 @@ let outputChannelName: string | undefined;
  *
  * Setup (usually in the extension `activate()`):
  * import { logInfo, logError } from './logging';
- * registerLogger('<Output Channel Name>', context);
+ * registerLogger(context);
  *
  * Usage (anywhere in the extension):
  * import { logInfo, logError } from './logging';
  * logInfo('Hello, world!');
  * logError('Operation failed', true, 'Error details:', error);
  *
- * @param name The name of the output channel.
  * @param context The ExtensionContext to register the logger with.
- * @returns A Disposable for cleanup.
+ * @returns The logger output channel.
  */
-export function registerLogger(
-  name: string,
-  context: ExtensionContext,
-): Disposable {
+export function registerLogger(context: ExtensionContext): Disposable {
   const outputChannel: LogOutputChannel = vscode.window.createOutputChannel(
-    name,
+    OUTPUT_CHANNEL_NAME,
     {
       log: true,
     },
   );
   context.subscriptions.push(outputChannel);
 
-  outputChannelName = name;
   channel = outputChannel;
   channel.info("Logger initialized.");
 
   const loggerDisposable: Disposable = {
     dispose: () => {
       channel = undefined;
-      outputChannelName = undefined;
     },
   };
   context.subscriptions.push(loggerDisposable);
@@ -212,16 +206,12 @@ export function logDebug(
  * This is useful for displaying error messages with a link to open the output.
  */
 export function showOutputChannel(): void {
-  if (channel) {
-    channel.show(true);
-  } else if (outputChannelName) {
-    // Fallback: if channel is not initialized but we know the name,
-    // create a temporary reference to show it
-    const tempChannel = vscode.window.createOutputChannel(outputChannelName, {
-      log: true,
-    });
-    tempChannel.show(true);
-  }
+  // Fallback: if channel is not initialized but we know the name,
+  // create a temporary reference to show it
+  const tempChannel = vscode.window.createOutputChannel(OUTPUT_CHANNEL_NAME, {
+    log: true,
+  });
+  tempChannel.show(true);
 }
 
 /**
@@ -254,11 +244,13 @@ function getMessageFunctionForLevel(
  *
  * @param message The user message to display.
  * @param level The level of the message.
+ * @param showDetailsButton Whether to show the "Details" button.
  * @returns A promise that resolves to the selected action or undefined.
  */
-function showUserMessage(
+export function showUserMessage(
   message: string,
   level: vscode.LogLevel,
+  showDetailsButton: boolean = true,
 ): Thenable<string | undefined> {
   // Get the message function dynamically for the log level
   const messageFunc = getMessageFunctionForLevel(level);
@@ -266,10 +258,27 @@ function showUserMessage(
     return Promise.resolve(undefined);
   }
 
-  return messageFunc(message, DETAILS_ACTION).then((action) => {
+  // Add the Details button if requested
+  const buttons = showDetailsButton ? [DETAILS_ACTION] : [];
+
+  // Show the message with optional buttons
+  return messageFunc(message, ...buttons).then((action) => {
     if (action === DETAILS_ACTION) {
       showOutputChannel();
     }
     return action;
   });
+}
+
+/**
+ * Simple function to show an info message with no details button.
+ *
+ * We only provide this function at the info level because warnings and errors
+ * should generally provide details in the logs.
+ *
+ * @param message
+ * @returns
+ */
+export function showInfoMessage(message: string): Thenable<string | undefined> {
+  return showUserMessage(message, vscode.LogLevel.Info, false);
 }

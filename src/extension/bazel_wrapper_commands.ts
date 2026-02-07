@@ -16,7 +16,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 
 import { IBazelCommandAdapter } from "../bazel/bazel_command";
-import { logError, logInfo } from "./logger";
+import { logError, logInfo, showInfoMessage, showUserMessage } from "./logger";
 import { BazelWorkspaceInfo } from "../bazel/bazel_workspace_info";
 import { getDefaultBazelExecutablePath } from "./configuration";
 import {
@@ -435,7 +435,7 @@ async function bazelGoToLabel(target_info?: blaze_query.ITarget | undefined) {
 function copyLabelToClipboard(label: string): void {
   vscode.env.clipboard.writeText(label);
 
-  logInfo(`Copied to clipboard: ${label}`, true);
+  showInfoMessage(`Copied to clipboard: ${label}`);
 }
 
 /**
@@ -444,7 +444,7 @@ function copyLabelToClipboard(label: string): void {
 function extractLabelFromCursor(): string | undefined {
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
-    logInfo("Please open a file to copy a label from.", true);
+    showInfoMessage("Please open a file to copy a label from.");
     return undefined;
   }
 
@@ -456,7 +456,7 @@ function extractLabelFromCursor(): string | undefined {
   );
 
   if (!wordRange) {
-    logInfo("No label found at cursor position.", true);
+    showInfoMessage("No label found at cursor position.");
     return undefined;
   }
 
@@ -467,7 +467,7 @@ function extractLabelFromCursor(): string | undefined {
     const filePath = document.uri.fsPath;
     const packagePath = getBazelPackageFolder(filePath);
     if (!packagePath) {
-      logError("Not in a Bazel package.", true);
+      logError("Not in a Bazel package.", true, "Filepath: %s", filePath);
       return undefined;
     }
 

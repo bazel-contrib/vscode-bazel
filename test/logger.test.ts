@@ -124,7 +124,7 @@ describe("The logger", () => {
   });
 
   it("registers logger successfully", () => {
-    disposable = registerLogger("test-log", mockContext);
+    disposable = registerLogger(mockContext);
     assert.ok(disposable, "registerLogger should return a disposable");
     const calls = (mockLogChannel as any)._calls;
     assert.strictEqual(
@@ -144,7 +144,7 @@ describe("The logger", () => {
   });
 
   it("logs messages correctly", () => {
-    disposable = registerLogger("test-log", mockContext);
+    disposable = registerLogger(mockContext);
     log("test message");
     const calls = (mockLogChannel as any)._calls;
     const logCall = calls.find(
@@ -159,7 +159,7 @@ describe("The logger", () => {
   });
 
   it("logs errors correctly", () => {
-    disposable = registerLogger("test-log", mockContext);
+    disposable = registerLogger(mockContext);
     logError("error message");
     const calls = (mockLogChannel as any)._calls;
     const errorCall = calls.find(
@@ -174,7 +174,7 @@ describe("The logger", () => {
   });
 
   it("logs warnings correctly", () => {
-    disposable = registerLogger("test-log", mockContext);
+    disposable = registerLogger(mockContext);
     logWarn("warning message");
     const calls = (mockLogChannel as any)._calls;
     const warnCall = calls.find((c: { method: string }) => c.method === "warn");
@@ -187,7 +187,7 @@ describe("The logger", () => {
   });
 
   it("logs info correctly", () => {
-    disposable = registerLogger("test-log", mockContext);
+    disposable = registerLogger(mockContext);
     logInfo("info message");
     const calls = (mockLogChannel as any)._calls;
     const infoCalls = calls.filter(
@@ -202,7 +202,7 @@ describe("The logger", () => {
   });
 
   it("logs verbose correctly", () => {
-    disposable = registerLogger("test-log", mockContext);
+    disposable = registerLogger(mockContext);
     logDebug("verbose message");
     const calls = (mockLogChannel as any)._calls;
     const debugCall = calls.find(
@@ -217,7 +217,7 @@ describe("The logger", () => {
   });
 
   it("handles dispose correctly", () => {
-    disposable = registerLogger("test-log", mockContext);
+    disposable = registerLogger(mockContext);
     log("before dispose");
     disposable.dispose();
     log("after dispose");
@@ -245,7 +245,7 @@ describe("The logger", () => {
 
   describe("showMessage functionality", () => {
     it("shows error message when showMessage is true", async () => {
-      disposable = registerLogger("test-log", mockContext);
+      disposable = registerLogger(mockContext);
       logError("test error", true);
       // The mock function should be called synchronously when showUserMessage
       // calls messageFunc. However, since showUserMessage returns a promise
@@ -276,7 +276,7 @@ describe("The logger", () => {
     });
 
     it("shows warning message when showMessage is true", async () => {
-      disposable = registerLogger("test-log", mockContext);
+      disposable = registerLogger(mockContext);
       logWarn("test warning", true);
       await new Promise((resolve) =>
         Promise.resolve().then(() => resolve(undefined)),
@@ -304,7 +304,7 @@ describe("The logger", () => {
     });
 
     it("shows info message when showMessage is true", async () => {
-      disposable = registerLogger("test-log", mockContext);
+      disposable = registerLogger(mockContext);
       logInfo("test info", true);
       await new Promise((resolve) =>
         Promise.resolve().then(() => resolve(undefined)),
@@ -332,7 +332,7 @@ describe("The logger", () => {
     });
 
     it("does not show message when showMessage is false", () => {
-      disposable = registerLogger("test-log", mockContext);
+      disposable = registerLogger(mockContext);
       logError("test error", false);
       logWarn("test warning", false);
       logInfo("test info", false);
@@ -345,7 +345,7 @@ describe("The logger", () => {
 
     it("does not show message when showMessage is omitted \
       (defaults to false)", () => {
-      disposable = registerLogger("test-log", mockContext);
+      disposable = registerLogger(mockContext);
       logError("test error");
       logWarn("test warning");
       logInfo("test info");
@@ -359,7 +359,7 @@ describe("The logger", () => {
 
   describe("additional arguments functionality", () => {
     it("formats single additional argument correctly", () => {
-      disposable = registerLogger("test-log", mockContext);
+      disposable = registerLogger(mockContext);
       log("test message", false, "additional info");
       const calls = (mockLogChannel as any)._calls;
       const logCall = calls.find(
@@ -381,7 +381,7 @@ describe("The logger", () => {
     });
 
     it("formats multiple additional arguments correctly", () => {
-      disposable = registerLogger("test-log", mockContext);
+      disposable = registerLogger(mockContext);
       logError(
         "error occurred",
         false,
@@ -422,7 +422,7 @@ describe("The logger", () => {
     });
 
     it("formats object arguments correctly", () => {
-      disposable = registerLogger("test-log", mockContext);
+      disposable = registerLogger(mockContext);
       const errorObj = { code: 404, message: "Not found" };
       logWarn("warning message", false, "Error object:", errorObj);
       const calls = (mockLogChannel as any)._calls;
@@ -445,7 +445,7 @@ describe("The logger", () => {
     });
 
     it("handles empty additional arguments gracefully", () => {
-      disposable = registerLogger("test-log", mockContext);
+      disposable = registerLogger(mockContext);
       logInfo("info message", false);
       const calls = (mockLogChannel as any)._calls;
       const infoCalls = calls.filter(
@@ -464,7 +464,7 @@ describe("The logger", () => {
 
   describe("showMessage with additional arguments", () => {
     it("shows message and formats additional arguments correctly", async () => {
-      disposable = registerLogger("test-log", mockContext);
+      disposable = registerLogger(mockContext);
       logError("error occurred", true, "Error code:", 500);
       await new Promise((resolve) =>
         Promise.resolve().then(() => resolve(undefined)),
@@ -499,7 +499,7 @@ describe("The logger", () => {
     });
 
     it("shows warning message with multiple additional arguments", async () => {
-      disposable = registerLogger("test-log", mockContext);
+      disposable = registerLogger(mockContext);
       logWarn("warning", true, "arg1", "arg2", 123);
       await new Promise((resolve) =>
         Promise.resolve().then(() => resolve(undefined)),
@@ -538,7 +538,7 @@ describe("The logger", () => {
     });
 
     it("shows info message with object argument", async () => {
-      disposable = registerLogger("test-log", mockContext);
+      disposable = registerLogger(mockContext);
       const data = { userId: 123, action: "login" };
       logInfo("operation completed", true, "Data:", data);
       await new Promise((resolve) =>

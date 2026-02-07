@@ -45,7 +45,7 @@ export let _workspaceTreeProvider: BazelWorkspaceTreeProvider;
  */
 export async function activate(context: vscode.ExtensionContext) {
   // Setup logging
-  registerLogger("Bazel VSCode", context);
+  registerLogger(context);
   logInfo("Extension activated successfully.");
 
   // Initialize the workspace tree provider
@@ -64,7 +64,12 @@ export async function activate(context: vscode.ExtensionContext) {
     const lspCommand = !!currentConfig.get<string>("lsp.command");
 
     if (!lspCommand) {
-      logError("Bazel LSP command (bazel.lsp.command) is not configured.", true);
+      logError(
+        "Bazel LSP command (bazel.lsp.command) is not configured.",
+        true,
+        "Configuration: %s",
+        JSON.stringify(currentConfig),
+      );
       return;
     }
 

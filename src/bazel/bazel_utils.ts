@@ -85,7 +85,12 @@ function shouldIgnorePath(fsPath: string): boolean {
         return true;
       }
     } catch (err) {
-      logError("pathsToIgnore value isn't a valid regex", true, escape(pathRegex), err);
+      logError(
+        "pathsToIgnore value isn't a valid regex",
+        true,
+        escape(pathRegex),
+        err,
+      );
     }
   }
   return false;
