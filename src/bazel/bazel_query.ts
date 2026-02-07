@@ -20,6 +20,7 @@ import * as vscode from "vscode";
 import { blaze_query } from "../protos";
 import { BazelCommand } from "./bazel_command";
 import { getBazelWorkspaceFolder } from "./bazel_utils";
+import { logDebug, logError, logWarn } from "../extension/logger";
 
 const protoOutputOptions = [
   "--proto:output_rule_attrs=''",
@@ -34,7 +35,6 @@ export class BazelQuery extends BazelCommand {
    * that match.
    *
    * @param query The query to execute.
-   * @param options
    * @param options.additionalOptions Additional command line options that
    * should be passed just to this specific invocation of the query.
    * @param options.sortByRuleName If `true`, the results from the query will
@@ -58,8 +58,12 @@ export class BazelQuery extends BazelCommand {
       abortSignal?: AbortSignal;
     } = {},
   ): Promise<blaze_query.QueryResult> {
+    const bazelConfig = vscode.workspace.getConfiguration("bazel");
+    const configOptions =
+      bazelConfig.get<string[]>("queryOptions.targets") ?? [];
+    const allOptions = [...configOptions, ...additionalOptions];
     const buffer = await this.run(
-      [query, ...additionalOptions, "--output=proto", ...protoOutputOptions],
+      [query, ...allOptions, "--output=proto", ...protoOutputOptions],
       { ignoresErrors, abortSignal },
     );
     const result = blaze_query.QueryResult.decode(buffer);
@@ -85,14 +89,30 @@ export class BazelQuery extends BazelCommand {
    * that match.
    *
    * @param query The query to execute.
+   * @param options
+   * @param options.additionalOptions Additional command line options that
+   * should be passed just to this specific invocation of the query.
+   * @param options.abortSignal The abort signal to use for the query.
    * @returns An sorted array of package paths containing the targets that
    * match.
    */
   public async queryPackages(
     query: string,
-    { abortSignal }: { abortSignal?: AbortSignal } = {},
+    {
+      additionalOptions = [],
+      abortSignal,
+    }: {
+      additionalOptions?: string[];
+      abortSignal?: AbortSignal;
+    } = {},
   ): Promise<string[]> {
-    const buffer = await this.run([query, "--output=package"], { abortSignal });
+    const bazelConfig = vscode.workspace.getConfiguration("bazel");
+    const configOptions =
+      bazelConfig.get<string[]>("queryOptions.packages") ?? [];
+    const allOptions = [...configOptions, ...additionalOptions];
+    const buffer = await this.run([query, ...allOptions, "--output=package"], {
+      abortSignal,
+    });
     const result = buffer
       .toString("utf-8")
       .trim()
@@ -149,9 +169,10 @@ export class BazelQuery extends BazelCommand {
       ]);
     }
     return new Promise<Buffer>((resolve, reject) => {
-      // eslint-disable-next-line no-console
-      console.debug(
-        `Running Bazel query with command line: ${this.bazelExecutable} ${this.execArgs(
+      logDebug(
+        "Running Bazel query",
+        false,
+        `Command line: ${this.bazelExecutable} ${this.execArgs(
           options,
           additionalStartupOptions,
         ).join(" ")}`,
@@ -209,12 +230,34 @@ export class BazelQuery extends BazelCommand {
       child.on("close", (code: number | null) => {
         cleanup();
 
+        // Check if --keep_going is in the options
+        const hasKeepGoing = options.some(
+          (opt) => opt === "--keep_going" || opt.startsWith("--keep_going="),
+        );
+
+        // Handle exit code 3 with --keep_going as a partial success
+        if (code === 3 && hasKeepGoing) {
+          logWarn(
+            "Bazel query was partially successful (if you are using git " +
+              "sparse-checkout, this may be expected).",
+            true,
+            "Partial success, but the query encountered 1 or more errors " +
+              "in the input BUILD file set and therefore the results of " +
+              "the operation are not 100% reliable. This is likely due " +
+              "to a --keep_going option on the command line.",
+          );
+          resolve(Buffer.concat(chunks));
+          return;
+        }
+
         if (code === 0 || ignoresErrors) {
           resolve(Buffer.concat(chunks));
         } else {
-          const error = new Error(`Bazel query failed with code ${code}`);
-          (error as { stderr?: string }).stderr = errorOutput;
-          reject(error);
+          const errorMessage = `Bazel query failed with code ${code}.`;
+          // Log the error message with the full error output
+          logError(errorMessage, true, "Query command output: %s", errorOutput);
+
+          reject();
         }
       });
     });
