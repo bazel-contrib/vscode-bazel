@@ -13,7 +13,10 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import { getDefaultBazelExecutablePath } from "../extension/configuration";
+import {
+  getDefaultBazelExecutablePath,
+  getQueryExpression,
+} from "../extension/configuration";
 import { IBazelCommandAdapter, IBazelCommandOptions } from "./bazel_command";
 import { BazelQuery } from "./bazel_query";
 import { blaze_query } from "../protos";
@@ -196,10 +199,14 @@ export async function queryQuickPickTargets({
 
   // Sort the labels so the QuickPick is ordered.
   return queryResult.target
-    .sort((a, b) => a.rule.name.localeCompare(b.rule.name))
+    .sort((a, b) => (a.rule?.name ?? "").localeCompare(b.rule?.name ?? ""))
     .map(
       (target) =>
-        new BazelTargetQuickPick(target.rule.name, workspaceInfo, target),
+        new BazelTargetQuickPick(
+          target.rule?.name ?? "",
+          workspaceInfo,
+          target,
+        ),
     );
 }
 
@@ -262,9 +269,7 @@ export function showDynamicQuickPick({
 
   // By default the quick pick is empty and we use the query expression from the settings.
   quickPick.placeholder = "Start typing to search for targets...";
-  const initialPattern: string = vscode.workspace
-    .getConfiguration("bazel.commandLine")
-    .get("queryExpression");
+  const initialPattern = getQueryExpression();
   // But if we can guess the label of interest from the current cursor position, we use it to improve the starting point
   const guessedLabelOfInterest = guessLabelOfInterest(
     vscode.window.activeTextEditor?.document.uri.fsPath,

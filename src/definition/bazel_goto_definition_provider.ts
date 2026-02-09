@@ -34,10 +34,14 @@ export async function targetToUri(
 ): Promise<QueryLocation | undefined> {
   const match = LABEL_REGEX.exec(targetText);
 
+  if (!match) {
+    return undefined;
+  }
+
   const targetName = match[1];
   // don't try to process visibility targets.
   if (targetName.startsWith("//visibility")) {
-    return null;
+    return undefined;
   }
 
   const queryResult = await new BazelQuery(
@@ -46,13 +50,22 @@ export async function targetToUri(
   ).queryTargets(`kind(rule, "${targetName}") + kind(file, "${targetName}")`);
 
   if (!queryResult.target.length) {
-    return null;
+    return undefined;
   }
   const result = queryResult.target[0];
-  let location;
+
+  let location: QueryLocation;
   if (result.type === blaze_query.Target.Discriminator.RULE) {
+    if (result.rule?.location == null) {
+      return undefined;
+    }
+
     location = new QueryLocation(result.rule.location);
   } else {
+    if (result.sourceFile?.location == null) {
+      return undefined;
+    }
+
     location = new QueryLocation(result.sourceFile.location);
   }
 
@@ -63,7 +76,7 @@ export class BazelGotoDefinitionProvider implements DefinitionProvider {
   public async provideDefinition(
     document: TextDocument,
     position: Position,
-  ): Promise<Definition | DefinitionLink[]> {
+  ): Promise<Definition | DefinitionLink[] | null> {
     const workspaceInfo = BazelWorkspaceInfo.fromDocument(document);
     if (workspaceInfo === undefined) {
       // Not in a Bazel Workspace.
