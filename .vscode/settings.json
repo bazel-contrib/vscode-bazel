@@ -5,7 +5,9 @@
     "[typescript]": {
         "editor.tabSize": 2,
         "editor.detectIndentation": false,
-        "editor.rulers": [80],
+        "editor.rulers": [
+            80
+        ],
         "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
     "prettier.trailingComma": "all",
