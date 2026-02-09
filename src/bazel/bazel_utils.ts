@@ -17,6 +17,7 @@ import * as path from "path";
 import * as vscode from "vscode";
 import { blaze_query } from "../protos";
 import { BazelQuery } from "./bazel_query";
+import { logError } from "../extension/logger";
 
 /**
  * Get the package label for a build file.
@@ -84,8 +85,11 @@ function shouldIgnorePath(fsPath: string): boolean {
         return true;
       }
     } catch (err) {
-      vscode.window.showErrorMessage(
-        "pathsToIgnore value isn't a valid regex: " + escape(pathRegex),
+      logError(
+        "pathsToIgnore value isn't a valid regex",
+        true,
+        escape(pathRegex),
+        err,
       );
     }
   }
@@ -111,8 +115,13 @@ function findAncestorFile(
   let iteration = 0;
   const maxIterations = 100; // Fail-safe to prevent infinite loops
 
-  if (fs.statSync(startPath).isFile()) {
-    dirname = path.dirname(dirname);
+  try {
+    if (fs.statSync(startPath).isFile()) {
+      dirname = path.dirname(dirname);
+    }
+  } catch (err) {
+    // File doesn't exist, start searching from the directory itself
+    dirname = path.dirname(startPath);
   }
 
   do {

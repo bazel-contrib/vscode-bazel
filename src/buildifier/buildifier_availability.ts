@@ -21,6 +21,7 @@ import {
   executeBuildifier,
   getDefaultBuildifierExecutablePath,
 } from "./buildifier";
+import { logWarn } from "../extension/logger";
 
 async function fileExists(filename: string) {
   try {
@@ -111,13 +112,19 @@ export async function checkBuildifierIsAvailable(): Promise<string | null> {
  * to the user.
  */
 async function showBuildifierDownloadPrompt(reason: string) {
-  const item = await vscode.window.showWarningMessage(
+  const message =
     `${reason}; linting and formatting of Bazel files ` +
-      "will not be available. Please download it from " +
-      `${BUILDTOOLS_RELEASES_URL} and install it ` +
-      "on your system PATH or set its location in Settings.",
-    { title: "Download" },
-  );
+    "will not be available. Please download it from " +
+    `${BUILDTOOLS_RELEASES_URL} and install it ` +
+    "on your system PATH or set its location in Settings.";
+
+  // Log to output channel
+  logWarn(message, false);
+
+  // Show interactive message with Download button
+  const item = await vscode.window.showWarningMessage(message, {
+    title: "Download",
+  });
 
   if (item && item.title === "Download") {
     await vscode.commands.executeCommand(

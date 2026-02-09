@@ -32,6 +32,7 @@ import { BazelWorkspaceTreeProvider } from "../workspace-tree";
 import { activateCommandVariables } from "./command_variables";
 import { activateTesting } from "../test-explorer";
 import { activateWrapperCommands } from "./bazel_wrapper_commands";
+import { registerLogger, logInfo, logError, showOutputChannel } from "./logger";
 
 // Global reference to the workspace tree provider for testing
 export let _workspaceTreeProvider: BazelWorkspaceTreeProvider;
@@ -43,6 +44,15 @@ export let _workspaceTreeProvider: BazelWorkspaceTreeProvider;
  * @param context The extension context.
  */
 export async function activate(context: vscode.ExtensionContext) {
+  // Setup logging
+  const logger = registerLogger(context);
+  logInfo("Extension activated successfully.");
+  context.subscriptions.push(
+    vscode.commands.registerCommand("bazel.showOutputChannel", () => {
+      showOutputChannel();
+    }),
+  );
+
   // Initialize the workspace tree provider
   _workspaceTreeProvider =
     BazelWorkspaceTreeProvider.fromExtensionContext(context);
@@ -59,8 +69,11 @@ export async function activate(context: vscode.ExtensionContext) {
     const lspCommand = !!currentConfig.get<string>("lsp.command");
 
     if (!lspCommand) {
-      void vscode.window.showErrorMessage(
+      logError(
         "Bazel LSP command (bazel.lsp.command) is not configured.",
+        true,
+        "Configuration: %s",
+        JSON.stringify(currentConfig),
       );
       return;
     }
@@ -80,9 +93,7 @@ export async function activate(context: vscode.ExtensionContext) {
     try {
       await lspClient.start();
     } catch (error: any) {
-      void vscode.window.showErrorMessage(
-        `Failed to start Bazel language server. Error: ${error.message}`,
-      );
+      logError("Failed to start Bazel language server", true, error);
     }
   }
 
@@ -162,14 +173,10 @@ export async function activate(context: vscode.ExtensionContext) {
               }),
             )
             .then(undefined, (err) => {
-              void vscode.window.showErrorMessage(
-                `Could not open file: ${location.path} Error: ${err}`,
-              );
+              logError("Could not open file", true, location.path, err);
             });
         } catch (err: any) {
-          void vscode.window.showErrorMessage(
-            `While handling URI: ${JSON.stringify(uri)} Error: ${err}`,
-          );
+          logError("While handling URI", true, JSON.stringify(uri), err);
         }
       },
     }),
@@ -214,6 +221,7 @@ export async function activate(context: vscode.ExtensionContext) {
 /** Called when the extension is deactivated. */
 export function deactivate() {
   // Nothing to do here.
+  logInfo("Extension deactivated.");
 }
 
 function createLsp(config: vscode.WorkspaceConfiguration) {

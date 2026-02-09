@@ -115,6 +115,11 @@
                 "command": "bazel.lsp.restart",
                 "title": "Restart language server",
                 "when": "bazel.lsp.enabled"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.showOutputChannel",
+                "title": "Show Output"
             }
         ],
         "configuration": {
@@ -505,7 +510,8 @@
         "package": "vsce package",
         "update-snapshot": "./scripts/test.sh -u",
         "vscode:prepublish": "./scripts/build.sh",
-        "watch": "./scripts/build.sh -watch"
+        "watch": "./scripts/build.sh -watch",
+        "clean": "rm -rf .vscode-test/ out/ node_modules/"
     },
     "devDependencies": {
         "@eslint/js": "^9.36.0",

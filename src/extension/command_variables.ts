@@ -15,6 +15,7 @@
 import * as path from "path";
 import * as vscode from "vscode";
 import { getDefaultBazelExecutablePath } from "./configuration";
+import { showInfoMessage } from "./logger";
 import {
   BazelTargetQuickPick,
   BazelWorkspaceInfo,
@@ -77,7 +78,7 @@ async function bazelGetTargetOutput(
   }
   const workspaceInfo = await BazelWorkspaceInfo.fromWorkspaceFolders();
   if (!workspaceInfo) {
-    vscode.window.showInformationMessage(
+    showInfoMessage(
       "Please open a Bazel workspace folder to use this command.",
     );
 
@@ -112,7 +113,7 @@ async function bazelGetTargetOutput(
 async function bazelInfo(key: string): Promise<string> {
   const workspaceInfo = await BazelWorkspaceInfo.fromWorkspaceFolders();
   if (!workspaceInfo) {
-    vscode.window.showInformationMessage(
+    showInfoMessage(
       "Please open a Bazel workspace folder to use this command.",
     );
     return;
@@ -157,7 +158,7 @@ async function wrapQuickPick(
 ): Promise<string | undefined> {
   const workspaceInfo = await BazelWorkspaceInfo.fromWorkspaceFolders();
   if (!workspaceInfo) {
-    vscode.window.showInformationMessage(
+    showInfoMessage(
       "Please open a Bazel workspace folder to use this command.",
     );
 
