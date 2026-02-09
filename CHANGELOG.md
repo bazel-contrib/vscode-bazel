@@ -1,5 +1,21 @@
 # Change Log
 
+## [0.14.0](https://github.com/bazel-contrib/vscode-bazel/compare/v0.13.2...v0.14.0) (2026-02-09)
+
+
+### Features
+
+* **debug:** improve Starlark debugger experience ([#558](https://github.com/bazel-contrib/vscode-bazel/issues/558)) ([7e5d8d7](https://github.com/bazel-contrib/vscode-bazel/commit/7e5d8d72821e90b37d7edde222905c2abbb5f5c0))
+* **logging:** Add proper VSCode Logging Output ([#557](https://github.com/bazel-contrib/vscode-bazel/issues/557)) ([11c1f8b](https://github.com/bazel-contrib/vscode-bazel/commit/11c1f8be3ee54597ef1f7f26b1a6c49741af4042))
+* **navigation:** Improve "Go to BUILD file" command ([#506](https://github.com/bazel-contrib/vscode-bazel/issues/506)) ([1a559fe](https://github.com/bazel-contrib/vscode-bazel/commit/1a559fe26307dd53b0cf160b7dab90634ac03c4f))
+* **quickpick:** Prepopulate quickpick with current package path ([#543](https://github.com/bazel-contrib/vscode-bazel/issues/543)) ([bfae85d](https://github.com/bazel-contrib/vscode-bazel/commit/bfae85d012449850c92c3f80ca866fff3eb230e4))
+
+
+### Bug Fixes
+
+* **buildifier:** Make buildifier robust against bzl files outside a workspace. ([7e5d8d7](https://github.com/bazel-contrib/vscode-bazel/commit/7e5d8d72821e90b37d7edde222905c2abbb5f5c0))
+* **lsp:** Allow manual restarts of the lsp client after initialization error. ([#498](https://github.com/bazel-contrib/vscode-bazel/issues/498)) ([f311f41](https://github.com/bazel-contrib/vscode-bazel/commit/f311f41ec2081e1114e50d12c01cc3b673a702b0))
+
 ## [0.13.2](https://github.com/bazel-contrib/vscode-bazel/compare/v0.13.1...v0.13.2) (2026-01-20)
 
 
