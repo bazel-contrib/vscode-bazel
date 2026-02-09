@@ -238,13 +238,13 @@ export class BazelQuery extends BazelCommand {
         // Handle exit code 3 with --keep_going as a partial success
         if (code === 3 && hasKeepGoing) {
           logWarn(
-            "Bazel query was partially successful (if you are using git " +
-              "sparse-checkout, this may be expected).",
+            "Bazel query was partially successful (`--keep_going` was used).",
             true,
             "Partial success, but the query encountered 1 or more errors " +
               "in the input BUILD file set and therefore the results of " +
               "the operation are not 100% reliable. This is likely due " +
-              "to a --keep_going option on the command line.",
+              "to a --keep_going option on the command line.  Full output: %s",
+            errorOutput,
           );
           resolve(Buffer.concat(chunks));
           return;
