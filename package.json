@@ -511,7 +511,8 @@
         "update-snapshot": "./scripts/test.sh -u",
         "vscode:prepublish": "./scripts/build.sh",
         "watch": "./scripts/build.sh -watch",
-        "clean": "rm -rf .vscode-test/ out/ node_modules/"
+        "try": "node scripts/try-extension.js",
+        "clean": "rm -rf .vscode-test/ out/ node_modules/  && echo 'SUCCESS:\nCleaned workspace.  Please run `npm install` to reinstall dependencies.'"
     },
     "devDependencies": {
         "@eslint/js": "^9.36.0",

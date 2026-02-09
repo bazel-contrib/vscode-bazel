@@ -45,7 +45,28 @@ We expect contributions to include tests that demonstrate and validate the inten
 
 - Utilities and bug fixes: extend the existing unit tests. If you add a new util or fix an existing one, include unit tests that cover the happy path and at least one edge case. See `test/code_lens_provider.test.ts` for a unit-style example.
 
-- Note: If you are getting test failures from files that no longer exist, try running `npm run clean` to clean the workspaceand then `npm install && npm run test` again.
+- Note: If you are getting test failures from files that no longer exist, try running `npm run clean` to clean the workspace and then `npm install && npm run test` again.
+
+## Trying the extension interactively
+
+You can launch a standalone VS Code instance with the packaged extension
+installed against the test Bazel workspace:
+
+```
+npm run try
+```
+
+This will:
+
+1. Package the extension into a `.vsix` file.
+2. Download a local copy of VS Code (or reuse one cached in `.vscode-test/`).
+3. Install the packaged extension into an isolated VS Code instance.
+4. Copy `test/bazel_workspace` to a disposable location (`.vscode-test/try-workspace/`) so you can edit files freely without modifying the source-controlled originals.
+5. Open VS Code with the copied workspace.
+
+The VS Code instance uses its own user-data and extensions directories under
+`.vscode-test/`, so it won't interfere with your normal VS Code installation.
+Running `npm run clean` removes everything under `.vscode-test/`.
 
 ## Commit messages
 
