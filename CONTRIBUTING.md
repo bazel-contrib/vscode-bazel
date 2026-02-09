@@ -39,7 +39,7 @@ extensions to have these tools applied automatically as you develop:
 
 We expect contributions to include tests that demonstrate and validate the intended behavior.
 
-- Running tests: Use `npm run test` to run the tests.  These tests will download a local version of vscode into the `.vscode-test` directory and will run integration tests against the extension in that workspace.
+- Running tests: Use `npm run test` to run the tests. These tests will download a local version of vscode into the `.vscode-test` directory and will run integration tests against the extension in that workspace.
 
 - New features: add a set of VS Code integration tests that demo the intended behaviour by making use of the mock workspace under `test/bazel_workspace` (vscode-tests will be executed within this workspace). Integration tests should exercise the extension as a user would (for example: open editors, execute commands with `vscode.commands.executeCommand`, and assert on the editor state or extension outputs). See `test/go_to_label.test.ts` for a minimal integration-style example.
 
