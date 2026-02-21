@@ -35,6 +35,29 @@ extensions to have these tools applied automatically as you develop:
 - [Prettier - Code Formatter](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
 - [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
 
+## Code Structure and Design Principles
+
+Take care of the following aspects when writing code to speed up the review process and increase the likelihood of your code being accepted:
+
+- **Architectural Integrity**: Maintain proper dependency directions. Prevent submodules from importing the main extension file to avoid circular dependencies. Keep cohesion within modules and decouple modules from each other to allow for independent maintenance.
+- **No unnecessary Duplication**: Each piece of functionality should have a single, clear implementation (as long as it doesn't collide with architectural integrity).
+- **Consistent Patterns**: Similar functions should follow the same structure and patterns
+- **Helper Functions**: Use helper functions consistently. If one function uses a helper, similar functions should too
+- **Linear Control Flow**: Avoid complex nested logic. Use clear if/else statements to separate different use cases
+- **Descriptive Naming**: Use full, unabbreviated variable names to aid readability
+- **Modern Async Patterns**: Choose async patterns (async/await, callbacks, synchronous calls) consciously and thoughtfully. Consider the specific context and performance implications of your async approach. Take care of logging and error handling when using async patterns.
+- **Undefined Safety**: Always check for `undefined` before using variables to prevent runtime errors.
+- **Type Safety**: Leverage TypeScript's type system to catch errors at compile time. Prefer proper typing over `as` assertions.
+- **Bazel-Accurate Terminology**: Use correct Bazel terminology in user-facing strings (e.g., "Label" instead of "Path" for `//...` strings)
+
+Besides these examples, our reviewers will generally focus on these key areas:
+
+- **Code Clarity**: Code should be easy to read and understand.
+- **Consistency**: Similar functionality should follow the same patterns.
+- **Maintainability**: Code should be easy to maintain and modify.
+- **Error Handling**: Proper error management is expected.
+- **Testing**: Consistent testing patterns are required.
+
 ## Testing
 
 We expect contributions to include tests that demonstrate and validate the intended behavior.
@@ -45,7 +68,7 @@ We expect contributions to include tests that demonstrate and validate the inten
 
 - Utilities and bug fixes: extend the existing unit tests. If you add a new util or fix an existing one, include unit tests that cover the happy path and at least one edge case. See `test/code_lens_provider.test.ts` for a unit-style example.
 
-- Note: If you are getting test failures from files that no longer exist, try running `npm run clean` to clean the workspaceand then `npm install && npm run test` again.
+- Note: If you are getting test failures from files that no longer exist, try running `npm run clean` to clean the workspace and then `npm install && npm run test` again.
 
 ## Commit messages
 
