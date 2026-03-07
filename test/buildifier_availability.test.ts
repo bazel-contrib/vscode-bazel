@@ -19,7 +19,7 @@ describe("buildifier_availability", () => {
   const originalPath = process.env.PATH;
 
   async function setBuildifierExecutableConfig(
-    configString: string,
+    configString: string | undefined,
   ): Promise<void> {
     await vscode.workspace
       .getConfiguration("bazel")
