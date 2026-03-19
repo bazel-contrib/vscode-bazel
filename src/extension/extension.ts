@@ -43,14 +43,14 @@ declare global {
 export function getWorkspaceTreeProviderForTesting():
   | BazelWorkspaceTreeProvider
   | undefined {
-  return (globalThis as any).bazelWorkspaceTreeProvider;
+  return globalThis.bazelWorkspaceTreeProvider;
 }
 
 // Also set a global variable that can be accessed from tests
 export function storeWorkspaceTreeProviderForTesting(
   provider: BazelWorkspaceTreeProvider,
 ) {
-  (globalThis as any).bazelWorkspaceTreeProvider = provider;
+  globalThis.bazelWorkspaceTreeProvider = provider;
 }
 
 /**
