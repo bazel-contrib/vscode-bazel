@@ -52,13 +52,13 @@ describe("buildifier", () => {
         code: "unused-variable",
         message: 'Variable "_foo" is unused. Please remove it.',
         range: {
-          a: {
-            a: 1,
-            b: 0,
+          _start: {
+            _line: 1,
+            _character: 0,
           },
-          b: {
-            a: 1,
-            b: 4,
+          _end: {
+            _line: 1,
+            _character: 4,
           },
         },
         severity: 1,

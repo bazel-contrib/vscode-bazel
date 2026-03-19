@@ -16,6 +16,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 
 import { IBazelCommandAdapter } from "../bazel/bazel_command";
+import { logError, logInfo, showInfoMessage, showUserMessage } from "./logger";
 import { BazelWorkspaceInfo } from "../bazel/bazel_workspace_info";
 import {
   getCommandArgs,
@@ -26,6 +27,7 @@ import {
   getBazelPackageFile,
   getBazelWorkspaceFolder,
   getBazelPackageFolder,
+  getBuildFileLineWithSourceFilePath,
 } from "../bazel/bazel_utils";
 import {
   queryQuickPickTargets,
@@ -143,9 +145,10 @@ async function bazelBuildTargetWithDebugging(
 
   const fullArgs = commandArgs
     .concat(commandOptions.targets)
+    .concat(["--notrack_incremental_state"])
     .concat(commandOptions.options);
 
-  vscode.debug.startDebugging(undefined, {
+  const debugStarted = await vscode.debug.startDebugging(undefined, {
     args: fullArgs,
     bazelCommand: "build",
     bazelExecutablePath: getDefaultBazelExecutablePath(),
@@ -155,6 +158,11 @@ async function bazelBuildTargetWithDebugging(
     request: "launch",
     type: "bazel-launch-build",
   });
+
+  // Automatically show the debug view when debugging starts
+  if (debugStarted) {
+    await vscode.commands.executeCommand("workbench.view.debug");
+  }
 }
 
 /**
@@ -329,9 +337,7 @@ async function testPackage(
 async function bazelClean() {
   const workspaceInfo = await BazelWorkspaceInfo.fromWorkspaceFolders();
   if (!workspaceInfo) {
-    vscode.window.showInformationMessage(
-      "Please open a Bazel workspace folder to use this command.",
-    );
+    logInfo("Please open a Bazel workspace folder to use this command.", true);
 
     return;
   }
@@ -348,30 +354,44 @@ async function bazelClean() {
  * Navigates to the BUILD file for the current package.
  *
  * This command finds the nearest BUILD or BUILD.bazel file in the current file's
- * directory or any parent directory and opens it in the editor. The search is
- * limited to the current Bazel workspace.
+ * directory or any parent directory and opens it in the editor.
+ * It attempts to select the correct line in the BUILD file based on a search for
+ * a mentioning of the current file's path.
+ * The search is limited to the current Bazel workspace.
  */
 async function bazelGoToBuildFile() {
   const currentEditor = vscode.window.activeTextEditor;
   if (!currentEditor) {
-    vscode.window.showInformationMessage(
-      "Please open a file to go to its BUILD file.",
-    );
+    logInfo("Please open a file to go to its BUILD file.", true);
     return;
   }
 
   const filePath = currentEditor.document.uri.fsPath;
   const buildFilePath = getBazelPackageFile(filePath);
   if (!buildFilePath) {
-    vscode.window.showInformationMessage(
+    logInfo(
       "No BUILD or BUILD.bazel file found in any parent directory.",
+      true,
     );
     return;
   }
 
   // Open the BUILD file
+  const editor = await vscode.window.showTextDocument(
+    vscode.Uri.file(buildFilePath),
+  );
 
-  await vscode.window.showTextDocument(vscode.Uri.file(buildFilePath));
+  // Move cursor to the line with the reference it found
+  const line = getBuildFileLineWithSourceFilePath(buildFilePath, filePath);
+  if (line === undefined) {
+    return;
+  }
+  const position = new vscode.Position(line, 0);
+  editor.selection = new vscode.Selection(position, position);
+  editor.revealRange(
+    new vscode.Range(position, position),
+    vscode.TextEditorRevealType.InCenter,
+  );
 }
 
 /**
@@ -417,7 +437,7 @@ async function bazelGoToLabel(target_info?: blaze_query.ITarget | undefined) {
 function copyLabelToClipboard(label: string): void {
   vscode.env.clipboard.writeText(label);
 
-  vscode.window.showInformationMessage(`Copied to clipboard: ${label}`);
+  showInfoMessage(`Copied to clipboard: ${label}`);
 }
 
 /**
@@ -426,9 +446,7 @@ function copyLabelToClipboard(label: string): void {
 function extractLabelFromCursor(): string | undefined {
   const editor = vscode.window.activeTextEditor;
   if (!editor) {
-    vscode.window.showInformationMessage(
-      "Please open a file to copy a label from.",
-    );
+    showInfoMessage("Please open a file to copy a label from.");
     return undefined;
   }
 
@@ -440,7 +458,7 @@ function extractLabelFromCursor(): string | undefined {
   );
 
   if (!wordRange) {
-    vscode.window.showInformationMessage("No label found at cursor position.");
+    showInfoMessage("No label found at cursor position.");
     return undefined;
   }
 
@@ -451,7 +469,7 @@ function extractLabelFromCursor(): string | undefined {
     const filePath = document.uri.fsPath;
     const packagePath = getBazelPackageFolder(filePath);
     if (!packagePath) {
-      vscode.window.showErrorMessage("Not in a Bazel package.");
+      logError("Not in a Bazel package.", true, "Filepath: %s", filePath);
       return undefined;
     }
 

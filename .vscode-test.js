@@ -7,4 +7,5 @@ module.exports = defineConfig({
     timeout: 5000,
   },
   workspaceFolder: "test/bazel_workspace",
+  version: "1.111.0",
 });
