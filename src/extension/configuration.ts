@@ -21,7 +21,7 @@ import * as vscode from "vscode";
  * @param name The name of the configuration item within the section.
  * @returns The configuration value, or its default.
  */
-function getConfigurationWithDefault<T>(section: string, name: string): T {
+export function getConfigurationWithDefault<T>(section: string, name: string): T {
   const config = vscode.workspace.getConfiguration(section);
 
   const value = config.get<T>(name);
