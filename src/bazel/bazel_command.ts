@@ -66,7 +66,7 @@ export abstract class BazelCommand {
    */
   protected abstract bazelCommand(): string;
 
-  /** The args used to execute the for the command. */
+  /** The args used to execute the command. */
   protected execArgs(
     additionalOptions: string[] = [],
     additionalStartupOptions: string[] = [],
