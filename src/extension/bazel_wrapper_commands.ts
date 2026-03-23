@@ -145,7 +145,10 @@ async function bazelBuildTargetWithDebugging(
 
   const fullArgs = commandArgs
     .concat(commandOptions.targets)
-    .concat(["--notrack_incremental_state"])
+    .concat([
+      "--notrack_incremental_state", // Force starlark code to be reevaluated
+      "--nokeep_state_after_build", // Avoid warning about incremental state
+    ])
     .concat(commandOptions.options);
 
   const debugStarted = await vscode.debug.startDebugging(undefined, {
