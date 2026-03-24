@@ -46,10 +46,13 @@ const execFile = util.promisify(child_process.execFile);
  * {@code Long}.
  */
 function number64(value: number | Long): number {
-  if (value instanceof Number) {
-    return value as number;
+  // Handle Long objects (which may be serialized differently when bundled)
+  if (value && typeof value === "object" && "toNumber" in value) {
+    return (value as Long).toNumber();
   }
-  return (value as Long).toNumber();
+
+  // Handle regular numbers and serialized Long objects
+  return Number(value);
 }
 
 /** Arguments that the Bazel debug adapter supports for "attach" requests. */
