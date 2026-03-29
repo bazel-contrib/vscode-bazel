@@ -150,22 +150,16 @@ export class BazelQuery extends BazelCommand {
       ]);
     }
     return new Promise<Buffer>((resolve, reject) => {
+      const execArgs = this.execArgs(options, additionalStartupOptions);
       logDebug(
         "Running Bazel query",
         false,
-        `Command line: ${this.bazelExecutable} ${this.execArgs(
-          options,
-          additionalStartupOptions,
-        ).join(" ")}`,
+        `Command line: ${this.bazelExecutable} ${execArgs.join(" ")}`,
       );
-      const child = spawn(
-        this.bazelExecutable,
-        this.execArgs(options, additionalStartupOptions),
-        {
-          cwd: this.workingDirectory,
-          stdio: ["ignore", "pipe", "pipe"],
-        },
-      );
+      const child = spawn(this.bazelExecutable, execArgs, {
+        cwd: this.workingDirectory,
+        stdio: ["ignore", "pipe", "pipe"],
+      });
 
       // Handle abort signal if provided
       const onAbort = () => {
@@ -215,8 +209,22 @@ export class BazelQuery extends BazelCommand {
           resolve(Buffer.concat(chunks));
         } else {
           const errorMessage = `Bazel query failed with code ${code}.`;
-          // Log the error message with the full error output
-          logError(errorMessage, true, "Query command output: %s", errorOutput);
+
+          // Check if this was an aborted execution
+          if (abortSignal?.aborted) {
+            logDebug(
+              `Bazel query execution was aborted: ${this.bazelExecutable} ${execArgs.join(" ")}`,
+              false,
+            );
+          } else {
+            // Log the error message with the full error output
+            logError(
+              errorMessage,
+              true,
+              "Query command output: %s",
+              errorOutput,
+            );
+          }
 
           reject();
         }

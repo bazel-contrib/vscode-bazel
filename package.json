@@ -14,7 +14,8 @@
         "vscode": "^1.88.0"
     },
     "categories": [
-        "Programming Languages"
+        "Programming Languages",
+        "Debuggers"
     ],
     "activationEvents": [
         "workspaceContains:**/BUILD",
@@ -233,6 +234,9 @@
             {
                 "type": "bazel-launch-build",
                 "label": "Launch Bazel Build",
+                "languages": [
+                    "starlark"
+                ],
                 "program": "./dist/debug-adapter-client.js",
                 "runtime": "node",
                 "configurationAttributes": {

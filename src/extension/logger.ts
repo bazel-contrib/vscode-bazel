@@ -233,8 +233,12 @@ function getMessageFunctionForLevel(
   }
 }
 
+// Track active messages to prevent duplicates
+const activeMessages = new Map<string, Promise<string | undefined>>();
+
 /**
  * Shows an user message with an "Details" button that opens the output channel.
+ * Prevents duplicate messages from being shown simultaneously.
  * Returns a promise that resolves to the action selected by the user, or undefined if dismissed.
  *
  * @param message The user message to display.
@@ -246,7 +250,15 @@ export function showUserMessage(
   message: string,
   level: vscode.LogLevel,
   showDetailsButton: boolean = true,
-): Thenable<string | undefined> {
+): Promise<string | undefined> {
+  // Create a unique key for this message to prevent duplicates
+  const messageKey = `${level}:${message}:${showDetailsButton}`;
+
+  // If the same message is already active, return the existing promise
+  if (activeMessages.has(messageKey)) {
+    return activeMessages.get(messageKey)!;
+  }
+
   // Get the message function dynamically for the log level
   const messageFunc = getMessageFunctionForLevel(level);
   if (!messageFunc) {
@@ -257,12 +269,24 @@ export function showUserMessage(
   const buttons = showDetailsButton ? [DETAILS_ACTION] : [];
 
   // Show the message with optional buttons
-  return messageFunc(message, ...buttons).then((action) => {
-    if (action === DETAILS_ACTION) {
-      showOutputChannel();
-    }
-    return action;
-  });
+  const messagePromise = Promise.resolve(messageFunc(message, ...buttons))
+    .then((action) => {
+      // Clean up from active messages when resolved
+      activeMessages.delete(messageKey);
+      if (action === DETAILS_ACTION) {
+        showOutputChannel();
+      }
+      return action;
+    })
+    .finally(() => {
+      // Ensure cleanup even if promise rejects
+      activeMessages.delete(messageKey);
+    });
+
+  // Store the promise to prevent duplicates
+  activeMessages.set(messageKey, messagePromise);
+
+  return messagePromise;
 }
 
 /**
