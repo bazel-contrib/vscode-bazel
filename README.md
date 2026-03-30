@@ -55,7 +55,7 @@ See [#216](https://github.com/bazelbuild/vscode-bazel/issues/216) and [bazelbuil
 The Starlark Debugger is designed to help you understand and debug Starlark code execution during Bazel's analysis phase.
 It's particularly useful when working with macros, rule implementations, or aspects - giving you insight into how your build configuration is processed.
 
-To start debugging, simply right-click any build target in the **Bazel Build Targets** view and select "Build Target with Starlark Debugger".
+To start debugging, simply right-click any build target in the **Bazel Targets** section in the Explorer View and select "Build Target with Starlark Debugger".
 Or use the command palette and search for "Bazel: Build Target with Starlark Debugger".
 This launches the Bazel build within Visual Studio Code's debugger, redirecting output to the Debug Console pane and automatically pausing at any breakpoints you've set.
 

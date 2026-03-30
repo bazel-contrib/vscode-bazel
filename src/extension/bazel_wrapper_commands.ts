@@ -18,7 +18,11 @@ import * as path from "path";
 import { IBazelCommandAdapter } from "../bazel/bazel_command";
 import { logError, logInfo, showInfoMessage, showUserMessage } from "./logger";
 import { BazelWorkspaceInfo } from "../bazel/bazel_workspace_info";
-import { getDefaultBazelExecutablePath } from "./configuration";
+import {
+  getCommandArgs,
+  getDefaultBazelExecutablePath,
+  getStartupOptions,
+} from "./configuration";
 import {
   getBazelPackageFile,
   getBazelWorkspaceFolder,
@@ -134,16 +138,17 @@ async function bazelBuildTargetWithDebugging(
     }
     return;
   }
-  const bazelConfigCmdLine =
-    vscode.workspace.getConfiguration("bazel.commandLine");
-  const startupOptions = bazelConfigCmdLine.get<string[]>("startupOptions");
-  const commandArgs = bazelConfigCmdLine.get<string[]>("commandArgs");
+  const startupOptions = getStartupOptions();
+  const commandArgs = getCommandArgs();
 
   const commandOptions = adapter.getBazelCommandOptions();
 
   const fullArgs = commandArgs
     .concat(commandOptions.targets)
-    .concat(["--notrack_incremental_state"])
+    .concat([
+      "--notrack_incremental_state", // Force starlark code to be reevaluated
+      "--nokeep_state_after_build", // Avoid warning about incremental state
+    ])
     .concat(commandOptions.options);
 
   const debugStarted = await vscode.debug.startDebugging(undefined, {

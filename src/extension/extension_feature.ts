@@ -98,7 +98,7 @@ export abstract class BaseExtensionFeature implements vscode.Disposable {
     if (shouldBeEnabled && !this.isEnabled) {
       this.logInfo(`Enabling ${this.constructor.name}`);
       if (!this.enable(this.context)) {
-        showUserMessage(
+        void showUserMessage(
           `Failed to enable ${this.constructor.name}`,
           vscode.LogLevel.Error,
           true,

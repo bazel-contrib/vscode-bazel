@@ -59,7 +59,7 @@ describe("The lcov parser", () => {
       "SF:a.cpp\nFN:1,abc\nend_of_record\n",
     );
     assert.equal(coveredFiles.length, 1);
-    assert.equal(coveredFiles[0].declarationCoverage.total, 1);
+    assert.equal(coveredFiles[0].declarationCoverage?.total, 1);
   });
 
   it("accepts Windows end-of-lines", async () => {
@@ -68,7 +68,7 @@ describe("The lcov parser", () => {
       "SF:a.cpp\r\nFN:1,abc\r\nend_of_record",
     );
     assert.equal(coveredFiles.length, 1);
-    assert.equal(coveredFiles[0].declarationCoverage.total, 1);
+    assert.equal(coveredFiles[0].declarationCoverage?.total, 1);
   });
 
   it("ignores invalid line numbers", async () => {
@@ -80,12 +80,14 @@ describe("The lcov parser", () => {
     before(async () => {
       const coveredFiles = await parseTestLcovFile("lcov/java.lcov");
       assert.equal(coveredFiles.length, 1);
-      fileCov = getCoverageForFile(
+      const newFileCov = getCoverageForFile(
         coveredFiles,
         "/base/examples/java-native/src/main/java/com/example/myproject/" +
           "Greeter.java",
       );
-      assert(fileCov !== undefined);
+      assert(newFileCov !== undefined);
+
+      fileCov = newFileCov;
     });
     it("function coverage", () => {
       assert(fileCov.declarationCoverage !== undefined);
@@ -107,6 +109,7 @@ describe("The lcov parser", () => {
       assert.equal(initFunc.name, "void Greeter::<init>()");
       assert.equal(initFunc.executed, 1);
       const convertFunc = getFunctionByLine(fileCov, 28);
+      assert(convertFunc !== undefined);
       assert.equal(
         convertFunc.name,
         "String Greeter::convertStreamToString(InputStream)",
@@ -114,12 +117,13 @@ describe("The lcov parser", () => {
       assert.equal(convertFunc.executed, 0);
     });
     it("line coverage details", () => {
-      assert.equal(getLineCoverageForLine(fileCov, 37).executed, 1);
-      assert.equal(getLineCoverageForLine(fileCov, 38).executed, 0);
-      assert.equal(getLineCoverageForLine(fileCov, 40).executed, 1);
+      assert.equal(getLineCoverageForLine(fileCov, 37)?.executed, 1);
+      assert.equal(getLineCoverageForLine(fileCov, 38)?.executed, 0);
+      assert.equal(getLineCoverageForLine(fileCov, 40)?.executed, 1);
     });
     it("branch coverage data", () => {
-      const branchCoverage = getLineCoverageForLine(fileCov, 37).branches;
+      const branchCoverage = getLineCoverageForLine(fileCov, 37)?.branches;
+      assert(branchCoverage !== undefined);
       assert.equal(branchCoverage.length, 2);
       assert.equal(branchCoverage[0].executed, 1);
       assert.equal(branchCoverage[1].executed, 0);
@@ -154,16 +158,18 @@ describe("The lcov parser", () => {
       assert.equal(initFunc.executed, 34);
     });
     it("line coverage details", () => {
-      assert.equal(getLineCoverageForLine(fileCov, 176).executed, 1);
-      assert.equal(getLineCoverageForLine(fileCov, 178).executed, 0);
-      assert.equal(getLineCoverageForLine(fileCov, 193).executed, 4);
+      assert.equal(getLineCoverageForLine(fileCov, 176)?.executed, 1);
+      assert.equal(getLineCoverageForLine(fileCov, 178)?.executed, 0);
+      assert.equal(getLineCoverageForLine(fileCov, 193)?.executed, 4);
     });
     it("branch coverage data", () => {
-      const branchCoverage = getLineCoverageForLine(fileCov, 479).branches;
+      const branchCoverage = getLineCoverageForLine(fileCov, 479)?.branches;
+      assert(branchCoverage !== undefined);
       assert.equal(branchCoverage.length, 2);
       assert.equal(branchCoverage[0].executed, 1);
       assert.equal(branchCoverage[1].executed, 0);
-      const branchCoverage2 = getLineCoverageForLine(fileCov, 481).branches;
+      const branchCoverage2 = getLineCoverageForLine(fileCov, 481)?.branches;
+      assert(branchCoverage2 !== undefined);
       assert.equal(branchCoverage2.length, 12);
     });
   });
@@ -173,8 +179,12 @@ describe("The lcov parser", () => {
     before(async () => {
       const coveredFiles = await parseTestLcovFile("lcov/rust.lcov");
       assert.equal(coveredFiles.length, 2);
-      fileCov = getCoverageForFile(coveredFiles, "/base/util/label/label.rs");
-      assert(fileCov !== undefined);
+      const newFileCov = getCoverageForFile(
+        coveredFiles,
+        "/base/util/label/label.rs",
+      );
+      assert(newFileCov !== undefined);
+      fileCov = newFileCov;
     });
     it("function coverage", () => {
       assert(fileCov.declarationCoverage !== undefined);
@@ -200,8 +210,8 @@ describe("The lcov parser", () => {
       assert.equal(consumeFunc.executed, 2);
     });
     it("line coverage details", () => {
-      assert.equal(getLineCoverageForLine(fileCov, 88).executed, 45);
-      assert.equal(getLineCoverageForLine(fileCov, 89).executed, 31);
+      assert.equal(getLineCoverageForLine(fileCov, 88)?.executed, 45);
+      assert.equal(getLineCoverageForLine(fileCov, 89)?.executed, 31);
     });
   });
 
@@ -210,8 +220,12 @@ describe("The lcov parser", () => {
     before(async () => {
       const coveredFiles = await parseTestLcovFile("lcov/go.lcov");
       assert.equal(coveredFiles.length, 7);
-      fileCov = getCoverageForFile(coveredFiles, "/base/config/config.go");
-      assert(fileCov !== undefined);
+      const newFileCov = getCoverageForFile(
+        coveredFiles,
+        "/base/config/config.go",
+      );
+      assert(newFileCov !== undefined);
+      fileCov = newFileCov;
     });
     it("function coverage", () => {
       assert(fileCov.declarationCoverage === undefined);
@@ -225,8 +239,8 @@ describe("The lcov parser", () => {
       assert(fileCov.branchCoverage === undefined);
     });
     it("line coverage details", () => {
-      assert.equal(getLineCoverageForLine(fileCov, 265).executed, 1);
-      assert.equal(getLineCoverageForLine(fileCov, 266).executed, 0);
+      assert.equal(getLineCoverageForLine(fileCov, 265)?.executed, 1);
+      assert.equal(getLineCoverageForLine(fileCov, 266)?.executed, 0);
     });
   });
 });

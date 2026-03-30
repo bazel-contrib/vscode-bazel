@@ -14,7 +14,8 @@
         "vscode": "^1.88.0"
     },
     "categories": [
-        "Programming Languages"
+        "Programming Languages",
+        "Debuggers"
     ],
     "activationEvents": [
         "workspaceContains:**/BUILD",
@@ -33,7 +34,7 @@
         "onCommand:bazel.info.output_path",
         "onCommand:bazel.info.workspace"
     ],
-    "main": "./out/src/extension/extension",
+    "main": "./dist/extension.js",
     "contributes": {
         "breakpoints": [
             {
@@ -233,7 +234,10 @@
             {
                 "type": "bazel-launch-build",
                 "label": "Launch Bazel Build",
-                "program": "./out/src/debug-adapter/client.js",
+                "languages": [
+                    "starlark"
+                ],
+                "program": "./dist/debug-adapter-client.js",
                 "runtime": "node",
                 "configurationAttributes": {
                     "launch": {
@@ -500,21 +504,27 @@
         ]
     },
     "scripts": {
-        "lint-check": "eslint .",
-        "lint-fix": "eslint . --fix",
-        "compile": "./scripts/build.sh",
-        "pretest": "./scripts/build.sh",
+        "clean": "rm -rf .vscode-test/ out/ node_modules/ dist/",
+        "typecheck": "tsc --noEmit",
+        "watch": "tsc --noEmit --watch --project tsconfig.json",
         "format-check": "prettier --check .",
         "format-fix": "prettier --write .",
-        "test": "./scripts/test.sh",
-        "package": "vsce package",
-        "update-snapshot": "./scripts/test.sh -u",
-        "vscode:prepublish": "./scripts/build.sh",
-        "watch": "./scripts/build.sh -watch",
-        "clean": "rm -rf .vscode-test/ out/ node_modules/"
+        "lint-check": "eslint .",
+        "lint-fix": "eslint . --fix",
+        "build:debugadapter": "esbuild src/debug-adapter/client.ts --bundle --outfile=dist/debug-adapter-client.js --external:vscode --format=cjs --platform=node --minify",
+        "build:extension": "esbuild src/extension/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify",
+        "build:tests": "esbuild test/**/*.test.ts --bundle --outdir=dist/test --external:vscode --format=cjs --platform=node --sourcemap",
+        "build": "npm run build:debugadapter && npm run build:extension",
+        "prebuild": "./scripts/prepare.sh",
+        "pretest": "npm run build",
+        "test:grammar": "vscode-tmgrammar-snap test/example.bazelrc",
+        "test:unit": "npm run build:tests && vscode-test",
+        "test": "npm run typecheck && npm run test:grammar && npm run test:unit",
+        "package": "npm run build && vsce package --no-dependencies",
+        "update-snapshot": "vscode-tmgrammar-snap -u test/example.bazelrc"
     },
     "devDependencies": {
-        "@eslint/js": "^9.36.0",
+        "@eslint/js": "^10.0.0",
         "@types/mocha": "^10.0.6",
         "@types/node": "^24.5.2",
         "@types/sinon": "^21.0.0",
@@ -525,20 +535,22 @@
         "@vscode/test-cli": "^0.0.12",
         "@vscode/test-electron": "^2.3.9",
         "@vscode/vsce": "^3.0.0",
-        "eslint": "^9.0.0",
+        "esbuild": "^0.27.2",
+        "eslint": "^10.0.0",
         "eslint-config-prettier": "^10.0.0",
         "eslint-plugin-jsdoc": "^62.0.0",
+        "globals": "^17.4.0",
         "js-yaml": "^4.1.1",
         "mocha": "^11.0.0",
         "prettier": "^3.2.5",
-        "sinon": "^21.0.1",
+        "sinon": "^21.0.3",
         "typescript": "^5.4.4",
         "vscode-tmgrammar-test": "^0.1.3"
     },
     "dependencies": {
-        "protobufjs": "^6.8.0",
         "@vscode/debugadapter": "^1.68.0",
         "@vscode/debugprotocol": "^1.68.0",
+        "protobufjs": "^6.8.0",
         "vscode-languageclient": "^9.0.1",
         "vscode-uri": "^3.0.2",
         "which": "^6.0.0"

@@ -39,9 +39,8 @@ jobs:
       - name: Check formatting
         run: npm run format-check
 
-      # Has to happen before `lint-check`, because we need the generated protobuf types
-      - name: Compile the extension
-        run: npm run compile
+      - name: Prepare protobufs
+        run: npm run prebuild
 
       - name: Lint
         run: npm run lint-check
@@ -68,7 +67,7 @@ jobs:
         run: npm run package
 
       - name: Upload Workflow Artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: vscode-bazel-prerelease.vsix
           path: vscode-bazel-*.vsix

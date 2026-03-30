@@ -46,10 +46,13 @@ const execFile = util.promisify(child_process.execFile);
  * {@code Long}.
  */
 function number64(value: number | Long): number {
-  if (value instanceof Number) {
-    return value as number;
+  // Handle Long objects (which may be serialized differently when bundled)
+  if (value && typeof value === "object" && "toNumber" in value) {
+    return (value as Long).toNumber();
   }
-  return (value as Long).toNumber();
+
+  // Handle regular numbers and serialized Long objects
+  return Number(value);
 }
 
 /** Arguments that the Bazel debug adapter supports for "attach" requests. */
@@ -577,7 +580,7 @@ class BazelDebugSession extends DebugSession {
   private launchBazel(bazelExecutable: string, cwd: string, args: string[]) {
     const options = { cwd };
 
-    this.bazelProcess = child_process
+    const bazelProcess = child_process
       .spawn(bazelExecutable, args, options)
       .on("error", () => {
         this.onBazelTerminated();
@@ -585,15 +588,16 @@ class BazelDebugSession extends DebugSession {
       .on("exit", () => {
         this.onBazelTerminated();
       });
+    this.bazelProcess = bazelProcess;
     this.isBazelRunning = true;
 
     // We intentionally render stderr from Bazel as stdout in VS Code so that
     // normal build log text shows up as white instead of red. ANSI color codes
     // are applied as expected in either case.
-    this.bazelProcess.stdout.on("data", (data: string) => {
+    bazelProcess.stdout.on("data", (data: string) => {
       this.onBazelOutput(data);
     });
-    this.bazelProcess.stderr.on("data", (data: string) => {
+    bazelProcess.stderr.on("data", (data: string) => {
       this.onBazelOutput(data);
     });
   }
