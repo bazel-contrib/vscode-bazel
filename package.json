@@ -2,7 +2,7 @@
     "name": "vscode-bazel",
     "displayName": "Bazel",
     "description": "Bazel BUILD integration",
-    "version": "0.13.2",
+    "version": "0.14.0",
     "publisher": "BazelBuild",
     "license": "Apache-2.0",
     "repository": {
@@ -14,7 +14,8 @@
         "vscode": "^1.88.0"
     },
     "categories": [
-        "Programming Languages"
+        "Programming Languages",
+        "Debuggers"
     ],
     "activationEvents": [
         "workspaceContains:**/BUILD",
@@ -233,6 +234,9 @@
             {
                 "type": "bazel-launch-build",
                 "label": "Launch Bazel Build",
+                "languages": [
+                    "starlark"
+                ],
                 "program": "./dist/debug-adapter-client.js",
                 "runtime": "node",
                 "configurationAttributes": {
@@ -523,6 +527,7 @@
         "@eslint/js": "^10.0.0",
         "@types/mocha": "^10.0.6",
         "@types/node": "^24.5.2",
+        "@types/sinon": "^21.0.0",
         "@types/vscode": "^1.88.0",
         "@types/which": "^3.0.3",
         "@typescript-eslint/eslint-plugin": "^8.44.1",
@@ -538,6 +543,7 @@
         "js-yaml": "^4.1.1",
         "mocha": "^11.0.0",
         "prettier": "^3.2.5",
+        "sinon": "^21.0.3",
         "typescript": "^5.4.4",
         "vscode-tmgrammar-test": "^0.1.3"
     },
