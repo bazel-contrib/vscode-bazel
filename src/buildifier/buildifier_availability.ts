@@ -102,6 +102,7 @@ async function resolvePath(configValue: string): Promise<IExecutable> {
   await showBuildifierDownloadPrompt(
     `Did not find buildifier at path "${pathToCheck}"`,
   );
+  throw new Error("No buildifier executable set.");
 }
 
 /**
@@ -112,6 +113,7 @@ async function resolveReleaseBinary(version: string): Promise<IExecutable> {
     await showBuildifierDownloadPrompt(
       "No release version specified for buildifier",
     );
+    throw new Error("No buildifier executable set.");
   }
 
   try {
@@ -127,6 +129,7 @@ async function resolveReleaseBinary(version: string): Promise<IExecutable> {
     await showBuildifierDownloadPrompt(
       `Failed to download buildifier release "${version}"`,
     );
+    throw new Error("No buildifier executable set.");
   }
 }
 
@@ -178,6 +181,7 @@ async function resolveAuto(configValue: string): Promise<IExecutable> {
   await showBuildifierDownloadPrompt(
     `Did not find a buildifier for "${valueToCheck}"`,
   );
+  throw new Error("No buildifier executable set.");
 }
 
 /**
