@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import * as child_process from "child_process";
-import * as path from "path";
 import * as util from "util";
 import * as vscode from "vscode";
 
@@ -28,9 +27,6 @@ type PromiseExecFileException = child_process.ExecFileException & {
 
 /** Whether to warn about lint findings or fix them. */
 export type BuildifierLintMode = "fix" | "warn";
-
-/** The type of file that buildifier should interpret standard input as. */
-export type BuildifierFileType = "build" | "bzl" | "workspace" | "default";
 
 /**
  * Invokes buildifier in format mode.
@@ -114,54 +110,6 @@ export async function buildifierLint(
       return [];
     }
   }
-}
-
-/**
- * Returns the file type of a file with the given path.
- *
- * @param fsPath The file path, whose extension and basename are used to
- * determine the file type.
- * @returns The buildifier type of the file.
- */
-export function getBuildifierFileType(fsPath: string): BuildifierFileType {
-  // TODO(bazelbuild/buildtools#475, bazelbuild/buildtools#681): Switch to
-  // `--path=<path>` rather than duplicate the logic from buildifier. The
-  // catch is `--path` was already documented, but didn't work with stdin
-  // until bazelbuild/buildtools#681, so we'd need to dual code path testing
-  // --version to decide how to do things; so it likely is better to just
-  // ignore things until the support has been out a while.
-
-  // NOTE: The implementation here should be kept in sync with buildifier's
-  // automatic format detection (see:
-  // https://github.com/bazelbuild/buildtools/blob/d39e4d/build/lex.go#L88)
-  // so that user actions in the IDE are consistent with the behavior they
-  // would see running buildifier on the command line.
-  const raw = fsPath.toLowerCase();
-  let parsedPath = path.parse(raw);
-  if (parsedPath.ext === ".oss") {
-    parsedPath = path.parse(parsedPath.name);
-  }
-  switch (parsedPath.ext) {
-    case ".bzl":
-      return "bzl";
-    case ".sky":
-      return "default";
-  }
-  if (
-    parsedPath.ext === ".build" ||
-    parsedPath.name === "build" ||
-    parsedPath.name.startsWith("build.")
-  ) {
-    return "build";
-  }
-  if (
-    parsedPath.ext === ".workspace" ||
-    parsedPath.name === "workspace" ||
-    parsedPath.name.startsWith("workspace.")
-  ) {
-    return "workspace";
-  }
-  return "default";
 }
 
 /**
