@@ -133,10 +133,36 @@
                     "description": "The name of the Bazel executable. This may be an absolute path, or a simple name that will be searched for on the system path. If empty, \"bazel\" on the system path will be used.",
                     "scope": "machine-overridable"
                 },
+                "bazel.buildifier": {
+                    "type": "object",
+                    "default": { "source": "auto", "value": "" },
+                    "markdownDescription": "How to resolve the Buildifier executable.",
+                    "properties": {
+                        "source": {
+                            "type": "string",
+                            "enum": ["auto", "path", "bazelTarget", "releaseTag"],
+                            "default": "auto",
+                            "markdownEnumDescriptions": [
+                                "Auto (`buildifier` on `$PATH`)",
+                                "Path to buildifier binary",
+                                "Bazel Target Label (e.g., `@buildifier_prebuilt//:buildifier`)",
+                                "Release Tag (e.g., `v8.5.1` or `latest`)"
+                            ]
+                        },
+                        "value": {
+                            "type": "string",
+                            "default": "",
+                            "markdownDescription": "Path, Bazel target, or release tag (interpretation depends on `source`). Leave empty for `auto` to use default `buildifier` on PATH."
+                        }
+                    },
+                    "additionalProperties": false,
+                    "scope": "machine-overridable"
+                },
                 "bazel.buildifierExecutable": {
                     "type": "string",
-                    "default": "buildifier",
-                    "markdownDescription": "The name of the Buildifier executable. This may be an absolute path, or a simple name that will be searched for on the system path. Paths starting with `@` are interpreted as Bazel targets and are run via `bazel run`. If empty, \"buildifier\" on the system path will be used.\n\nBuildifier can be downloaded from https://github.com/bazelbuild/buildtools/releases.",
+                    "default": "",
+                    "deprecationMessage": "Deprecated: Use bazel.buildifier instead.",
+                    "markdownDescription": "**Deprecated.** Use `bazel.buildifier` instead.\n\nThe name of the Buildifier executable. This may be an absolute path, or a simple name that will be searched for on the system path. Paths starting with `@` are interpreted as Bazel targets and are run via `bazel run`. If the value matches a Buildifier release (e.g. `v8.2.1`) this will be downloaded (for the current platform) and used. If empty, \"buildifier\" on the system path will be used.",
                     "scope": "machine-overridable"
                 },
                 "bazel.buildifierConfigJsonPath": {

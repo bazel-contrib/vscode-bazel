@@ -12,36 +12,186 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as fs from "fs/promises";
+import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
 import which from "which";
 
+import { executeBuildifier, IExecutable } from "./buildifier";
 import {
-  executeBuildifier,
-  getDefaultBuildifierExecutablePath,
-} from "./buildifier";
+  getDefaultBazelExecutablePath,
+  getBuildifierConfig,
+  BuildifierConfig,
+} from "../extension/configuration";
+import {
+  downloadBuildifier,
+  getBuildifierExecutablePath,
+} from "./buildifier_downloader";
 import { logWarn } from "../extension/logger";
-
-async function fileExists(filename: string) {
-  try {
-    // First check if file exists and is a regular file
-    const stats = await fs.stat(filename);
-    if (!stats.isFile()) {
-      return false;
-    }
-
-    // Then check if it's executable by trying to access it
-    await fs.access(filename, fs.constants.X_OK);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 /** The URL to load for buildifier's releases. */
 const BUILDTOOLS_RELEASES_URL =
   "https://github.com/bazelbuild/buildtools/releases";
+
+/**
+ * Gets the buildifier configuration.
+ *
+ * @returns The buildifier configuration.
+ */
+export function getBuildifierConfiguration(): BuildifierConfig {
+  return getBuildifierConfig();
+}
+
+/**
+ * Returns the path to the buildifier executable and arguments to use.
+ *
+ * This is the central point for resolving the buildifier executable. It may
+ * involve downloading a buildifier release.
+ *
+ * @returns The path to the buildifier executable and arguments to use, or
+ * undefined if buildifier cannot be found.
+ */
+async function getBuildifierExecutable(): Promise<IExecutable | undefined> {
+  const config = getBuildifierConfiguration();
+  const { source, value } = config;
+
+  switch (source) {
+    case "bazelTarget":
+      return {
+        path: getDefaultBazelExecutablePath(),
+        args: ["run", "--", value],
+      };
+
+    case "releaseTag":
+      return resolveReleaseBinary(value);
+
+    case "path":
+      return resolvePath(value);
+
+    case "auto":
+    default:
+      return resolveAuto(value);
+  }
+}
+
+/**
+ * Resolves a file path to a buildifier executable.
+ * @returns The executable, or undefined if not found.
+ */
+async function resolvePath(
+  configValue: string,
+): Promise<IExecutable | undefined> {
+  const pathToCheck = configValue || "buildifier";
+
+  // Absolute path (must be a file, not a directory)
+  if (fs.existsSync(pathToCheck) && fs.statSync(pathToCheck).isFile()) {
+    return { path: pathToCheck, args: [] };
+  }
+  // Relative path from workspace
+  const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath;
+  if (workspacePath) {
+    const relativePath = path.join(workspacePath, pathToCheck);
+    if (fs.existsSync(relativePath) && fs.statSync(relativePath).isFile()) {
+      return { path: relativePath, args: [] };
+    }
+  }
+  // File on $PATH
+  try {
+    return { path: await which(pathToCheck), args: [] };
+  } catch (e) {
+    // nothing on PATH
+  }
+
+  await showBuildifierDownloadPrompt(
+    `Did not find buildifier at path "${pathToCheck}"`,
+  );
+  return undefined;
+}
+
+/**
+ * Resolves a release version to a buildifier executable, downloading if needed.
+ * @returns The executable, or undefined if not found.
+ */
+async function resolveReleaseBinary(
+  version: string,
+): Promise<IExecutable | undefined> {
+  if (!version) {
+    await showBuildifierDownloadPrompt(
+      "No release version specified for buildifier",
+    );
+    return undefined;
+  }
+
+  try {
+    const dst = getBuildifierExecutablePath(version);
+    if (fs.existsSync(dst.fsPath)) {
+      return { path: dst.fsPath, args: [] };
+    }
+    return {
+      path: (await downloadBuildifier(version)).fsPath,
+      args: [],
+    };
+  } catch (e) {
+    await showBuildifierDownloadPrompt(
+      `Failed to download buildifier release "${version}"`,
+    );
+    return undefined;
+  }
+}
+
+/**
+ * Auto-detect buildifier: try path resolution first, then release download.
+ * This preserves the original heuristic behavior for backward compatibility.
+ * @returns The executable, or undefined if not found.
+ */
+async function resolveAuto(
+  configValue: string,
+): Promise<IExecutable | undefined> {
+  const valueToCheck = configValue || "buildifier";
+
+  // Bazel target (legacy support for @ prefix detection)
+  if (valueToCheck.startsWith("@")) {
+    return {
+      path: getDefaultBazelExecutablePath(),
+      args: ["run", valueToCheck, "--"],
+    };
+  }
+  // Absolute path (must be a file, not a directory)
+  if (fs.existsSync(valueToCheck) && fs.statSync(valueToCheck).isFile()) {
+    return { path: valueToCheck, args: [] };
+  }
+  // Relative path from workspace
+  const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath;
+  if (workspacePath) {
+    const relativePath = path.join(workspacePath, valueToCheck);
+    if (fs.existsSync(relativePath) && fs.statSync(relativePath).isFile()) {
+      return { path: relativePath, args: [] };
+    }
+  }
+  // File on $PATH
+  try {
+    return { path: await which(valueToCheck), args: [] };
+  } catch (e) {
+    // nothing on PATH
+  }
+  // Release binary
+  try {
+    const dst = getBuildifierExecutablePath(valueToCheck);
+    if (fs.existsSync(dst.fsPath)) {
+      return { path: dst.fsPath, args: [] };
+    }
+    return {
+      path: (await downloadBuildifier(valueToCheck)).fsPath,
+      args: [],
+    };
+  } catch (e) {
+    // Can't download a release with that version
+  }
+  await showBuildifierDownloadPrompt(
+    `Did not find a buildifier for "${valueToCheck}"`,
+  );
+  return undefined;
+}
 
 /**
  * Checks whether buildifier is available (either at the system PATH or a
@@ -50,50 +200,53 @@ const BUILDTOOLS_RELEASES_URL =
  * If not available, a warning message will be presented to the user with a
  * Download button that they can use to go to the GitHub releases page.
  *
- * @returns absolute path to the found buildifier executable, or null if not found
+ * @returns The path/target identifier for buildifier, or null if not available.
  */
 export async function checkBuildifierIsAvailable(): Promise<string | null> {
-  const buildifierExecutable = getDefaultBuildifierExecutablePath();
+  const config = getBuildifierConfiguration();
+  const state = await getBuildifierExecutable();
 
-  // Check if the program exists (in case it's an actual executable and not
-  // an target name starting with `@`).
-  const isTarget = buildifierExecutable.startsWith("@");
+  if (state === undefined) {
+    return null;
+  }
 
-  // Check if the program exists as a relative path of the workspace
-  const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath;
-  const relativePath = path.join(workspacePath || "", buildifierExecutable);
-  const relativePathExists = await fileExists(relativePath);
-
-  let executablePath: string;
-  if (relativePathExists) {
-    executablePath = relativePath;
-  } else if (isTarget) {
-    // For Bazel targets, use the target name as-is
-    executablePath = buildifierExecutable;
+  // Determine the identifier to return
+  // For bazelTarget: return the target value from config
+  // For auto with @ prefix: return the target from args[1]
+  // For paths: return the resolved path
+  let identifier: string;
+  if (config.source === "bazelTarget") {
+    identifier = config.value;
+  } else if (state.args.length > 0 && state.args[0] === "run") {
+    // Legacy bazel target detection (auto mode with @ prefix)
+    identifier = state.args[1];
   } else {
-    // Try to find the executable in the system PATH
-    try {
-      executablePath = await which(buildifierExecutable);
-    } catch (e) {
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      showBuildifierDownloadPrompt("Buildifier was not found");
-      return null;
-    }
+    identifier = state.path;
   }
 
   // Make sure it's a compatible version by running
   // buildifier on an empty input and see if it exits successfully and the
   // output parses.
-  const { stdout } = await executeBuildifier(
-    "",
-    // specify the --lint value even though off is the default in case
-    // a .buildifer.json with a different value is present
-    ["--format=json", "--mode=check", "--lint=off"],
-    false,
-  );
+  let stdout: string;
+  try {
+    const result = await executeBuildifier(
+      "",
+      // specify the --lint value even though off is the default in case
+      // a .buildifer.json with a different value is present
+      ["--format=json", "--mode=check", "--lint=off"],
+      false,
+      state, // Pass state directly to avoid workspaceState dependency
+    );
+    stdout = result.stdout;
+  } catch (e) {
+    // Execution failed - buildifier not found or other error
+    // The helper functions already showed appropriate prompts
+    logWarn(`checkBuildifierIsAvailable: execution failed: ${e}`, false);
+    return null;
+  }
+
   try {
     JSON.parse(stdout);
-    return executablePath;
   } catch {
     // If we got no valid JSON back, we don't have a compatible version.
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
@@ -102,6 +255,8 @@ export async function checkBuildifierIsAvailable(): Promise<string | null> {
     );
     return null;
   }
+
+  return identifier;
 }
 
 /**

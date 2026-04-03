@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import * as child_process from "child_process";
-import * as path from "path";
 import * as util from "util";
 import * as vscode from "vscode";
 
@@ -28,9 +27,6 @@ type PromiseExecFileException = child_process.ExecFileException & {
 
 /** Whether to warn about lint findings or fix them. */
 export type BuildifierLintMode = "fix" | "warn";
-
-/** The type of file that buildifier should interpret standard input as. */
-export type BuildifierFileType = "build" | "bzl" | "workspace" | "default";
 
 /**
  * Invokes buildifier in format mode.
@@ -117,22 +113,6 @@ export async function buildifierLint(
 }
 
 /**
- * Gets the path to the buildifier executable specified by the workspace
- * configuration.
- *
- * @returns The path to the buildifier executable specified in the workspace
- * configuration, or its default.
- */
-export function getDefaultBuildifierExecutablePath(): string {
-  return (
-    vscode.workspace
-      .getConfiguration("bazel")
-      .get<string>("buildifierExecutable")
-      .trim() || "buildifier"
-  );
-}
-
-/**
  * Gets the path to the buildifier json configuration file specified by the
  * workspace configuration.
  *
@@ -146,6 +126,15 @@ export function getDefaultBuildifierJsonConfigPath(): string {
     .trim();
 }
 
+/** A description of an executable and the arguments to pass to it. */
+export interface IExecutable {
+  /** The path to the executable. */
+  path: string;
+
+  /** The arguments that should be passed to the executable. */
+  args: string[];
+}
+
 /**
  * Executes buildifier with the given file content and arguments.
  *
@@ -154,23 +143,50 @@ export function getDefaultBuildifierJsonConfigPath(): string {
  * @param args Command line arguments to pass to buildifier.
  * @param acceptNonSevereErrors If true, syntax/lint exit codes will not be
  * treated as severe tool errors.
+ * @param executableOverride Optional executable to use instead of resolving
+ * from config.
  */
 export async function executeBuildifier(
   fileContent: string,
   args: string[],
   acceptNonSevereErrors: boolean,
+  executableOverride?: IExecutable,
 ): Promise<{ stdout: string; stderr: string }> {
   // Determine the executable
-  let executable = getDefaultBuildifierExecutablePath();
+  let executable: string;
+  let execArgs: string[] = [];
+
+  if (executableOverride) {
+    executable = executableOverride.path;
+    execArgs = executableOverride.args;
+  } else {
+    // Fallback to simple config-based resolution (for backward compatibility)
+    const config = vscode.workspace.getConfiguration("bazel");
+    const buildifierConfig = config.get<{ source?: string; value?: string }>(
+      "buildifier",
+    );
+    let configValue =
+      buildifierConfig?.value || config.get<string>("buildifierExecutable", "");
+
+    // Default to "buildifier" if nothing configured
+    if (!configValue) {
+      configValue = "buildifier";
+    }
+
+    // Paths starting with @ are Bazel targets
+    if (configValue.startsWith("@")) {
+      executable = getDefaultBazelExecutablePath();
+      execArgs = ["run", configValue, "--"];
+    } else {
+      executable = configValue;
+    }
+  }
+
+  args = execArgs.concat(args);
+
   const buildifierConfigJsonPath = getDefaultBuildifierJsonConfigPath();
   if (buildifierConfigJsonPath.length !== 0) {
-    args = ["--config", buildifierConfigJsonPath, ...args];
-  }
-  // Paths starting with an `@` are referring to Bazel targets
-  if (executable.startsWith("@")) {
-    const targetName = executable;
-    executable = getDefaultBazelExecutablePath();
-    args = ["run", targetName, "--", ...args];
+    args.push("--config", buildifierConfigJsonPath);
   }
   const execOptions = {
     maxBuffer: Number.MAX_SAFE_INTEGER,

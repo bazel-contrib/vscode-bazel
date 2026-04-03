@@ -53,6 +53,8 @@ export function storeWorkspaceTreeProviderForTesting(
   globalThis.bazelWorkspaceTreeProvider = provider;
 }
 
+export let extensionContext: vscode.ExtensionContext;
+
 /**
  * Called when the extension is activated; that is, when its first command is
  * executed.
@@ -60,6 +62,8 @@ export function storeWorkspaceTreeProviderForTesting(
  * @param context The extension context.
  */
 export async function activate(context: vscode.ExtensionContext) {
+  extensionContext = context;
+
   // Setup logging
   const logger = registerLogger(context);
   logInfo("Extension activated successfully.");
@@ -225,6 +229,13 @@ export async function activate(context: vscode.ExtensionContext) {
     ...activateCommandVariables(),
     // Test provider
     ...activateTesting(),
+
+    // Listen for configuration changes that affect buildifier
+    vscode.workspace.onDidChangeConfiguration(async (e) => {
+      if (e.affectsConfiguration("bazel.buildifierExecutable")) {
+        await checkBuildifierIsAvailable();
+      }
+    }),
   );
 
   // Notify the user if buildifier is not available on their path (or where

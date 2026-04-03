@@ -73,3 +73,49 @@ export function getQueryExpression(): string {
     "queryExpression",
   );
 }
+
+/** The source type for buildifier resolution. */
+export type BuildifierSource = "auto" | "path" | "bazelTarget" | "releaseTag";
+
+/** Configuration for buildifier resolution. */
+export interface BuildifierConfig {
+  source: BuildifierSource;
+  value: string;
+}
+
+const DEFAULT_BUILDIFIER_CONFIG: BuildifierConfig = {
+  source: "auto",
+  value: "",
+};
+
+/**
+ * Gets the buildifier configuration from settings.
+ * Prefers the new `bazel.buildifier` object setting, falls back to legacy
+ * `bazel.buildifierExecutable` string.
+ *
+ * @returns The buildifier configuration.
+ */
+export function getBuildifierConfig(): BuildifierConfig {
+  const config = vscode.workspace.getConfiguration("bazel");
+
+  // Check the new object setting first
+  const buildifierObj = config.get<BuildifierConfig>("buildifier");
+  if (
+    buildifierObj &&
+    (buildifierObj.source !== "auto" || buildifierObj.value !== "")
+  ) {
+    return buildifierObj;
+  }
+
+  // Fall back to legacy string setting
+  const legacyValue = config.get<string>("buildifierExecutable", "");
+  if (legacyValue) {
+    // Infer source from legacy value format
+    return {
+      source: "auto",
+      value: legacyValue,
+    };
+  }
+
+  return DEFAULT_BUILDIFIER_CONFIG;
+}
