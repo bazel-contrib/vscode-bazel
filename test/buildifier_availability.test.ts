@@ -4,6 +4,7 @@ import * as vscode from "vscode";
 import * as fs from "fs/promises";
 
 import { checkBuildifierIsAvailable } from "../src/buildifier/buildifier_availability";
+import { BuildifierConfig } from "../src/extension/configuration";
 
 describe("buildifier_availability", () => {
   const testWorkspace = path.join(
@@ -26,6 +27,14 @@ describe("buildifier_availability", () => {
       .update("buildifierExecutable", configString);
   }
 
+  async function setBuildifierConfig(
+    config: BuildifierConfig | undefined,
+  ): Promise<void> {
+    await vscode.workspace
+      .getConfiguration("bazel")
+      .update("buildifier", config);
+  }
+
   function addDummyExecutablesToPath(): void {
     process.env.PATH = buildifierDirPath + path.delimiter + process.env.PATH;
   }
@@ -35,12 +44,14 @@ describe("buildifier_availability", () => {
     process.env.PATH = originalPath;
     // Restore vscode settings
     await setBuildifierExecutableConfig(undefined);
+    await setBuildifierConfig(undefined);
   });
   afterEach(async () => {
     // Restore original PATH before each test
     process.env.PATH = originalPath;
     // Restore vscode settings
     await setBuildifierExecutableConfig(undefined);
+    await setBuildifierConfig(undefined);
   });
 
   describe("checkBuildifierIsAvailable", () => {
@@ -112,6 +123,57 @@ describe("buildifier_availability", () => {
         const result = await checkBuildifierIsAvailable();
 
         assert.strictEqual(result, null);
+      });
+    });
+  });
+
+  describe("new buildifier object config", () => {
+    describe("source: path", () => {
+      it("should find executable in system PATH with source:path", async () => {
+        await setBuildifierConfig({ source: "path", value: "buildifier_good" });
+        addDummyExecutablesToPath();
+
+        const result = await checkBuildifierIsAvailable();
+
+        assert.strictEqual(result, buildifierGoodPath);
+      });
+      it("should handle absolute paths with source:path", async () => {
+        await setBuildifierConfig({
+          source: "path",
+          value: buildifierGoodPath,
+        });
+
+        const result = await checkBuildifierIsAvailable();
+
+        assert.strictEqual(result, buildifierGoodPath);
+      });
+    });
+
+    describe("source: bazelTarget", () => {
+      it("should use bazelTarget source", async function () {
+        this.timeout(10000); // Allow bazel to start
+        await setBuildifierConfig({
+          source: "bazelTarget",
+          value: "@//buildifier:buildifier",
+        });
+
+        const result = await checkBuildifierIsAvailable();
+
+        assert.strictEqual(result, "@//buildifier:buildifier");
+      });
+    });
+
+    describe("config precedence", () => {
+      it("should prefer new config over legacy config", async () => {
+        await setBuildifierExecutableConfig("buildifier_good");
+        await setBuildifierConfig({
+          source: "path",
+          value: buildifierGoodPath,
+        });
+
+        const result = await checkBuildifierIsAvailable();
+
+        assert.strictEqual(result, buildifierGoodPath);
       });
     });
   });

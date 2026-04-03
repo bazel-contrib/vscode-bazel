@@ -18,7 +18,11 @@ import * as vscode from "vscode";
 import which from "which";
 
 import { executeBuildifier, IExecutable } from "./buildifier";
-import { getDefaultBazelExecutablePath } from "../extension/configuration";
+import {
+  getDefaultBazelExecutablePath,
+  getBuildifierConfig,
+  BuildifierConfig,
+} from "../extension/configuration";
 import {
   downloadBuildifier,
   getBuildifierExecutablePath,
@@ -35,9 +39,8 @@ const BUILDTOOLS_RELEASES_URL =
  *
  * @returns The buildifier configuration.
  */
-export function getBuildifierConfiguration(): string {
-  const bazelConfig = vscode.workspace.getConfiguration("bazel");
-  return bazelConfig.get<string>("buildifierExecutable", "buildifier");
+export function getBuildifierConfiguration(): BuildifierConfig {
+  return getBuildifierConfig();
 }
 
 /**
@@ -49,47 +52,131 @@ export function getBuildifierConfiguration(): string {
  * @returns The path to the buildifier executable and arguments to use.
  */
 async function getBuildifierExecutable(): Promise<IExecutable> {
-  const configValue = getBuildifierConfiguration();
-  // Bazel target
-  if (configValue.startsWith("@")) {
-    return {
-      path: getDefaultBazelExecutablePath(),
-      args: ["run", configValue, "--"],
-    };
+  const config = getBuildifierConfiguration();
+  const { source, value } = config;
+
+  switch (source) {
+    case "bazelTarget":
+      return {
+        path: getDefaultBazelExecutablePath(),
+        args: ["run", "--", value],
+      };
+
+    case "releaseTag":
+      return resolveReleaseBinary(value);
+
+    case "path":
+      return resolvePath(value);
+
+    case "auto":
+    default:
+      return resolveAuto(value);
   }
+}
+
+/**
+ * Resolves a file path to a buildifier executable.
+ */
+async function resolvePath(configValue: string): Promise<IExecutable> {
+  const pathToCheck = configValue || "buildifier";
+
   // Absolute path
-  if (fs.existsSync(configValue)) {
-    return { path: configValue, args: [] };
+  if (fs.existsSync(pathToCheck)) {
+    return { path: pathToCheck, args: [] };
   }
   // Relative path from workspace
   const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath;
   if (workspacePath) {
-    const relativePath = path.join(workspacePath, configValue);
+    const relativePath = path.join(workspacePath, pathToCheck);
     if (fs.existsSync(relativePath)) {
       return { path: relativePath, args: [] };
     }
   }
   // File on $PATH
   try {
-    return { path: await which(configValue), args: [] };
+    return { path: await which(pathToCheck), args: [] };
+  } catch (e) {
+    // nothing on PATH
+  }
+
+  await showBuildifierDownloadPrompt(
+    `Did not find buildifier at path "${pathToCheck}"`,
+  );
+}
+
+/**
+ * Resolves a release version to a buildifier executable, downloading if needed.
+ */
+async function resolveReleaseBinary(version: string): Promise<IExecutable> {
+  if (!version) {
+    await showBuildifierDownloadPrompt(
+      "No release version specified for buildifier",
+    );
+  }
+
+  try {
+    const dst = getBuildifierExecutablePath(version);
+    if (fs.existsSync(dst.fsPath)) {
+      return { path: dst.fsPath, args: [] };
+    }
+    return {
+      path: (await downloadBuildifier(version)).fsPath,
+      args: [],
+    };
+  } catch (e) {
+    await showBuildifierDownloadPrompt(
+      `Failed to download buildifier release "${version}"`,
+    );
+  }
+}
+
+/**
+ * Auto-detect buildifier: try path resolution first, then release download.
+ * This preserves the original heuristic behavior for backward compatibility.
+ */
+async function resolveAuto(configValue: string): Promise<IExecutable> {
+  const valueToCheck = configValue || "buildifier";
+
+  // Bazel target (legacy support for @ prefix detection)
+  if (valueToCheck.startsWith("@")) {
+    return {
+      path: getDefaultBazelExecutablePath(),
+      args: ["run", valueToCheck, "--"],
+    };
+  }
+  // Absolute path
+  if (fs.existsSync(valueToCheck)) {
+    return { path: valueToCheck, args: [] };
+  }
+  // Relative path from workspace
+  const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath;
+  if (workspacePath) {
+    const relativePath = path.join(workspacePath, valueToCheck);
+    if (fs.existsSync(relativePath)) {
+      return { path: relativePath, args: [] };
+    }
+  }
+  // File on $PATH
+  try {
+    return { path: await which(valueToCheck), args: [] };
   } catch (e) {
     // nothing on PATH
   }
   // Release binary
   try {
-    const dst = getBuildifierExecutablePath(configValue);
+    const dst = getBuildifierExecutablePath(valueToCheck);
     if (fs.existsSync(dst.fsPath)) {
       return { path: dst.fsPath, args: [] };
     }
     return {
-      path: (await downloadBuildifier(configValue)).fsPath,
+      path: (await downloadBuildifier(valueToCheck)).fsPath,
       args: [],
     };
   } catch (e) {
     // Can't download a release with that version
   }
   await showBuildifierDownloadPrompt(
-    `Did not find a buildifier for "${configValue}"`,
+    `Did not find a buildifier for "${valueToCheck}"`,
   );
 }
 
