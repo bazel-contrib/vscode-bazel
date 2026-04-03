@@ -15,7 +15,7 @@
 import * as vscode from "vscode";
 import * as lc from "vscode-languageclient/node";
 
-import { activateTaskProvider, IBazelCommandAdapter } from "../bazel";
+import { activateTaskProvider } from "../bazel";
 import {
   BuildifierDiagnosticsManager,
   BuildifierFormatProvider,
@@ -32,6 +32,26 @@ import { BazelWorkspaceTreeProvider } from "../workspace-tree";
 import { activateCommandVariables } from "./command_variables";
 import { activateTesting } from "../test-explorer";
 import { activateWrapperCommands } from "./bazel_wrapper_commands";
+import { registerLogger, logInfo, logError, showOutputChannel } from "./logger";
+
+// Global reference to the workspace tree provider for testing
+declare global {
+  var bazelWorkspaceTreeProvider: BazelWorkspaceTreeProvider | undefined;
+}
+
+// Clean way to access the provider for testing
+export function getWorkspaceTreeProviderForTesting():
+  | BazelWorkspaceTreeProvider
+  | undefined {
+  return globalThis.bazelWorkspaceTreeProvider;
+}
+
+// Also set a global variable that can be accessed from tests
+export function storeWorkspaceTreeProviderForTesting(
+  provider: BazelWorkspaceTreeProvider,
+) {
+  globalThis.bazelWorkspaceTreeProvider = provider;
+}
 
 export let extensionContext: vscode.ExtensionContext;
 
@@ -44,28 +64,75 @@ export let extensionContext: vscode.ExtensionContext;
 export async function activate(context: vscode.ExtensionContext) {
   extensionContext = context;
 
-  const workspaceTreeProvider =
-    BazelWorkspaceTreeProvider.fromExtensionContext(context);
-  context.subscriptions.push(workspaceTreeProvider);
+  // Setup logging
+  const logger = registerLogger(context);
+  logInfo("Extension activated successfully.");
+  context.subscriptions.push(
+    vscode.commands.registerCommand("bazel.showOutputChannel", () => {
+      showOutputChannel();
+    }),
+  );
 
+  // Initialize the workspace tree provider
+  const _workspaceTreeProvider =
+    BazelWorkspaceTreeProvider.fromExtensionContext(context);
+
+  // Set the global reference for testing
+  storeWorkspaceTreeProviderForTesting(_workspaceTreeProvider);
+
+  context.subscriptions.push(_workspaceTreeProvider);
+
+  // Initialize other components
   const codeLensProvider = new BazelBuildCodeLensProvider(context);
   const buildifierDiagnostics = new BuildifierDiagnosticsManager();
   let completionItemProvider: BazelCompletionItemProvider | null = null;
+  let lspClient: lc.LanguageClient | undefined;
 
+  async function startLspFromCurrentConfig() {
+    const currentConfig = vscode.workspace.getConfiguration("bazel");
+    const lspCommand = !!currentConfig.get<string>("lsp.command");
+
+    if (!lspCommand) {
+      logError(
+        "Bazel LSP command (bazel.lsp.command) is not configured.",
+        true,
+        "Configuration: %s",
+        JSON.stringify(currentConfig),
+      );
+      return;
+    }
+
+    if (lspClient) {
+      try {
+        await lspClient.stop();
+      } catch {
+        // Ignore errors while stopping a previous client instance.
+      }
+    }
+
+    const newClient = createLsp(currentConfig);
+    lspClient = newClient;
+    context.subscriptions.push(newClient);
+
+    try {
+      await lspClient.start();
+    } catch (error: any) {
+      logError("Failed to start Bazel language server", true, error);
+    }
+  }
+
+  // Initialize other parts of the extension
   const config = vscode.workspace.getConfiguration("bazel");
   const lspEnabled = !!config.get<string>("lsp.command");
 
+  // Set up LSP if enabled
   if (lspEnabled) {
-    const lspClient = createLsp(config);
-
     context.subscriptions.push(
-      lspClient,
-      vscode.commands.registerCommand("bazel.lsp.restart", () =>
-        lspClient.restart(),
-      ),
+      vscode.commands.registerCommand("bazel.lsp.restart", async () => {
+        await startLspFromCurrentConfig();
+      }),
     );
-
-    await lspClient.start();
+    await startLspFromCurrentConfig();
   } else {
     completionItemProvider = new BazelCompletionItemProvider();
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
@@ -90,25 +157,30 @@ export async function activate(context: vscode.ExtensionContext) {
       ),
     );
   }
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
+
   vscode.commands.executeCommand("setContext", "bazel.lsp.enabled", lspEnabled);
 
+  // Create and register the tree view
+  const treeView = vscode.window.createTreeView("bazelWorkspace", {
+    treeDataProvider: _workspaceTreeProvider,
+    showCollapseAll: true,
+  });
+  _workspaceTreeProvider.setTreeView(treeView);
+
   context.subscriptions.push(
-    vscode.window.registerTreeDataProvider(
-      "bazelWorkspace",
-      workspaceTreeProvider,
-    ),
+    treeView,
     // Commands
     ...activateWrapperCommands(),
+
+    // Register command to manually refresh the tree view
+    vscode.commands.registerCommand("bazel.workspaceTree.refresh", () => {
+      _workspaceTreeProvider.refresh();
+    }),
     vscode.commands.registerCommand("bazel.refreshBazelBuildTargets", () => {
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
       completionItemProvider?.refresh();
-      workspaceTreeProvider.refresh();
+      _workspaceTreeProvider.refresh();
     }),
-    vscode.commands.registerCommand(
-      "bazel.copyTargetToClipboard",
-      bazelCopyTargetToClipboard,
-    ),
     // URI handler
     vscode.window.registerUriHandler({
       async handleUri(uri: vscode.Uri) {
@@ -125,14 +197,10 @@ export async function activate(context: vscode.ExtensionContext) {
               }),
             )
             .then(undefined, (err) => {
-              void vscode.window.showErrorMessage(
-                `Could not open file: ${location.path} Error: ${err}`,
-              );
+              logError("Could not open file", true, location.path, err);
             });
         } catch (err: any) {
-          void vscode.window.showErrorMessage(
-            `While handling URI: ${JSON.stringify(uri)} Error: ${err}`,
-          );
+          logError("While handling URI", true, JSON.stringify(uri), err);
         }
       },
     }),
@@ -184,6 +252,7 @@ export async function activate(context: vscode.ExtensionContext) {
 /** Called when the extension is deactivated. */
 export function deactivate() {
   // Nothing to do here.
+  logInfo("Extension deactivated.");
 }
 
 function createLsp(config: vscode.WorkspaceConfiguration) {
@@ -214,20 +283,4 @@ function createLsp(config: vscode.WorkspaceConfiguration) {
     serverOptions,
     clientOptions,
   );
-}
-
-/**
- * Copies a target to the clipboard.
- */
-function bazelCopyTargetToClipboard(adapter: IBazelCommandAdapter | undefined) {
-  if (adapter === undefined) {
-    // This command should not be enabled in the commands palette, so adapter
-    // should always be present.
-    return;
-  }
-  // This can only be called on single targets, so we can assume there is only
-  // one of them.
-  const target = adapter.getBazelCommandOptions().targets[0];
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  vscode.env.clipboard.writeText(target);
 }

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as vscode from "vscode";
 import { BazelWorkspaceInfo } from "./bazel_workspace_info";
+import { getStartupOptions } from "../extension/configuration";
 
 /**
  * Arbitrary types should implement this interface to specify how a task should
@@ -66,16 +66,12 @@ export abstract class BazelCommand {
    */
   protected abstract bazelCommand(): string;
 
-  /** The args used to execute the for the command. */
+  /** The args used to execute the command. */
   protected execArgs(
     additionalOptions: string[] = [],
     additionalStartupOptions: string[] = [],
   ) {
-    const bazelConfigCmdLine =
-      vscode.workspace.getConfiguration("bazel.commandLine");
-    const startupOptions = bazelConfigCmdLine.get<string[]>("startupOptions");
-
-    const result = startupOptions
+    const result = getStartupOptions()
       .concat(additionalStartupOptions)
       .concat([this.bazelCommand()])
       .concat(this.options)

@@ -2,7 +2,7 @@
     "name": "vscode-bazel",
     "displayName": "Bazel",
     "description": "Bazel BUILD integration",
-    "version": "0.11.0",
+    "version": "0.14.0",
     "publisher": "BazelBuild",
     "license": "Apache-2.0",
     "repository": {
@@ -14,7 +14,8 @@
         "vscode": "^1.88.0"
     },
     "categories": [
-        "Programming Languages"
+        "Programming Languages",
+        "Debuggers"
     ],
     "activationEvents": [
         "workspaceContains:**/BUILD",
@@ -33,7 +34,7 @@
         "onCommand:bazel.info.output_path",
         "onCommand:bazel.info.workspace"
     ],
-    "main": "./out/src/extension/extension",
+    "main": "./dist/extension.js",
     "contributes": {
         "breakpoints": [
             {
@@ -88,6 +89,16 @@
             },
             {
                 "category": "Bazel",
+                "command": "bazel.goToBuildFile",
+                "title": "Go to BUILD file"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.goToLabel",
+                "title": "Go to Label"
+            },
+            {
+                "category": "Bazel",
                 "command": "bazel.refreshBazelBuildTargets",
                 "title": "Refresh Bazel Build Targets",
                 "icon": {
@@ -97,7 +108,7 @@
             },
             {
                 "category": "Bazel",
-                "command": "bazel.copyTargetToClipboard",
+                "command": "bazel.copyLabelToClipboard",
                 "title": "Copy Label to Clipboard"
             },
             {
@@ -105,6 +116,11 @@
                 "command": "bazel.lsp.restart",
                 "title": "Restart language server",
                 "when": "bazel.lsp.enabled"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.showOutputChannel",
+                "title": "Show Output"
             }
         ],
         "configuration": {
@@ -113,7 +129,7 @@
             "properties": {
                 "bazel.executable": {
                     "type": "string",
-                    "default": "",
+                    "default": "bazel",
                     "description": "The name of the Bazel executable. This may be an absolute path, or a simple name that will be searched for on the system path. If empty, \"bazel\" on the system path will be used.",
                     "scope": "machine-overridable"
                 },
@@ -218,7 +234,10 @@
             {
                 "type": "bazel-launch-build",
                 "label": "Launch Bazel Build",
-                "program": "./out/src/debug-adapter/client.js",
+                "languages": [
+                    "starlark"
+                ],
+                "program": "./dist/debug-adapter-client.js",
                 "runtime": "node",
                 "configurationAttributes": {
                     "launch": {
@@ -312,8 +331,8 @@
         "menus": {
             "commandPalette": [
                 {
-                    "command": "bazel.copyTargetToClipboard",
-                    "when": "false"
+                    "command": "bazel.copyLabelToClipboard",
+                    "when": "bazel.haveWorkspace"
                 },
                 {
                     "command": "bazel.buildTarget",
@@ -349,6 +368,14 @@
                 },
                 {
                     "command": "bazel.clean",
+                    "when": "bazel.haveWorkspace"
+                },
+                {
+                    "command": "bazel.goToBuildFile",
+                    "when": "bazel.haveWorkspace"
+                },
+                {
+                    "command": "bazel.goToLabel",
                     "when": "bazel.haveWorkspace"
                 }
             ],
@@ -404,12 +431,12 @@
                     "group": "build"
                 },
                 {
-                    "command": "bazel.copyTargetToClipboard",
+                    "command": "bazel.copyLabelToClipboard",
                     "when": "view == bazelWorkspace && viewItem == rule",
                     "group": "build"
                 },
                 {
-                    "command": "bazel.copyTargetToClipboard",
+                    "command": "bazel.copyLabelToClipboard",
                     "when": "view == bazelWorkspace && viewItem == testRule",
                     "group": "build"
                 }
@@ -477,41 +504,58 @@
         ]
     },
     "scripts": {
-        "check-lint": "eslint .",
-        "compile": "./scripts/build.sh",
-        "pretest": "./scripts/build.sh",
+        "clean": "rm -rf .vscode-test/ out/ node_modules/ dist/",
+        "typecheck": "tsc --noEmit",
+        "watch": "tsc --noEmit --watch --project tsconfig.json",
         "format-check": "prettier --check .",
         "format-fix": "prettier --write .",
-        "test": "./scripts/test.sh",
-        "package": "vsce package",
-        "update-snapshot": "./scripts/test.sh -u",
-        "vscode:prepublish": "./scripts/build.sh",
-        "watch": "./scripts/build.sh -watch"
+        "lint-check": "eslint .",
+        "lint-fix": "eslint . --fix",
+        "build:debugadapter": "esbuild src/debug-adapter/client.ts --bundle --outfile=dist/debug-adapter-client.js --external:vscode --format=cjs --platform=node --minify",
+        "build:extension": "esbuild src/extension/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify",
+        "build:tests": "esbuild test/**/*.test.ts --bundle --outdir=dist/test --external:vscode --format=cjs --platform=node --sourcemap",
+        "build": "npm run build:debugadapter && npm run build:extension",
+        "prebuild": "./scripts/prepare.sh",
+        "pretest": "npm run build",
+        "test:grammar": "vscode-tmgrammar-snap test/example.bazelrc",
+        "test:unit": "npm run build:tests && vscode-test",
+        "test": "npm run typecheck && npm run test:grammar && npm run test:unit",
+        "package": "npm run build && vsce package --no-dependencies",
+        "update-snapshot": "vscode-tmgrammar-snap -u test/example.bazelrc"
     },
     "devDependencies": {
+        "@eslint/js": "^10.0.0",
         "@types/mocha": "^10.0.6",
-        "@types/node": "^16.11.7",
+        "@types/node": "^24.5.2",
+        "@types/sinon": "^21.0.0",
         "@types/vscode": "^1.88.0",
         "@types/which": "^3.0.3",
-        "@vscode/test-cli": "^0.0.9",
+        "@typescript-eslint/eslint-plugin": "^8.44.1",
+        "@typescript-eslint/parser": "^8.44.1",
+        "@vscode/test-cli": "^0.0.12",
         "@vscode/test-electron": "^2.3.9",
-        "@vscode/vsce": "^2.24.0",
-        "eslint": "^8.57.0",
-        "eslint-config-prettier": "^9.1.0",
-        "eslint-plugin-jsdoc": "^48.2.2",
-        "js-yaml": "^4.1.0",
-        "mocha": "^10.8.2",
+        "@vscode/vsce": "^3.0.0",
+        "esbuild": "^0.27.2",
+        "eslint": "^10.0.0",
+        "eslint-config-prettier": "^10.0.0",
+        "eslint-plugin-jsdoc": "^62.0.0",
+        "globals": "^17.4.0",
+        "js-yaml": "^4.1.1",
+        "mocha": "^11.0.0",
         "prettier": "^3.2.5",
+        "sinon": "^21.0.3",
         "typescript": "^5.4.4",
-        "typescript-eslint": "^7.5.0",
         "vscode-tmgrammar-test": "^0.1.3"
     },
+    "overrides": {
+        "serialize-javascript": "7.0.5"
+    },
     "dependencies": {
+        "@vscode/debugadapter": "^1.68.0",
+        "@vscode/debugprotocol": "^1.68.0",
         "protobufjs": "^6.8.0",
-        "vscode-debugadapter": "^1.37.1",
-        "vscode-debugprotocol": "^1.37.0",
         "vscode-languageclient": "^9.0.1",
         "vscode-uri": "^3.0.2",
-        "which": "^4.0.0"
+        "which": "^6.0.0"
     }
 }

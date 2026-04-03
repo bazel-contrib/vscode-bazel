@@ -1,5 +1,77 @@
 # Change Log
 
+## [0.14.0](https://github.com/bazel-contrib/vscode-bazel/compare/v0.13.2...v0.14.0) (2026-03-30)
+
+
+### Features
+
+* **debug:** improve Starlark debugger experience ([#558](https://github.com/bazel-contrib/vscode-bazel/issues/558)) ([7e5d8d7](https://github.com/bazel-contrib/vscode-bazel/commit/7e5d8d72821e90b37d7edde222905c2abbb5f5c0))
+* **logging:** Add proper VSCode Logging Output ([#557](https://github.com/bazel-contrib/vscode-bazel/issues/557)) ([11c1f8b](https://github.com/bazel-contrib/vscode-bazel/commit/11c1f8be3ee54597ef1f7f26b1a6c49741af4042))
+* **navigation:** Improve "Go to BUILD file" command ([#506](https://github.com/bazel-contrib/vscode-bazel/issues/506)) ([1a559fe](https://github.com/bazel-contrib/vscode-bazel/commit/1a559fe26307dd53b0cf160b7dab90634ac03c4f))
+* **quickpick:** Prepopulate quickpick with current package path ([#543](https://github.com/bazel-contrib/vscode-bazel/issues/543)) ([bfae85d](https://github.com/bazel-contrib/vscode-bazel/commit/bfae85d012449850c92c3f80ca866fff3eb230e4))
+
+
+### Bug Fixes
+
+* **buildifier:** Make buildifier robust against bzl files outside a workspace. ([7e5d8d7](https://github.com/bazel-contrib/vscode-bazel/commit/7e5d8d72821e90b37d7edde222905c2abbb5f5c0))
+* **lsp:** Allow manual restarts of the lsp client after initialization error. ([#498](https://github.com/bazel-contrib/vscode-bazel/issues/498)) ([f311f41](https://github.com/bazel-contrib/vscode-bazel/commit/f311f41ec2081e1114e50d12c01cc3b673a702b0))
+
+## [0.13.2](https://github.com/bazel-contrib/vscode-bazel/compare/v0.13.1...v0.13.2) (2026-01-20)
+
+
+### Bug Fixes
+
+* **config:** Make default values for executables user-visible ([#489](https://github.com/bazel-contrib/vscode-bazel/issues/489)) ([529f5ad](https://github.com/bazel-contrib/vscode-bazel/commit/529f5ade95725b7f7b669e6832d473864c4d35f2))
+* **deps:** update dependency which to v6 ([#536](https://github.com/bazel-contrib/vscode-bazel/issues/536)) ([a7af391](https://github.com/bazel-contrib/vscode-bazel/commit/a7af3913ebaf6f2ded2a17c19cf824d31ea58621))
+
+
+### Performance Improvements
+
+* **workspace-tree:** implement debouncing and lazy loading for performance ([#542](https://github.com/bazel-contrib/vscode-bazel/issues/542)) ([8a534f8](https://github.com/bazel-contrib/vscode-bazel/commit/8a534f8d4e0c93cf1a4ab6f04c032dd7e0d82b8c)), closes [#504](https://github.com/bazel-contrib/vscode-bazel/issues/504)
+
+## [0.13.1](https://github.com/bazel-contrib/vscode-bazel/compare/v0.13.0...v0.13.1) (2025-12-11)
+
+
+### Bug Fixes
+
+* **worskpace-tree:** Do not reveal treeview when not visible. ([#493](https://github.com/bazel-contrib/vscode-bazel/issues/493)) ([fd034ea](https://github.com/bazel-contrib/vscode-bazel/commit/fd034ea4123d82d9537c4e344264d610c07c6fdd))
+
+## [0.13.0](https://github.com/bazel-contrib/vscode-bazel/compare/v0.12.0...v0.13.0) (2025-12-09)
+
+
+### Features
+
+* **codelens:** Show picker for multiple targets ([#477](https://github.com/bazel-contrib/vscode-bazel/issues/477)) ([7aa2304](https://github.com/bazel-contrib/vscode-bazel/commit/7aa2304cc12907be76d80716c21815ace5f591c6))
+* **codelens:** Sort Bazel build targets by name length in codelens ([#464](https://github.com/bazel-contrib/vscode-bazel/issues/464)) ([3c48c7a](https://github.com/bazel-contrib/vscode-bazel/commit/3c48c7a864c6f1be783ee97c0e7b5d542a4b3dc9))
+* **navigation:** Add 'Copy Label To Clipboard' to command palette ([#467](https://github.com/bazel-contrib/vscode-bazel/issues/467)) ([edbdffc](https://github.com/bazel-contrib/vscode-bazel/commit/edbdffc00451f5472068e3141cdb151b7d4a01fb))
+* **navigation:** Add "Go to BUILD file" command ([66f699c](https://github.com/bazel-contrib/vscode-bazel/commit/66f699c945fd3e8720590bfe03f49818a66c0d61))
+* **navigation:** Add "Go to Label" command ([bc2abea](https://github.com/bazel-contrib/vscode-bazel/commit/bc2abeaffedbe0a0d7d218679d0a7fc54ea868e0))
+* **quickpick:** Introduce dynamic quickpick for targets/packages. ([#465](https://github.com/bazel-contrib/vscode-bazel/issues/465)) ([b00a658](https://github.com/bazel-contrib/vscode-bazel/commit/b00a658cd121595188fc1dcf18923ca17179ca8e))
+* **workspace-tree:** sync open editor with workspace tree ([#461](https://github.com/bazel-contrib/vscode-bazel/issues/461)) ([4c7438e](https://github.com/bazel-contrib/vscode-bazel/commit/4c7438e82886765afb7f1d25b475f70328c3de38))
+
+
+### Bug Fixes
+
+* **buildifier:** specify --lint=off in case buildifer config has different value ([#483](https://github.com/bazel-contrib/vscode-bazel/issues/483)) ([d488d74](https://github.com/bazel-contrib/vscode-bazel/commit/d488d74127909192503d3b80c7a4a73658059d7c))
+* **buildifier:** Support linting & formatting MODULE.bazel files ([#487](https://github.com/bazel-contrib/vscode-bazel/issues/487)) ([babb1f6](https://github.com/bazel-contrib/vscode-bazel/commit/babb1f6eb8c240cdd4b166fd72ac2898e20f3537)), closes [#471](https://github.com/bazel-contrib/vscode-bazel/issues/471)
+* **quickpick:** improve loading state management in dynamic quickpick ([67bbd95](https://github.com/bazel-contrib/vscode-bazel/commit/67bbd9536872a6ef67cd02416e5a5ea87c079142))
+* **quickpick:** Respect config settings for inital query scope. ([#488](https://github.com/bazel-contrib/vscode-bazel/issues/488)) ([c97d158](https://github.com/bazel-contrib/vscode-bazel/commit/c97d158d660508ad39f800a0ebf2ddb398cc3652))
+* Use "go to" instead of "jump" ([#468](https://github.com/bazel-contrib/vscode-bazel/issues/468)) ([30bf975](https://github.com/bazel-contrib/vscode-bazel/commit/30bf975b7954a7323c315c476ebfe6584b9d1609))
+
+## [0.12.0](https://github.com/bazel-contrib/vscode-bazel/compare/v0.11.0...v0.12.0) (2025-07-13)
+
+
+### Features
+
+* Add URI handler for jumping to targets ([#431](https://github.com/bazel-contrib/vscode-bazel/issues/431)) ([7e5ee8f](https://github.com/bazel-contrib/vscode-bazel/commit/7e5ee8f3fce34043a6b82a20d3de661589ea0812))
+* **lsp:** Allow passing environment variables to the language server ([#438](https://github.com/bazel-contrib/vscode-bazel/issues/438)) ([0dc2684](https://github.com/bazel-contrib/vscode-bazel/commit/0dc2684aaa8e3ce5ae1b7e8d67e562329d3fb374))
+
+
+### Bug Fixes
+
+* Don't instantiate CompletionItemProvider when using a language server ([#440](https://github.com/bazel-contrib/vscode-bazel/issues/440)) ([7b6f85f](https://github.com/bazel-contrib/vscode-bazel/commit/7b6f85f9d08d0b6d1f1991f05e09cfcd8740407e))
+* fix starlark debugger broken in release 0.11.0 ([#432](https://github.com/bazel-contrib/vscode-bazel/issues/432)) ([#433](https://github.com/bazel-contrib/vscode-bazel/issues/433)) ([b83b99c](https://github.com/bazel-contrib/vscode-bazel/commit/b83b99c57299d003d2858d859c487b2523d233d5))
+
 ## [0.11.0](https://github.com/bazel-contrib/vscode-bazel/compare/0.10.0...v0.11.0) (2024-11-28)
 
 

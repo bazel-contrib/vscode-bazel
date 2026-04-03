@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import * as fs from "fs/promises";
 import * as path from "path";
 import * as child_process from "child_process";
-import * as which from "which";
+import which from "which";
 import * as util from "util";
 import { assert } from "../assert";
 
@@ -61,7 +61,7 @@ function demangleJVMTypeNames(mangled: string): string[] | undefined {
         while (idx < mangled.length && mangled[idx] !== ";") ++idx;
         if (idx === mangled.length) return undefined;
         const fullClassName = mangled.substring(startIdx, idx - startIdx + 1);
-        const shortClassName = fullClassName.split("/").pop();
+        const shortClassName = fullClassName.split("/").pop()!;
         flushType(shortClassName);
         break;
       }
@@ -123,7 +123,9 @@ async function demangleNameUsingFilter(
   mangled: string,
 ): Promise<string | undefined> {
   if (execPath === null) return undefined;
-  const unmangled = (await execFile(execPath, [mangled])).stdout.trim();
+  // c++filt needs the -n flag to properly demangle names that start with underscore
+  const args = execPath.includes("c++filt") ? ["-n", mangled] : [mangled];
+  const unmangled = (await execFile(execPath, args)).stdout.trim();
   // If unmangling failed, return undefined, so we can fallback to another demangler.
   if (!unmangled || unmangled === mangled) return undefined;
   return unmangled;
@@ -163,7 +165,7 @@ async function resolveSourceFilePath(
  */
 export class BazelFileCoverage extends vscode.FileCoverage {
   // The coverage details
-  details?: vscode.FileCoverageDetail[];
+  details: vscode.FileCoverageDetail[] = [];
 
   // Construct the coverage info from the detailed coverage information
   static fromDetails(
@@ -212,7 +214,7 @@ export async function parseLcov(
   const infosByFile: Map<string, FileCoverageInfo> = new Map();
   for (const block of lcov.split(/end_of_record(\n|$)/)) {
     const functionsByName: Map<string, vscode.DeclarationCoverage> = new Map();
-    let info: FileCoverageInfo;
+    let info: FileCoverageInfo | undefined = undefined;
     for (let line of block.split("\n")) {
       line = line.trim();
       if (line === "") continue;
@@ -287,7 +289,7 @@ export async function parseLcov(
               new vscode.DeclarationCoverage(demangled, 0, location),
             );
           }
-          functionsByName.set(funcName, info.functionsByLine.get(startLine));
+          functionsByName.set(funcName, info.functionsByLine.get(startLine)!);
           break;
         }
         case "FNDA": {
@@ -342,7 +344,7 @@ export async function parseLcov(
               ),
             );
           } else {
-            const coverageEntry = info.lineCoverage.get(lineNumber);
+            const coverageEntry = info.lineCoverage.get(lineNumber)!;
             assert(typeof coverageEntry.executed == "number");
             coverageEntry.executed += hitCount;
           }
@@ -394,7 +396,8 @@ export async function parseLcov(
           if (!info.coverageByLineAndBranch.has(lineNumber)) {
             info.coverageByLineAndBranch.set(lineNumber, new Map());
           }
-          const coverageByBranch = info.coverageByLineAndBranch.get(lineNumber);
+          const coverageByBranch =
+            info.coverageByLineAndBranch.get(lineNumber)!;
           const branchId = `${blockId}:${label}`;
           if (!coverageByBranch.has(branchId)) {
             coverageByBranch.set(
@@ -402,7 +405,7 @@ export async function parseLcov(
               new vscode.BranchCoverage(0, undefined, label),
             );
           }
-          const branchCoverage = coverageByBranch.get(branchId);
+          const branchCoverage = coverageByBranch.get(branchId)!;
           assert(typeof branchCoverage.executed == "number");
           branchCoverage.executed += hitCount;
           break;

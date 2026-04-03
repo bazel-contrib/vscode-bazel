@@ -15,20 +15,61 @@
 import * as vscode from "vscode";
 
 /**
+ * Gets a configuration value, returning the default set in the package.json if
+ * the value is not set or falsey.
+ * @param section The section that contains the configuration, as is passed to vscode.workspace.getConfiguration.
+ * @param name The name of the configuration item within the section.
+ * @returns The configuration value, or its default.
+ */
+export function getConfigurationWithDefault<T>(
+  section: string,
+  name: string,
+): T {
+  const config = vscode.workspace.getConfiguration(section);
+
+  const value = config.get<T>(name);
+
+  if (!value) {
+    const info = config.inspect<T>(name);
+
+    if (info.defaultValue == null) {
+      throw new Error(`No default value for configuration ${section}.${name}`);
+    }
+
+    return info.defaultValue;
+  } else {
+    return value;
+  }
+}
+
+/**
  * Gets the path to the Bazel executable specified by the workspace
- * configuration, if present.
+ * configuration.
  *
  * @returns The path to the Bazel executable specified in the workspace
- * configuration, or just "bazel" if not present (in which case the system path
- * will be searched).
+ * configuration, or its default.
  */
 export function getDefaultBazelExecutablePath(): string {
-  // Try to retrieve the executable from VS Code's settings. If it's not set,
-  // just use "bazel" as the default and get it from the system PATH.
-  const bazelConfig = vscode.workspace.getConfiguration("bazel");
-  const bazelExecutable = bazelConfig.get<string>("executable");
-  if (bazelExecutable.length === 0) {
-    return "bazel";
-  }
-  return bazelExecutable;
+  return getConfigurationWithDefault<string>("bazel", "executable").trim();
+}
+
+export function getStartupOptions(): string[] {
+  return getConfigurationWithDefault<string[]>(
+    "bazel.commandLine",
+    "startupOptions",
+  );
+}
+
+export function getCommandArgs(): string[] {
+  return getConfigurationWithDefault<string[]>(
+    "bazel.commandLine",
+    "commandArgs",
+  );
+}
+
+export function getQueryExpression(): string {
+  return getConfigurationWithDefault<string>(
+    "bazel.commandLine",
+    "queryExpression",
+  );
 }

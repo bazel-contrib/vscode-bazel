@@ -38,17 +38,16 @@ export class BazelPackageTreeItem
   /**
    * Initializes a new tree item with the given workspace path and package path.
    *
-   * @param workspacePath The path to the VS Code workspace folder.
+   * @param resources The resources for the extension.
+   * @param workspaceInfo The workspace information.
+   * @param parent The parent tree item of this item.
    * @param packagePath The path to the build package that this item represents.
-   * @param parentPackagePath The path to the build package of the tree item
-   * that is this item's parent, which indicates how much of
-   * {@code packagePath} should be stripped for the item's label.
    */
   constructor(
     private readonly resources: Resources,
     private readonly workspaceInfo: BazelWorkspaceInfo,
+    private readonly parent: IBazelTreeItem,
     private readonly packagePath: string,
-    private readonly parentPackagePath: string,
   ) {}
 
   public mightHaveChildren(): boolean {
@@ -67,21 +66,27 @@ export class BazelPackageTreeItem
       return new BazelTargetTreeItem(
         this.resources,
         this.workspaceInfo,
+        this,
         target,
       );
     });
     return (this.directSubpackages as IBazelTreeItem[]).concat(targets);
   }
 
+  public getParent(): vscode.ProviderResult<IBazelTreeItem> {
+    return this.parent;
+  }
+
   public getLabel(): string {
     // If this is a top-level package, include the leading double-slash on the
     // label.
-    if (this.parentPackagePath.length === 0) {
+    const parentPackagePath = this.parent.getPackagePath();
+    if (parentPackagePath.length === 0) {
       return `//${this.packagePath}`;
     }
     // Otherwise, strip off the part of the package path that came from the
     // parent item (along with the slash).
-    return this.packagePath.substring(this.parentPackagePath.length + 1);
+    return this.packagePath.substring(parentPackagePath.length + 1);
   }
 
   public getIcon(): vscode.ThemeIcon {
@@ -106,5 +111,9 @@ export class BazelPackageTreeItem
       targets: [`//${this.packagePath}`],
       workspaceInfo: this.workspaceInfo,
     };
+  }
+
+  public getPackagePath(): string {
+    return this.packagePath;
   }
 }

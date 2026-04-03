@@ -14,7 +14,10 @@
 
 import * as vscode from "vscode";
 import { BazelWorkspaceInfo, BazelQuery } from "../bazel";
-import { getDefaultBazelExecutablePath } from "../extension/configuration";
+import {
+  getDefaultBazelExecutablePath,
+  getQueryExpression,
+} from "../extension/configuration";
 import { blaze_query } from "../protos";
 import { BazelPackageTreeItem } from "./bazel_package_tree_item";
 import { BazelTargetTreeItem } from "./bazel_target_tree_item";
@@ -24,9 +27,17 @@ import { Resources } from "../extension/resources";
 /** A tree item representing a workspace folder. */
 export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
   /**
-   * Initializes a new tree item with the given workspace folder.
+   * Stores all BazelPackageTreeItems in sorted order (by path length and in descending order).
+   * This is used to find the most specific match for a given file path.
+   */
+  private sortedPackageTreeItems: BazelPackageTreeItem[] = [];
+
+  /**
+   * Creates a new tree item with the given workspace folder.
+   * Tree gets initialized on demand.
    *
-   * @param workspaceFolder The workspace folder that the tree item represents.
+   * @param resources The resources for the extension.
+   * @param workspaceInfo The workspace information for the Bazel project.
    */
   constructor(
     private readonly resources: Resources,
@@ -41,16 +52,20 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     return this.getDirectoryItems();
   }
 
+  public getParent(): vscode.ProviderResult<IBazelTreeItem> {
+    return undefined;
+  }
+
   public getLabel(): string {
-    return this.workspaceInfo.workspaceFolder.name;
+    return this.workspaceInfo.workspaceFolder?.name ?? "Unknown Workspace";
   }
 
   public getIcon(): vscode.ThemeIcon {
     return vscode.ThemeIcon.Folder;
   }
 
-  public getTooltip(): string {
-    return this.workspaceInfo.workspaceFolder.uri.fsPath;
+  public getTooltip(): string | undefined {
+    return this.workspaceInfo.workspaceFolder?.uri.fsPath;
   }
 
   public getCommand(): vscode.Command | undefined {
@@ -59,6 +74,31 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
 
   public getContextValue(): string {
     return "workspaceFolder";
+  }
+
+  public getWorkspaceInfo(): BazelWorkspaceInfo {
+    return this.workspaceInfo;
+  }
+
+  public getPackagePath(): string {
+    return "";
+  }
+
+  /**
+   * Finds the package that contains the given relative file path.
+   * Uses the presorted list of package items for efficient lookups.
+   * Find the first package that is a prefix of the relative path
+   *
+   * @param relativeFilePath The filepath relative to the workspace folder.
+   * @returns The package tree item that contains the given relative file path,
+   * or undefined if no such package exists.
+   */
+  public getClosestPackageTreeItem(
+    relativeFilePath: string,
+  ): BazelPackageTreeItem | undefined {
+    return this.sortedPackageTreeItems.find((pkg) =>
+      relativeFilePath.startsWith(pkg.getPackagePath()),
+    );
   }
 
   /**
@@ -73,16 +113,15 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
    * common prefixes should be searched.
    * @param treeItems An array into which the tree items created at this level
    * in the tree will be pushed.
-   * @param parentPackagePath The parent package path of the items being created
-   * by this call, which is used to trim the package prefix from labels in
-   * the tree items.
+   * @param parent The parent tree item of the items being created by this call,
+   * which is used to trim the package prefix from labels in the tree items.
    */
   private buildPackageTree(
     packagePaths: string[],
     startIndex: number,
     endIndex: number,
     treeItems: BazelPackageTreeItem[],
-    parentPackagePath: string,
+    parent: IBazelTreeItem,
   ) {
     // We can assume that the caller has sorted the packages, so we scan them to
     // find groupings into which we should traverse more deeply. For example, if
@@ -128,8 +167,8 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
       const item = new BazelPackageTreeItem(
         this.resources,
         this.workspaceInfo,
+        parent,
         packagePath,
-        parentPackagePath,
       );
       treeItems.push(item);
       this.buildPackageTree(
@@ -137,7 +176,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
         groupStart + 1,
         groupEnd,
         item.directSubpackages,
-        packagePath,
+        item,
       );
 
       // Move our index to start looking for more groups in the next iteration
@@ -157,25 +196,21 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     // have a VS Code workspace that is pointed at a subpackage of a large
     // workspace without the performance penalty of querying the entire
     // workspace.
-    if (!this.workspaceInfo) {
-      return Promise.resolve([] as IBazelTreeItem[]);
+    if (!this.workspaceInfo || !this.workspaceInfo.workspaceFolder) {
+      return Promise.resolve([]);
     }
     const workspacePath = this.workspaceInfo.workspaceFolder.uri.fsPath;
     const packagePaths = await new BazelQuery(
       getDefaultBazelExecutablePath(),
       workspacePath,
-    ).queryPackages(
-      vscode.workspace
-        .getConfiguration("bazel.commandLine")
-        .get("queryExpression"),
-    );
+    ).queryPackages(getQueryExpression());
     const topLevelItems: BazelPackageTreeItem[] = [];
     this.buildPackageTree(
       packagePaths,
       0,
       packagePaths.length,
       topLevelItems,
-      "",
+      this,
     );
 
     // Now collect any targets in the directory also (this can fail since
@@ -191,10 +226,37 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
       return new BazelTargetTreeItem(
         this.resources,
         this.workspaceInfo,
+        this,
         target,
       );
     });
 
+    // Cache all packages after building the tree
+    this.collectAndSortPackageTreeItems(topLevelItems);
+
     return Promise.resolve((topLevelItems as IBazelTreeItem[]).concat(targets));
+  }
+
+  /**
+   * Collect, sort and store packages for later lookup
+   */
+  private collectAndSortPackageTreeItems(items: BazelPackageTreeItem[]): void {
+    this.sortedPackageTreeItems = [];
+    this.collectAllPackageTreeItems(items);
+    this.sortedPackageTreeItems.sort(
+      (a, b) => b.getPackagePath().length - a.getPackagePath().length,
+    );
+  }
+
+  /**
+   * Recursively collect all children of type BazelPackageTreeItem
+   */
+  private collectAllPackageTreeItems(items: BazelPackageTreeItem[]): void {
+    for (const item of items) {
+      this.sortedPackageTreeItems.push(item);
+      if (item.directSubpackages) {
+        this.collectAllPackageTreeItems(item.directSubpackages);
+      }
+    }
   }
 }

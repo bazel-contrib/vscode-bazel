@@ -13,8 +13,9 @@
 // limitations under the License.
 
 import * as fs from "fs";
+import * as path from "path";
 import * as vscode from "vscode";
-import * as which from "which";
+import which from "which";
 
 import { executeBuildifier, IExecutable } from "./buildifier";
 import { getDefaultBazelExecutablePath } from "../extension/configuration";
@@ -23,6 +24,7 @@ import {
   getBuildifierExecutablePath,
 } from "./buildifier_downloader";
 import { extensionContext } from "../extension/extension";
+import { logWarn } from "../extension/logger";
 
 /** The URL to load for buildifier's releases. */
 const BUILDTOOLS_RELEASES_URL =
@@ -58,6 +60,14 @@ async function getBuildifierExecutable(): Promise<IExecutable> {
   // Absolute path
   if (fs.existsSync(configValue)) {
     return { path: configValue, args: [] };
+  }
+  // Relative path from workspace
+  const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath;
+  if (workspacePath) {
+    const relativePath = path.join(workspacePath, configValue);
+    if (fs.existsSync(relativePath)) {
+      return { path: relativePath, args: [] };
+    }
   }
   // File on $PATH
   try {
@@ -99,7 +109,9 @@ export async function checkBuildifierIsAvailable() {
   // output parses.
   const { stdout } = await executeBuildifier(
     "",
-    ["--format=json", "--mode=check"],
+    // specify the --lint value even though off is the default in case
+    // a .buildifer.json with a different value is present
+    ["--format=json", "--mode=check", "--lint=off"],
     false,
   );
   try {
@@ -121,13 +133,19 @@ export async function checkBuildifierIsAvailable() {
  * to the user.
  */
 async function showBuildifierDownloadPrompt(reason: string) {
-  const item = await vscode.window.showWarningMessage(
+  const message =
     `${reason}; linting and formatting of Bazel files ` +
-      "will not be available. Please download it from " +
-      `${BUILDTOOLS_RELEASES_URL} and install it ` +
-      "on your system PATH or set its location in Settings.",
-    { title: "Download" },
-  );
+    "will not be available. Please download it from " +
+    `${BUILDTOOLS_RELEASES_URL} and install it ` +
+    "on your system PATH or set its location in Settings.";
+
+  // Log to output channel
+  logWarn(message, false);
+
+  // Show interactive message with Download button
+  const item = await vscode.window.showWarningMessage(message, {
+    title: "Download",
+  });
 
   if (item && item.title === "Download") {
     await vscode.commands.executeCommand(

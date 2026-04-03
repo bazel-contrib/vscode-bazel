@@ -1,3 +1,4 @@
+dist
 out
 node_modules
 .vscode-test
@@ -7,3 +8,4 @@ node_modules
 # tree.
 src/protos/protos.d.ts
 src/protos/protos.js
+MODULE.bazel.lock
