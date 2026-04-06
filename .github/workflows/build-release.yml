@@ -56,6 +56,11 @@ jobs:
         run: bazel build //...
         working-directory: ${{ github.workspace }}/test/bazel_workspace/
 
+      - name: Validate tool checksums
+        run: npm run validate-tool-checksums
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
       # Required for the test cases
       - name: Install system dependencies
         run: sudo apt install -y binutils rustfilt
