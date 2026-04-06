@@ -19,7 +19,6 @@ import { activateTaskProvider } from "../bazel";
 import {
   BuildifierDiagnosticsManager,
   BuildifierFormatProvider,
-  checkBuildifierIsAvailable,
 } from "../buildifier";
 import { BazelBuildCodeLensProvider } from "../codelens";
 import { BazelCompletionItemProvider } from "../completion-provider";
@@ -34,6 +33,7 @@ import { activateTesting } from "../test-explorer";
 import { activateWrapperCommands } from "./bazel_wrapper_commands";
 import { registerLogger, logInfo, logError, showOutputChannel } from "./logger";
 import { startLspClientFromCurrentConfig } from "../lsp/language-server-client";
+import { checkAvailabilityOfExternalTools } from "../external-tools/tool_manager";
 
 // Global reference to the workspace tree provider for testing
 declare global {
@@ -87,6 +87,10 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Set up LSP if enabled
   const config = vscode.workspace.getConfiguration("bazel");
+
+  // Check availability of external tools
+  await checkAvailabilityOfExternalTools(context);
+
   const lspEnabled = !!config.get<string>("lsp.command");
   if (lspEnabled) {
     context.subscriptions.push(
@@ -192,16 +196,6 @@ export async function activate(context: vscode.ExtensionContext) {
     // Test provider
     ...activateTesting(),
   );
-
-  // Notify the user if buildifier is not available on their path (or where
-  // their settings expect it).
-  // We intentionally do no `await` the completion because doing so would mean
-  // that VS Code considers the extension activation to be "in-flight" until the
-  // users closes the "Buildifier not found" notification. VS Code hence
-  // dislayed  never-finishing "Loading" indicator on top of the "Bazel Build
-  // Targets" tree view.
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  checkBuildifierIsAvailable();
 }
 
 /** Called when the extension is deactivated. */

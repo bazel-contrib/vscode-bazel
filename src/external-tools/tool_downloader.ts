@@ -40,7 +40,9 @@ export async function _verifyBinaryIntegrity(
     .digest("hex");
   const githubHash = asset.digest.replace("sha256:", "").toLowerCase();
 
-  logDebug(`Checksum verification for ${asset.name}: expected=${githubHash}, actual=${actualChecksum}`);
+  logDebug(
+    `Checksum verification for ${asset.name}: expected=${githubHash}, actual=${actualChecksum}`,
+  );
 
   if (actualChecksum !== githubHash) {
     // If verification fails, clean up the downloaded file
@@ -50,14 +52,15 @@ export async function _verifyBinaryIntegrity(
     } catch {
       // Ignore cleanup errors
     }
-    const errorMsg = `Security violation: ${asset.name} failed checksum verification.\n` +
-        `Expected: ${githubHash}\n` +
-        `Actual: ${actualChecksum}\n` +
-        `The downloaded binary may be corrupted or tampered with. File removed.`;
+    const errorMsg =
+      `Security violation: ${asset.name} failed checksum verification.\n` +
+      `Expected: ${githubHash}\n` +
+      `Actual: ${actualChecksum}\n` +
+      `The downloaded binary may be corrupted or tampered with. File removed.`;
     logError(errorMsg, true);
     throw new Error(errorMsg);
   }
-  
+
   logDebug(`Successfully verified binary integrity for ${asset.name}`);
 }
 
@@ -76,8 +79,10 @@ export async function downloadAndVerify(
   asset: GitHubAsset,
   destination: string,
 ): Promise<void> {
-  logInfo(`Starting download of ${asset.name} from ${asset.browser_download_url}`);
-  
+  logInfo(
+    `Starting download of ${asset.name} from ${asset.browser_download_url}`,
+  );
+
   try {
     const response = await fetch(asset.browser_download_url);
     if (!response.ok) {
@@ -88,7 +93,9 @@ export async function downloadAndVerify(
 
     const arrayBuffer = await response.arrayBuffer();
     await fs.writeFile(destination, Buffer.from(arrayBuffer));
-    logDebug(`Downloaded ${asset.name} to ${destination}, starting verification`);
+    logDebug(
+      `Downloaded ${asset.name} to ${destination}, starting verification`,
+    );
     await _verifyBinaryIntegrity(asset, destination);
     logInfo(`Successfully downloaded and verified ${asset.name}`);
   } catch (error) {
@@ -99,7 +106,11 @@ export async function downloadAndVerify(
     } catch {
       // Ignore cleanup errors
     }
-    logError(`Failed to download ${asset.name}: ${error instanceof Error ? error.message : String(error)}`, false, error);
+    logError(
+      `Failed to download ${asset.name}: ${error instanceof Error ? error.message : String(error)}`,
+      false,
+      error,
+    );
     throw error;
   }
 }
@@ -116,7 +127,9 @@ export class ToolDownloader {
       context.globalStorageUri.fsPath,
       "external-tools",
     );
-    logDebug(`Tool downloader initialized with tools directory: ${this.toolsDir}`);
+    logDebug(
+      `Tool downloader initialized with tools directory: ${this.toolsDir}`,
+    );
     const { config } = loadToolConfig();
     this.toolConfig = config;
   }
@@ -127,7 +140,7 @@ export class ToolDownloader {
    */
   async downloadExternalTools(toolName: string): Promise<string> {
     logDebug(`Starting download process for tool: ${toolName}`);
-    
+
     const config = this.toolConfig[toolName];
     if (!config) {
       throw new Error(`Unknown tool: ${toolName}`);
@@ -176,7 +189,7 @@ export class ToolDownloader {
    */
   async getToolPath(toolName: string): Promise<string | null> {
     logDebug(`Checking if tool exists locally: ${toolName}`);
-    
+
     const config = this.toolConfig[toolName];
     if (!config) {
       logDebug(`No configuration found for tool: ${toolName}`);

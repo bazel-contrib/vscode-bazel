@@ -33,7 +33,9 @@ export async function getGitHubRelease(
   // Use the direct release-by-tag endpoint
   const apiUrl = `https://api.github.com/repos/${repository}/releases/tags/${version}`;
 
-  logDebug(`Fetching GitHub release info for ${repository}@${version} from ${apiUrl}`);
+  logDebug(
+    `Fetching GitHub release info for ${repository}@${version} from ${apiUrl}`,
+  );
 
   try {
     const headers: Record<string, string> = {
@@ -57,7 +59,9 @@ export async function getGitHubRelease(
     }
 
     const release = (await response.json()) as GitHubRelease;
-    logDebug(`Successfully fetched release info for ${repository}@${version} with ${release.assets.length} assets`);
+    logDebug(
+      `Successfully fetched release info for ${repository}@${version} with ${release.assets.length} assets`,
+    );
     return release;
   } catch (error) {
     const errorMsg = `Failed to fetch release info for ${repository}@${version}: ${error instanceof Error ? error.message : String(error)}`;

@@ -32,7 +32,9 @@ export function loadToolConfig(): {
     path.join(__dirname.replace("/dist", ""), "external-tools-config.json"), // src location for extension
   ];
 
-  logDebug(`Attempting to load tool configuration from paths: ${configPaths.join(", ")}`);
+  logDebug(
+    `Attempting to load tool configuration from paths: ${configPaths.join(", ")}`,
+  );
 
   for (const configPath of configPaths) {
     try {
@@ -42,7 +44,9 @@ export function loadToolConfig(): {
       logDebug(`Successfully loaded tool configuration from: ${configPath}`);
       return { config, path: configPath };
     } catch (error) {
-      logDebug(`Failed to load config from ${configPath}: ${error instanceof Error ? error.message : String(error)}`);
+      logDebug(
+        `Failed to load config from ${configPath}: ${error instanceof Error ? error.message : String(error)}`,
+      );
       // Continue to next path
       continue;
     }

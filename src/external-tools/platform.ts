@@ -29,13 +29,16 @@ export function detectPlatform(): Platform {
   let detectedPlatform: Platform;
   switch (platform) {
     case "win32":
-      detectedPlatform = arch === "arm64" ? Platform.WINDOWS_ARM64 : Platform.WINDOWS_X64;
+      detectedPlatform =
+        arch === "arm64" ? Platform.WINDOWS_ARM64 : Platform.WINDOWS_X64;
       break;
     case "linux":
-      detectedPlatform = arch === "arm64" ? Platform.LINUX_ARM64 : Platform.LINUX_X64;
+      detectedPlatform =
+        arch === "arm64" ? Platform.LINUX_ARM64 : Platform.LINUX_X64;
       break;
     case "darwin":
-      detectedPlatform = arch === "arm64" ? Platform.DARWIN_ARM64 : Platform.DARWIN_X64;
+      detectedPlatform =
+        arch === "arm64" ? Platform.DARWIN_ARM64 : Platform.DARWIN_X64;
       break;
     default:
       const errorMsg = `Unsupported platform: ${platform}-${arch}`;
