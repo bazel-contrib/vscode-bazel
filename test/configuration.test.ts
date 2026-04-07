@@ -1,6 +1,9 @@
 import * as assert from "assert";
 import * as vscode from "vscode";
-import { getConfigurationWithDefault } from "../src/extension/configuration";
+import {
+  getConfigurationWithDefault,
+  getCompletionQueryScope,
+} from "../src/extension/configuration";
 
 describe("Configuration", () => {
   describe("getConfigurationWithDefault", () => {
@@ -63,6 +66,31 @@ describe("Configuration", () => {
         "startupOptions",
       );
       assert.deepStrictEqual(result, ["--option"]);
+    });
+  });
+
+  describe("getCompletionQueryScope", () => {
+    afterEach(async () => {
+      await vscode.workspace
+        .getConfiguration("bazel.completion")
+        .update("queryScope", undefined, vscode.ConfigurationTarget.Workspace);
+    });
+
+    it("should return empty array by default", () => {
+      const result = getCompletionQueryScope();
+      assert.deepStrictEqual(result, []);
+    });
+
+    it("should return configured patterns", async () => {
+      await vscode.workspace
+        .getConfiguration("bazel.completion")
+        .update(
+          "queryScope",
+          ["//src/...", "//lib/..."],
+          vscode.ConfigurationTarget.Workspace,
+        );
+      const result = getCompletionQueryScope();
+      assert.deepStrictEqual(result, ["//src/...", "//lib/..."]);
     });
   });
 });
