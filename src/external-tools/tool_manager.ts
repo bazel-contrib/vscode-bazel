@@ -20,9 +20,10 @@ import * as child_process from "child_process";
 import which from "which";
 
 import { ToolDownloader } from "./tool_downloader";
-import { loadToolConfig } from "./config";
-import { ToolConfig } from "./types";
+import { findToolConfig, loadToolsConfig } from "./config";
+import { ToolConfig, ToolsConfig } from "./types";
 import { logInfo, logDebug, logWarn, logError } from "../extension/logger";
+import { executeBuildifier } from "../buildifier";
 
 const execFile = util.promisify(child_process.execFile);
 
@@ -36,13 +37,20 @@ const execFile = util.promisify(child_process.execFile);
 export class ExternalToolsManager {
   private readonly toolLocations = new Map<string, string>();
   private readonly toolDownloader: ToolDownloader;
-  private readonly toolConfig: ToolConfig;
+  private readonly toolsConfig: ToolsConfig;
+  private readonly downloadDir: string;
 
   constructor(private readonly context: vscode.ExtensionContext) {
-    this.toolConfig = loadToolConfig().config;
-    this.toolDownloader = new ToolDownloader(context);
+    this.toolsConfig = loadToolsConfig().config;
+    this.downloadDir = path.join(
+      context.globalStorageUri.fsPath,
+      "external-tools",
+    );
+    this.toolDownloader = new ToolDownloader(
+      this.downloadDir,
+      this.toolsConfig,
+    );
 
-    // Ensure tools directory is in PATH
     this.ensureToolsDirectoryInPath();
   }
 
@@ -50,12 +58,8 @@ export class ExternalToolsManager {
    * Ensures the tools directory is added to the process PATH.
    */
   private ensureToolsDirectoryInPath(): void {
-    const toolsDir = path.join(
-      this.context.globalStorageUri.fsPath,
-      "external-tools",
-    );
-    if (!process.env.PATH?.includes(toolsDir)) {
-      process.env.PATH = `${toolsDir}${path.delimiter}${process.env.PATH}`;
+    if (!process.env.PATH?.includes(this.downloadDir)) {
+      process.env.PATH = `${this.downloadDir}${path.delimiter}${process.env.PATH}`;
     }
   }
 
@@ -79,26 +83,25 @@ export class ExternalToolsManager {
    * Validates that a tool is working correctly by running it with basic arguments.
    */
   private async validateTool(
-    toolName: string,
+    toolKey: string,
     executablePath: string,
   ): Promise<boolean> {
-    logDebug(`Validating tool: ${toolName} at ${executablePath}`);
+    logDebug(`Validating tool: ${toolKey} at ${executablePath}`);
 
     try {
-      switch (toolName) {
+      switch (toolKey) {
         case "Buildifier":
           logDebug(`Testing buildifier with JSON output format`);
-          // Test buildifier with empty input and check for JSON output
-          const { stdout } = await execFile(
-            executablePath,
+          const { stdout } = await executeBuildifier(
+            "",
+            // specify the --lint value even though off is the default in case
+            // a .buildifer.json with a different value is present
             ["--format=json", "--mode=check", "--lint=off"],
-            { input: "" } as any,
+            false,
+            executablePath,
           );
-          const stdoutStr =
-            typeof stdout === "string" ? stdout : stdout.toString();
-
           try {
-            JSON.parse(stdoutStr); // Will throw if not valid JSON
+            JSON.parse(stdout); // Will throw if not valid JSON
             logDebug(
               `Buildifier validation successful - JSON output supported`,
             );
@@ -126,12 +129,12 @@ export class ExternalToolsManager {
           return true;
 
         default:
-          logDebug(`No validation method available for tool: ${toolName}`);
+          logDebug(`No validation method available for tool: ${toolKey}`);
           return false;
       }
     } catch (error) {
       logError(
-        `Tool validation failed for ${toolName} at ${executablePath}: ${error instanceof Error ? error.message : String(error)}`,
+        `Tool validation failed for ${toolKey} at ${executablePath}: ${error instanceof Error ? error.message : String(error)}`,
         false,
         error,
       );
@@ -142,14 +145,9 @@ export class ExternalToolsManager {
   /**
    * Gets the configured path for a tool from VSCode settings.
    */
-  private getConfiguredPath(toolName: string): string | null {
-    const config = this.toolConfig[toolName];
-    if (!config) {
-      return null;
-    }
-
+  private getConfiguredPath(toolConfig: ToolConfig): string | null {
     const vscodeConfig = vscode.workspace.getConfiguration("bazel");
-    return vscodeConfig.get<string>(config.configKey) || null;
+    return vscodeConfig.get<string>(toolConfig.configKey) || null;
   }
 
   /**
@@ -158,33 +156,35 @@ export class ExternalToolsManager {
   private async findTool(toolName: string): Promise<string | null> {
     logDebug(`Finding tool: ${toolName}`);
 
-    const config = this.toolConfig[toolName];
-    if (!config) {
-      logDebug(`No configuration found for tool: ${toolName}`);
-      return null;
-    }
+    // Find the configuration entry for this tool name
+    const { config, configKey } = findToolConfig(toolName, this.toolsConfig);
+    logDebug(`Found configuration for ${toolName} using key: ${configKey}`);
 
     // STAGE 1: Get Tool Name
-    const configuredPath = this.getConfiguredPath(toolName);
+    const configuredPath = this.getConfiguredPath(config);
     const executableNameOrPath = configuredPath || config.executableName;
     logDebug(
       `Using executable path/name: ${executableNameOrPath}${configuredPath ? " (from settings)" : " (from config)"}`,
     );
 
-    // STAGE 2: Find Executable
-    const executablePath = await this.findExecutable(
-      toolName,
-      executableNameOrPath,
-    );
+    // STAGE 2: Find or Download Executable
+    let executablePath: string | null = null;
+    executablePath = await this.findExecutable(executableNameOrPath);
+    if (!executablePath) {
+      logDebug(`Prompting to download or configure tool: ${toolName}`);
+      executablePath = await this.promptDownloadOrConfigureTool(
+        config,
+        `${toolName} was not found`,
+      );
+    }
     if (!executablePath) {
       logDebug(`Could not find executable for tool: ${toolName}`);
       return null;
     }
-
     logDebug(`Found executable for ${toolName}: ${executablePath}`);
 
     // STAGE 3: Validate Executable
-    if (await this.validateTool(toolName, executablePath)) {
+    if (await this.validateTool(configKey, executablePath)) {
       logDebug(`Tool validation successful for: ${toolName}`);
       return executablePath;
     } else {
@@ -192,7 +192,11 @@ export class ExternalToolsManager {
       logDebug(
         `Tool validation failed for: ${toolName}, prompting for manual configuration`,
       );
-      await this.promptManualConfiguration(toolName, "Tool validation failed");
+      await this.promptManualConfiguration(
+        toolName,
+        config,
+        "Tool validation failed",
+      );
       return null;
     }
   }
@@ -201,14 +205,13 @@ export class ExternalToolsManager {
    * Finds executable path using various strategies.
    */
   private async findExecutable(
-    toolName: string,
     executableNameOrPath: string,
   ): Promise<string | null> {
-    logDebug(`Finding executable for ${toolName}: ${executableNameOrPath}`);
+    logDebug(`Finding executable: ${executableNameOrPath}`);
 
     // 1. Handle Bazel targets (starting with @)
     if (executableNameOrPath.startsWith("@")) {
-      logDebug(`Found Bazel target for ${toolName}: ${executableNameOrPath}`);
+      logDebug(`Found Bazel target: ${executableNameOrPath}`);
       return executableNameOrPath;
     }
 
@@ -243,14 +246,7 @@ export class ExternalToolsManager {
       logDebug(`Executable not found in system PATH: ${executableNameOrPath}`);
     }
 
-    // 4. Offer to download the tool
-    logDebug(`Prompting to download or configure tool: ${toolName}`);
-    const downloadedToolPath = await this.promptDownloadOrConfigureTool(
-      toolName,
-      `${toolName} was not found`,
-    );
-
-    return downloadedToolPath;
+    return null;
   }
 
   /**
@@ -260,16 +256,10 @@ export class ExternalToolsManager {
    * @returns The path to the tool if successfully resolved, null otherwise.
    */
   private async promptDownloadOrConfigureTool(
-    toolName: string,
+    toolConfig: ToolConfig,
     reason: string,
   ): Promise<string | null> {
-    const toolConfig = this.toolConfig[toolName];
-    if (!toolConfig) {
-      throw new Error(`Unknown tool: ${toolName}`);
-    }
-
-    const toolDisplayName = toolName;
-    const message = `${reason}. Would you like to download ${toolDisplayName} automatically?`;
+    const message = `${reason}. Would you like to download ${toolConfig.repository} automatically?`;
 
     const options: { title: string; action: string }[] = [
       { title: "Download", action: "download" },
@@ -293,9 +283,9 @@ export class ExternalToolsManager {
 
     switch (selectedOption.action) {
       case "download":
-        return await this.downloadAndConfigureTool(toolName);
+        return await this.downloadAndConfigureTool(toolConfig);
       case "configure":
-        await this.openSettingsForTool(toolName);
+        await this.openSettingsForTool(toolConfig);
         return null;
       case "cancel":
         return null;
@@ -306,57 +296,28 @@ export class ExternalToolsManager {
 
   /**
    * Downloads and configures a tool.
-   * @param toolName The name of the tool to download.
+   * @param toolConfig The tool configuration to configure.
    * @returns The path to the downloaded tool or null if failed.
    */
   private async downloadAndConfigureTool(
-    toolName: string,
+    toolConfig: ToolConfig,
   ): Promise<string | null> {
     try {
-      // Show progress notification
-      const toolConfig = this.toolConfig[toolName];
-      if (!toolConfig) {
-        throw new Error(`Unknown tool: ${toolName}`);
-      }
+      const toolPath =
+        await this.toolDownloader.downloadExternalTool(toolConfig);
 
-      const toolDisplayName = toolName;
-      await vscode.window.withProgress(
-        {
-          location: vscode.ProgressLocation.Notification,
-          title: `Downloading ${toolDisplayName}`,
-          cancellable: false,
-        },
-        async (progress) => {
-          progress.report({
-            increment: 0,
-            message: "Initializing download...",
-          });
+      // Update configuration to use downloaded path
+      await this.updateConfigurationForTool(toolConfig, toolPath);
 
-          const toolPath =
-            await this.toolDownloader.downloadExternalTools(toolName);
-
-          progress.report({ increment: 100, message: "Download complete!" });
-
-          // Update configuration to use downloaded path
-          await this.updateConfigurationForTool(toolName, toolPath);
-
-          return toolPath;
-        },
-      );
-
-      // Show success message
-      const downloadedToolPath =
-        await this.toolDownloader.getToolPath(toolName);
-      await vscode.window.showInformationMessage(
-        `${toolDisplayName} downloaded successfully and configured.`,
-      );
-
-      return downloadedToolPath;
+      return toolPath;
     } catch (error) {
-      const toolConfig = this.toolConfig[toolName];
-      const toolDisplayName = toolName;
-      await vscode.window.showErrorMessage(
-        `Failed to download ${toolDisplayName}: ${error}`,
+      vscode.window.showErrorMessage(
+        `Failed to download ${toolConfig.repository}: ${error}`,
+      );
+      await this.promptManualConfiguration(
+        toolConfig.executableName,
+        toolConfig,
+        "Tool download or validation failed",
       );
       return null;
     }
@@ -364,14 +325,9 @@ export class ExternalToolsManager {
 
   /**
    * Opens VSCode settings for specific tool configuration.
-   * @param toolName The name of the tool to configure.
+   * @param toolConfig The tool configuration to configure.
    */
-  private async openSettingsForTool(toolName: string): Promise<void> {
-    const toolConfig = this.toolConfig[toolName];
-    if (!toolConfig) {
-      throw new Error(`Unknown tool: ${toolName}`);
-    }
-
+  private async openSettingsForTool(toolConfig: ToolConfig): Promise<void> {
     const settingKey = `bazel.${toolConfig.configKey}`;
     await vscode.commands.executeCommand(
       "workbench.action.openSettings",
@@ -381,22 +337,20 @@ export class ExternalToolsManager {
 
   /**
    * Updates VSCode configuration to use the downloaded tool path.
-   * @param toolName The name of the tool that was downloaded.
+   * @param toolConfig The tool configuration to update.
    * @param toolPath The path to the downloaded tool.
    */
   private async updateConfigurationForTool(
-    toolName: string,
+    toolConfig: ToolConfig,
     toolPath: string,
   ): Promise<void> {
-    const toolConfig = this.toolConfig[toolName];
-    if (!toolConfig) {
-      throw new Error(`Unknown tool: ${toolName}`);
-    }
-
-    const configKey = toolConfig.configKey;
-    const config = vscode.workspace.getConfiguration("bazel");
-
-    await config.update(configKey, toolPath, vscode.ConfigurationTarget.Global);
+    await vscode.workspace
+      .getConfiguration("bazel")
+      .update(
+        toolConfig.configKey,
+        toolPath,
+        vscode.ConfigurationTarget.Global,
+      );
   }
 
   /**
@@ -404,26 +358,23 @@ export class ExternalToolsManager {
    */
   private async promptManualConfiguration(
     toolName: string,
+    toolConfig: ToolConfig,
     reason: string,
   ): Promise<void> {
-    const config = this.toolConfig[toolName];
-    if (!config) {
-      return;
-    }
-    const message = `${reason}. Please manually configure path to ${toolName} in settings.`;
+    const message = `${reason}. Please manually configure the path to ${toolName} executable in settings.`;
     const choice = await vscode.window.showWarningMessage(
       message,
       "Open Settings",
     );
     if (choice === "Open Settings") {
-      await this.openSettingsForTool(toolName);
+      await this.openSettingsForTool(toolConfig);
     }
   }
 
   /**
    * Gets the path to a tool, using cached location if available.
    */
-  public async getToolPath(toolName: string): Promise<string | null> {
+  public async getToolPathByName(toolName: string): Promise<string | null> {
     logDebug(`Getting tool path for: ${toolName}`);
 
     // Check cache first
@@ -456,7 +407,7 @@ export class ExternalToolsManager {
   ): Promise<{ stdout: string; stderr: string }> {
     logDebug(`Executing tool: ${toolName} with args: [${args.join(", ")}]`);
 
-    const toolPath = await this.getToolPath(toolName);
+    const toolPath = await this.getToolPathByName(toolName);
     if (!toolPath) {
       const errorMsg = `${toolName} is not available`;
       logError(errorMsg, true);
@@ -469,7 +420,7 @@ export class ExternalToolsManager {
 
     if (toolPath.startsWith("@")) {
       const targetName = toolPath;
-      executable = (await this.getToolPath("Bazelisk")) || "bazel";
+      executable = await this.getToolPathByName("bazel");
       execArgs = ["run", targetName, "--", ...args];
       logDebug(
         `Executing Bazel target: ${targetName} using bazelisk: ${executable}`,
@@ -501,50 +452,25 @@ export class ExternalToolsManager {
    * Checks availability of all external tools.
    */
   public async checkAvailabilityOfExternalTools(): Promise<void> {
-    logDebug(`Checking availability of all external tools`);
-    const toolKeys = Object.keys(this.toolConfig) as string[];
+    logInfo(`Checking availability of all external tools`);
+    const toolKeys = Object.keys(this.toolsConfig) as string[];
 
-    for (const toolKey of toolKeys) {
-      const toolName = this.toolConfig[toolKey].executableName;
-      logDebug(`Checking availability of: ${toolName}`);
-      try {
-        await this.getToolPath(toolName);
-        logDebug(`Tool ${toolName} is available`);
-      } catch (error) {
-        logWarn(
-          `Failed to check availability of ${toolName}: ${error instanceof Error ? error.message : String(error)}`,
-          false,
-        );
-      }
-    }
+    await Promise.all(
+      toolKeys.map(async (toolKey) => {
+        const toolName = this.toolsConfig[toolKey].executableName;
+        logInfo(`Checking availability of: ${toolKey}`);
+        try {
+          const toolPath = await this.getToolPathByName(toolName);
+          logInfo(`Tool ${toolName} is available at: ${toolPath}`);
+        } catch (error) {
+          logWarn(
+            `Failed to check availability of ${toolName}: ${error instanceof Error ? error.message : String(error)}`,
+            false,
+          );
+        }
+      }),
+    );
 
     logDebug(`Completed availability check for all external tools`);
   }
-}
-
-/**
- * Global instance of the external tools manager.
- */
-let externalToolsManager: ExternalToolsManager | null = null;
-
-/**
- * Gets or creates the global external tools manager instance.
- */
-export function getExternalToolsManager(
-  context: vscode.ExtensionContext,
-): ExternalToolsManager {
-  if (!externalToolsManager) {
-    externalToolsManager = new ExternalToolsManager(context);
-  }
-  return externalToolsManager;
-}
-
-/**
- * Checks availability of external tools using the global manager.
- */
-export async function checkAvailabilityOfExternalTools(
-  context: vscode.ExtensionContext,
-): Promise<void> {
-  const manager = getExternalToolsManager(context);
-  await manager.checkAvailabilityOfExternalTools();
 }

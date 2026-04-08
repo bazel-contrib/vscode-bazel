@@ -14,7 +14,7 @@
 
 import * as path from "path";
 import { logDebug, logError } from "../extension/logger";
-import { ToolConfig } from "./types";
+import { ToolsConfig } from "./types";
 
 /**
  * Attempts to load tool configuration from multiple possible paths to support
@@ -23,8 +23,8 @@ import { ToolConfig } from "./types";
  * @returns Object containing loaded configuration and the successful path
  * @throws Error if no valid configuration file found in any location
  */
-export function loadToolConfig(): {
-  config: ToolConfig;
+export function loadToolsConfig(): {
+  config: ToolsConfig;
   path: string;
 } {
   // List of paths to try in order
@@ -55,4 +55,21 @@ export function loadToolConfig(): {
   const errorMsg = `Failed to load tool configuration from any of these paths: ${configPaths.join(", ")}`;
   logError(errorMsg, true);
   throw new Error(errorMsg);
+}
+
+/**
+ * Finds tool configuration by name or executable name.
+ * @param toolNameOrKey The tool name or executable name to search for.
+ * @returns Object containing the config and the config key, or null if not found.
+ */
+export function findToolConfig(
+  toolNameOrKey: string,
+  toolsConfig: ToolsConfig,
+): { config: any; configKey: string } {
+  for (const [key, value] of Object.entries(toolsConfig)) {
+    if (value.executableName === toolNameOrKey || key === toolNameOrKey) {
+      return { config: value, configKey: key };
+    }
+  }
+  throw new Error(`Unknown tool: ${toolNameOrKey}`);
 }

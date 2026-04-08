@@ -33,11 +33,12 @@ import { activateTesting } from "../test-explorer";
 import { activateWrapperCommands } from "./bazel_wrapper_commands";
 import { registerLogger, logInfo, logError, showOutputChannel } from "./logger";
 import { startLspClientFromCurrentConfig } from "../lsp/language-server-client";
-import { checkAvailabilityOfExternalTools } from "../external-tools/tool_manager";
+import { ExternalToolsManager } from "../external-tools/tool_manager";
 
 // Global reference to the workspace tree provider for testing
 declare global {
   var bazelWorkspaceTreeProvider: BazelWorkspaceTreeProvider | undefined;
+  var externalToolsManager: ExternalToolsManager | undefined;
 }
 
 // Clean way to access the provider for testing
@@ -52,6 +53,18 @@ export function storeWorkspaceTreeProviderForTesting(
   provider: BazelWorkspaceTreeProvider,
 ) {
   globalThis.bazelWorkspaceTreeProvider = provider;
+}
+
+/**
+ * Gets or creates the global external tools manager instance.
+ */
+export function getExternalToolsManager(
+  context: vscode.ExtensionContext,
+): ExternalToolsManager {
+  if (!globalThis.externalToolsManager) {
+    globalThis.externalToolsManager = new ExternalToolsManager(context);
+  }
+  return globalThis.externalToolsManager;
 }
 
 /**
@@ -88,9 +101,10 @@ export async function activate(context: vscode.ExtensionContext) {
   // Set up LSP if enabled
   const config = vscode.workspace.getConfiguration("bazel");
 
-  // Check availability of external tools
-  await checkAvailabilityOfExternalTools(context);
+  // Check availability of external tools (don't wait for it as it involves user prompts)
+  void getExternalToolsManager(context).checkAvailabilityOfExternalTools();
 
+  // Set up LSP if enabled
   const lspEnabled = !!config.get<string>("lsp.command");
   if (lspEnabled) {
     context.subscriptions.push(

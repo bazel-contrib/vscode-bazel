@@ -27,16 +27,18 @@
  * - checksums: Platform-to-SHA256 checksum mapping for integrity verification
  */
 export interface ToolConfig {
-  [toolName: string]: {
-    repository: string;
-    version: string;
-    configKey: string;
-    assets: { [key in Platform]: string };
-    executableName: string;
-    checksums: {
-      [platform: string]: string;
-    };
+  repository: string;
+  version: string;
+  configKey: string;
+  assets: { [key in Platform]: string };
+  executableName: string;
+  checksums: {
+    [platform: string]: string;
   };
+}
+
+export interface ToolsConfig {
+  [toolKey: string]: ToolConfig;
 }
 
 /**

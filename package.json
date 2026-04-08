@@ -514,7 +514,7 @@
         "build:debugadapter": "esbuild src/debug-adapter/client.ts --bundle --outfile=dist/debug-adapter-client.js --external:vscode --format=cjs --platform=node --minify",
         "build:extension": "esbuild src/extension/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify",
         "build:tests": "esbuild test/**/*.test.ts --bundle --outdir=dist/test --external:vscode --format=cjs --platform=node --sourcemap",
-        "build:checksum-validator": "esbuild src/external-tools/validate_tool_checksums.ts --bundle --outfile=dist/validate_tool_checksums.js --format=cjs --platform=node",
+        "build:checksum-validator": "esbuild src/external-tools/validate_tool_checksums.ts --bundle --outfile=dist/validate_tool_checksums.js --external:vscode --format=cjs --platform=node",
         "build": "npm run build:debugadapter && npm run build:extension",
         "prebuild": "./scripts/prepare.sh",
         "pretest": "npm run build",

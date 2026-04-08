@@ -13,8 +13,8 @@ import * as path from "path";
 import * as os from "os";
 import { downloadAndVerify } from "./tool_downloader";
 import { findMatchingGithubAsset, getGitHubRelease } from "./github";
-import { GitHubRelease, Platform, ToolConfig } from "./types";
-import { loadToolConfig } from "./config";
+import { GitHubRelease, Platform, ToolConfig, ToolsConfig } from "./types";
+import { loadToolsConfig } from "./config";
 
 interface ValidationOptions {
   shouldDownload: boolean;
@@ -62,7 +62,7 @@ function _parseArguments(): ValidationOptions {
  */
 async function validateToolChecksumsMain(): Promise<void> {
   const options = _parseArguments();
-  const { config: toolConfig, path: configPath } = loadToolConfig();
+  const { config: toolsConfig, path: configPath } = loadToolsConfig();
 
   console.log(`Using tool config file: ${configPath}`);
 
@@ -72,7 +72,7 @@ async function validateToolChecksumsMain(): Promise<void> {
 
   try {
     const { configUpdated, hasErrors } = await validateAllToolChecksums(
-      toolConfig,
+      toolsConfig,
       options,
     );
 
@@ -82,7 +82,7 @@ async function validateToolChecksumsMain(): Promise<void> {
     }
 
     if (configUpdated) {
-      writeUpdatedToolConfigFile(configPath, toolConfig);
+      writeUpdatedToolConfigFile(configPath, toolsConfig);
       console.log(
         "⚠️  Changes were made - please commit the updated checksums",
       );
@@ -102,19 +102,19 @@ async function validateToolChecksumsMain(): Promise<void> {
  * Validate all tool checksums and return validation result.
  */
 async function validateAllToolChecksums(
-  toolConfig: any,
+  toolsConfig: ToolsConfig,
   options: ValidationOptions,
 ): Promise<ValidationResult> {
   let configUpdated = false;
   let hasErrors = false;
-  const toolNames = Object.keys(toolConfig);
-  console.log(`\n🔍 Validating ${toolNames.length} tools...`);
+  const toolKeys = Object.keys(toolsConfig);
+  console.log(`\n🔍 Validating ${toolKeys.length} tools...`);
 
-  for (const toolName of toolNames) {
+  for (const toolKey of toolKeys) {
     try {
       const result = await validateSingleToolChecksum(
-        toolName,
-        toolConfig,
+        toolKey,
+        toolsConfig[toolKey],
         options,
       );
       configUpdated = configUpdated || result.configUpdated;
@@ -122,12 +122,12 @@ async function validateAllToolChecksums(
         hasErrors = true;
       }
       if (result.configUpdated) {
-        console.log(`  📝 ${toolName}: Configuration updated`);
+        console.log(`  📝 ${toolKey}: Configuration updated`);
       } else if (result.errors.length === 0) {
-        console.log(`  ✅ ${toolName}: All checksums up to date`);
+        console.log(`  ✅ ${toolKey}: All checksums up to date`);
       }
     } catch (error) {
-      console.error(`\n❌ Failed to validate ${toolName}:`);
+      console.error(`\n❌ Failed to validate ${toolKey}:`);
       console.error(error instanceof Error ? error.message : String(error));
       hasErrors = true;
     }
@@ -152,26 +152,25 @@ async function validateAllToolChecksums(
  */
 async function validateSingleToolChecksum(
   toolName: string,
-  toolConfig: any,
+  toolConfig: ToolConfig,
   options: ValidationOptions,
 ): Promise<{ configUpdated: boolean; errors: Error[] }> {
   console.log(`\n=== Validating ${toolName} ===`);
-  const tool = toolConfig[toolName];
   let configUpdated = false;
   const errors: Error[] = [];
   try {
     // Get release information from GitHub
     console.log(
-      `  🌐 Fetching release info for ${tool.repository}@${tool.version}...`,
+      `  🌐 Fetching release info for ${toolConfig.repository}@${toolConfig.version}...`,
     );
     const release = await getGitHubRelease(
-      tool.repository,
-      tool.version,
+      toolConfig.repository,
+      toolConfig.version,
       options.githubToken,
     );
 
     // Process all platforms for this tool
-    const supportedPlatforms = Object.keys(tool.assets);
+    const supportedPlatforms = Object.keys(toolConfig.assets);
     console.log(
       `  📦 Checking ${supportedPlatforms.length} platforms: ${supportedPlatforms.join(", ")}`,
     );
@@ -238,9 +237,8 @@ export async function validateSingleAssetChecksum(
     update_config?: boolean;
   } = {},
 ): Promise<{ configUpdated: boolean; errors: Error[] }> {
-  const tool = toolConfig[toolName];
-  const filename = tool.assets[platform];
-  const expectedChecksum = tool.checksums[platform];
+  const filename = toolConfig.assets[platform];
+  const expectedChecksum = toolConfig.checksums[platform];
   const asset = findMatchingGithubAsset(release.assets, filename);
 
   // Error checking
@@ -272,7 +270,7 @@ export async function validateSingleAssetChecksum(
   if (expectedChecksum !== githubHash) {
     if (options.update_config) {
       console.log(`  🔄 Updating checksum for ${toolName} ${platform}`);
-      tool.checksums[platform] = githubHash;
+      toolConfig.checksums[platform] = githubHash;
       return { configUpdated: true, errors: [] };
     } else {
       // Treat as validation error
@@ -307,10 +305,13 @@ export async function validateSingleAssetChecksum(
  * operation fails, the original file remains unchanged.
  *
  * @param configPath Path to the configuration file to update
- * @param toolConfig Updated tool configuration object
+ * @param toolsConfig Updated tool configuration object
  */
-function writeUpdatedToolConfigFile(configPath: string, toolConfig: any): void {
-  fs.writeFileSync(configPath, JSON.stringify(toolConfig, null, 2));
+function writeUpdatedToolConfigFile(
+  configPath: string,
+  toolsConfig: ToolsConfig,
+): void {
+  fs.writeFileSync(configPath, JSON.stringify(toolsConfig, null, 2));
   console.log(`\n📝 Tool configuration updated: ${configPath}`);
 }
 

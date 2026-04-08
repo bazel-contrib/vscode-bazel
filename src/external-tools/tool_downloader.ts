@@ -17,9 +17,9 @@ import * as path from "path";
 import * as vscode from "vscode";
 import * as crypto from "crypto";
 import { logInfo, logDebug, logError } from "../extension/logger";
-import { ToolConfig, GitHubAsset } from "./types";
+import { ToolConfig, ToolsConfig, GitHubAsset } from "./types";
 import { detectPlatform } from "./platform";
-import { loadToolConfig } from "./config";
+import { findToolConfig, loadToolsConfig } from "./config";
 import { getGitHubRelease, findMatchingGithubAsset } from "./github";
 
 /**
@@ -120,37 +120,27 @@ export async function downloadAndVerify(
  */
 export class ToolDownloader {
   private readonly toolsDir: string;
-  private readonly toolConfig: ToolConfig;
+  private readonly toolsConfig: ToolsConfig;
 
-  constructor(private readonly context: vscode.ExtensionContext) {
-    this.toolsDir = path.join(
-      context.globalStorageUri.fsPath,
-      "external-tools",
-    );
-    logDebug(
-      `Tool downloader initialized with tools directory: ${this.toolsDir}`,
-    );
-    const { config } = loadToolConfig();
-    this.toolConfig = config;
+  constructor(toolsDir: string, toolsConfig: ToolsConfig) {
+    this.toolsDir = toolsDir;
+    this.toolsConfig = toolsConfig;
   }
 
   /**
    * Downloads a tool from GitHub releases.
-   * @param toolName The name of the tool to download.
+   * @param toolConfig The tool configuration to download.
    */
-  async downloadExternalTools(toolName: string): Promise<string> {
-    logDebug(`Starting download process for tool: ${toolName}`);
-
-    const config = this.toolConfig[toolName];
-    if (!config) {
-      throw new Error(`Unknown tool: ${toolName}`);
-    }
+  async downloadExternalTool(toolConfig: ToolConfig): Promise<string> {
+    logDebug(`Starting download process for tool: ${toolConfig.repository}`);
 
     const platform = detectPlatform();
-    const assetFilename = config.assets[platform];
+    const assetFilename = toolConfig.assets[platform];
 
     if (!assetFilename) {
-      throw new Error(`Unsupported platform ${platform} for tool ${toolName}`);
+      throw new Error(
+        `Unsupported platform ${platform} for tool ${toolConfig.executableName}`,
+      );
     }
 
     // Ensure tools directory exists
@@ -158,18 +148,18 @@ export class ToolDownloader {
 
     // Get release information from GitHub
     const releaseInfo = await getGitHubRelease(
-      config.repository,
-      config.version,
+      toolConfig.repository,
+      toolConfig.version,
     );
     const asset = findMatchingGithubAsset(releaseInfo.assets, assetFilename);
 
     if (!asset) {
       throw new Error(
-        `No matching asset found for ${toolName} on ${platform} (${assetFilename})`,
+        `No matching asset found for ${toolConfig.executableName} on ${platform} (${assetFilename})`,
       );
     }
 
-    const downloadPath = path.join(this.toolsDir, config.executableName);
+    const downloadPath = path.join(this.toolsDir, toolConfig.executableName);
     await downloadAndVerify(asset, downloadPath);
 
     // Make executable on Unix systems
@@ -178,24 +168,23 @@ export class ToolDownloader {
       logDebug(`Made ${downloadPath} executable`);
     }
 
-    logDebug(`Successfully downloaded ${toolName} to ${downloadPath}`);
+    logDebug(
+      `Successfully downloaded ${toolConfig.repository} to ${downloadPath}`,
+    );
     return downloadPath;
   }
 
   /**
    * Gets the path to a tool if it exists, returns null otherwise.
-   * @param toolName The name of the tool.
+   * @param toolNameOrKey The name of the tool.
    * @returns The absolute path to the tool or null if not found.
    */
-  async getToolPath(toolName: string): Promise<string | null> {
-    logDebug(`Checking if tool exists locally: ${toolName}`);
-
-    const config = this.toolConfig[toolName];
-    if (!config) {
-      logDebug(`No configuration found for tool: ${toolName}`);
-      return null;
-    }
-
+  async getToolPath(toolNameOrKey: string): Promise<string | null> {
+    logDebug(`Checking if tool exists locally: ${toolNameOrKey}`);
+    const { config, configKey } = findToolConfig(
+      toolNameOrKey,
+      this.toolsConfig,
+    );
     const executablePath = path.join(this.toolsDir, config.executableName);
     try {
       await fs.access(executablePath, fs.constants.X_OK);

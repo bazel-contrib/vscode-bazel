@@ -57,7 +57,7 @@ describe("external_tools_availability", () => {
         // No modification of config setting in this test
         addDummyExecutablesToPath();
 
-        const result = await manager.getToolPath("Buildifier");
+        const result = await manager.getToolPathByName("Buildifier");
 
         assert.strictEqual(result, buildifierDefaultPath);
       });
@@ -68,7 +68,7 @@ describe("external_tools_availability", () => {
           .update("buildifierExecutable", "buildifier_good");
         addDummyExecutablesToPath();
 
-        const result = await manager.getToolPath("Buildifier");
+        const result = await manager.getToolPathByName("Buildifier");
 
         assert.strictEqual(result, buildifierGoodPath);
       });
@@ -78,7 +78,7 @@ describe("external_tools_availability", () => {
           .getConfiguration("bazel")
           .update("buildifierExecutable", buildifierGoodPath);
 
-        const result = await manager.getToolPath("Buildifier");
+        const result = await manager.getToolPathByName("Buildifier");
 
         assert.strictEqual(result, buildifierGoodPath);
       });
@@ -89,7 +89,7 @@ describe("external_tools_availability", () => {
           .getConfiguration("bazel")
           .update("buildifierExecutable", relativePath);
 
-        const result = await manager.getToolPath("Buildifier");
+        const result = await manager.getToolPathByName("Buildifier");
 
         assert.strictEqual(result, buildifierGoodPath);
       });
@@ -100,7 +100,7 @@ describe("external_tools_availability", () => {
           .getConfiguration("bazel")
           .update("buildifierExecutable", "@//buildifier:buildifier");
 
-        const result = await manager.getToolPath("Buildifier");
+        const result = await manager.getToolPathByName("Buildifier");
 
         assert.strictEqual(result, "@//buildifier:buildifier");
       });
@@ -113,7 +113,7 @@ describe("external_tools_availability", () => {
           .getConfiguration("bazel")
           .update("buildifierExecutable", "@//buildifier:buildifier_outdated");
 
-        const result = await manager.getToolPath("Buildifier");
+        const result = await manager.getToolPathByName("Buildifier");
 
         assert.strictEqual(result, null);
       });
@@ -124,7 +124,7 @@ describe("external_tools_availability", () => {
           .getConfiguration("bazel")
           .update("buildifierExecutable", relativePath);
 
-        const result = await manager.getToolPath("Buildifier");
+        const result = await manager.getToolPathByName("Buildifier");
 
         assert.strictEqual(result, null);
       });
@@ -135,7 +135,7 @@ describe("external_tools_availability", () => {
           .update("buildifierExecutable", "buildifier_good");
         // No modification of PATH in this test
 
-        const result = await manager.getToolPath("Buildifier");
+        const result = await manager.getToolPathByName("Buildifier");
 
         assert.strictEqual(result, null);
       });
@@ -145,8 +145,8 @@ describe("external_tools_availability", () => {
       it("should cache tool locations", async () => {
         addDummyExecutablesToPath();
 
-        const result1 = await manager.getToolPath("Buildifier");
-        const result2 = await manager.getToolPath("Buildifier");
+        const result1 = await manager.getToolPathByName("Buildifier");
+        const result2 = await manager.getToolPathByName("Buildifier");
 
         assert.strictEqual(result1, buildifierDefaultPath);
         assert.strictEqual(result2, buildifierDefaultPath);
