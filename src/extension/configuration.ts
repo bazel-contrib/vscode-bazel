@@ -73,3 +73,15 @@ export function getQueryExpression(): string {
     "queryExpression",
   );
 }
+
+/**
+ * Gets the list of Bazel package patterns used to scope the completion
+ * provider's target query. An empty array means the entire workspace is
+ * queried.
+ */
+export function getCompletionQueryScope(): string[] {
+  return getConfigurationWithDefault<string[]>(
+    "bazel.completion",
+    "queryScope",
+  );
+}

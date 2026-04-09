@@ -18,6 +18,7 @@ import {
   getPackageLabelForBuildFile,
   queryQuickPickTargets,
 } from "../bazel";
+import { getCompletionQueryScope } from "../extension/configuration";
 
 function insertCompletionItemIfUnique(
   options: vscode.CompletionItem[],
@@ -139,12 +140,26 @@ export class BazelCompletionItemProvider
   }
 
   /**
+   * Builds a Bazel query expression for fetching rule targets.
+   *
+   * When {@link getCompletionQueryScope} returns a non-empty list of patterns
+   * (e.g. `["//src/...", "//lib/..."]`), the query is scoped to those
+   * directories via `kind('.* rule', //src/... + //lib/...)`.
+   * Otherwise the entire workspace is queried (`kind('.* rule', ...)`).
+   */
+  private buildQuery(): string {
+    const scope = getCompletionQueryScope();
+    const scopeExpr = scope.length > 0 ? scope.join(" + ") : "...";
+    return `kind('.* rule', ${scopeExpr})`;
+  }
+
+  /**
    * Runs a bazel query command to acquire labels of all the targets in the
-   * workspace.
+   * workspace (or a configured subset of it).
    */
   public async refresh() {
     const queryTargets = await queryQuickPickTargets({
-      query: "kind('.* rule', ...)",
+      query: this.buildQuery(),
     });
     if (queryTargets.length !== 0) {
       this.targets = queryTargets.map((queryTarget) => {
