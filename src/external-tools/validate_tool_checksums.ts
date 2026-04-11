@@ -17,7 +17,7 @@ import { GitHubRelease, Platform, ToolConfig, ToolsConfig } from "./types";
 import { loadToolsConfig } from "./config";
 
 interface ValidationOptions {
-  shouldDownload: boolean;
+  downloadTo?: string;
   githubToken?: string;
 }
 
@@ -32,17 +32,19 @@ interface ValidationResult {
  * Parses command line arguments and environment variables to determine
  * validation options. Supports:
  *
- * - --download flag: Enables binary download and integrity verification
+ * - --download-to <dir>: Optional directory to download binaries to for integrity verification
  * - GITHUB_TOKEN env var: Optional GitHub token for authenticated API requests
  *
  * Returns structured options for the validation pipeline.
  */
 function _parseArguments(): ValidationOptions {
   const args = process.argv.slice(2);
-  const shouldDownload = args.includes("--download");
+  const downloadToIndex = args.indexOf("--download-to");
+  const downloadTo =
+    downloadToIndex !== -1 ? args[downloadToIndex + 1] : undefined;
   const githubToken = process.env.GITHUB_TOKEN;
 
-  return { shouldDownload, githubToken };
+  return { downloadTo, githubToken };
 }
 
 /**
@@ -180,7 +182,7 @@ async function validateSingleToolChecksum(
         toolConfig,
         platform as Platform,
         release,
-        { validateDownload: options.shouldDownload, update_config: true },
+        { validateDownload: !!options.downloadTo, update_config: true },
       );
 
       if (result.errors.length > 0) {
