@@ -23,7 +23,7 @@ import { ToolDownloader } from "./tool_downloader";
 import { findToolConfig, loadToolsConfig } from "./config";
 import { ToolConfig, ToolsConfig } from "./types";
 import { logInfo, logDebug, logWarn, logError } from "../extension/logger";
-import { executeBuildifier } from "../buildifier";
+import { validateBuildifierExecutable } from "../buildifier";
 
 const execFile = util.promisify(child_process.execFile);
 
@@ -91,28 +91,7 @@ export class ExternalToolsManager {
     try {
       switch (toolKey) {
         case "Buildifier":
-          logDebug(`Testing buildifier with JSON output format`);
-          const { stdout } = await executeBuildifier(
-            "",
-            // specify the --lint value even though off is the default in case
-            // a .buildifer.json with a different value is present
-            ["--format=json", "--mode=check", "--lint=off"],
-            false,
-            executablePath,
-          );
-          try {
-            JSON.parse(stdout); // Will throw if not valid JSON
-            logDebug(
-              `Buildifier validation successful - JSON output supported`,
-            );
-            return true;
-          } catch (jsonError) {
-            logWarn(
-              `Buildifier JSON validation failed. The buildifier version may be too old and doesn't support JSON output format. Consider updating to a newer version. Error: ${jsonError instanceof Error ? jsonError.message : String(jsonError)}`,
-              false,
-            );
-            return false;
-          }
+          return validateBuildifierExecutable(executablePath);
 
         case "Bazelisk":
           logDebug(`Testing bazelisk with version command`);
