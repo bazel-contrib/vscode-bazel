@@ -49,7 +49,7 @@ export function getConfigurationWithDefault<T>(
  * @returns The path to the Bazel executable specified in the workspace
  * configuration, or its default.
  */
-export function getDefaultBazelExecutablePath(): string {
+export function getBazelExecutablePath(): string {
   return getConfigurationWithDefault<string>("bazel", "executable").trim();
 }
 
@@ -71,5 +71,53 @@ export function getQueryExpression(): string {
   return getConfigurationWithDefault<string>(
     "bazel.commandLine",
     "queryExpression",
+  );
+}
+
+/**
+ * Gets the path to the buildifier executable specified by the workspace
+ * configuration.
+ *
+ * @returns The path to the buildifier executable specified in the workspace
+ * configuration, or its default.
+ */
+export function getBuildifierExecutablePath(): string {
+  return getConfigurationWithDefault<string>(
+    "bazel",
+    "buildifierExecutable",
+  ).trim();
+}
+
+/**
+ * Gets the path to the buildifier json configuration file specified by the
+ * workspace configuration.
+ *
+ * @returns The path to the buildifier json configuration file specified in the
+ * workspace configuration, or its default.
+ */
+export function getBuildifierJsonConfigPath(): string {
+  return getConfigurationWithDefault<string>(
+    "bazel",
+    "buildifierConfigJsonPath",
+  ).trim();
+}
+
+/**
+ * Gets the path to the buildifier json configuration file specified by the
+ * workspace configuration.
+ *
+ * @returns The path to the buildifier json configuration file specified in the
+ * workspace configuration, or its default.
+ */
+export function getLspServerExecutablePath(): string {
+  return getConfigurationWithDefault<string>("bazel.lsp", "command").trim();
+}
+export function getLspServerArgs(): string[] {
+  return getConfigurationWithDefault<string[]>("bazel.lsp", "args");
+}
+export function getLspServerEnv(): Record<string, string> {
+  return getConfigurationWithDefault<Record<string, string>>(
+    "bazel.lsp",
+    "env",
   );
 }

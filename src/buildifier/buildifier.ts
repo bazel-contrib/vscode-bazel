@@ -13,12 +13,15 @@
 // limitations under the License.
 
 import * as child_process from "child_process";
-import * as path from "path";
 import * as util from "util";
 import * as vscode from "vscode";
 
 import { IBuildifierResult, IBuildifierWarning } from "./buildifier_result";
-import { getDefaultBazelExecutablePath } from "../extension/configuration";
+import {
+  getBazelExecutablePath,
+  getBuildifierExecutablePath,
+  getBuildifierJsonConfigPath,
+} from "../extension/configuration";
 
 const execFile = util.promisify(child_process.execFile);
 type PromiseExecFileException = child_process.ExecFileException & {
@@ -117,36 +120,6 @@ export async function buildifierLint(
 }
 
 /**
- * Gets the path to the buildifier executable specified by the workspace
- * configuration.
- *
- * @returns The path to the buildifier executable specified in the workspace
- * configuration, or its default.
- */
-export function getDefaultBuildifierExecutablePath(): string {
-  return (
-    vscode.workspace
-      .getConfiguration("bazel")
-      .get<string>("buildifierExecutable")
-      .trim() || "buildifier"
-  );
-}
-
-/**
- * Gets the path to the buildifier json configuration file specified by the
- * workspace configuration.
- *
- * @returns The path to the buildifier json configuration file specified in the
- * workspace configuration, or its default.
- */
-export function getDefaultBuildifierJsonConfigPath(): string {
-  return vscode.workspace
-    .getConfiguration("bazel")
-    .get<string>("buildifierConfigJsonPath")
-    .trim();
-}
-
-/**
  * Executes buildifier with the given file content and arguments.
  *
  * @param fileContent The BUILD or .bzl file content to process, which is sent
@@ -154,22 +127,25 @@ export function getDefaultBuildifierJsonConfigPath(): string {
  * @param args Command line arguments to pass to buildifier.
  * @param acceptNonSevereErrors If true, syntax/lint exit codes will not be
  * treated as severe tool errors.
+ * @param executable Optional custom executable path to use instead of the default.
  */
 export async function executeBuildifier(
   fileContent: string,
   args: string[],
   acceptNonSevereErrors: boolean,
+  executable?: string,
 ): Promise<{ stdout: string; stderr: string }> {
   // Determine the executable
-  let executable = getDefaultBuildifierExecutablePath();
-  const buildifierConfigJsonPath = getDefaultBuildifierJsonConfigPath();
+  let buildifierExecutable =
+    executable || (await getBuildifierExecutablePath());
+  const buildifierConfigJsonPath = getBuildifierJsonConfigPath();
   if (buildifierConfigJsonPath.length !== 0) {
     args = ["--config", buildifierConfigJsonPath, ...args];
   }
   // Paths starting with an `@` are referring to Bazel targets
-  if (executable.startsWith("@")) {
-    const targetName = executable;
-    executable = getDefaultBazelExecutablePath();
+  if (buildifierExecutable.startsWith("@")) {
+    const targetName = buildifierExecutable;
+    buildifierExecutable = getBazelExecutablePath();
     args = ["run", targetName, "--", ...args];
   }
   const execOptions = {
@@ -180,7 +156,7 @@ export async function executeBuildifier(
   };
 
   // Start buildifier
-  const process = execFile(executable, args, execOptions);
+  const process = execFile(buildifierExecutable, args, execOptions);
 
   // Write the file being linted/formatted to stdin and close the stream so
   // that the buildifier process continues.

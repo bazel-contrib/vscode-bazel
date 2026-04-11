@@ -14,7 +14,7 @@
 
 import * as vscode from "vscode";
 import {
-  getDefaultBazelExecutablePath,
+  getBazelExecutablePath,
   getQueryExpression,
 } from "../extension/configuration";
 import { IBazelCommandAdapter, IBazelCommandOptions } from "./bazel_command";
@@ -193,7 +193,7 @@ export async function queryQuickPickTargets({
   }
 
   const queryResult = await new BazelQuery(
-    getDefaultBazelExecutablePath(),
+    getBazelExecutablePath(),
     workspaceInfo.workspaceFolder.uri.fsPath,
   ).queryTargets(query ?? "//...:*", { abortSignal });
 
@@ -234,7 +234,7 @@ export async function queryQuickPickPackage({
   }
 
   const packagePaths = await new BazelQuery(
-    getDefaultBazelExecutablePath(),
+    getBazelExecutablePath(),
     workspaceInfo.workspaceFolder.uri.fsPath,
   ).queryPackages(query ?? "//...", { abortSignal });
 

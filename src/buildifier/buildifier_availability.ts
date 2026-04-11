@@ -17,10 +17,8 @@ import * as path from "path";
 import * as vscode from "vscode";
 import which from "which";
 
-import {
-  executeBuildifier,
-  getDefaultBuildifierExecutablePath,
-} from "./buildifier";
+import { executeBuildifier } from "./buildifier";
+import { getBuildifierExecutablePath } from "../extension/configuration";
 import { logWarn } from "../extension/logger";
 
 async function fileExists(filename: string) {
@@ -53,7 +51,7 @@ const BUILDTOOLS_RELEASES_URL =
  * @returns absolute path to the found buildifier executable, or null if not found
  */
 export async function checkBuildifierIsAvailable(): Promise<string | null> {
-  const buildifierExecutable = getDefaultBuildifierExecutablePath();
+  const buildifierExecutable = getBuildifierExecutablePath();
 
   // Check if the program exists (in case it's an actual executable and not
   // an target name starting with `@`).
@@ -90,6 +88,7 @@ export async function checkBuildifierIsAvailable(): Promise<string | null> {
     // a .buildifer.json with a different value is present
     ["--format=json", "--mode=check", "--lint=off"],
     false,
+    executablePath,
   );
   try {
     JSON.parse(stdout);
