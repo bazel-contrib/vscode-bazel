@@ -29,20 +29,7 @@ describe("CodeLensFeature", () => {
   });
 
   describe("enable", () => {
-    it("returns false when not in a Bazel workspace", () => {
-      sandbox
-        .stub(bazel_availability, "checkBazelWorkspaceAvailable")
-        .returns(false);
-
-      const result = codeLensFeature.enable(mockContext);
-
-      assert.strictEqual(result, false);
-    });
-
     it("returns false when Bazel executable is not available", () => {
-      sandbox
-        .stub(bazel_availability, "checkBazelWorkspaceAvailable")
-        .returns(true);
       sandbox.stub(bazel_availability, "checkBazelIsAvailable").returns(false);
 
       const result = codeLensFeature.enable(mockContext);
@@ -51,10 +38,6 @@ describe("CodeLensFeature", () => {
     });
 
     it("returns true when all preconditions are met", () => {
-      sandbox
-        .stub(bazel_availability, "checkBazelWorkspaceAvailable")
-        .returns(true);
-      sandbox.stub(bazel_availability, "checkBazelIsAvailable").returns(true);
       const registerStub = sandbox
         .stub(vscode.languages, "registerCodeLensProvider")
         .returns(mockDisposable);

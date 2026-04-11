@@ -1,10 +1,7 @@
 import * as vscode from "vscode";
 
 import { BaseExtensionFeature } from "../extension/extension_feature";
-import {
-  checkBazelIsAvailable,
-  checkBazelWorkspaceAvailable,
-} from "../bazel/bazel_availability";
+import { checkBazelIsAvailable } from "../bazel/bazel_availability";
 import { CodeLensProvider } from "./code_lens_provider";
 
 /**
@@ -20,11 +17,6 @@ export class CodeLensFeature extends BaseExtensionFeature {
   }
 
   enable(context: vscode.ExtensionContext): boolean {
-    // Precondition: must be in a Bazel workspace
-    if (!checkBazelWorkspaceAvailable()) {
-      this.logWarn("Can not activate, no Bazel workspace found.");
-      return false;
-    }
     // Precondition: bazel executable available
     if (!checkBazelIsAvailable()) {
       this.logWarn("Can not activate, no bazel executable found.");
