@@ -56,34 +56,6 @@ export function storeWorkspaceTreeProviderForTesting(
 }
 
 /**
- * Sets the global external tools manager instance.
- */
-export function setExternalToolsManager(manager: ExternalToolsManager) {
-  globalThis.externalToolsManager = manager;
-}
-
-/**
- * Gets the global external tools manager instance.
- */
-export function getGlobalExternalToolsManager():
-  | ExternalToolsManager
-  | undefined {
-  return globalThis.externalToolsManager;
-}
-
-/**
- * Gets or creates the global external tools manager instance.
- */
-export function getExternalToolsManager(
-  context: vscode.ExtensionContext,
-): ExternalToolsManager {
-  if (!globalThis.externalToolsManager) {
-    globalThis.externalToolsManager = new ExternalToolsManager(context);
-  }
-  return globalThis.externalToolsManager;
-}
-
-/**
  * Called when the extension is activated; that is, when its first command is
  * executed.
  *
@@ -118,8 +90,7 @@ export async function activate(context: vscode.ExtensionContext) {
   const config = vscode.workspace.getConfiguration("bazel");
 
   // Check availability of external tools (don't wait for it as it involves user prompts)
-  const toolsManager = getExternalToolsManager(context);
-  setExternalToolsManager(toolsManager);
+  const toolsManager = new ExternalToolsManager(context);
   void toolsManager.checkAvailabilityOfExternalTools();
 
   // Set up LSP if enabled

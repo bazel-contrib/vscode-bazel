@@ -24,6 +24,7 @@ import { findToolConfig, loadToolsConfig } from "./config";
 import { ToolConfig, ToolsConfig } from "./types";
 import { logInfo, logDebug, logWarn, logError } from "../extension/logger";
 import { validateBuildifierExecutable } from "../buildifier";
+import { getConfigurationWithDefault } from "../extension/configuration";
 
 const execFile = util.promisify(child_process.execFile);
 
@@ -35,7 +36,6 @@ const execFile = util.promisify(child_process.execFile);
  * tool discovery, validation, downloading, and caching of tool locations.
  */
 export class ExternalToolsManager {
-  private readonly toolLocations = new Map<string, string>();
   private readonly toolDownloader: ToolDownloader;
   private readonly toolsConfig: ToolsConfig;
   private readonly downloadDir: string;
@@ -50,17 +50,6 @@ export class ExternalToolsManager {
       this.downloadDir,
       this.toolsConfig,
     );
-
-    this.ensureToolsDirectoryInPath();
-  }
-
-  /**
-   * Ensures the tools directory is added to the process PATH.
-   */
-  private ensureToolsDirectoryInPath(): void {
-    if (!process.env.PATH?.includes(this.downloadDir)) {
-      process.env.PATH = `${this.downloadDir}${path.delimiter}${process.env.PATH}`;
-    }
   }
 
   /**
@@ -122,17 +111,9 @@ export class ExternalToolsManager {
   }
 
   /**
-   * Gets the configured path for a tool from VSCode settings.
-   */
-  private getConfiguredPath(toolConfig: ToolConfig): string | null {
-    const vscodeConfig = vscode.workspace.getConfiguration("bazel");
-    return vscodeConfig.get<string>(toolConfig.configKey) || null;
-  }
-
-  /**
    * Finds a tool using various strategies.
    */
-  private async findTool(toolName: string): Promise<string | null> {
+  public async getToolPathByName(toolName: string): Promise<string | null> {
     logDebug(`Finding tool: ${toolName}`);
 
     // Find the configuration entry for this tool name
@@ -140,7 +121,10 @@ export class ExternalToolsManager {
     logDebug(`Found configuration for ${toolName} using key: ${configKey}`);
 
     // STAGE 1: Get Tool Name
-    const configuredPath = this.getConfiguredPath(config);
+    const configuredPath = getConfigurationWithDefault<string[]>(
+      "bazel",
+      config.configKey,
+    );
     const executableNameOrPath = configuredPath || config.executableName;
     logDebug(
       `Using executable path/name: ${executableNameOrPath}${configuredPath ? " (from settings)" : " (from config)"}`,
@@ -348,83 +332,6 @@ export class ExternalToolsManager {
     if (choice === "Open Settings") {
       await this.openSettingsForTool(toolConfig);
     }
-  }
-
-  /**
-   * Gets the path to a tool, using cached location if available.
-   */
-  public async getToolPathByName(toolName: string): Promise<string | null> {
-    logDebug(`Getting tool path for: ${toolName}`);
-
-    // Check cache first
-    if (this.toolLocations.has(toolName)) {
-      const cachedPath = this.toolLocations.get(toolName)!;
-      logDebug(`Found cached path for ${toolName}: ${cachedPath}`);
-      return cachedPath;
-    }
-
-    logDebug(`No cached path found for ${toolName}, searching...`);
-    // Find the tool
-    const toolPath = await this.findTool(toolName);
-    if (toolPath) {
-      this.toolLocations.set(toolName, toolPath);
-      logDebug(`Caching path for ${toolName}: ${toolPath}`);
-    } else {
-      logDebug(`Could not find path for ${toolName}`);
-    }
-
-    return toolPath;
-  }
-
-  /**
-   * Executes a tool with the given arguments.
-   */
-  public async executeTool(
-    toolName: string,
-    args: string[] = [],
-    options: child_process.ExecFileOptions = {},
-  ): Promise<{ stdout: string; stderr: string }> {
-    logDebug(`Executing tool: ${toolName} with args: [${args.join(", ")}]`);
-
-    const toolPath = await this.getToolPathByName(toolName);
-    if (!toolPath) {
-      const errorMsg = `${toolName} is not available`;
-      logError(errorMsg, true);
-      throw new Error(errorMsg);
-    }
-
-    // Handle Bazel targets
-    let executable = toolPath;
-    let execArgs = [...args];
-
-    if (toolPath.startsWith("@")) {
-      const targetName = toolPath;
-      executable = await this.getToolPathByName("bazel");
-      execArgs = ["run", targetName, "--", ...args];
-      logDebug(
-        `Executing Bazel target: ${targetName} using bazelisk: ${executable}`,
-      );
-    }
-
-    const execOptions = {
-      maxBuffer: Number.MAX_SAFE_INTEGER,
-      cwd: vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath,
-      ...options,
-    };
-
-    logDebug(`Executing: ${executable} ${execArgs.join(" ")}`);
-    const result = await execFile(executable, execArgs, execOptions);
-    const stdout =
-      typeof result.stdout === "string"
-        ? result.stdout
-        : result.stdout.toString();
-    const stderr =
-      typeof result.stderr === "string"
-        ? result.stderr
-        : result.stderr.toString();
-
-    logDebug(`Tool execution completed for ${toolName}`);
-    return { stdout, stderr };
   }
 
   /**

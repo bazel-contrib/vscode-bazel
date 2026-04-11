@@ -140,52 +140,5 @@ describe("external_tools_availability", () => {
         assert.strictEqual(result, null);
       });
     });
-
-    describe("caching", () => {
-      it("should cache tool locations", async () => {
-        addDummyExecutablesToPath();
-
-        const result1 = await manager.getToolPathByName("Buildifier");
-        const result2 = await manager.getToolPathByName("Buildifier");
-
-        assert.strictEqual(result1, buildifierDefaultPath);
-        assert.strictEqual(result2, buildifierDefaultPath);
-        // Should be the same object reference due to caching
-        assert.strictEqual(result1, result2);
-      });
-    });
-
-    describe("executeTool", () => {
-      it("should execute tool with arguments", async () => {
-        addDummyExecutablesToPath();
-
-        const result = await manager.executeTool("Buildifier", ["--version"]);
-
-        assert.ok(result.stdout);
-        assert.ok(typeof result.stdout === "string");
-      });
-
-      it("should handle Bazel targets", async function () {
-        this.timeout(10000); // Allow bazel to start
-        await vscode.workspace
-          .getConfiguration("bazel")
-          .update("buildifierExecutable", "@//buildifier:buildifier");
-
-        const result = await manager.executeTool("Buildifier", ["--version"]);
-
-        assert.ok(result.stdout);
-      });
-
-      it("should throw error for unavailable tool", async () => {
-        await vscode.workspace
-          .getConfiguration("bazel")
-          .update("buildifierExecutable", "nonexistent");
-
-        await assert.rejects(
-          () => manager.executeTool("Buildifier", ["--version"]),
-          /Buildifier is not available/,
-        );
-      });
-    });
   });
 });

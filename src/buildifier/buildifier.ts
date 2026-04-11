@@ -22,6 +22,7 @@ import {
   getBuildifierExecutablePath,
   getBuildifierJsonConfigPath,
 } from "../extension/configuration";
+import { logDebug, logWarn } from "../extension/logger";
 
 const execFile = util.promisify(child_process.execFile);
 type PromiseExecFileException = child_process.ExecFileException & {
@@ -119,7 +120,6 @@ export async function buildifierLint(
   }
 }
 
-
 /**
  * Validates that buildifier executable is working correctly.
  *
@@ -129,7 +129,6 @@ export async function buildifierLint(
 export async function validateBuildifierExecutable(
   buildifierExecutable: string,
 ): Promise<boolean> {
-  
   try {
     logDebug(`Testing buildifier with JSON output format`);
     const { stdout } = await executeBuildifier(
@@ -139,9 +138,7 @@ export async function validateBuildifierExecutable(
       buildifierExecutable,
     );
     JSON.parse(stdout); // Will throw if not valid JSON
-    logDebug(
-      `Buildifier validation successful - JSON output supported`,
-    );
+    logDebug(`Buildifier validation successful - JSON output supported`);
     return true;
   } catch (jsonError) {
     logWarn(
@@ -151,6 +148,7 @@ export async function validateBuildifierExecutable(
     return false;
   }
 }
+
 /**
  * Executes buildifier with the given file content and arguments.
  *
