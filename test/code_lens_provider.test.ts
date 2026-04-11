@@ -16,6 +16,11 @@ describe("CodeLensProvider", () => {
   let mockCodeLensBuilder: {
     buildCodeLenses: sinon.SinonStub;
   };
+  let mockLogger: {
+    logInfo: sinon.SinonStub;
+    logWarn: sinon.SinonStub;
+    logError: sinon.SinonStub;
+  };
 
   // Helper function to create test document
   function createTestDocument(overrides: Partial<vscode.TextDocument> = {}) {
@@ -56,6 +61,13 @@ describe("CodeLensProvider", () => {
     mockDocument = createTestDocument();
     mockWorkspaceInfo = createWorkspaceInfo();
 
+    // Create a mock logger
+    mockLogger = {
+      logInfo: sandbox.stub(),
+      logWarn: sandbox.stub(),
+      logError: sandbox.stub(),
+    };
+
     // Create a mock builder
     mockCodeLensBuilder = {
       buildCodeLenses: sandbox.stub().returns([]),
@@ -67,7 +79,7 @@ describe("CodeLensProvider", () => {
       .callsFake(mockCodeLensBuilder.buildCodeLenses as any);
 
     // Create the provider after common stubs are in place
-    provider = new CodeLensProvider();
+    provider = new CodeLensProvider(mockLogger);
   });
 
   afterEach(() => {
@@ -133,6 +145,14 @@ describe("CodeLensProvider", () => {
 
       const result = await provider.provideCodeLenses(mockDocument);
       assert.strictEqual(result.length, 0);
+
+      // Verify logger was called with the error
+      sinon.assert.calledWith(
+        mockLogger.logError,
+        "Error getting targets for build file:",
+        false,
+        error,
+      );
     });
   });
 

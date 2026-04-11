@@ -17,6 +17,7 @@ import * as vscode from "vscode";
 import { BazelWorkspaceInfo } from "../bazel";
 import { getTargetsForBuildFile } from "../bazel";
 import { getDefaultBazelExecutablePath } from "../extension/configuration";
+import { ILogger } from "../extension/logger";
 import { CodeLensBuilder } from "./code_lens_builder";
 
 /**
@@ -32,13 +33,16 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
   public onDidChangeCodeLenses: vscode.Event<void>;
   private onDidChangeCodeLensesEmitter = new vscode.EventEmitter<void>();
   private builder: CodeLensBuilder;
+  private logger: ILogger;
 
   /**
    * Initializes a new CodeLens provider.
+   * @param logger Optional logger for feature-specific logging
    */
-  constructor() {
+  constructor(logger: ILogger) {
     this.onDidChangeCodeLenses = this.onDidChangeCodeLensesEmitter.event;
     this.builder = new CodeLensBuilder();
+    this.logger = logger;
   }
 
   /**
@@ -62,12 +66,22 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
       // Don't show code lenses for dirty BUILD files; we can't reliably
       // determine what the build targets in it are until it is saved and we can
       // invoke `bazel query` with the updated file.
+      this.logger.logInfo(
+        "Skipping CodeLens for dirty document:",
+        false,
+        document.uri.fsPath,
+      );
       return [];
     }
 
     const workspaceInfo = BazelWorkspaceInfo.fromDocument(document);
     if (workspaceInfo === undefined) {
       // Not in a Bazel Workspace.
+      this.logger.logInfo(
+        "Skipping CodeLens - not in Bazel workspace:",
+        false,
+        document.uri.fsPath,
+      );
       return [];
     }
 
@@ -76,15 +90,29 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
       workspaceInfo.bazelWorkspacePath,
       document.uri.fsPath,
     ).catch((error) => {
-      // eslint-disable-next-line no-console
-      console.error("Error getting targets for build file:", error);
+      this.logger.logError(
+        "Error getting targets for build file:",
+        false,
+        error,
+      );
       return undefined;
     });
 
     if (queryResult === undefined) {
+      this.logger.logInfo(
+        "Skipping CodeLens - query failed for:",
+        false,
+        document.uri.fsPath,
+      );
       return [];
     }
 
-    return this.builder.buildCodeLenses(workspaceInfo, queryResult);
+    const codeLenses = this.builder.buildCodeLenses(workspaceInfo, queryResult);
+    this.logger.logInfo(
+      `Generated ${codeLenses.length} CodeLenses for:`,
+      false,
+      document.uri.fsPath,
+    );
+    return codeLenses;
   }
 }
