@@ -54,7 +54,7 @@
       "darwin-amd64": "starpls-darwin-amd64",
       "darwin-arm64": "starpls-darwin-arm64"
     },
-    "executableName": "lsp",
+    "executableName": "lsp_server",
     "checksums": {
       "windows-amd64": "87626a4226ed2f3f0f9e573501731bbe225a53cf009df845ec547ee984a1857e",
       "linux-amd64": "7c661cdde0d1c026665086d07523d825671e29056276681616bb32d0273c5eab",
