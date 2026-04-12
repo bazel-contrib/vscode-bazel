@@ -17,7 +17,7 @@ import { DocumentSymbolProvider } from "vscode";
 
 import { BazelWorkspaceInfo, QueryLocation } from "../bazel";
 import { getTargetsForBuildFile } from "../bazel";
-import { getDefaultBazelExecutablePath } from "../extension/configuration";
+import { getBazelExecutablePath } from "../extension/configuration";
 import { blaze_query } from "../protos";
 
 /** Provids Symbols for targets in Bazel BUILD files. */
@@ -32,7 +32,7 @@ export class BazelTargetSymbolProvider implements DocumentSymbolProvider {
     }
 
     const queryResult = await getTargetsForBuildFile(
-      getDefaultBazelExecutablePath(),
+      getBazelExecutablePath(),
       workspaceInfo.bazelWorkspacePath,
       document.uri.fsPath,
     );

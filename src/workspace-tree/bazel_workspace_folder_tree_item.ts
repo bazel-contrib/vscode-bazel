@@ -15,7 +15,7 @@
 import * as vscode from "vscode";
 import { BazelWorkspaceInfo, BazelQuery } from "../bazel";
 import {
-  getDefaultBazelExecutablePath,
+  getBazelExecutablePath,
   getQueryExpression,
 } from "../extension/configuration";
 import { blaze_query } from "../protos";
@@ -201,7 +201,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     }
     const workspacePath = this.workspaceInfo.workspaceFolder.uri.fsPath;
     const packagePaths = await new BazelQuery(
-      getDefaultBazelExecutablePath(),
+      getBazelExecutablePath(),
       workspacePath,
     ).queryPackages(getQueryExpression());
     const topLevelItems: BazelPackageTreeItem[] = [];
@@ -216,7 +216,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     // Now collect any targets in the directory also (this can fail since
     // there might not be a BUILD files at this level (but down levels)).
     const queryResult = await new BazelQuery(
-      getDefaultBazelExecutablePath(),
+      getBazelExecutablePath(),
       workspacePath,
     ).queryTargets(`:all`, {
       ignoresErrors: true,

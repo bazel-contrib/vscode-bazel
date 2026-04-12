@@ -14,7 +14,7 @@
 
 import * as path from "path";
 import * as vscode from "vscode";
-import { getDefaultBazelExecutablePath } from "./configuration";
+import { getBazelExecutablePath } from "./configuration";
 import { showInfoMessage } from "./logger";
 import {
   BazelTargetQuickPick,
@@ -85,11 +85,11 @@ async function bazelGetTargetOutput(
     return;
   }
   const outputPath = await new BazelInfo(
-    getDefaultBazelExecutablePath(),
+    getBazelExecutablePath(),
     workspaceInfo.bazelWorkspacePath,
   ).getOne("output_path");
   const outputs = await new BazelCQuery(
-    getDefaultBazelExecutablePath(),
+    getBazelExecutablePath(),
     workspaceInfo.bazelWorkspacePath,
   ).queryOutputs(target, options);
   switch (outputs.length) {
@@ -119,7 +119,7 @@ async function bazelInfo(key: string): Promise<string> {
     return;
   }
   return new BazelInfo(
-    getDefaultBazelExecutablePath(),
+    getBazelExecutablePath(),
     workspaceInfo.bazelWorkspacePath,
   ).getOne(key);
 }
