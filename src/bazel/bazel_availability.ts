@@ -2,7 +2,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
 import * as which from "which";
-import { getDefaultBazelExecutablePath } from "../extension/configuration";
+import { getBazelExecutablePath } from "../extension/configuration";
 import { getBazelWorkspaceFolder } from "./bazel_utils";
 import { logDebug } from "../extension/logger";
 
@@ -20,7 +20,7 @@ function fileExistsSync(filename: string): boolean {
  * user-specified path, depending on the value in Settings).
  */
 export function checkBazelIsAvailable(): boolean {
-  const bazelExecutable = getDefaultBazelExecutablePath();
+  const bazelExecutable = getBazelExecutablePath();
 
   // Check if the program exists as a relative path of the workspace
   const pathExists = fileExistsSync(

@@ -22,7 +22,7 @@ import {
 } from "vscode";
 import { Utils } from "vscode-uri";
 import { BazelQuery, BazelWorkspaceInfo, QueryLocation } from "../bazel";
-import { getDefaultBazelExecutablePath } from "../extension/configuration";
+import { getBazelExecutablePath } from "../extension/configuration";
 import { blaze_query } from "../protos";
 
 // LABEL_REGEX matches label strings, e.g. @r//x/y/z:abc
@@ -45,7 +45,7 @@ export async function targetToUri(
   }
 
   const queryResult = await new BazelQuery(
-    getDefaultBazelExecutablePath(),
+    getBazelExecutablePath(),
     workingDirectory.fsPath,
   ).queryTargets(`kind(rule, "${targetName}") + kind(file, "${targetName}")`);
 

@@ -19,7 +19,7 @@ import {
   IBazelCommandAdapter,
   IBazelCommandOptions,
 } from "../bazel";
-import { getDefaultBazelExecutablePath } from "../extension/configuration";
+import { getBazelExecutablePath } from "../extension/configuration";
 import { blaze_query } from "../protos";
 import { BazelTargetTreeItem } from "./bazel_target_tree_item";
 import { IBazelTreeItem } from "./bazel_tree_item";
@@ -56,7 +56,7 @@ export class BazelPackageTreeItem
 
   public async getChildren(): Promise<IBazelTreeItem[]> {
     const queryResult = await new BazelQuery(
-      getDefaultBazelExecutablePath(),
+      getBazelExecutablePath(),
       this.workspaceInfo.bazelWorkspacePath,
     ).queryTargets(`//${this.packagePath}:all`, {
       ignoresErrors: true,

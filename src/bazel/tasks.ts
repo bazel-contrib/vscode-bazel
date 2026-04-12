@@ -15,7 +15,7 @@
 import * as vscode from "vscode";
 import {
   getCommandArgs,
-  getDefaultBazelExecutablePath,
+  getBazelExecutablePath,
   getStartupOptions,
 } from "../extension/configuration";
 import { IBazelCommandOptions } from "./bazel_command";
@@ -160,7 +160,7 @@ async function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
     // Find the coverage file and load it.
     const workspaceInfo = await getWorkspaceInfoFromTask(task.scope);
     const bazelInfo = new BazelInfo(
-      getDefaultBazelExecutablePath(),
+      getBazelExecutablePath(),
       workspaceInfo.bazelWorkspacePath,
     );
     const outputPath = await bazelInfo.getOne("output_path");
@@ -277,7 +277,7 @@ export function createBazelTaskFromDefinition(
     workspaceInfo.workspaceFolder || vscode.TaskScope.Workspace,
     `${commandDescription} ${targetsDescription}`,
     "bazel",
-    new vscode.ShellExecution(getDefaultBazelExecutablePath(), args, {
+    new vscode.ShellExecution(getBazelExecutablePath(), args, {
       cwd: workspaceInfo.bazelWorkspacePath,
     }),
   );

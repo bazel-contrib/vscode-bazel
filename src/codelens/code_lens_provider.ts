@@ -16,7 +16,7 @@ import * as vscode from "vscode";
 
 import { BazelWorkspaceInfo } from "../bazel";
 import { getTargetsForBuildFile } from "../bazel";
-import { getDefaultBazelExecutablePath } from "../extension/configuration";
+import { getBazelExecutablePath } from "../extension/configuration";
 import { ILogger } from "../extension/logger";
 import { CodeLensBuilder } from "./code_lens_builder";
 
@@ -86,7 +86,7 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
     }
 
     const queryResult = await getTargetsForBuildFile(
-      getDefaultBazelExecutablePath(),
+      getBazelExecutablePath(),
       workspaceInfo.bazelWorkspacePath,
       document.uri.fsPath,
     ).catch((error) => {

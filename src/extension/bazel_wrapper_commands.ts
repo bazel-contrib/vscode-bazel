@@ -20,7 +20,7 @@ import { logError, logInfo, showInfoMessage, showUserMessage } from "./logger";
 import { BazelWorkspaceInfo } from "../bazel/bazel_workspace_info";
 import {
   getCommandArgs,
-  getDefaultBazelExecutablePath,
+  getBazelExecutablePath,
   getStartupOptions,
 } from "./configuration";
 import {
@@ -154,7 +154,7 @@ async function bazelBuildTargetWithDebugging(
   const debugStarted = await vscode.debug.startDebugging(undefined, {
     args: fullArgs,
     bazelCommand: "build",
-    bazelExecutablePath: getDefaultBazelExecutablePath(),
+    bazelExecutablePath: getBazelExecutablePath(),
     bazelStartupOptions: startupOptions,
     cwd: commandOptions.workspaceInfo.bazelWorkspacePath,
     name: "On-demand Bazel Build Debug",
