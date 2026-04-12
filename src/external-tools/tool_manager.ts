@@ -1,4 +1,4 @@
-// Copyright 2025 The Bazel Authors. All rights reserved.
+// Copyright 2026 The Bazel Authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import {
   loadToolsConfig,
   ToolConfig,
   ToolsConfig,
-} from "./config";
+} from "./tool_config";
 import { logInfo, logDebug, logWarn, logError } from "../extension/logger";
 import { validateBuildifierExecutable } from "../buildifier";
 import { getConfigurationWithDefault } from "../extension/configuration";

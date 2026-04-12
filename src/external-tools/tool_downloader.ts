@@ -1,4 +1,4 @@
-// Copyright 2025 The Bazel Authors. All rights reserved.
+// Copyright 2026 The Bazel Authors. All rights reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@ import * as fs from "fs/promises";
 import * as path from "path";
 import * as crypto from "crypto";
 import { logInfo, logDebug, logError } from "../extension/logger";
-import { ToolConfig, detectPlatform } from "./config";
+import { ToolConfig, detectPlatform } from "./tool_config";
 import {
   GitHubAsset,
   getGitHubRelease,

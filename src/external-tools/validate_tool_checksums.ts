@@ -17,7 +17,7 @@ import {
   getGitHubRelease,
   GitHubRelease,
 } from "./github";
-import { loadToolsConfig, ToolConfig, ToolsConfig, Platform } from "./config";
+import { loadToolsConfig, ToolConfig, ToolsConfig, Platform } from "./tool_config";
 
 interface ValidationOptions {
   downloadTo?: string;
