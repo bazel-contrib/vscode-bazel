@@ -119,7 +119,6 @@ export async function buildifierLint(
   }
 }
 
-
 /**
  * Executes buildifier with the given file content and arguments.
  *

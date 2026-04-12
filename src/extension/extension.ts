@@ -85,14 +85,12 @@ export async function activate(context: vscode.ExtensionContext) {
   let completionItemProvider: BazelCompletionItemProvider | null = null;
   let lspClient: lc.LanguageClient | undefined;
 
-  // Set up LSP if enabled
-  const config = vscode.workspace.getConfiguration("bazel");
-
   // Check availability of external tools (don't wait for it as it involves user prompts)
   const toolsManager = new ExternalToolsManager(context);
   void toolsManager.checkAvailabilityOfExternalTools();
 
   // Set up LSP if enabled
+  const config = vscode.workspace.getConfiguration("bazel");
   const lspEnabled = !!config.get<string>("lsp.command");
   if (lspEnabled) {
     context.subscriptions.push(
