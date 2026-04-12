@@ -38,7 +38,6 @@ import { ExternalToolsManager } from "../external-tools/tool_manager";
 // Global reference to the workspace tree provider for testing
 declare global {
   var bazelWorkspaceTreeProvider: BazelWorkspaceTreeProvider | undefined;
-  var externalToolsManager: ExternalToolsManager | undefined;
 }
 
 // Clean way to access the provider for testing
