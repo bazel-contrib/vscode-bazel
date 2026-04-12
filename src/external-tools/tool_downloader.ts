@@ -16,8 +16,7 @@ import * as fs from "fs/promises";
 import * as path from "path";
 import * as crypto from "crypto";
 import { logInfo, logDebug, logError } from "../extension/logger";
-import { detectPlatform } from "./platform";
-import { findToolConfig, ToolConfig, ToolsConfig } from "./config";
+import { ToolConfig, detectPlatform } from "./config";
 import {
   GitHubAsset,
   getGitHubRelease,

@@ -14,7 +14,6 @@
 
 import * as path from "path";
 import { logDebug, logError } from "../extension/logger";
-import { Platform } from "./platform";
 
 /**
  * Tool configuration schema.
@@ -44,6 +43,18 @@ export interface ToolConfig {
 export interface ToolsConfig {
   [toolKey: string]: ToolConfig;
 }
+
+/**
+ * Platform detection utilities for tool downloads.
+ */
+export type Platform =
+  | "win32-amd64"
+  | "win32-arm64"
+  | "linux-amd64"
+  | "linux-arm64"
+  | "darwin-amd64"
+  | "darwin-arm64";
+
 /**
  * Attempts to load tool configuration from multiple possible paths to support
  * different execution contexts (development vs. production, extension vs. script).
@@ -100,4 +111,28 @@ export function findToolConfig(
     }
   }
   throw new Error(`Unknown tool: ${toolNameOrKey}`);
+}
+
+/**
+ * Detects the current platform and architecture.
+ * @returns The detected platform string value.
+ * @throws Error if the platform is not supported.
+ */
+export function detectPlatform(): Platform {
+  const platform = process.platform;
+  const arch = process.arch;
+  const detectedPlatform = `${platform}-${arch}`;
+  logDebug(`Detected platform: ${detectedPlatform}`);
+
+  // Runtime validation using regex based on Platform type
+  const platformPattern = /^(win32|linux|darwin)-(amd64|arm64)$/;
+
+  if (!platformPattern.test(detectedPlatform)) {
+    const errorMsg = `Unsupported platform: ${detectedPlatform}`;
+    logDebug(errorMsg);
+    throw new Error(errorMsg);
+  }
+
+  logDebug(`Detected platform: ${detectedPlatform}`);
+  return detectedPlatform as Platform;
 }
