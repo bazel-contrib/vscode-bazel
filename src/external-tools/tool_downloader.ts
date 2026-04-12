@@ -14,13 +14,15 @@
 
 import * as fs from "fs/promises";
 import * as path from "path";
-import * as vscode from "vscode";
 import * as crypto from "crypto";
 import { logInfo, logDebug, logError } from "../extension/logger";
-import { ToolConfig, ToolsConfig, GitHubAsset } from "./types";
 import { detectPlatform } from "./platform";
-import { findToolConfig, loadToolsConfig } from "./config";
-import { getGitHubRelease, findMatchingGithubAsset } from "./github";
+import { findToolConfig, ToolConfig, ToolsConfig } from "./config";
+import {
+  GitHubAsset,
+  getGitHubRelease,
+  findMatchingGithubAsset,
+} from "./github";
 
 /**
  * Cryptographic binary integrity verifier.
@@ -116,83 +118,51 @@ export async function downloadAndVerify(
 }
 
 /**
- * Downloads and manages external tools for the extension.
+ * Downloads a tool from GitHub releases.
+ * @param toolConfig The tool configuration to download.
  */
-export class ToolDownloader {
-  private readonly toolsDir: string;
-  private readonly toolsConfig: ToolsConfig;
+export async function downloadExternalTool(
+  toolConfig: ToolConfig,
+  toolsDir: string,
+): Promise<string> {
+  logDebug(`Starting download process for tool: ${toolConfig.repository}`);
 
-  constructor(toolsDir: string, toolsConfig: ToolsConfig) {
-    this.toolsDir = toolsDir;
-    this.toolsConfig = toolsConfig;
+  const platform = detectPlatform();
+  const assetFilename = toolConfig.assets[platform];
+
+  if (!assetFilename) {
+    throw new Error(
+      `Unsupported platform ${platform} for tool ${toolConfig.executableName}`,
+    );
   }
 
-  /**
-   * Downloads a tool from GitHub releases.
-   * @param toolConfig The tool configuration to download.
-   */
-  async downloadExternalTool(toolConfig: ToolConfig): Promise<string> {
-    logDebug(`Starting download process for tool: ${toolConfig.repository}`);
+  // Ensure tools directory exists
+  await fs.mkdir(toolsDir, { recursive: true });
 
-    const platform = detectPlatform();
-    const assetFilename = toolConfig.assets[platform];
+  // Get release information from GitHub
+  const releaseInfo = await getGitHubRelease(
+    toolConfig.repository,
+    toolConfig.version,
+  );
+  const asset = findMatchingGithubAsset(releaseInfo.assets, assetFilename);
 
-    if (!assetFilename) {
-      throw new Error(
-        `Unsupported platform ${platform} for tool ${toolConfig.executableName}`,
-      );
-    }
-
-    // Ensure tools directory exists
-    await fs.mkdir(this.toolsDir, { recursive: true });
-
-    // Get release information from GitHub
-    const releaseInfo = await getGitHubRelease(
-      toolConfig.repository,
-      toolConfig.version,
+  if (!asset) {
+    throw new Error(
+      `No matching asset found for ${toolConfig.executableName} on ${platform} (${assetFilename})`,
     );
-    const asset = findMatchingGithubAsset(releaseInfo.assets, assetFilename);
-
-    if (!asset) {
-      throw new Error(
-        `No matching asset found for ${toolConfig.executableName} on ${platform} (${assetFilename})`,
-      );
-    }
-
-    const downloadPath = path.join(this.toolsDir, toolConfig.executableName);
-    await downloadAndVerify(asset, downloadPath);
-
-    // Make executable on Unix systems
-    if (process.platform !== "win32") {
-      await fs.chmod(downloadPath, 0o755);
-      logDebug(`Made ${downloadPath} executable`);
-    }
-
-    logDebug(
-      `Successfully downloaded ${toolConfig.repository} to ${downloadPath}`,
-    );
-    return downloadPath;
   }
 
-  /**
-   * Gets the path to a tool if it exists, returns null otherwise.
-   * @param toolNameOrKey The name of the tool.
-   * @returns The absolute path to the tool or null if not found.
-   */
-  async getToolPath(toolNameOrKey: string): Promise<string | null> {
-    logDebug(`Checking if tool exists locally: ${toolNameOrKey}`);
-    const { config, configKey } = findToolConfig(
-      toolNameOrKey,
-      this.toolsConfig,
-    );
-    const executablePath = path.join(this.toolsDir, config.executableName);
-    try {
-      await fs.access(executablePath, fs.constants.X_OK);
-      logDebug(`Found existing executable at: ${executablePath}`);
-      return executablePath;
-    } catch {
-      logDebug(`Tool not found or not executable: ${executablePath}`);
-      return null;
-    }
+  const downloadPath = path.join(toolsDir, toolConfig.executableName);
+  await downloadAndVerify(asset, downloadPath);
+
+  // Make executable on Unix systems
+  if (process.platform !== "win32") {
+    await fs.chmod(downloadPath, 0o755);
+    logDebug(`Made ${downloadPath} executable`);
   }
+
+  logDebug(
+    `Successfully downloaded ${toolConfig.repository} to ${downloadPath}`,
+  );
+  return downloadPath;
 }

@@ -19,9 +19,13 @@ import * as util from "util";
 import * as child_process from "child_process";
 import which from "which";
 
-import { ToolDownloader } from "./tool_downloader";
-import { findToolConfig, loadToolsConfig } from "./config";
-import { ToolConfig, ToolsConfig } from "./types";
+import { downloadExternalTool } from "./tool_downloader";
+import {
+  findToolConfig,
+  loadToolsConfig,
+  ToolConfig,
+  ToolsConfig,
+} from "./config";
 import { logInfo, logDebug, logWarn, logError } from "../extension/logger";
 import { validateBuildifierExecutable } from "../buildifier";
 import { getConfigurationWithDefault } from "../extension/configuration";
@@ -36,7 +40,6 @@ const execFile = util.promisify(child_process.execFile);
  * tool discovery, validation, downloading, and caching of tool locations.
  */
 export class ExternalToolsManager {
-  private readonly toolDownloader: ToolDownloader;
   private readonly toolsConfig: ToolsConfig;
   private readonly downloadDir: string;
 
@@ -45,10 +48,6 @@ export class ExternalToolsManager {
     this.downloadDir = path.join(
       context.globalStorageUri.fsPath,
       "external-tools",
-    );
-    this.toolDownloader = new ToolDownloader(
-      this.downloadDir,
-      this.toolsConfig,
     );
   }
 
@@ -266,8 +265,7 @@ export class ExternalToolsManager {
     toolConfig: ToolConfig,
   ): Promise<string | null> {
     try {
-      const toolPath =
-        await this.toolDownloader.downloadExternalTool(toolConfig);
+      const toolPath = await downloadExternalTool(toolConfig, this.downloadDir);
 
       // Update configuration to use downloaded path
       await this.updateConfigurationForTool(toolConfig, toolPath);

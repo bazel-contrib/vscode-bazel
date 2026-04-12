@@ -14,8 +14,36 @@
 
 import * as path from "path";
 import { logDebug, logError } from "../extension/logger";
-import { ToolsConfig } from "./types";
+import { Platform } from "./platform";
 
+/**
+ * Tool configuration schema.
+ *
+ * Defines the structure for external tool configurations including repository
+ * information, version specifications, platform-specific assets, and checksums.
+ *
+ * Schema Details:
+ * - repository: GitHub repository in "owner/repo" format
+ * - version: Semantic version tag (e.g., "v8.5.1")
+ * - configKey: VSCode configuration key for updating the setting
+ * - assets: Platform-to-filename mapping for binary downloads
+ * - executableName: Platform-independent executable identifier
+ * - checksums: Platform-to-SHA256 checksum mapping for integrity verification
+ */
+export interface ToolConfig {
+  repository: string;
+  version: string;
+  configKey: string;
+  assets: { [key in Platform]: string };
+  executableName: string;
+  checksums: {
+    [platform: string]: string;
+  };
+}
+
+export interface ToolsConfig {
+  [toolKey: string]: ToolConfig;
+}
 /**
  * Attempts to load tool configuration from multiple possible paths to support
  * different execution contexts (development vs. production, extension vs. script).

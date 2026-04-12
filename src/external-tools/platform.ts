@@ -13,7 +13,18 @@
 // limitations under the License.
 
 import { logDebug } from "../extension/logger";
-import { Platform } from "./types";
+
+/**
+ * Platform detection utilities for tool downloads.
+ */
+export enum Platform {
+  WINDOWS_X64 = "windows-amd64",
+  WINDOWS_ARM64 = "windows-arm64",
+  LINUX_X64 = "linux-amd64",
+  LINUX_ARM64 = "linux-arm64",
+  DARWIN_X64 = "darwin-amd64",
+  DARWIN_ARM64 = "darwin-arm64",
+}
 
 /**
  * Detects the current platform and architecture.

@@ -12,9 +12,13 @@ import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
 import { downloadAndVerify } from "./tool_downloader";
-import { findMatchingGithubAsset, getGitHubRelease } from "./github";
-import { GitHubRelease, Platform, ToolConfig, ToolsConfig } from "./types";
-import { loadToolsConfig } from "./config";
+import {
+  findMatchingGithubAsset,
+  getGitHubRelease,
+  GitHubRelease,
+} from "./github";
+import { loadToolsConfig, ToolConfig, ToolsConfig } from "./config";
+import { Platform } from "./platform";
 
 interface ValidationOptions {
   downloadTo?: string;

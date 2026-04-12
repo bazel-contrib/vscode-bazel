@@ -13,7 +13,38 @@
 // limitations under the License.
 
 import { logDebug, logError } from "../extension/logger";
-import { GitHubAsset, GitHubRelease } from "./types";
+
+/**
+ * GitHub release asset metadata.
+ *
+ * Represents a downloadable asset from a GitHub release with integrity
+ * verification capabilities via the GitHub-provided SHA256 digest.
+ *
+ * Important Notes:
+ * - digest: GitHub-provided SHA256 hash (prefixed with "sha256:")
+ * - browser_download_url: Direct download URL for the asset
+ * - name: Original filename as shown in the GitHub release
+ *
+ * Security:
+ * The digest field is cryptographically signed by GitHub and provides
+ * assurance that the asset has not been tampered with since release.
+ */
+export interface GitHubAsset {
+  name: string;
+  browser_download_url: string;
+  digest: string;
+}
+
+/**
+ * GitHub release information.
+ *
+ * Contains metadata about a GitHub release including all associated assets.
+ * Used for tool version management and binary distribution.
+ */
+export interface GitHubRelease {
+  tag_name: string;
+  assets: GitHubAsset[];
+}
 
 /**
  * Fetches release information from GitHub's REST API with support for
