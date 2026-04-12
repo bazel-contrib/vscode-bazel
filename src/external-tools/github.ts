@@ -59,7 +59,6 @@ export interface GitHubRelease {
 export async function getGitHubRelease(
   repository: string,
   version: string,
-  token?: string,
 ): Promise<GitHubRelease> {
   // Use the direct release-by-tag endpoint
   const apiUrl = `https://api.github.com/repos/${repository}/releases/tags/${version}`;
@@ -76,6 +75,7 @@ export async function getGitHubRelease(
     };
 
     // Add Authorization header if token is provided
+    const token = process.env.GITHUB_TOKEN;
     if (token) {
       headers.Authorization = `token ${token}`;
       logDebug(`Using authenticated request for ${repository}@${version}`);

@@ -41,9 +41,13 @@ jobs:
         run: npm run lint-check
 
       - name: Download external tools and validate checksums
-        run: npm run validate-tool-checksums -- --download-to /usr/local/bin
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
+      uses: ./.github/actions/download-external-tools
+      with:
+        tools-dir: ${{ runner.temp }}/tools
+        config-file: external-tools-config.json
+        platform: linux-amd64
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
 
       - name: Build Bazel workspace to assure it is working & warm up cache
         run: bazel build //...

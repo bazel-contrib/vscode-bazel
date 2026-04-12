@@ -1,0 +1,65 @@
+name: 'Download External Tools'
+description: 'Downloads external tools from GitHub releases and validates checksums'
+
+inputs:
+  tools-dir:
+    description: 'Directory to download tools to'
+    required: true
+  config-file:
+    description: 'Path to external-tools-config.json'
+    required: false
+    default: 'external-tools-config.json'
+  platform:
+    description: 'Target platform (e.g., linux-amd64, darwin-amd64)'
+    required: false
+    default: 'linux-amd64'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Download external tools and validate checksums
+      shell: bash
+      run: |
+        TOOLS_DIR="${{ inputs.tools-dir }}"
+        CONFIG_FILE="${{ inputs.config-file }}"
+        PLATFORM="${{ inputs.platform }}"
+        
+        mkdir -p "$TOOLS_DIR"
+        
+        # Loop through each tool in the config
+        for tool_key in $(jq -r 'keys[]' "$CONFIG_FILE"); do
+          echo "Downloading $tool_key..."
+          
+          # Extract tool configuration
+          repo=$(jq -r ".\"$tool_key\".repository" "$CONFIG_FILE")
+          version=$(jq -r ".\"$tool_key\".version" "$CONFIG_FILE")
+          asset_name=$(jq -r ".\"$tool_key\".assets[\"$PLATFORM\"]" "$CONFIG_FILE")
+          executable_name=$(jq -r ".\"$tool_key\".executableName" "$CONFIG_FILE")
+          expected_checksum=$(jq -r ".\"$tool_key\".checksums[\"$PLATFORM\"]" "$CONFIG_FILE")
+          
+          # Skip if platform not supported for this tool
+          if [ "$asset_name" = "null" ] || [ "$expected_checksum" = "null" ]; then
+            echo "Skipping $tool_key - platform $PLATFORM not supported"
+            continue
+          fi
+          
+          # Download the asset
+          gh release download "$version" --repo "$repo" --pattern "$asset_name" --dir "$TOOLS_DIR"
+          
+          # Move to executable name and set permissions
+          mv "$TOOLS_DIR/$asset_name" "$TOOLS_DIR/$executable_name"
+          chmod +x "$TOOLS_DIR/$executable_name"
+          
+          # Validate SHA256 checksum
+          actual_checksum=$(sha256sum "$TOOLS_DIR/$executable_name" | cut -d' ' -f1)
+          if [ "$actual_checksum" != "$expected_checksum" ]; then
+            echo "Checksum mismatch for $tool_key:"
+            echo "  Expected: $expected_checksum"
+            echo "  Actual:   $actual_checksum"
+            exit 1
+          fi
+          
+          echo "Successfully downloaded and validated $tool_key"
+        done
+        
+        echo "$TOOLS_DIR" >> $GITHUB_PATH

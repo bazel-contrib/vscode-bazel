@@ -66,32 +66,35 @@ export function loadToolsConfig(): {
   config: ToolsConfig;
   path: string;
 } {
-  // List of paths to try in order
-  const configPaths = [
-    path.join(__dirname.replace("/dist", ""), "external-tools-config.json"), // src location for extension
+  // Try relative require paths like the test pattern
+  const requirePaths = [
+    "./external-tools-config.json", // same directory
+    "../external-tools-config.json", // parent directory (test pattern)
+    "../../external-tools-config.json", // two levels up
   ];
 
   logDebug(
-    `Attempting to load tool configuration from paths: ${configPaths.join(", ")}`,
+    `Attempting to load tool configuration from require paths: ${requirePaths.join(", ")}`,
   );
 
-  for (const configPath of configPaths) {
+  for (const requirePath of requirePaths) {
     try {
-      logDebug(`Trying to load config from: ${configPath}`);
+      logDebug(`Trying to load config from: ${requirePath}`);
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const config = require(configPath);
-      logDebug(`Successfully loaded tool configuration from: ${configPath}`);
-      return { config, path: configPath };
+      const config = require(requirePath);
+      const resolvedPath = path.resolve(__dirname, requirePath);
+      logDebug(`Successfully loaded tool configuration from: ${resolvedPath}`);
+      return { config, path: resolvedPath };
     } catch (error) {
       logDebug(
-        `Failed to load config from ${configPath}: ${error instanceof Error ? error.message : String(error)}`,
+        `Failed to load config from ${requirePath}: ${error instanceof Error ? error.message : String(error)}`,
       );
       // Continue to next path
       continue;
     }
   }
 
-  const errorMsg = `Failed to load tool configuration from any of these paths: ${configPaths.join(", ")}`;
+  const errorMsg = `Failed to load tool configuration from any of these require paths: ${requirePaths.join(", ")}`;
   logError(errorMsg, true);
   throw new Error(errorMsg);
 }
