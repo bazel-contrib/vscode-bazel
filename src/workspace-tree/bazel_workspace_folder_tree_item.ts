@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as path from "path";
 import * as vscode from "vscode";
 import { BazelWorkspaceInfo, BazelQuery } from "../bazel";
 import {
@@ -199,11 +200,26 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     if (!this.workspaceInfo || !this.workspaceInfo.workspaceFolder) {
       return Promise.resolve([]);
     }
-    const workspacePath = this.workspaceInfo.workspaceFolder.uri.fsPath;
+    // Always use the Bazel workspace root as cwd for spawning Bazel.
+    // In multi-root workspaces the VS Code workspace folder may be a
+    // subdirectory which would cause spawn errors when used as cwd.
+    const bazelWorkspacePath = this.workspaceInfo.bazelWorkspacePath;
+    const workspaceFolderPath = this.workspaceInfo.workspaceFolder.uri.fsPath;
+
+    // When the VS Code folder is a subdirectory of the Bazel workspace,
+    // scope queries to that subdirectory for performance.
+    const relativePath = path
+      .relative(bazelWorkspacePath, workspaceFolderPath)
+      .replace(/\\/g, "/");
+
+    const queryExpression = relativePath
+      ? `//${relativePath}/...:*`
+      : getQueryExpression();
+
     const packagePaths = await new BazelQuery(
       getBazelExecutablePath(),
-      workspacePath,
-    ).queryPackages(getQueryExpression());
+      bazelWorkspacePath,
+    ).queryPackages(queryExpression);
     const topLevelItems: BazelPackageTreeItem[] = [];
     this.buildPackageTree(
       packagePaths,
@@ -215,10 +231,11 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
 
     // Now collect any targets in the directory also (this can fail since
     // there might not be a BUILD files at this level (but down levels)).
+    const targetQuery = relativePath ? `//${relativePath}:all` : `:all`;
     const queryResult = await new BazelQuery(
       getBazelExecutablePath(),
-      workspacePath,
-    ).queryTargets(`:all`, {
+      bazelWorkspacePath,
+    ).queryTargets(targetQuery, {
       ignoresErrors: true,
       sortByRuleName: true,
     });

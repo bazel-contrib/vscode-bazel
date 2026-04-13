@@ -194,7 +194,7 @@ export async function queryQuickPickTargets({
 
   const queryResult = await new BazelQuery(
     getBazelExecutablePath(),
-    workspaceInfo.workspaceFolder.uri.fsPath,
+    workspaceInfo.bazelWorkspacePath,
   ).queryTargets(query ?? "//...:*", { abortSignal });
 
   // Sort the labels so the QuickPick is ordered.
@@ -235,7 +235,7 @@ export async function queryQuickPickPackage({
 
   const packagePaths = await new BazelQuery(
     getBazelExecutablePath(),
-    workspaceInfo.workspaceFolder.uri.fsPath,
+    workspaceInfo.bazelWorkspacePath,
   ).queryPackages(query ?? "//...", { abortSignal });
 
   // Sort the labels so the QuickPick is ordered.
