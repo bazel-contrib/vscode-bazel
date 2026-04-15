@@ -99,6 +99,7 @@ export class BazelQuery extends BazelCommand {
       .trim()
       .replace(/\r\n|\r/g, "\n")
       .split("\n")
+      .filter(Boolean)
       .sort();
     return result;
   }
