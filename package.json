@@ -535,7 +535,7 @@
         "@vscode/test-cli": "^0.0.12",
         "@vscode/test-electron": "^2.3.9",
         "@vscode/vsce": "^3.0.0",
-        "esbuild": "^0.27.2",
+        "esbuild": "^0.28.0",
         "eslint": "^10.0.0",
         "eslint-config-prettier": "^10.0.0",
         "eslint-plugin-jsdoc": "^62.0.0",
