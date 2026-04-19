@@ -25,7 +25,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")/.." > /dev/null
 # extension's build time.
 if [[ ! -f src/protos/protos.js ]] ; then
   sed -e "s#^#src/protos/#" src/protos/protos_list.txt | \
-      xargs npx pbjs -t static-module -o src/protos/protos.js
+      xargs npx pbjs --path src/protos -t static-module -o src/protos/protos.js
 fi
 if [[ ! -f src/protos/protos.d.ts ]] ; then
   npx pbts -o src/protos/protos.d.ts src/protos/protos.js
