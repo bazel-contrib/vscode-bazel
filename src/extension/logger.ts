@@ -20,6 +20,17 @@ import { Disposable, ExtensionContext, LogOutputChannel } from "vscode";
 
 type Arguments = unknown[];
 
+/**
+ * Interface for logger implementations that provide feature-specific logging.
+ * This allows dependency injection of logging capabilities while maintaining
+ * feature-specific prefixes in log messages.
+ */
+export interface ILogger {
+  logInfo(message: string, showMessage?: boolean, ...args: unknown[]): void;
+  logWarn(message: string, showMessage?: boolean, ...args: unknown[]): void;
+  logError(message: string, showMessage?: boolean, ...args: unknown[]): void;
+}
+
 const OUTPUT_CHANNEL_NAME = "Bazel";
 const DETAILS_ACTION = "Details";
 let channel: LogOutputChannel | undefined;
