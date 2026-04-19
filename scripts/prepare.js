@@ -32,7 +32,7 @@ if (!fs.existsSync("src/protos/protos.js")) {
     .filter((line) => line.length > 0)
     .map((line) => `src/protos/${line}`);
   execSync(
-    `npx pbjs -t static-module -o src/protos/protos.js ${protoFiles.join(" ")}`,
+    `npx pbjs --path src/protos -t static-module -o src/protos/protos.js ${protoFiles.join(" ")}`,
     {
       stdio: "inherit",
     },

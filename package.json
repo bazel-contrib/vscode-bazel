@@ -513,12 +513,12 @@
         "lint-fix": "eslint . --fix",
         "build:debugadapter": "esbuild src/debug-adapter/client.ts --bundle --outfile=dist/debug-adapter-client.js --external:vscode --format=cjs --platform=node --minify",
         "build:extension": "esbuild src/extension/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify",
-        "build:tests": "esbuild test/**/*.test.ts --bundle --outdir=dist/test --external:vscode --format=cjs --platform=node --sourcemap",
+        "build:unbundled": "tsc --project tsconfig.json",
         "build": "npm run build:debugadapter && npm run build:extension",
         "prebuild": "node ./scripts/prepare.js",
         "pretest": "npm run build",
         "test:grammar": "vscode-tmgrammar-snap test/example.bazelrc",
-        "test:unit": "npm run build:tests && vscode-test",
+        "test:unit": "npm run build:unbundled && vscode-test",
         "test": "npm run typecheck && npm run test:grammar && npm run test:unit",
         "package": "npm run build && vsce package --no-dependencies",
         "update-snapshot": "vscode-tmgrammar-snap -u test/example.bazelrc"
@@ -535,7 +535,7 @@
         "@vscode/test-cli": "^0.0.12",
         "@vscode/test-electron": "^2.3.9",
         "@vscode/vsce": "^3.0.0",
-        "esbuild": "^0.27.2",
+        "esbuild": "^0.28.0",
         "eslint": "^10.0.0",
         "eslint-config-prettier": "^10.0.0",
         "eslint-plugin-jsdoc": "^62.0.0",
@@ -553,7 +553,8 @@
     "dependencies": {
         "@vscode/debugadapter": "^1.68.0",
         "@vscode/debugprotocol": "^1.68.0",
-        "protobufjs": "^6.8.0",
+        "protobufjs": "^8.0.1",
+        "protobufjs-cli": "^2.0.1",
         "vscode-languageclient": "^9.0.1",
         "vscode-uri": "^3.0.2",
         "which": "^6.0.0"
