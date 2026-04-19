@@ -515,7 +515,7 @@
         "build:extension": "esbuild src/extension/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify",
         "build:unbundled": "tsc --project tsconfig.json",
         "build": "npm run build:debugadapter && npm run build:extension",
-        "prebuild": "./scripts/prepare.sh",
+        "prebuild": "node ./scripts/prepare.js",
         "pretest": "npm run build",
         "test:grammar": "vscode-tmgrammar-snap test/example.bazelrc",
         "test:unit": "npm run build:unbundled && vscode-test",
