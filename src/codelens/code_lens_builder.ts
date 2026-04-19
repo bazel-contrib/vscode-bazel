@@ -19,6 +19,13 @@ import { CodeLensCommandAdapter } from "./code_lens_command_adapter";
 
 /**
  * Groups of Bazel targets organized by the actions they support.
+ * Used by the CodeLens provider to determine which actions to display for each target.
+ *
+ * @interface ActionGroups
+ * @property {string[]} copy - Targets that support copying their label to clipboard (all target types)
+ * @property {string[]} build - Targets that support build operations (libraries, binaries, tests)
+ * @property {string[]} test - Targets that support test execution (test rules only)
+ * @property {string[]} run - Targets that support run operations (executable binaries only)
  */
 interface ActionGroups {
   copy: string[];
@@ -34,6 +41,10 @@ export class CodeLensBuilder {
   /**
    * Takes the result of a Bazel query for targets defined in a package and
    * returns a list of CodeLens for the BUILD file in that package.
+   *
+   * @param bazelWorkspaceInfo The Bazel workspace information containing workspace path and context
+   * @param queryResult The result of the bazel query containing target definitions
+   * @returns A new array of CodeLens objects for the BUILD file
    */
   buildCodeLenses(
     bazelWorkspaceInfo: BazelWorkspaceInfo,
@@ -71,6 +82,10 @@ export class CodeLensBuilder {
 
   /**
    * Creates CodeLens objects for targets on the same line.
+   *
+   * @param targets Array of Bazel targets found on the same line in the BUILD file
+   * @param bazelWorkspaceInfo Workspace context information for command creation
+   * @param result Output array that will be modified in-place to include new CodeLens objects
    */
   private createCodeLensesForTargetsOnSameLine(
     targets: blaze_query.ITarget[],
@@ -116,6 +131,10 @@ export class CodeLensBuilder {
 
   /**
    * Groups targets by the actions they support based on Bazel rule types.
+   * Uses rule naming conventions to determine which actions are available.
+   *
+   * @param targets Array of Bazel targets to classify by supported actions
+   * @returns ActionGroups object with targets organized by action type
    */
   private groupTargetsByAction(targets: blaze_query.ITarget[]): ActionGroups {
     const copyTargets: string[] = [];
@@ -137,6 +156,11 @@ export class CodeLensBuilder {
       }
 
       // Targets which are not libraries may support running.
+      //
+      // Without checking the Bazel rule's `executable` attribute we can't know
+      // for sure which targets can be run. This could be calculated by running
+      // `bazel cquery`, but this would introduce significant costs due to
+      // first running the `analysis` phase, so we use a heuristic instead.
       const ruleIsLibrary = ruleClass.endsWith("_library");
       if (!ruleIsLibrary) {
         runTargets.push(targetName);
@@ -153,6 +177,14 @@ export class CodeLensBuilder {
 
   /**
    * Creates a CodeLens for a specific action type if targets are available.
+   * Title shows action name with count for multiple targets.
+   *
+   * @param actionName Display name for the action (e.g., "Build", "Test", "Run", "Copy")
+   * @param command VS Code command identifier to execute when CodeLens is clicked
+   * @param targets Array of target names that support this action
+   * @param location Source location information for CodeLens positioning
+   * @param bazelWorkspaceInfo Workspace context for command adapter creation
+   * @param result Output array that will be modified in-place to include the new CodeLens
    */
   private createCodeLens(
     actionName: string,
