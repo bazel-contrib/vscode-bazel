@@ -43,13 +43,40 @@ export function checkBazelIsAvailable(): boolean {
 
 /** Checks if any Bazel workspace is available. */
 export function checkBazelWorkspaceAvailable(): boolean {
-  if (!vscode.workspace.workspaceFolders?.length) {
-    return false;
-  }
-  for (const folder of vscode.workspace.workspaceFolders) {
-    if (getBazelWorkspaceFolder(folder.uri.fsPath)) {
-      return true;
-    }
-  }
-  return false;
+  const workspaceFolders = vscode.workspace.workspaceFolders
+    .map((folder) => getBazelWorkspaceFolder(folder.uri.fsPath))
+    .filter((folder) => folder !== undefined);
+  return workspaceFolders.length > 0;
+}
+
+export function setBazelWorkspaceAvailableContext() {
+  vscode.commands.executeCommand(
+    "setContext",
+    "bazel.haveWorkspace",
+    checkBazelWorkspaceAvailable(),
+  );
+}
+
+export function registerBazelWorkspaceAvailabilityWatcher(
+  context: vscode.ExtensionContext,
+) {
+  const buildFilesWatcher = vscode.workspace.createFileSystemWatcher(
+    "**/{BUILD,BUILD.bazel,MODULE.bazel,REPO.bazel,WORKSPACE.bazel,WORKSPACE}",
+    false, // ignoreCreateEvents
+    true, // ignoreChangeEvents
+    false, // ignoreDeleteEvents
+  );
+
+  buildFilesWatcher.onDidCreate(() => {
+    setBazelWorkspaceAvailableContext();
+  });
+  buildFilesWatcher.onDidDelete(() => {
+    setBazelWorkspaceAvailableContext();
+  });
+  vscode.workspace.onDidChangeWorkspaceFolders(() => {
+    setBazelWorkspaceAvailableContext();
+  });
+  context.subscriptions.push(buildFilesWatcher);
+
+  setBazelWorkspaceAvailableContext(); // Initialize
 }

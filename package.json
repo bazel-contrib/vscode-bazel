@@ -104,7 +104,8 @@
                 "icon": {
                     "dark": "./icons/refresh-dark.svg",
                     "light": "./icons/refresh-light.svg"
-                }
+                },
+                "when": "bazel.workspaceTree.enabled"
             },
             {
                 "category": "Bazel",
@@ -162,8 +163,13 @@
                 },
                 "bazel.enableCodeLens": {
                     "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "Whether to add a CodeLens to `BUILD`/`BUILD.bazel` files to provide actions while browsing the file."
+                    "default": true,
+                    "markdownDescription": "Whether to add a CodeLens to `BUILD`/`BUILD.bazel` files to provide actions while browsing the file. Deactivate to avoid running queries in the background."
+                },
+                "bazel.enableWorkspaceTree": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "Whether to show Bazel packages and targets in a tree view in the Explorer panel. Deactivate to avoid running queries in the background."
                 },
                 "bazel.pathsToIgnore": {
                     "type": "array",
