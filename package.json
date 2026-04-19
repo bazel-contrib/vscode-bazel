@@ -535,7 +535,7 @@
         "@vscode/test-cli": "^0.0.12",
         "@vscode/test-electron": "^2.3.9",
         "@vscode/vsce": "^3.0.0",
-        "esbuild": "^0.27.2",
+        "esbuild": "^0.28.0",
         "eslint": "^10.0.0",
         "eslint-config-prettier": "^10.0.0",
         "eslint-plugin-jsdoc": "^62.0.0",
@@ -553,7 +553,8 @@
     "dependencies": {
         "@vscode/debugadapter": "^1.68.0",
         "@vscode/debugprotocol": "^1.68.0",
-        "protobufjs": "^6.8.0",
+        "protobufjs": "^8.0.1",
+        "protobufjs-cli": "^2.0.1",
         "vscode-languageclient": "^9.0.1",
         "vscode-uri": "^3.0.2",
         "which": "^6.0.0"
