@@ -38,6 +38,7 @@ import {
 import { createBazelTask } from "../bazel/tasks";
 import { blaze_query } from "../protos";
 import { CodeLensCommandAdapter } from "../codelens/code_lens_command_adapter";
+import { QueryLocation } from "../bazel/query_location";
 
 /**
  * Unified target selection logic that handles all 3 use cases:
@@ -419,15 +420,12 @@ async function bazelGoToLabel(target_info?: blaze_query.ITarget | undefined) {
   }
 
   const location = target_info.rule.location;
-  const [filePath, line, column] = location.split(":");
-  const position = new vscode.Position(
-    parseInt(line, 10) - 1, // Convert to 0-based line number
-    parseInt(column || "0", 10) - 1, // Convert to 0-based column number, default to 0
-  );
+  const queryLocation = new QueryLocation(location);
+  const position = queryLocation.range.start;
 
   // Open the document and reveal the position
   const document = await vscode.workspace.openTextDocument(
-    vscode.Uri.file(filePath),
+    vscode.Uri.file(queryLocation.path),
   );
   await vscode.window.showTextDocument(document, {
     selection: new vscode.Range(position, position),
