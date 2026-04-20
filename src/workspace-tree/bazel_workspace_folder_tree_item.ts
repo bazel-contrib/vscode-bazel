@@ -207,6 +207,11 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
       .replace(/\\/g, "/");
 
     const queryExpression = getQueryExpression();
+    // When the VS Code folder is a subdirectory of the Bazel workspace,
+    // `intersect` scopes the user's query to only packages under that
+    // subdirectory (//${relativePath}/...:*), and `except` removes the
+    // folder's own direct targets (//${relativePath}:*) so we only get
+    // sub-packages for the tree — direct targets are fetched separately below.
     const packageQuery = relativePath
       ? `((${queryExpression}) intersect (//${relativePath}/...:*)) except (//${relativePath}:*)`
       : queryExpression;
@@ -227,6 +232,9 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
 
     // Now collect any targets in the directory also (this can fail since
     // there might not be a BUILD files at this level (but down levels)).
+    // Intersect the user's query with the directory-level target query so
+    // only targets that satisfy both the user's filter and belong to this
+    // directory are shown (e.g. the user may restrict to certain rule kinds).
     const scopedTargetQuery = relativePath ? `//${relativePath}:all` : `:all`;
     const targetQuery = `(${queryExpression}) intersect (${scopedTargetQuery})`;
     const queryResult = await new BazelQuery(
