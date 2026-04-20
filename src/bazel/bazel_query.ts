@@ -99,6 +99,10 @@ export class BazelQuery extends BazelCommand {
       .trim()
       .replace(/\r\n|\r/g, "\n")
       .split("\n")
+      // Remove empty strings caused by trailing newlines or empty output,
+      // e.g. "foo\nbar\n".split("\n") → ["foo","bar",""] — the trailing ""
+      // would otherwise pollute the package list.
+      .filter(Boolean)
       .sort();
     return result;
   }
