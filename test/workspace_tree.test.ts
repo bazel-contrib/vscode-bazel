@@ -3,8 +3,10 @@ import * as vscode from "vscode";
 import * as assert from "assert";
 import { getWorkspaceTreeProviderForTesting } from "../src/extension/extension";
 import * as fs from "fs";
-import { IBazelTreeItem } from "../src/workspace-tree/bazel_tree_item";
-import { BazelWorkspaceTreeProvider } from "../src/workspace-tree";
+import {
+  BazelWorkspaceTreeProvider,
+  IBazelTreeItem,
+} from "../src/workspace-tree";
 
 describe("Bazel Workspace Tree", function (this: Mocha.Suite) {
   this.timeout(10000);

@@ -12,4 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from "./bazel_workspace_tree_provider";
+import { WorkspaceTreeFeature } from "./workspace_tree_feature";
+import { BazelWorkspaceTreeProvider } from "./workspace_tree_provider";
+import { IBazelTreeItem } from "./bazel_tree_item";
+export { BazelWorkspaceTreeProvider, WorkspaceTreeFeature, IBazelTreeItem };
