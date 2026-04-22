@@ -204,10 +204,7 @@ describe("Bazel Workspace Tree", function (this: Mocha.Suite) {
           vscode.ConfigurationTarget.Workspace,
         );
 
-      await verifyTreeStructure(
-        {},
-        await workspaceTreeProvider.getChildren(),
-      );
+      await verifyTreeStructure({}, await workspaceTreeProvider.getChildren());
     });
   });
 
