@@ -52,6 +52,9 @@ export class BazelTargetSymbolProvider implements DocumentSymbolProvider {
     const result: vscode.DocumentSymbol[] = [];
 
     for (const target of queryResult.target) {
+      if (!target.rule?.location || !target.rule.name) {
+        continue;
+      }
       const location = new QueryLocation(target.rule.location);
       let targetName = target.rule.name;
 

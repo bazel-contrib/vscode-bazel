@@ -90,7 +90,7 @@ class BazelTaskProvider implements vscode.TaskProvider {
 }
 
 async function getWorkspaceInfoFromTask(
-  scope: vscode.WorkspaceFolder | vscode.TaskScope,
+  scope: vscode.WorkspaceFolder | vscode.TaskScope | undefined,
 ) {
   let workspaceInfo: BazelWorkspaceInfo | undefined;
   if (
@@ -135,7 +135,7 @@ async function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
   const taskDefinition = task.definition as BazelTaskDefinition;
   const command = taskDefinition.command;
   const rawExitCode = event.exitCode;
-  const exitCode = parseExitCode(rawExitCode, command);
+  const exitCode = parseExitCode(rawExitCode ?? 0, command);
   const bazelTaskInfo = taskDefinition.bazelTaskInfo;
 
   // Show a notification that the build is finished
@@ -159,6 +159,10 @@ async function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
   if (taskDefinition.command === "coverage" && rawExitCode === 0) {
     // Find the coverage file and load it.
     const workspaceInfo = await getWorkspaceInfoFromTask(task.scope);
+    if (!workspaceInfo) {
+      logWarn("No Bazel workspace found for coverage task.", true);
+      return;
+    }
     const bazelInfo = new BazelInfo(
       getBazelExecutablePath(),
       workspaceInfo.bazelWorkspacePath,
@@ -170,8 +174,8 @@ async function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
     const execution = task.execution as vscode.ShellExecution;
     const bazelCommandStr = JSON.stringify(
       [execution.command]
-        .concat(execution.args)
-        .map((a) => (typeof a === "string" ? a : a.value)),
+        .concat(execution.args ?? [])
+        .map((a) => (typeof a === "string" ? a : (a?.value ?? ""))),
     );
     const description = `Coverage info from:\n  ${bazelCommandStr}\n`;
 
