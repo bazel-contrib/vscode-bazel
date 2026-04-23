@@ -424,7 +424,7 @@ function formatTargetDisplayName(
   target: string,
   maxLabelLength: number = MAX_TARGET_DISPLAY_LENGTH,
 ): string {
-  const shortName = target.includes(":") ? target.split(":")[1] : target;
+  const shortName = target.split(":")[1] ?? target;
   // Truncate from the beginning if the name is too long (keep the end visible)
   return shortName.length > maxLabelLength
     ? "..." + shortName.slice(-(maxLabelLength - 3))
