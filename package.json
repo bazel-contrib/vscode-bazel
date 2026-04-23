@@ -195,7 +195,7 @@
                 "bazel.commandLine.queryExpression": {
                     "type": "string",
                     "default": "...:*",
-                    "description": "A [query language expression](https://bazel.build/query/language) which determines the packages displayed in the workspace tree and quick picker. The default inspects the entire workspace, but you could narrow it. For example: `//part/you/want/...:*`"
+                    "description": "A [query language expression](https://bazel.build/query/language) which determines the packages and targets displayed in the workspace tree and quick picker. The default inspects the entire workspace, but you could narrow it. For example: `//part/you/want/...:*` or `kind('.*_test rule', //...)`"
                 },
                 "bazel.lsp.command": {
                     "type": "string",
@@ -515,7 +515,7 @@
         "build:extension": "esbuild src/extension/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify",
         "build:unbundled": "tsc --project tsconfig.json",
         "build": "npm run build:debugadapter && npm run build:extension",
-        "prebuild": "./scripts/prepare.sh",
+        "prebuild": "node ./scripts/prepare.js",
         "pretest": "npm run build",
         "test:grammar": "vscode-tmgrammar-snap test/example.bazelrc",
         "test:unit": "npm run build:unbundled && vscode-test",

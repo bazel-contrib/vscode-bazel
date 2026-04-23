@@ -204,10 +204,9 @@ export function getBuildFileLineWithSourceFilePath(
   sourceFilePath: string,
 ): number | undefined {
   // Find the line number where the current editors file is mentioned
-  const relativeSourcePath = path.relative(
-    path.dirname(buildFilePath),
-    sourceFilePath,
-  );
+  const relativeSourcePath = path
+    .relative(path.dirname(buildFilePath), sourceFilePath)
+    .replace(/\\/g, "/");
   const buildFileContent = fs
     .readFileSync(buildFilePath, "utf8")
     .trim()
