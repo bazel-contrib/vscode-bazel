@@ -23,6 +23,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Enforce conventional commit message in PR title
+        if: github.event_name == 'pull_request'
+        run: ./.github/scripts/enforce-conventional-commit-message.sh "${{ github.event.pull_request.title }}"
+
       - name: Install Node.js
         uses: actions/setup-node@v6
         with:
