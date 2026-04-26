@@ -57,6 +57,19 @@ export function getPathsToIgnore(): string[] {
   return getConfigurationWithDefault<string[]>("bazel", "pathsToIgnore");
 }
 
+/**
+ * Gets the manually specified Bazel workspace path from the workspace
+ * configuration.
+ *
+ * @param scopeUri Optional URI to scope the configuration lookup to a specific
+ * resource.
+ * @returns The manually specified workspace path, or an empty string if not set.
+ */
+export function getWorkspacePath(scopeUri?: vscode.Uri): string {
+  const config = vscode.workspace.getConfiguration("bazel", scopeUri);
+  return (config.get<string>("workspacePath") || "").trim();
+}
+
 export function getStartupOptions(): string[] {
   return getConfigurationWithDefault<string[]>(
     "bazel.commandLine",
