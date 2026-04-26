@@ -28,11 +28,6 @@ jobs:
         with:
           cache: "npm"
 
-      - name: Install buildifier
-        uses: ./.github/actions/install-buildifier
-        with:
-          version: "8.2.1"
-
       - name: Install Javascript dependencies
         run: npm ci
 
@@ -45,12 +40,14 @@ jobs:
       - name: Lint
         run: npm run lint-check
 
-      - uses: bazel-contrib/setup-bazel@0.19.0
-        with:
-          bazelisk-cache: true
-          disk-cache: false
-          repository-cache: false
-          module-root: ${{ github.workspace }}/test/bazel_workspace
+      - name: Download external tools and validate checksums
+      uses: ./.github/actions/download-external-tools
+      with:
+        tools-dir: ${{ runner.temp }}/tools
+        config-file: external-tools-config.json
+        platform: linux-amd64
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
 
       - name: Build Bazel workspace to assure it is working & warm up cache
         run: bazel build //...

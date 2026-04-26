@@ -12,123 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as fs from "fs/promises";
-import * as path from "path";
-import * as vscode from "vscode";
-import which from "which";
-
+import { logDebug, logWarn } from "../extension/logger";
 import { executeBuildifier } from "./buildifier";
-import { getBuildifierExecutablePath } from "../extension/configuration";
-import { logWarn } from "../extension/logger";
 
-async function fileExists(filename: string) {
+/**
+ * Validates that buildifier executable is working correctly.
+ *
+ * @param buildifierExecutable Custom executable path to use instead of default.
+ * @returns True if buildifier is working correctly, false otherwise.
+ */
+export async function validateBuildifierExecutable(
+  buildifierExecutable: string,
+): Promise<boolean> {
   try {
-    // First check if file exists and is a regular file
-    const stats = await fs.stat(filename);
-    if (!stats.isFile()) {
-      return false;
-    }
-
-    // Then check if it's executable by trying to access it
-    await fs.access(filename, fs.constants.X_OK);
+    logDebug(`Testing buildifier with JSON output format`);
+    const { stdout } = await executeBuildifier(
+      "",
+      ["--format=json", "--mode=check", "--lint=off"],
+      false,
+      buildifierExecutable,
+    );
+    JSON.parse(stdout); // Will throw if not valid JSON
+    logDebug(`Buildifier validation successful - JSON output supported`);
     return true;
-  } catch {
+  } catch (jsonError) {
+    logWarn(
+      `Buildifier JSON validation failed. The buildifier version may be too old and doesn't support JSON output format. Consider updating to a newer version. Error: ${jsonError instanceof Error ? jsonError.message : String(jsonError)}`,
+      false,
+    );
     return false;
-  }
-}
-
-/** The URL to load for buildifier's releases. */
-const BUILDTOOLS_RELEASES_URL =
-  "https://github.com/bazelbuild/buildtools/releases";
-
-/**
- * Checks whether buildifier is available (either at the system PATH or a
- * user-specified path, depending on the value in Settings).
- *
- * If not available, a warning message will be presented to the user with a
- * Download button that they can use to go to the GitHub releases page.
- *
- * @returns absolute path to the found buildifier executable, or null if not found
- */
-export async function checkBuildifierIsAvailable(): Promise<string | null> {
-  const buildifierExecutable = getBuildifierExecutablePath();
-
-  // Check if the program exists (in case it's an actual executable and not
-  // an target name starting with `@`).
-  const isTarget = buildifierExecutable.startsWith("@");
-
-  // Check if the program exists as a relative path of the workspace
-  const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath;
-  const relativePath = path.join(workspacePath || "", buildifierExecutable);
-  const relativePathExists = await fileExists(relativePath);
-
-  let executablePath: string;
-  if (relativePathExists) {
-    executablePath = relativePath;
-  } else if (isTarget) {
-    // For Bazel targets, use the target name as-is
-    executablePath = buildifierExecutable;
-  } else {
-    // Try to find the executable in the system PATH
-    try {
-      executablePath = await which(buildifierExecutable);
-    } catch (e) {
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      showBuildifierDownloadPrompt("Buildifier was not found");
-      return null;
-    }
-  }
-
-  // Make sure it's a compatible version by running
-  // buildifier on an empty input and see if it exits successfully and the
-  // output parses.
-  const { stdout } = await executeBuildifier(
-    "",
-    // specify the --lint value even though off is the default in case
-    // a .buildifer.json with a different value is present
-    ["--format=json", "--mode=check", "--lint=off"],
-    false,
-    executablePath,
-  );
-  try {
-    JSON.parse(stdout);
-    return executablePath;
-  } catch {
-    // If we got no valid JSON back, we don't have a compatible version.
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    showBuildifierDownloadPrompt(
-      "Buildifier is too old (0.25.1 or higher is needed)",
-    );
-    return null;
-  }
-}
-
-/**
- * Show a warning to the user that Buildifier was not found or is not
- * compatible, and give them the option to download it.
- *
- * @param reason The reason that Buildifier was not valid, which is displayed
- * to the user.
- */
-async function showBuildifierDownloadPrompt(reason: string) {
-  const message =
-    `${reason}; linting and formatting of Bazel files ` +
-    "will not be available. Please download it from " +
-    `${BUILDTOOLS_RELEASES_URL} and install it ` +
-    "on your system PATH or set its location in Settings.";
-
-  // Log to output channel
-  logWarn(message, false);
-
-  // Show interactive message with Download button
-  const item = await vscode.window.showWarningMessage(message, {
-    title: "Download",
-  });
-
-  if (item && item.title === "Download") {
-    await vscode.commands.executeCommand(
-      "vscode.open",
-      vscode.Uri.parse(BUILDTOOLS_RELEASES_URL),
-    );
   }
 }

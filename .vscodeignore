@@ -8,3 +8,4 @@
 !icons/**/*.+(svg|license)
 !media/**/*
 !syntaxes/**/*.+(json|license)
+!external-tools-config.json
