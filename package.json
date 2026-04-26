@@ -175,6 +175,12 @@
                     "default": true,
                     "markdownDescription": "Whether to enable Buildifier support for formatting and linting Bazel files. When enabled, provides document formatting and lint diagnostics for BUILD, WORKSPACE, and .bzl files."
                 },
+                "bazel.workspacePath": {
+                    "type": "string",
+                    "default": "",
+                    "markdownDescription": "Manually specify the path to the Bazel workspace directory. This can be an absolute path, or a relative path from the VS Code workspace folder. If set, this path will be used instead of auto-detecting the workspace by searching for `MODULE.bazel`, `REPO.bazel`, `WORKSPACE.bazel`, or `WORKSPACE` files.",
+                    "scope": "resource"
+                },
                 "bazel.pathsToIgnore": {
                     "type": "array",
                     "items": {
