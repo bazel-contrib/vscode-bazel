@@ -8,5 +8,40 @@
     "group:test",
     "group:unitTest",
     "security:minimumReleaseAgeNpm"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "external-tools-config\\.json$"
+      ],
+      "matchStrings": [
+        "\"Buildifier\":\\s*\\{[^}]*\"version\":\\s*\"(?<currentValue>[^\"]+)\""
+      ],
+      "depNameTemplate": "bazelbuild/buildtools",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "external-tools-config\\.json$"
+      ],
+      "matchStrings": [
+        "\"Bazelisk\":\\s*\\{[^}]*\"version\":\\s*\"(?<currentValue>[^\"]+)\""
+      ],
+      "depNameTemplate": "bazelbuild/bazelisk",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "external-tools-config\\.json$"
+      ],
+      "matchStrings": [
+        "\"Starlark Language Server\":\\s*\\{[^}]*\"version\":\\s*\"(?<currentValue>[^\"]+)\""
+      ],
+      "depNameTemplate": "withered-magic/starpls",
+      "datasourceTemplate": "github-releases"
+    }
   ]
 }

@@ -19,7 +19,6 @@ import { activateTaskProvider } from "../bazel";
 import {
   BuildifierDiagnosticsManager,
   BuildifierFormatProvider,
-  checkBuildifierIsAvailable,
 } from "../buildifier";
 import { CodeLensFeature } from "../codelens/code_lens_feature";
 import { BazelCompletionItemProvider } from "../completion-provider";
@@ -34,6 +33,7 @@ import { activateTesting } from "../test-explorer";
 import { activateWrapperCommands } from "./bazel_wrapper_commands";
 import { registerLogger, logInfo, logError, showOutputChannel } from "./logger";
 import { startLspClientFromCurrentConfig } from "../lsp/language-server-client";
+import { ExternalToolsManager } from "../external-tools/tool_manager";
 
 // Global reference to the workspace tree provider for testing
 declare global {
@@ -84,6 +84,10 @@ export async function activate(context: vscode.ExtensionContext) {
   const buildifierDiagnostics = new BuildifierDiagnosticsManager();
   let completionItemProvider: BazelCompletionItemProvider | null = null;
   let lspClient: lc.LanguageClient | undefined;
+
+  // Check availability of external tools (don't wait for it as it involves user prompts)
+  const toolsManager = new ExternalToolsManager(context);
+  void toolsManager.checkAvailabilityOfExternalTools();
 
   // Set up LSP if enabled
   const config = vscode.workspace.getConfiguration("bazel");
@@ -187,16 +191,6 @@ export async function activate(context: vscode.ExtensionContext) {
     // Test provider
     ...activateTesting(),
   );
-
-  // Notify the user if buildifier is not available on their path (or where
-  // their settings expect it).
-  // We intentionally do no `await` the completion because doing so would mean
-  // that VS Code considers the extension activation to be "in-flight" until the
-  // users closes the "Buildifier not found" notification. VS Code hence
-  // dislayed  never-finishing "Loading" indicator on top of the "Bazel Build
-  // Targets" tree view.
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  checkBuildifierIsAvailable();
 }
 
 /** Called when the extension is deactivated. */
