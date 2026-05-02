@@ -1,5 +1,21 @@
 # Change Log
 
+## [0.15.0](https://github.com/bazel-contrib/vscode-bazel/compare/v0.14.0...v0.15.0) (2026-05-02)
+
+
+### Features
+
+* Allow to deactivate CodeLens dynamically ([#496](https://github.com/bazel-contrib/vscode-bazel/issues/496)) ([6a9383a](https://github.com/bazel-contrib/vscode-bazel/commit/6a9383a54866917df46bde9961d0ca61fb05f3ba))
+
+
+### Bug Fixes
+
+* **deps:** update dependency protobufjs-cli to v2 ([#612](https://github.com/bazel-contrib/vscode-bazel/issues/612)) ([eb8cd50](https://github.com/bazel-contrib/vscode-bazel/commit/eb8cd5048b356b37eb1754ed5733ff5cbefb5b0e))
+* update serialize-javascript to 7.0.3 to resolve GHSA-5c6j-r48x-rmvq ([#586](https://github.com/bazel-contrib/vscode-bazel/issues/586)) ([ba37137](https://github.com/bazel-contrib/vscode-bazel/commit/ba3713782af37b56e05a336a01b7abea74d8c818))
+* use Bazel workspace root as cwd instead of VS Code folder path ([#608](https://github.com/bazel-contrib/vscode-bazel/issues/608)) ([ca98b99](https://github.com/bazel-contrib/vscode-bazel/commit/ca98b990cf637d6ff65891916d54c86fe8830ad8))
+* window path issues for go to commands ([#617](https://github.com/bazel-contrib/vscode-bazel/issues/617)) ([cfd2282](https://github.com/bazel-contrib/vscode-bazel/commit/cfd22829360489a7a799266436aa81b5d01182ab))
+* **workspace-tree:** make bazel.commandLine.queryExpression behave more similarly to bazel query ([#619](https://github.com/bazel-contrib/vscode-bazel/issues/619)) ([89664f7](https://github.com/bazel-contrib/vscode-bazel/commit/89664f7da714ec795a70fcb432249f084dfe219e))
+
 ## [0.14.0](https://github.com/bazel-contrib/vscode-bazel/compare/v0.13.2...v0.14.0) (2026-03-30)
 
 
