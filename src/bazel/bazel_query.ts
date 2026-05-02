@@ -28,6 +28,10 @@ const protoOutputOptions = [
   "--noproto:default_values",
 ];
 
+function getRuleName(target: blaze_query.ITarget): string {
+  return target.rule?.name ?? "";
+}
+
 /** Provides a promise-based API around a Bazel query. */
 export class BazelQuery extends BazelCommand {
   /**
@@ -66,8 +70,8 @@ export class BazelQuery extends BazelCommand {
     const result = blaze_query.QueryResult.decode(buffer);
     if (sortByRuleName) {
       const sorted = result.target.sort((t1, t2) => {
-        const n1 = t1.rule.name;
-        const n2 = t2.rule.name;
+        const n1 = getRuleName(t1);
+        const n2 = getRuleName(t2);
         if (n1 > n2) {
           return 1;
         }
@@ -99,6 +103,10 @@ export class BazelQuery extends BazelCommand {
       .trim()
       .replace(/\r\n|\r/g, "\n")
       .split("\n")
+      // Remove empty strings caused by trailing newlines or empty output,
+      // e.g. "foo\nbar\n".split("\n") → ["foo","bar",""] — the trailing ""
+      // would otherwise pollute the package list.
+      .filter(Boolean)
       .sort();
     return result;
   }
@@ -138,6 +146,11 @@ export class BazelQuery extends BazelCommand {
       // uses a generated tmp directory based on the Bazel workspace, this way
       // the server is shared for all the queries.
       const ws = getBazelWorkspaceFolder(this.workingDirectory);
+      if (!ws) {
+        throw new Error(
+          `Could not determine Bazel workspace for ${this.workingDirectory}`,
+        );
+      }
       const hash = crypto.createHash("md5").update(ws).digest("hex");
       const queryOutputBaseConfigValue =
         bazelConfig.get<string>("queryOutputBase");

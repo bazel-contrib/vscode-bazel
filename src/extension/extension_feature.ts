@@ -135,7 +135,7 @@ export abstract class BaseExtensionFeature
    * @param config The configuration to check
    */
   private isEnabledInConfig(config: vscode.WorkspaceConfiguration): boolean {
-    return config.get<boolean>(this.configKey);
+    return config.get<boolean>(this.configKey) ?? false;
   }
 
   /**

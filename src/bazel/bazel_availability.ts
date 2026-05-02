@@ -21,14 +21,13 @@ function fileExistsSync(filename: string): boolean {
  */
 export function checkBazelIsAvailable(): boolean {
   const bazelExecutable = getBazelExecutablePath();
+  const workspaceFolderPath =
+    vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 
   // Check if the program exists as a relative path of the workspace
-  const pathExists = fileExistsSync(
-    path.join(
-      vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath,
-      bazelExecutable,
-    ),
-  );
+  const pathExists = workspaceFolderPath
+    ? fileExistsSync(path.join(workspaceFolderPath, bazelExecutable))
+    : false;
 
   if (!pathExists) {
     try {

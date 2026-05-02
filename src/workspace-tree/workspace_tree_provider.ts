@@ -111,6 +111,9 @@ export class BazelWorkspaceTreeProvider
       // level.
       if (vscode.workspace.workspaceFolders.length === 1) {
         const folderItem = this.workspaceFolderTreeItems[0];
+        if (!folderItem) {
+          return Promise.resolve([]);
+        }
         return folderItem.getChildren();
       }
 
@@ -229,8 +232,10 @@ export class BazelWorkspaceTreeProvider
           );
           return undefined;
         })
-        .filter((folder) => folder !== undefined);
-
+        .filter(
+          (folder): folder is BazelWorkspaceFolderTreeItem =>
+            folder !== undefined,
+        );
       this.logger.logDebug(
         `Created ${this.workspaceFolderTreeItems.length} workspace tree items`,
       );
@@ -316,9 +321,10 @@ export class BazelWorkspaceTreeProvider
       return undefined; // File does not belong to any vscode workspace folder
     }
 
-    const workspaceFolderTreeItem = this.workspaceFolderTreeItems.find(
+    const workspaceFolderTreeItems = this.workspaceFolderTreeItems ?? [];
+    const workspaceFolderTreeItem = workspaceFolderTreeItems.find(
       (item) =>
-        item.getWorkspaceInfo().workspaceFolder.uri.toString() ===
+        item.getWorkspaceInfo().workspaceFolder?.uri.toString() ===
         workspaceFolderVSCode.uri.toString(),
     );
     if (!workspaceFolderTreeItem) {

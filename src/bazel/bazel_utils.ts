@@ -14,10 +14,10 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import * as vscode from "vscode";
 import { blaze_query } from "../protos";
-import { BazelQuery } from "./bazel_query";
+import { getPathsToIgnore } from "../extension/configuration";
 import { logError } from "../extension/logger";
+import { BazelQuery } from "./bazel_query";
 
 /**
  * Get the package label for a build file.
@@ -76,9 +76,7 @@ export async function getTargetsForBuildFile(
  * be in a workspace).
  */
 function shouldIgnorePath(fsPath: string): boolean {
-  const bazelConfig = vscode.workspace.getConfiguration("bazel");
-  const pathsToIgnore = bazelConfig.get<string[]>("pathsToIgnore");
-  for (const pathRegex of pathsToIgnore) {
+  for (const pathRegex of getPathsToIgnore()) {
     try {
       const regex = new RegExp(pathRegex);
       if (regex.test(fsPath)) {
@@ -206,10 +204,9 @@ export function getBuildFileLineWithSourceFilePath(
   sourceFilePath: string,
 ): number | undefined {
   // Find the line number where the current editors file is mentioned
-  const relativeSourcePath = path.relative(
-    path.dirname(buildFilePath),
-    sourceFilePath,
-  );
+  const relativeSourcePath = path
+    .relative(path.dirname(buildFilePath), sourceFilePath)
+    .replace(/\\/g, "/");
   const buildFileContent = fs
     .readFileSync(buildFilePath, "utf8")
     .trim()

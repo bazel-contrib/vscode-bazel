@@ -124,6 +124,92 @@ describe("Bazel Workspace Tree", function (this: Mocha.Suite) {
     );
   });
 
+  describe("queryExpression filtering", () => {
+    afterEach(async () => {
+      await vscode.workspace
+        .getConfiguration("bazel.commandLine")
+        .update(
+          "queryExpression",
+          undefined,
+          vscode.ConfigurationTarget.Workspace,
+        );
+    });
+
+    it("should filter targets by rule kind", async () => {
+      await vscode.workspace
+        .getConfiguration("bazel.commandLine")
+        .update(
+          "queryExpression",
+          "kind('py_.*', //...)",
+          vscode.ConfigurationTarget.Workspace,
+        );
+
+      await verifyTreeStructure(
+        {
+          "//pkg1": {
+            ":main  (py_binary)": {},
+            ":pkg1  (py_library)": {},
+          },
+        },
+        await workspaceTreeProvider.getChildren(),
+      );
+    });
+
+    it("should filter to filegroup targets only", async () => {
+      await vscode.workspace
+        .getConfiguration("bazel.commandLine")
+        .update(
+          "queryExpression",
+          "kind('filegroup', //...)",
+          vscode.ConfigurationTarget.Workspace,
+        );
+
+      await verifyTreeStructure(
+        {
+          "//pkg1": {
+            ":foo  (filegroup)": {},
+            ":src_files  (filegroup)": {},
+          },
+          "//pkg2/sub-pkg": {
+            ":foobar  (filegroup)": {},
+          },
+        },
+        await workspaceTreeProvider.getChildren(),
+      );
+    });
+
+    it("should filter to a single target", async () => {
+      await vscode.workspace
+        .getConfiguration("bazel.commandLine")
+        .update(
+          "queryExpression",
+          "//pkg1:main",
+          vscode.ConfigurationTarget.Workspace,
+        );
+
+      await verifyTreeStructure(
+        {
+          "//pkg1": {
+            ":main  (py_binary)": {},
+          },
+        },
+        await workspaceTreeProvider.getChildren(),
+      );
+    });
+
+    it("should show empty tree when expression matches nothing", async () => {
+      await vscode.workspace
+        .getConfiguration("bazel.commandLine")
+        .update(
+          "queryExpression",
+          "kind('java_library', //...)",
+          vscode.ConfigurationTarget.Workspace,
+        );
+
+      await verifyTreeStructure({}, await workspaceTreeProvider.getChildren());
+    });
+  });
+
   it("does not select tree item when bazel view is hidden", async () => {
     // GIVEN another view is active (Search) instead of the Explorer
     await vscode.commands.executeCommand("workbench.view.search");
