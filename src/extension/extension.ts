@@ -16,11 +16,7 @@ import * as vscode from "vscode";
 import * as lc from "vscode-languageclient/node";
 
 import { activateTaskProvider } from "../bazel";
-import {
-  BuildifierDiagnosticsManager,
-  BuildifierFormatProvider,
-  checkBuildifierIsAvailable,
-} from "../buildifier";
+import { BuildifierFeature } from "../buildifier";
 import { CodeLensFeature } from "../codelens/code_lens_feature";
 import { BazelCompletionItemProvider } from "../completion-provider";
 import {
@@ -81,7 +77,11 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Initialize other components
   context.subscriptions.push(CodeLensFeature.create(context));
-  const buildifierDiagnostics = new BuildifierDiagnosticsManager();
+
+  // BuildifierFeature
+  context.subscriptions.push(BuildifierFeature.create(context));
+
+  // Other components
   let completionItemProvider: BazelCompletionItemProvider | null = null;
   let lspClient: lc.LanguageClient | undefined;
 
@@ -166,20 +166,6 @@ export async function activate(context: vscode.ExtensionContext) {
         }
       },
     }),
-    // Buildifier formatting support
-    vscode.languages.registerDocumentFormattingEditProvider(
-      [
-        { language: "starlark" },
-        { pattern: "**/BUILD" },
-        { pattern: "**/*.bazel" },
-        { pattern: "**/WORKSPACE" },
-        { pattern: "**/*.BUILD" },
-        { pattern: "**/*.bzl" },
-        { pattern: "**/*.sky" },
-      ],
-      new BuildifierFormatProvider(),
-    ),
-    buildifierDiagnostics,
     // Task provider
     ...activateTaskProvider(),
     // Command variables
@@ -187,16 +173,6 @@ export async function activate(context: vscode.ExtensionContext) {
     // Test provider
     ...activateTesting(),
   );
-
-  // Notify the user if buildifier is not available on their path (or where
-  // their settings expect it).
-  // We intentionally do no `await` the completion because doing so would mean
-  // that VS Code considers the extension activation to be "in-flight" until the
-  // users closes the "Buildifier not found" notification. VS Code hence
-  // dislayed  never-finishing "Loading" indicator on top of the "Bazel Build
-  // Targets" tree view.
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  checkBuildifierIsAvailable();
 }
 
 /** Called when the extension is deactivated. */
