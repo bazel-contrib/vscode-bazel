@@ -42,9 +42,10 @@ export function checkBazelIsAvailable(): boolean {
 
 /** Checks if any Bazel workspace is available. */
 export function checkBazelWorkspaceAvailable(): boolean {
-  const workspaceFolders = vscode.workspace.workspaceFolders
-    .map((folder) => getBazelWorkspaceFolder(folder.uri.fsPath))
-    .filter((folder) => folder !== undefined);
+  const workspaceFolders =
+    vscode.workspace.workspaceFolders
+      ?.map((folder) => getBazelWorkspaceFolder(folder.uri.fsPath))
+      .filter((folder) => folder !== undefined) ?? [];
   return workspaceFolders.length > 0;
 }
 

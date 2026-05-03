@@ -53,7 +53,7 @@ export function getWorkspaceTreeProviderForTesting():
 
 // Also set a global variable that can be accessed from tests
 export function storeWorkspaceTreeProviderForTesting(
-  provider: BazelWorkspaceTreeProvider,
+  provider: BazelWorkspaceTreeProvider | undefined,
 ) {
   globalThis.bazelWorkspaceTreeProvider = provider;
 }

@@ -14,7 +14,7 @@ describe("Bazel Workspace Tree", function (this: Mocha.Suite) {
   const workspacePath = path.join(extensionPath, "test", "bazel_workspace");
   const rootBuildFilePath = path.join(workspacePath, "BUILD");
   const workspaceTreeProvider: BazelWorkspaceTreeProvider =
-    getWorkspaceTreeProviderForTesting();
+    getWorkspaceTreeProviderForTesting()!;
   type ExpectedNodes = {
     [key: string]: ExpectedNodes | Record<string, never>;
   };
