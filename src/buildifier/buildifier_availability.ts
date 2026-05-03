@@ -110,7 +110,7 @@ export async function checkBuildifierIsAvailable(): Promise<string | null> {
  * @param reason The reason that Buildifier was not valid, which is displayed
  * to the user.
  */
-async function showBuildifierDownloadPrompt(reason: string) {
+export async function showBuildifierDownloadPrompt(reason: string) {
   const message =
     `${reason}; linting and formatting of Bazel files ` +
     "will not be available. Please download it from " +
