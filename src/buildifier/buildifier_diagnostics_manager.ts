@@ -16,6 +16,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { buildifierLint } from "./buildifier";
 import { BazelWorkspaceInfo } from "../bazel";
+import { ILogger } from "../extension/logger";
 
 /**
  * The delay to wait for the user to finish typing before invoking buildifier to
@@ -34,12 +35,14 @@ export class BuildifierDiagnosticsManager implements vscode.Disposable {
    * manager itself is disposed.
    */
   private disposables: vscode.Disposable[] = [];
+  private logger: ILogger;
 
   /**
    * Initializes a new buildifier diagnostics manager and hooks into workspace
    * and window events so that diagnostics are updated live.
    */
-  constructor() {
+  constructor(logger: ILogger) {
+    this.logger = logger;
     let didChangeTextTimer: NodeJS.Timeout | null;
 
     this.disposables.push(
@@ -81,10 +84,15 @@ export class BuildifierDiagnosticsManager implements vscode.Disposable {
    */
   public async updateDiagnostics(document: vscode.TextDocument) {
     if (document.languageId === "starlark") {
+      this.logger.logDebug(`Updating diagnostics for ${document.uri.fsPath}`);
+
       const workspaceInfo = BazelWorkspaceInfo.fromDocument(document);
       if (!workspaceInfo) {
-        // eslint-disable-next-line no-console
-        console.warn("No workspace info found for document", document.uri);
+        this.logger.logDebug(
+          "No workspace info found for document",
+          false,
+          document.uri.fsPath,
+        );
         return;
       }
       const workspaceRelativePath = path.relative(
@@ -97,6 +105,7 @@ export class BuildifierDiagnosticsManager implements vscode.Disposable {
         workspaceRelativePath,
         "warn",
       );
+      this.logger.logDebug(`Found ${warnings.length} warnings`);
 
       this.diagnosticsCollection.set(
         document.uri,

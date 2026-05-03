@@ -17,7 +17,7 @@ import * as path from "path";
 import { buildifierFormat } from "./buildifier";
 import { BazelWorkspaceInfo } from "../bazel";
 import { getBuildifierFixOnFormat } from "../extension/configuration";
-import { logError } from "../extension/logger";
+import { ILogger } from "../extension/logger";
 
 /**
  * Provides document formatting functionality for Bazel files by invoking
@@ -26,12 +26,25 @@ import { logError } from "../extension/logger";
 export class BuildifierFormatProvider
   implements vscode.DocumentFormattingEditProvider
 {
+  private logger: ILogger;
+
+  constructor(logger: ILogger) {
+    this.logger = logger;
+  }
+
   public async provideDocumentFormattingEdits(
     document: vscode.TextDocument,
   ): Promise<vscode.TextEdit[]> {
+    this.logger.logDebug(`Formatting document: ${document.uri.fsPath}`);
+
     const fileContent = document.getText();
     const workspaceInfo = BazelWorkspaceInfo.fromDocument(document);
     if (!workspaceInfo) {
+      this.logger.logDebug(
+        "No workspace info found for document during formatting",
+        false,
+        document.uri.fsPath,
+      );
       return [];
     }
     const workspaceRelativePath = path.relative(
@@ -45,6 +58,7 @@ export class BuildifierFormatProvider
         getBuildifierFixOnFormat(),
       );
       if (formattedContent === fileContent) {
+        this.logger.logDebug("File did not change during formatting");
         // If the file didn't change, return any empty array of edits.
         return [];
       }
@@ -58,9 +72,10 @@ export class BuildifierFormatProvider
           formattedContent,
         ),
       ];
+      this.logger.logDebug("Returning formatting edits");
       return edits;
     } catch (err: any) {
-      logError("Buildifier formatting failed", true, err);
+      this.logger.logError("Buildifier formatting failed", true, err);
       return [];
     }
   }
