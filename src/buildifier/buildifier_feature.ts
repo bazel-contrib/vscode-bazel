@@ -51,11 +51,13 @@ export class BuildifierFeature extends BaseExtensionFeature {
     }
 
     // Create and register the diagnostics manager for lint warnings
-    this.diagnosticsManager = new BuildifierDiagnosticsManager();
+    this.diagnosticsManager = new BuildifierDiagnosticsManager(
+      this.getLogger(),
+    );
     this.disposables.push(this.diagnosticsManager);
 
     // Create and register the document formatting provider
-    const formatProvider = new BuildifierFormatProvider();
+    const formatProvider = new BuildifierFormatProvider(this.getLogger());
     const formatRegistration =
       vscode.languages.registerDocumentFormattingEditProvider(
         [

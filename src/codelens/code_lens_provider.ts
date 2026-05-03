@@ -77,7 +77,7 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
     const workspaceInfo = BazelWorkspaceInfo.fromDocument(document);
     if (workspaceInfo === undefined) {
       // Not in a Bazel Workspace.
-      this.logger.logInfo(
+      this.logger.logWarn(
         "Skipping CodeLens - not in Bazel workspace:",
         false,
         document.uri.fsPath,
@@ -99,7 +99,7 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
     });
 
     if (queryResult === undefined) {
-      this.logger.logInfo(
+      this.logger.logWarn(
         "Skipping CodeLens - query failed for:",
         false,
         document.uri.fsPath,
@@ -108,7 +108,7 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
     }
 
     const codeLenses = this.builder.buildCodeLenses(workspaceInfo, queryResult);
-    this.logger.logInfo(
+    this.logger.logDebug(
       `Generated ${codeLenses.length} CodeLenses for:`,
       false,
       document.uri.fsPath,
