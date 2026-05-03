@@ -165,6 +165,11 @@
                     "default": false,
                     "markdownDescription": "Whether to add a CodeLens to `BUILD`/`BUILD.bazel` files to provide actions while browsing the file."
                 },
+                "bazel.enableBuildifier": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "Whether to enable Buildifier support for formatting and linting Bazel files. When enabled, provides document formatting and lint diagnostics for BUILD, WORKSPACE, and .bzl files."
+                },
                 "bazel.pathsToIgnore": {
                     "type": "array",
                     "items": {
