@@ -107,6 +107,21 @@ export async function activate(context: vscode.ExtensionContext) {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     completionItemProvider.refresh();
 
+    // Set up file watcher for BUILD files
+    const buildWatcher = vscode.workspace.createFileSystemWatcher(
+      "**/{BUILD,BUILD.bazel}",
+      false, // ignoreCreateEvents
+      false, // ignoreChangeEvents
+      false, // ignoreDeleteEvents
+    );
+
+    // Fire refresh when BUILD files change
+    buildWatcher.onDidChange(
+      () => completionItemProvider?.refresh(),
+      null,
+      context.subscriptions,
+    );
+
     context.subscriptions.push(
       vscode.languages.registerCompletionItemProvider(
         [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
