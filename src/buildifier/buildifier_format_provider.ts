@@ -13,9 +13,7 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import * as path from "path";
 import { buildifierFormat } from "./buildifier";
-import { BazelWorkspaceInfo } from "../bazel";
 import { getBuildifierFixOnFormat } from "../extension/configuration";
 import { ILogger } from "../extension/logger";
 
@@ -38,23 +36,11 @@ export class BuildifierFormatProvider
     this.logger.logDebug(`Formatting document: ${document.uri.fsPath}`);
 
     const fileContent = document.getText();
-    const workspaceInfo = BazelWorkspaceInfo.fromDocument(document);
-    if (!workspaceInfo) {
-      this.logger.logDebug(
-        "No workspace info found for document during formatting",
-        false,
-        document.uri.fsPath,
-      );
-      return [];
-    }
-    const workspaceRelativePath = path.relative(
-      workspaceInfo.bazelWorkspacePath,
-      document.uri.fsPath,
-    );
+    const absolutePath = document.uri.fsPath;
     try {
       const formattedContent = await buildifierFormat(
         fileContent,
-        workspaceRelativePath,
+        absolutePath,
         getBuildifierFixOnFormat(),
       );
       if (formattedContent === fileContent) {

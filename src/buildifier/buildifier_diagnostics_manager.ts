@@ -13,9 +13,7 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import * as path from "path";
 import { buildifierLint } from "./buildifier";
-import { BazelWorkspaceInfo } from "../bazel";
 import { ILogger } from "../extension/logger";
 
 /**
@@ -86,23 +84,11 @@ export class BuildifierDiagnosticsManager implements vscode.Disposable {
     if (document.languageId === "starlark") {
       this.logger.logDebug(`Updating diagnostics for ${document.uri.fsPath}`);
 
-      const workspaceInfo = BazelWorkspaceInfo.fromDocument(document);
-      if (!workspaceInfo) {
-        this.logger.logDebug(
-          "No workspace info found for document",
-          false,
-          document.uri.fsPath,
-        );
-        return;
-      }
-      const workspaceRelativePath = path.relative(
-        workspaceInfo.bazelWorkspacePath,
-        document.uri.fsPath,
-      );
+      const absolutePath = document.uri.fsPath;
 
       const warnings = await buildifierLint(
         document.getText(),
-        workspaceRelativePath,
+        absolutePath,
         "warn",
       );
       this.logger.logDebug(`Found ${warnings.length} warnings`);
