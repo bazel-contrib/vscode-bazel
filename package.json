@@ -104,8 +104,7 @@
                 "icon": {
                     "dark": "./icons/refresh-dark.svg",
                     "light": "./icons/refresh-light.svg"
-                },
-                "when": "bazel.workspaceTree.enabled"
+                }
             },
             {
                 "category": "Bazel",
@@ -383,6 +382,10 @@
                 {
                     "command": "bazel.goToLabel",
                     "when": "bazel.haveWorkspace"
+                },
+                {
+                    "command": "bazel.refreshBazelBuildTargets",
+                    "when": "bazel.feature.WorkspaceTree.enabled"
                 }
             ],
             "view/item/context": [
@@ -497,7 +500,7 @@
                 {
                     "id": "bazelWorkspace",
                     "name": "Bazel Targets",
-                    "when": "bazel.haveWorkspace"
+                    "when": "bazel.haveWorkspace && bazel.feature.WorkspaceTree.enabled"
                 }
             ]
         },
@@ -505,7 +508,7 @@
             {
                 "view": "bazelWorkspace",
                 "contents": "No Bazel targets found.\n[Refresh Target List](command:bazel.refreshBazelBuildTargets)",
-                "when": "bazel.haveWorkspace"
+                "when": "bazel.haveWorkspace && bazel.feature.WorkspaceTree.enabled"
             }
         ]
     },
