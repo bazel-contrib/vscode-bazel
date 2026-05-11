@@ -26,6 +26,7 @@ type Arguments = unknown[];
  * feature-specific prefixes in log messages.
  */
 export interface ILogger {
+  logDebug(message: string, showMessage?: boolean, ...args: unknown[]): void;
   logInfo(message: string, showMessage?: boolean, ...args: unknown[]): void;
   logWarn(message: string, showMessage?: boolean, ...args: unknown[]): void;
   logError(message: string, showMessage?: boolean, ...args: unknown[]): void;

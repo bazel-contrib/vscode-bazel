@@ -1,5 +1,12 @@
 import * as vscode from "vscode";
-import { logInfo, logWarn, logError, showUserMessage, ILogger } from "./logger";
+import {
+  logInfo,
+  logWarn,
+  logError,
+  showUserMessage,
+  ILogger,
+  logDebug,
+} from "./logger";
 
 /**
  * Represents a feature of the Bazel extension.
@@ -163,6 +170,13 @@ export abstract class BaseExtensionFeature
   /**
    * Implementation of ILogger interface - public methods for external use.
    */
+  public logDebug(
+    message: string,
+    showMessage: boolean = false,
+    ...args: unknown[]
+  ): void {
+    logDebug(`[${this.featureName}] ${message}`, showMessage, ...args);
+  }
   public logInfo(
     message: string,
     showMessage: boolean = false,

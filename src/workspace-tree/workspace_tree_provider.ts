@@ -19,7 +19,7 @@ import { IBazelTreeItem } from "./bazel_tree_item";
 import { BazelWorkspaceFolderTreeItem } from "./bazel_workspace_folder_tree_item";
 import { BazelPackageTreeItem } from "./bazel_package_tree_item";
 import { Resources } from "../extension/resources";
-import { logError } from "../extension/logger";
+import { ILogger } from "../extension/logger";
 
 /**
  * Provides a tree of Bazel build packages and targets for the VS Code explorer
@@ -51,20 +51,17 @@ export class BazelWorkspaceTreeProvider
   // Flag to track if a refresh is necessary when the tree view becomes visible
   private runRefreshWhenTreeViewBecomesVisible: boolean = false;
 
-  public static fromExtensionContext(
-    context: vscode.ExtensionContext,
-  ): BazelWorkspaceTreeProvider {
-    return new BazelWorkspaceTreeProvider(
-      Resources.fromExtensionContext(context),
-    );
-  }
-
   /**
    * Initializes a new tree provider with the given extension context.
    *
    * @param context The VS Code extension context.
    */
-  constructor(private readonly resources: Resources) {
+  constructor(
+    private readonly resources: Resources,
+    private readonly logger: ILogger,
+  ) {
+    this.logger.logInfo("Initializing BazelWorkspaceTreeProvider");
+
     const buildFilesWatcher = vscode.workspace.createFileSystemWatcher(
       "**/{BUILD,BUILD.bazel}",
       false,
@@ -85,6 +82,7 @@ export class BazelWorkspaceTreeProvider
     );
 
     this.updateWorkspaceFolderTreeItems();
+    this.logger.logInfo("BazelWorkspaceTreeProvider initialized successfully");
   }
 
   public getParent(
@@ -149,7 +147,10 @@ export class BazelWorkspaceTreeProvider
    * Handles lazy loading by checking tree visibility.
    */
   public refresh() {
+    this.logger.logDebug("Tree refresh requested");
+
     if (!this.isTreeViewVisible()) {
+      this.logger.logDebug("Tree view not visible, deferring refresh");
       this.runRefreshWhenTreeViewBecomesVisible = true;
       return;
     }
@@ -159,6 +160,8 @@ export class BazelWorkspaceTreeProvider
       this.runRefreshWhenTreeViewBecomesVisible = false;
       this.updateWorkspaceFolderTreeItems();
       this.onDidChangeTreeDataEmitter.fire();
+    } catch (error) {
+      this.logger.logError("Tree refresh failed", false, error);
     } finally {
       this.isCurrentlyRefreshing = false;
     }
@@ -171,9 +174,12 @@ export class BazelWorkspaceTreeProvider
    * Called when BUILD files are created, deleted, or changed.
    */
   private queueRefresh(): void {
+    this.logger.logDebug("Queueing refresh with debouncing");
+
     // Clear and restart any existing timeout
     if (this.refreshTimeout) {
       clearTimeout(this.refreshTimeout);
+      this.logger.logDebug("Clearing existing refresh timeout");
     }
 
     // Set a timeout to perform refresh after a short delay
@@ -184,8 +190,10 @@ export class BazelWorkspaceTreeProvider
         // We don't want to run multiple refreshes in parallel,
         // but we want to ensure that the last change is always picked up,
         // so just queue another refresh.
+        this.logger.logDebug("Refresh already in progress, re-queuing");
         this.queueRefresh();
       } else {
+        this.logger.logDebug("Executing queued refresh");
         this.refresh();
       }
     }, 500); // Wait 500ms after the last change
@@ -201,34 +209,40 @@ export class BazelWorkspaceTreeProvider
 
   /** Refresh the cached BazelWorkspaceFolderTreeItems. */
   private updateWorkspaceFolderTreeItems() {
+    this.logger.logDebug("Updating workspace folder tree items");
+
     if (vscode.workspace.workspaceFolders) {
+      const folderCount = vscode.workspace.workspaceFolders.length;
+      this.logger.logDebug(`Processing ${folderCount} workspace folders`);
+
       this.workspaceFolderTreeItems = vscode.workspace.workspaceFolders
         .map((folder) => {
           const workspaceInfo = BazelWorkspaceInfo.fromWorkspaceFolder(folder);
           if (workspaceInfo) {
+            this.logger.logDebug(
+              `Found Bazel workspace in folder: ${folder.name}`,
+            );
             return new BazelWorkspaceFolderTreeItem(
               this.resources,
               workspaceInfo,
             );
           }
+          this.logger.logDebug(
+            `No Bazel workspace found in folder: ${folder.name}`,
+          );
           return undefined;
         })
         .filter(
           (folder): folder is BazelWorkspaceFolderTreeItem =>
             folder !== undefined,
         );
+      this.logger.logDebug(
+        `Created ${this.workspaceFolderTreeItems.length} workspace tree items`,
+      );
     } else {
+      this.logger.logInfo("No workspace folders found");
       this.workspaceFolderTreeItems = [];
     }
-
-    // All the UI to update based on having items.
-    const haveBazelWorkspace = this.workspaceFolderTreeItems.length !== 0;
-
-    vscode.commands.executeCommand(
-      "setContext",
-      "bazel.haveWorkspace",
-      haveBazelWorkspace,
-    );
   }
 
   public dispose() {
@@ -241,6 +255,8 @@ export class BazelWorkspaceTreeProvider
     for (const disposable of this.disposables) {
       disposable.dispose();
     }
+
+    this.logger.logInfo("BazelWorkspaceTreeProvider disposed successfully");
   }
 
   /**
@@ -263,8 +279,14 @@ export class BazelWorkspaceTreeProvider
    * When the tree becomes visible and there's a pending refresh, performs the refresh.
    */
   private onTreeViewVisibilityChanged(): void {
-    if (this.isTreeViewVisible() && this.runRefreshWhenTreeViewBecomesVisible) {
+    const isVisible = this.isTreeViewVisible();
+    this.logger.logDebug(`Tree view visibility changed to: ${isVisible}`);
+
+    if (isVisible && this.runRefreshWhenTreeViewBecomesVisible) {
       // Tree became visible and we have a pending refresh
+      this.logger.logInfo(
+        "Tree view became visible with pending refresh, executing refresh",
+      );
       this.refresh();
     }
   }
@@ -274,6 +296,7 @@ export class BazelWorkspaceTreeProvider
    */
   private async revealTreeItem(treeItem: IBazelTreeItem): Promise<void> {
     try {
+      this.logger.logDebug(`Revealing tree item: ${treeItem.getLabel()}`);
       this.lastRevealedTreeItem = treeItem;
       await this.treeView?.reveal(treeItem, {
         select: true,
@@ -281,7 +304,7 @@ export class BazelWorkspaceTreeProvider
         expand: true,
       });
     } catch (error) {
-      logError("Failed to reveal tree item", false, error);
+      this.logger.logError("Failed to reveal tree item", false, error);
       this.lastRevealedTreeItem = undefined;
     }
   }
@@ -324,35 +347,45 @@ export class BazelWorkspaceTreeProvider
    */
   public async syncSelectedTreeItem(): Promise<void> {
     if (!this.isTreeViewVisible()) {
-      return; // Do not sync if the Bazel tree view is not visible
+      this.logger.logDebug("Tree view is not visible, skipping sync");
+      return;
     }
 
     if (!this.workspaceFolderTreeItems?.length) {
-      return; // No workspace folders
+      this.logger.logDebug("No workspace folders, skipping sync");
+      return;
     }
 
     const activeEditor = vscode.window.activeTextEditor;
     if (!activeEditor) {
-      return; // No active editor
+      this.logger.logDebug("No active editor, skipping sync");
+      return;
     }
 
     const fileUri = activeEditor.document.uri;
     if (fileUri.scheme !== "file") {
-      return; // Non-file URI
+      this.logger.logWarn("Non-file URI, skipping sync");
+      return;
     }
 
     if (this.lastSelectedUri?.toString() === fileUri.toString()) {
-      return; // Already processed this file
+      this.logger.logDebug("Already processed this file, skipping sync");
+      return;
     }
 
     try {
+      this.logger.logInfo(`Syncing tree item for file: ${fileUri.fsPath}`);
       const packageItem = this.getPackageTreeItemFromUri(fileUri);
       if (packageItem) {
         this.lastSelectedUri = fileUri;
         await this.revealTreeItem(packageItem);
+      } else {
+        this.logger.logWarn(
+          `No package tree item found for file: ${fileUri.fsPath}`,
+        );
       }
     } catch (error) {
-      logError("Error syncing selected tree item", false, error);
+      this.logger.logError("Error syncing selected tree item", false, error);
     }
   }
 }

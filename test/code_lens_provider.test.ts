@@ -17,6 +17,7 @@ describe("CodeLensProvider", () => {
     buildCodeLenses: sinon.SinonStub;
   };
   let mockLogger: {
+    logDebug: sinon.SinonStub;
     logInfo: sinon.SinonStub;
     logWarn: sinon.SinonStub;
     logError: sinon.SinonStub;
@@ -63,6 +64,7 @@ describe("CodeLensProvider", () => {
 
     // Create a mock logger
     mockLogger = {
+      logDebug: sandbox.stub(),
       logInfo: sandbox.stub(),
       logWarn: sandbox.stub(),
       logError: sandbox.stub(),
