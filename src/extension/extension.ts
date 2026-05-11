@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import * as lc from "vscode-languageclient/node";
 
 import { activateTaskProvider } from "../bazel";
 import {
@@ -26,18 +25,13 @@ import {
   BazelWorkspaceTreeProvider,
   WorkspaceTreeFeature,
 } from "../workspace-tree";
-import { BazelCompletionItemProvider } from "../completion-provider";
-import {
-  BazelGotoDefinitionProvider,
-  targetToUri,
-} from "../definition/bazel_goto_definition_provider";
-import { BazelTargetSymbolProvider } from "../symbols";
+import { targetToUri } from "../definition/bazel_goto_definition_provider";
 import { activateCommandVariables } from "./command_variables";
 import { activateTesting } from "../test-explorer";
 import { activateWrapperCommands } from "./bazel_wrapper_commands";
 import { registerLogger, logInfo, logError, showOutputChannel } from "./logger";
-import { startLspClientFromCurrentConfig } from "../lsp/language-server-client";
 import { registerBazelWorkspaceAvailabilityWatcher } from "../bazel/bazel_availability";
+import { LanguageSupportFeature } from "../language_support/language_support_feature";
 
 // Global reference to the workspace tree provider for testing
 declare global {
@@ -89,60 +83,9 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Other components
   const buildifierDiagnostics = new BuildifierDiagnosticsManager();
-  let completionItemProvider: BazelCompletionItemProvider | null = null;
-  let lspClient: lc.LanguageClient | undefined;
 
-  // Set up LSP if enabled
-  const config = vscode.workspace.getConfiguration("bazel");
-  const lspEnabled = !!config.get<string>("lsp.command");
-  if (lspEnabled) {
-    context.subscriptions.push(
-      vscode.commands.registerCommand("bazel.lsp.restart", async () => {
-        await startLspClientFromCurrentConfig(lspClient, context);
-      }),
-    );
-    await startLspClientFromCurrentConfig(lspClient, context);
-  } else {
-    completionItemProvider = new BazelCompletionItemProvider();
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    completionItemProvider.refresh();
-
-    // Set up file watcher for BUILD files
-    const buildWatcher = vscode.workspace.createFileSystemWatcher(
-      "**/{BUILD,BUILD.bazel}",
-      false, // ignoreCreateEvents
-      false, // ignoreChangeEvents
-      false, // ignoreDeleteEvents
-    );
-
-    // Fire refresh when BUILD files change
-    buildWatcher.onDidChange(
-      () => completionItemProvider?.refresh(),
-      null,
-      context.subscriptions,
-    );
-
-    context.subscriptions.push(
-      vscode.languages.registerCompletionItemProvider(
-        [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
-        completionItemProvider,
-        "/",
-        ":",
-      ),
-      // Symbol provider for BUILD files
-      vscode.languages.registerDocumentSymbolProvider(
-        [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
-        new BazelTargetSymbolProvider(),
-      ),
-      // Goto definition for BUILD files
-      vscode.languages.registerDefinitionProvider(
-        [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
-        new BazelGotoDefinitionProvider(),
-      ),
-    );
-  }
-
-  vscode.commands.executeCommand("setContext", "bazel.lsp.enabled", lspEnabled);
+  // Initialize language support feature
+  context.subscriptions.push(LanguageSupportFeature.create(context));
 
   context.subscriptions.push(
     // Commands
