@@ -58,10 +58,10 @@ export class BazelTargetTreeItem
   }
 
   public getLabel(): string {
-    const fullPath = this.target.rule.name;
+    const fullPath = this.target.rule?.name ?? "";
     const colonIndex = fullPath.lastIndexOf(":");
     const targetName = fullPath.substr(colonIndex);
-    return `${targetName}  (${this.target.rule.ruleClass})`;
+    return `${targetName}  (${this.target.rule?.ruleClass ?? "unknown"})`;
   }
 
   public getIcon(): string | vscode.ThemeIcon {
@@ -73,10 +73,13 @@ export class BazelTargetTreeItem
   }
 
   public getTooltip(): string {
-    return `${this.target.rule.name}`;
+    return `${this.target.rule?.name ?? ""}`;
   }
 
   public getCommand(): vscode.Command | undefined {
+    if (!this.target.rule?.location) {
+      return undefined;
+    }
     const location = new QueryLocation(this.target.rule.location);
     return {
       arguments: [
@@ -89,8 +92,11 @@ export class BazelTargetTreeItem
   }
 
   public getContextValue(): string {
-    const ruleClass = this.target.rule.ruleClass;
-    if (ruleClass.endsWith("_test") || ruleClass === "test_suite") {
+    const ruleClass = this.target.rule?.ruleClass;
+    if (
+      ruleClass &&
+      (ruleClass.endsWith("_test") || ruleClass === "test_suite")
+    ) {
       return "testRule";
     }
     return "rule";
@@ -99,7 +105,7 @@ export class BazelTargetTreeItem
   public getBazelCommandOptions(): IBazelCommandOptions {
     return {
       options: [],
-      targets: [`${this.target.rule.name}`],
+      targets: this.target.rule?.name ? [this.target.rule.name] : [],
       workspaceInfo: this.workspaceInfo,
     };
   }

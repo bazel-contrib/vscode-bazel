@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as path from "path";
 import * as vscode from "vscode";
 import { BazelWorkspaceInfo, BazelQuery } from "../bazel";
 import {
@@ -199,11 +200,27 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     if (!this.workspaceInfo || !this.workspaceInfo.workspaceFolder) {
       return Promise.resolve([]);
     }
-    const workspacePath = this.workspaceInfo.workspaceFolder.uri.fsPath;
+    const bazelWorkspacePath = this.workspaceInfo.bazelWorkspacePath;
+    const workspaceFolderPath = this.workspaceInfo.workspaceFolder.uri.fsPath;
+    const relativePath = path
+      .relative(bazelWorkspacePath, workspaceFolderPath)
+      .replace(/\\/g, "/");
+
+    const queryExpression = getQueryExpression();
+    // When the VS Code folder is a subdirectory of the Bazel workspace,
+    // `intersect` scopes the user's query to only packages under that
+    // subdirectory (//${relativePath}/...:*), and `except` removes the
+    // folder's own direct targets (//${relativePath}:*) so we only get
+    // sub-packages for the tree — direct targets are fetched separately below.
+    const packageQuery = relativePath
+      ? `((${queryExpression}) intersect (//${relativePath}/...:*)) except (//${relativePath}:*)`
+      : queryExpression;
+
     const packagePaths = await new BazelQuery(
       getBazelExecutablePath(),
-      workspacePath,
-    ).queryPackages(getQueryExpression());
+      bazelWorkspacePath,
+    ).queryPackages(packageQuery);
+
     const topLevelItems: BazelPackageTreeItem[] = [];
     this.buildPackageTree(
       packagePaths,
@@ -215,10 +232,15 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
 
     // Now collect any targets in the directory also (this can fail since
     // there might not be a BUILD files at this level (but down levels)).
+    // Intersect the user's query with the directory-level target query so
+    // only targets that satisfy both the user's filter and belong to this
+    // directory are shown (e.g. the user may restrict to certain rule kinds).
+    const scopedTargetQuery = relativePath ? `//${relativePath}:all` : `:all`;
+    const targetQuery = `(${queryExpression}) intersect (${scopedTargetQuery})`;
     const queryResult = await new BazelQuery(
       getBazelExecutablePath(),
-      workspacePath,
-    ).queryTargets(`:all`, {
+      bazelWorkspacePath,
+    ).queryTargets(targetQuery, {
       ignoresErrors: true,
       sortByRuleName: true,
     });

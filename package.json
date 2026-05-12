@@ -162,8 +162,13 @@
                 },
                 "bazel.enableCodeLens": {
                     "type": "boolean",
-                    "default": false,
-                    "markdownDescription": "Whether to add a CodeLens to `BUILD`/`BUILD.bazel` files to provide actions while browsing the file."
+                    "default": true,
+                    "markdownDescription": "Whether to add a CodeLens to `BUILD`/`BUILD.bazel` files to provide actions while browsing the file. Deactivate to avoid running queries in the background."
+                },
+                "bazel.enableWorkspaceTree": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "Whether to show Bazel packages and targets in a tree view in the Explorer panel. Deactivate to avoid running queries in the background."
                 },
                 "bazel.pathsToIgnore": {
                     "type": "array",
@@ -195,7 +200,7 @@
                 "bazel.commandLine.queryExpression": {
                     "type": "string",
                     "default": "...:*",
-                    "description": "A [query language expression](https://bazel.build/query/language) which determines the packages displayed in the workspace tree and quick picker. The default inspects the entire workspace, but you could narrow it. For example: `//part/you/want/...:*`"
+                    "description": "A [query language expression](https://bazel.build/query/language) which determines the packages and targets displayed in the workspace tree and quick picker. The default inspects the entire workspace, but you could narrow it. For example: `//part/you/want/...:*` or `kind('.*_test rule', //...)`"
                 },
                 "bazel.lsp.command": {
                     "type": "string",
@@ -377,6 +382,10 @@
                 {
                     "command": "bazel.goToLabel",
                     "when": "bazel.haveWorkspace"
+                },
+                {
+                    "command": "bazel.refreshBazelBuildTargets",
+                    "when": "bazel.feature.WorkspaceTree.enabled"
                 }
             ],
             "view/item/context": [
@@ -491,7 +500,7 @@
                 {
                     "id": "bazelWorkspace",
                     "name": "Bazel Targets",
-                    "when": "bazel.haveWorkspace"
+                    "when": "bazel.haveWorkspace && bazel.feature.WorkspaceTree.enabled"
                 }
             ]
         },
@@ -499,7 +508,7 @@
             {
                 "view": "bazelWorkspace",
                 "contents": "No Bazel targets found.\n[Refresh Target List](command:bazel.refreshBazelBuildTargets)",
-                "when": "bazel.haveWorkspace"
+                "when": "bazel.haveWorkspace && bazel.feature.WorkspaceTree.enabled"
             }
         ]
     },
@@ -513,12 +522,12 @@
         "lint-fix": "eslint . --fix",
         "build:debugadapter": "esbuild src/debug-adapter/client.ts --bundle --outfile=dist/debug-adapter-client.js --external:vscode --format=cjs --platform=node --minify",
         "build:extension": "esbuild src/extension/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node --minify",
-        "build:tests": "esbuild test/**/*.test.ts --bundle --outdir=dist/test --external:vscode --format=cjs --platform=node --sourcemap",
+        "build:unbundled": "tsc --project tsconfig.json",
         "build": "npm run build:debugadapter && npm run build:extension",
-        "prebuild": "./scripts/prepare.sh",
+        "prebuild": "node ./scripts/prepare.js",
         "pretest": "npm run build",
         "test:grammar": "vscode-tmgrammar-snap test/example.bazelrc",
-        "test:unit": "npm run build:tests && vscode-test",
+        "test:unit": "npm run build:unbundled && vscode-test",
         "test": "npm run typecheck && npm run test:grammar && npm run test:unit",
         "package": "npm run build && vsce package --no-dependencies",
         "update-snapshot": "vscode-tmgrammar-snap -u test/example.bazelrc"
@@ -535,7 +544,7 @@
         "@vscode/test-cli": "^0.0.12",
         "@vscode/test-electron": "^2.3.9",
         "@vscode/vsce": "^3.0.0",
-        "esbuild": "^0.27.2",
+        "esbuild": "^0.28.0",
         "eslint": "^10.0.0",
         "eslint-config-prettier": "^10.0.0",
         "eslint-plugin-jsdoc": "^62.0.0",
@@ -553,7 +562,8 @@
     "dependencies": {
         "@vscode/debugadapter": "^1.68.0",
         "@vscode/debugprotocol": "^1.68.0",
-        "protobufjs": "^6.8.0",
+        "protobufjs": "^8.0.1",
+        "protobufjs-cli": "^2.0.1",
         "vscode-languageclient": "^9.0.1",
         "vscode-uri": "^3.0.2",
         "which": "^6.0.0"

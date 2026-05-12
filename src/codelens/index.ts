@@ -12,4 +12,4 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-export * from "./bazel_build_code_lens_provider";
+export * from "./code_lens_provider";

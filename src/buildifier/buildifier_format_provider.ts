@@ -16,6 +16,7 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { buildifierFormat } from "./buildifier";
 import { BazelWorkspaceInfo } from "../bazel";
+import { getBuildifierFixOnFormat } from "../extension/configuration";
 import { logError } from "../extension/logger";
 
 /**
@@ -28,11 +29,11 @@ export class BuildifierFormatProvider
   public async provideDocumentFormattingEdits(
     document: vscode.TextDocument,
   ): Promise<vscode.TextEdit[]> {
-    const bazelConfig = vscode.workspace.getConfiguration("bazel");
-    const applyLintFixes = bazelConfig.get<boolean>("buildifierFixOnFormat");
-
     const fileContent = document.getText();
     const workspaceInfo = BazelWorkspaceInfo.fromDocument(document);
+    if (!workspaceInfo) {
+      return [];
+    }
     const workspaceRelativePath = path.relative(
       workspaceInfo.bazelWorkspacePath,
       document.uri.fsPath,
@@ -41,7 +42,7 @@ export class BuildifierFormatProvider
       const formattedContent = await buildifierFormat(
         fileContent,
         workspaceRelativePath,
-        applyLintFixes,
+        getBuildifierFixOnFormat(),
       );
       if (formattedContent === fileContent) {
         // If the file didn't change, return any empty array of edits.
@@ -60,6 +61,7 @@ export class BuildifierFormatProvider
       return edits;
     } catch (err: any) {
       logError("Buildifier formatting failed", true, err);
+      return [];
     }
   }
 }

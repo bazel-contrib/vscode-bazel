@@ -32,7 +32,7 @@ export function getConfigurationWithDefault<T>(
   if (!value) {
     const info = config.inspect<T>(name);
 
-    if (info.defaultValue == null) {
+    if (!info || info.defaultValue == null) {
       throw new Error(`No default value for configuration ${section}.${name}`);
     }
 
@@ -51,6 +51,10 @@ export function getConfigurationWithDefault<T>(
  */
 export function getBazelExecutablePath(): string {
   return getConfigurationWithDefault<string>("bazel", "executable").trim();
+}
+
+export function getPathsToIgnore(): string[] {
+  return getConfigurationWithDefault<string[]>("bazel", "pathsToIgnore");
 }
 
 export function getStartupOptions(): string[] {
@@ -86,6 +90,10 @@ export function getBuildifierExecutablePath(): string {
     "bazel",
     "buildifierExecutable",
   ).trim();
+}
+
+export function getBuildifierFixOnFormat(): boolean {
+  return getConfigurationWithDefault<boolean>("bazel", "buildifierFixOnFormat");
 }
 
 /**

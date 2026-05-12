@@ -1,21 +1,21 @@
-name: 'Download External Tools'
-description: 'Downloads external tools from GitHub releases and validates checksums'
+name: "Download External Tools"
+description: "Downloads external tools from GitHub releases and validates checksums"
 
 inputs:
   tools-dir:
-    description: 'Directory to download tools to'
+    description: "Directory to download tools to"
     required: true
   config-file:
-    description: 'Path to external-tools-config.json'
+    description: "Path to external-tools-config.json"
     required: false
-    default: 'external-tools-config.json'
+    default: "external-tools-config.json"
   platform:
-    description: 'Target platform (e.g., linux-amd64, darwin-amd64)'
+    description: "Target platform (e.g., linux-amd64, darwin-amd64)"
     required: false
-    default: 'linux-amd64'
+    default: "linux-amd64"
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Download external tools and validate checksums
       shell: bash
@@ -23,9 +23,9 @@ runs:
         TOOLS_DIR="${{ inputs.tools-dir }}"
         CONFIG_FILE="${{ inputs.config-file }}"
         PLATFORM="${{ inputs.platform }}"
-        
+
         mkdir -p "$TOOLS_DIR"
-        
+
         # Loop through each tool in the config
         for tool_key in $(jq -r 'keys[]' "$CONFIG_FILE"); do
           echo "Downloading $tool_key..."
@@ -61,5 +61,5 @@ runs:
           
           echo "Successfully downloaded and validated $tool_key"
         done
-        
+
         echo "$TOOLS_DIR" >> $GITHUB_PATH

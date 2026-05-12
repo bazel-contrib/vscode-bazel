@@ -194,7 +194,7 @@ export async function queryQuickPickTargets({
 
   const queryResult = await new BazelQuery(
     getBazelExecutablePath(),
-    workspaceInfo.workspaceFolder.uri.fsPath,
+    workspaceInfo.bazelWorkspacePath,
   ).queryTargets(query ?? "//...:*", { abortSignal });
 
   // Sort the labels so the QuickPick is ordered.
@@ -235,7 +235,7 @@ export async function queryQuickPickPackage({
 
   const packagePaths = await new BazelQuery(
     getBazelExecutablePath(),
-    workspaceInfo.workspaceFolder.uri.fsPath,
+    workspaceInfo.bazelWorkspacePath,
   ).queryPackages(query ?? "//...", { abortSignal });
 
   // Sort the labels so the QuickPick is ordered.
@@ -424,7 +424,7 @@ function formatTargetDisplayName(
   target: string,
   maxLabelLength: number = MAX_TARGET_DISPLAY_LENGTH,
 ): string {
-  const shortName = target.includes(":") ? target.split(":")[1] : target;
+  const shortName = target.split(":")[1] ?? target;
   // Truncate from the beginning if the name is too long (keep the end visible)
   return shortName.length > maxLabelLength
     ? "..." + shortName.slice(-(maxLabelLength - 3))

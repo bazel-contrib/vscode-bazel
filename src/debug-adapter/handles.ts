@@ -34,7 +34,7 @@ export class Handles<T> {
   }
 
   /** Retrieves the value with the given handle. */
-  public get(handle: number): T {
+  public get(handle: number): T | undefined {
     return this.values.get(handle);
   }
 

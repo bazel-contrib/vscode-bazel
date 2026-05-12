@@ -18,7 +18,7 @@ export function activateTesting(): vscode.Disposable[] {
   coverageRunProfile = testController.createRunProfile(
     "Bazel Coverage",
     vscode.TestRunProfileKind.Coverage,
-    undefined,
+    async () => undefined,
   );
   coverageRunProfile.isDefault = false;
   // `loadDetailedCoverage` is important so that line coverage data is shown.
@@ -42,7 +42,7 @@ export async function showLcovCoverage(
 ) {
   const run = testController.createTestRun(
     new vscode.TestRunRequest(undefined, undefined, coverageRunProfile),
-    null,
+    undefined,
     false,
   );
   run.appendOutput(description.replaceAll("\n", "\r\n"));

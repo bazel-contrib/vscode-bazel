@@ -1,5 +1,12 @@
 import * as vscode from "vscode";
-import { logInfo, logWarn, logError, showUserMessage } from "./logger";
+import {
+  logInfo,
+  logWarn,
+  logError,
+  showUserMessage,
+  ILogger,
+  logDebug,
+} from "./logger";
 
 /**
  * Represents a feature of the Bazel extension.
@@ -20,7 +27,9 @@ import { logInfo, logWarn, logError, showUserMessage } from "./logger";
  * - have a corresponding config for enabling: `bazel.enable<featureName>`
  * - have a corresponding context key to communicate its current state: `bazel.feature.<featureName>.enabled`
  */
-export abstract class BaseExtensionFeature implements vscode.Disposable {
+export abstract class BaseExtensionFeature
+  implements vscode.Disposable, ILogger
+{
   /**
    * Name of the feature, used in settings.
    */
@@ -126,7 +135,7 @@ export abstract class BaseExtensionFeature implements vscode.Disposable {
    * @param config The configuration to check
    */
   private isEnabledInConfig(config: vscode.WorkspaceConfiguration): boolean {
-    return config.get<boolean>(this.configKey);
+    return config.get<boolean>(this.configKey) ?? false;
   }
 
   /**
@@ -151,23 +160,38 @@ export abstract class BaseExtensionFeature implements vscode.Disposable {
   }
 
   /**
-   * Internal helpers to prepend featureName to log messages.
+   * Gets the logger instance for this feature, which can be passed to other components.
+   * This allows dependency injection of feature-specific logging capabilities.
    */
-  protected logInfo(
+  public getLogger(): ILogger {
+    return this;
+  }
+
+  /**
+   * Implementation of ILogger interface - public methods for external use.
+   */
+  public logDebug(
+    message: string,
+    showMessage: boolean = false,
+    ...args: unknown[]
+  ): void {
+    logDebug(`[${this.featureName}] ${message}`, showMessage, ...args);
+  }
+  public logInfo(
     message: string,
     showMessage: boolean = false,
     ...args: unknown[]
   ): void {
     logInfo(`[${this.featureName}] ${message}`, showMessage, ...args);
   }
-  protected logWarn(
+  public logWarn(
     message: string,
     showMessage: boolean = false,
     ...args: unknown[]
   ): void {
     logWarn(`[${this.featureName}] ${message}`, showMessage, ...args);
   }
-  protected logError(
+  public logError(
     message: string,
     showMessage: boolean = false,
     ...args: unknown[]
