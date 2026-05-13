@@ -16,6 +16,7 @@ import * as vscode from "vscode";
 import {
   BazelWorkspaceInfo,
   getPackageLabelForBuildFile,
+  pickBazelWorkspace,
   queryQuickPickTargets,
 } from "../bazel";
 
@@ -143,8 +144,17 @@ export class BazelCompletionItemProvider
    * workspace.
    */
   public async refresh() {
+    const workspaceInfo = await pickBazelWorkspace();
+
+    // If no workspace is found (e.g. user cancels pick or not a Bazel workspace),
+    // return silently to avoid spamming errors in non-Bazel repos.
+    if (!workspaceInfo) {
+      return;
+    }
+
     const queryTargets = await queryQuickPickTargets({
       query: "kind('.* rule', ...)",
+      workspaceInfo: workspaceInfo,
     });
     if (queryTargets.length !== 0) {
       this.targets = queryTargets.map((queryTarget) => {
