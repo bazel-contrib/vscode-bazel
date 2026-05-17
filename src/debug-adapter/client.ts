@@ -154,7 +154,7 @@ class BazelDebugSession extends DebugSession {
     this.sendResponse(response);
   }
 
-  protected async configurationDoneRequest(
+  async _configurationDoneRequest(
     response: DebugProtocol.ConfigurationDoneResponse,
   ) {
     await this.bazelConnection.sendRequest({
@@ -164,7 +164,13 @@ class BazelDebugSession extends DebugSession {
     this.sendResponse(response);
   }
 
-  protected async launchRequest(
+  protected configurationDoneRequest(
+    response: DebugProtocol.ConfigurationDoneResponse,
+  ) {
+    void this._configurationDoneRequest(response);
+  }
+
+  async _launchRequest(
     response: DebugProtocol.LaunchResponse,
     args: ILaunchRequestArguments,
   ) {
@@ -199,6 +205,13 @@ class BazelDebugSession extends DebugSession {
     this.bazelConnection.on("event", (event) => {
       this.handleBazelEvent(event as skylark_debugging.DebugEvent);
     });
+  }
+
+  protected launchRequest(
+    response: DebugProtocol.LaunchResponse,
+    args: ILaunchRequestArguments,
+  ) {
+    void this._launchRequest(response, args);
   }
 
   protected disconnectRequest(response: DebugProtocol.DisconnectResponse) {
@@ -281,7 +294,7 @@ class BazelDebugSession extends DebugSession {
     this.sendResponse(response);
   }
 
-  protected async stackTraceRequest(
+  async _stackTraceRequest(
     response: DebugProtocol.StackTraceResponse,
     args: DebugProtocol.StackTraceArguments,
   ) {
@@ -320,6 +333,13 @@ class BazelDebugSession extends DebugSession {
     this.sendResponse(response);
   }
 
+  protected stackTraceRequest(
+    response: DebugProtocol.StackTraceResponse,
+    args: DebugProtocol.StackTraceArguments,
+  ) {
+    void this._stackTraceRequest(response, args);
+  }
+
   protected scopesRequest(
     response: DebugProtocol.ScopesResponse,
     args: DebugProtocol.ScopesArguments,
@@ -342,7 +362,7 @@ class BazelDebugSession extends DebugSession {
     this.sendResponse(response);
   }
 
-  protected async variablesRequest(
+  async _variablesRequest(
     response: DebugProtocol.VariablesResponse,
     args: DebugProtocol.VariablesArguments,
   ) {
@@ -398,7 +418,14 @@ class BazelDebugSession extends DebugSession {
     this.sendResponse(response);
   }
 
-  protected async evaluateRequest(
+  protected variablesRequest(
+    response: DebugProtocol.VariablesResponse,
+    args: DebugProtocol.VariablesArguments,
+  ) {
+    void this._variablesRequest(response, args);
+  }
+
+  async _evaluateRequest(
     response: DebugProtocol.EvaluateResponse,
     args: DebugProtocol.EvaluateArguments,
   ) {
@@ -432,6 +459,13 @@ class BazelDebugSession extends DebugSession {
     } catch (e) {
       this.debugLog(`Unable to evaluate expression: ${args.expression}`);
     }
+  }
+
+  protected evaluateRequest(
+    response: DebugProtocol.EvaluateResponse,
+    args: DebugProtocol.EvaluateArguments,
+  ) {
+    void this._evaluateRequest(response, args);
   }
 
   // Execution/control flow requests
