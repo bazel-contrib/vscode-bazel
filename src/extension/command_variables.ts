@@ -209,7 +209,7 @@ export function activateCommandVariables(): vscode.Disposable[] {
       const commandName = `bazel.${key}`;
       const funcs = [queryQuickPickPackage, queryQuickPickTargets];
       const func = funcs[idx];
-      return vscode.commands.registerCommand(commandName, (args) =>
+      return vscode.commands.registerCommand(commandName, async (args) =>
         wrapQuickPick(commandName, func, args),
       );
     }),
@@ -222,7 +222,7 @@ export function activateCommandVariables(): vscode.Disposable[] {
       "output_path",
       "workspace",
     ].map((key) =>
-      vscode.commands.registerCommand(`bazel.info.${key}`, () =>
+      vscode.commands.registerCommand(`bazel.info.${key}`, async () =>
         bazelInfo(key),
       ),
     ),

@@ -6,7 +6,7 @@ import { DeclarationCoverage, StatementCoverage } from "vscode";
 
 const testDir = path.join(__dirname, "../..", "test");
 
-function parseTestLcov(lcov: string): Promise<BazelFileCoverage[]> {
+async function parseTestLcov(lcov: string): Promise<BazelFileCoverage[]> {
   return parseLcov("/base", lcov);
 }
 

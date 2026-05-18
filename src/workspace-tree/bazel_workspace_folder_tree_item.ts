@@ -49,7 +49,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     return true;
   }
 
-  public getChildren(): Promise<IBazelTreeItem[]> {
+  public async getChildren(): Promise<IBazelTreeItem[]> {
     return this.getDirectoryItems();
   }
 

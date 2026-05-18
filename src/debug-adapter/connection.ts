@@ -84,7 +84,7 @@ export class BazelDebugConnection extends EventEmitter {
    * populated by this method.
    * @returns A {@code Promise} for the response to the request.
    */
-  public sendRequest(
+  public async sendRequest(
     options: skylark_debugging.IDebugRequest,
   ): Promise<skylark_debugging.IDebugEvent> {
     if (!this.socket) {
