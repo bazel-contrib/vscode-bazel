@@ -56,6 +56,7 @@ module.exports = [
         "error",
       "@typescript-eslint/no-duplicate-enum-values": "error",
       "@typescript-eslint/adjacent-overload-signatures": "error",
+      "@typescript-eslint/prefer-reduce-type-parameter": "error",
       "@typescript-eslint/array-type": [
         "error",
         {
