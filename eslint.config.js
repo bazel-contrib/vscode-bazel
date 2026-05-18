@@ -52,6 +52,8 @@ module.exports = [
           overrides: { constructors: "no-public" },
         },
       ],
+      "@typescript-eslint/no-unnecessary-parameter-property-assignment":
+        "error",
       "@typescript-eslint/adjacent-overload-signatures": "error",
       "@typescript-eslint/array-type": [
         "error",
