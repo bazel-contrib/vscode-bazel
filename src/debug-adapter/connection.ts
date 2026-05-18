@@ -66,7 +66,7 @@ export class BazelDebugConnection extends EventEmitter {
    * @param host The host name to connect to.
    * @param port The port number to connect to.
    */
-  public constructor(
+  constructor(
     host: string,
     port: number,
     private logger: (message: string, ...objects: object[]) => void,

@@ -63,7 +63,7 @@ describe("Bazel availability", () => {
     await setBazelConfiguration(undefined, undefined);
     await fs.rm(nestedExecutablePath, { force: true });
     await Promise.all(
-      temporaryDirectories.map((directory) =>
+      temporaryDirectories.map(async (directory) =>
         fs.rm(directory, { recursive: true, force: true }),
       ),
     );

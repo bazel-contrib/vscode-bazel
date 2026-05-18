@@ -75,15 +75,15 @@ export class BazelTargetQuickPick
     return this.targetInfo;
   }
 
-  get alwaysShow(): boolean {
+  public get alwaysShow(): boolean {
     return true;
   }
 
-  get label(): string {
+  public get label(): string {
     return this.targetLabel;
   }
 
-  get picked(): boolean {
+  public get picked(): boolean {
     return false;
   }
 

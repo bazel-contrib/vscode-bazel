@@ -32,7 +32,7 @@ describe("CodeLensFeature", () => {
     it("returns false when Bazel executable is not available", async () => {
       sandbox.stub(bazel_availability, "checkBazelIsAvailable").returns(false);
 
-      const result = await codeLensFeature.enable(mockContext);
+      const result = await (codeLensFeature as any).enable(mockContext);
 
       assert.strictEqual(result, false);
     });
@@ -47,7 +47,7 @@ describe("CodeLensFeature", () => {
           onDidChange: sinon.stub(),
         } as unknown as vscode.FileSystemWatcher);
 
-      const result = await codeLensFeature.enable(mockContext);
+      const result = await (codeLensFeature as any).enable(mockContext);
 
       // Assert that feature enables successfully
       assert.strictEqual(result, true);

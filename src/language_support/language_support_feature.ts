@@ -117,7 +117,7 @@ export class LanguageSupportFeature extends BaseExtensionFeature {
     );
 
     // Fire refresh when BUILD files change, are created, or deleted
-    const refreshOnEvent = (uri: vscode.Uri) =>
+    const refreshOnEvent = async (uri: vscode.Uri) =>
       this.completionItemProvider?.refresh(uri);
     const onDidChangeDisposable = buildWatcher.onDidChange(refreshOnEvent);
     const onDidCreateDisposable = buildWatcher.onDidCreate(refreshOnEvent);

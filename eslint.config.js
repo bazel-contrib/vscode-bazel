@@ -45,6 +45,13 @@ module.exports = [
       "@typescript-eslint/await-thenable": "error",
       "@typescript-eslint/promise-function-async": "error",
       "@typescript-eslint/prefer-includes": "error",
+      "@typescript-eslint/explicit-member-accessibility": [
+        "error",
+        {
+          accessibility: "explicit",
+          overrides: { constructors: "no-public" },
+        },
+      ],
       "@typescript-eslint/adjacent-overload-signatures": "error",
       "@typescript-eslint/array-type": [
         "error",
