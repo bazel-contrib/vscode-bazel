@@ -44,6 +44,7 @@ module.exports = [
       "@typescript-eslint/return-await": ["error", "in-try-catch"],
       "@typescript-eslint/await-thenable": "error",
       "@typescript-eslint/promise-function-async": "error",
+      "@typescript-eslint/prefer-includes": "error",
       "@typescript-eslint/adjacent-overload-signatures": "error",
       "@typescript-eslint/array-type": [
         "error",
