@@ -46,7 +46,7 @@ export class CodeLensBuilder {
    * @param queryResult The result of the bazel query containing target definitions
    * @returns A new array of CodeLens objects for the BUILD file
    */
-  buildCodeLenses(
+  public buildCodeLenses(
     bazelWorkspaceInfo: BazelWorkspaceInfo,
     queryResult: blaze_query.QueryResult,
   ): vscode.CodeLens[] {
