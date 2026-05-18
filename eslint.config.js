@@ -41,6 +41,7 @@ module.exports = [
     },
     rules: {
       "@typescript-eslint/prefer-optional-chain": "error",
+      "@typescript-eslint/return-await": ["error", "in-try-catch"],
       "@typescript-eslint/adjacent-overload-signatures": "error",
       "@typescript-eslint/array-type": [
         "error",

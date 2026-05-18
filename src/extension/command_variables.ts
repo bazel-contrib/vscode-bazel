@@ -98,7 +98,7 @@ async function bazelGetTargetOutput(
     case 1:
       return path.join(outputPath, "..", outputs[0]);
     default:
-      return await vscode.window.showQuickPick(outputs, {
+      return vscode.window.showQuickPick(outputs, {
         placeHolder: `Pick an output of ${target}`,
       });
   }
