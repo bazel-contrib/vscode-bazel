@@ -40,7 +40,7 @@ module.exports = [
       jsdoc,
     },
     rules: {
-      // TypeScript rules
+      "@typescript-eslint/prefer-optional-chain": "error",
       "@typescript-eslint/adjacent-overload-signatures": "error",
       "@typescript-eslint/array-type": [
         "error",
