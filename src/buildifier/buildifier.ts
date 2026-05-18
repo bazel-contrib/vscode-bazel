@@ -136,8 +136,7 @@ export async function executeBuildifier(
   executable?: string,
 ): Promise<{ stdout: string; stderr: string }> {
   // Determine the executable
-  let buildifierExecutable =
-    executable || (await getBuildifierExecutablePath());
+  let buildifierExecutable = executable || getBuildifierExecutablePath();
   const buildifierConfigJsonPath = getBuildifierJsonConfigPath();
   if (buildifierConfigJsonPath.length !== 0) {
     args = ["--config", buildifierConfigJsonPath, ...args];
