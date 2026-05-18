@@ -32,7 +32,7 @@ export function getConfigurationWithDefault<T>(
   if (!value) {
     const info = config.inspect<T>(name);
 
-    if (!info || info.defaultValue == null) {
+    if (info?.defaultValue == null) {
       throw new Error(`No default value for configuration ${section}.${name}`);
     }
 
