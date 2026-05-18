@@ -54,6 +54,7 @@ module.exports = [
       ],
       "@typescript-eslint/no-unnecessary-parameter-property-assignment":
         "error",
+      "@typescript-eslint/no-duplicate-enum-values": "error",
       "@typescript-eslint/adjacent-overload-signatures": "error",
       "@typescript-eslint/array-type": [
         "error",
