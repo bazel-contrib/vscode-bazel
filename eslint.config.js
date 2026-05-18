@@ -60,6 +60,19 @@ module.exports = [
       "jsdoc/require-throws": "warn",
       "jsdoc/require-yields": "warn",
       "jsdoc/no-undefined-types": "error",
+      // Rules that require activation of strictNullChecks in tsconfig.json first
+      // "@typescript-eslint/strict-boolean-expressions": ["error", {
+      //   "allowString": false,
+      //   "allowNumber": false,
+      //   "allowNullableObject": false,
+      //   "allowNullableBoolean": false,
+      //   "allowNullableString": false,
+      //   "allowNullableNumber": false,
+      //   "allowAny": false,
+      // }],
+      // "@typescript-eslint/prefer-nullish-coalescing": "error",
+      // "@typescript-eslint/no-unnecessary-boolean-literal-compare": "error",
+
       "@typescript-eslint/array-type": [
         "error",
         {
