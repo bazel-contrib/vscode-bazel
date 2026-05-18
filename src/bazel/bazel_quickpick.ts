@@ -253,7 +253,7 @@ export async function queryQuickPickPackage({
  * @param options.workspaceInfo Workspace information for the Bazel project
  * @returns A promise that resolves with the selected BazelTargetQuickPick, or undefined if no selection was made
  */
-export function showDynamicQuickPick({
+export async function showDynamicQuickPick({
   queryBuilder,
   queryFunctor,
   workspaceInfo,
