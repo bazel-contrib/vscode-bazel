@@ -20,6 +20,7 @@ import * as vscode from "vscode";
  * @param section The section that contains the configuration, as is passed to vscode.workspace.getConfiguration.
  * @param name The name of the configuration item within the section.
  * @returns The configuration value, or its default.
+ * @throws {Error} If the configuration value is not set and has no default.
  */
 export function getConfigurationWithDefault<T>(
   section: string,

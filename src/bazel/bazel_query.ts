@@ -46,7 +46,7 @@ export class BazelQuery extends BazelCommand {
    * be sorted by their name.
    * @param options.ignoresErrors `true` if errors from executing the query
    * should be ignored.
-   * @returns A {@link QueryResult} object that contains structured information
+   * @returns A {@link blaze_query.QueryResult} object that contains structured information
    * about the query results.
    */
   public async queryTargets(
