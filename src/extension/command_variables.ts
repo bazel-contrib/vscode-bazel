@@ -132,6 +132,7 @@ async function bazelInfo(key: string): Promise<string> {
  * @param argName the argument name
  * @param commandName the commmand name. Used in the error message
  * @returns the extracted string value
+ * @throws {Error} If the argument is not a string or is not present.
  */
 function getArgumentValue(
   args: Record<string, any>,
