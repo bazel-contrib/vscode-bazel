@@ -116,10 +116,12 @@ export class LanguageSupportFeature extends BaseExtensionFeature {
       false, // ignoreDeleteEvents
     );
 
-    // Fire refresh when BUILD files change
-    const buildWatcherDisposable = buildWatcher.onDidChange(() =>
-      this.completionItemProvider?.refresh(),
-    );
+    // Fire refresh when BUILD files change, are created, or deleted
+    const refreshOnEvent = (uri: vscode.Uri) =>
+      this.completionItemProvider?.refresh(uri);
+    const onDidChangeDisposable = buildWatcher.onDidChange(refreshOnEvent);
+    const onDidCreateDisposable = buildWatcher.onDidCreate(refreshOnEvent);
+    const onDidDeleteDisposable = buildWatcher.onDidDelete(refreshOnEvent);
 
     // Register language providers
     const completionRegistration =
@@ -143,7 +145,9 @@ export class LanguageSupportFeature extends BaseExtensionFeature {
     // Add all disposables
     this.disposables.push(
       buildWatcher,
-      buildWatcherDisposable,
+      onDidChangeDisposable,
+      onDidCreateDisposable,
+      onDidDeleteDisposable,
       completionRegistration,
       symbolRegistration,
       definitionRegistration,
