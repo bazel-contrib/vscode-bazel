@@ -91,6 +91,22 @@ export class BazelWorkspaceInfo {
   }
 
   /**
+   * Returns all Bazel workspaces found among the open VS Code workspace
+   * folders.
+   */
+  public static getAll(): BazelWorkspaceInfo[] {
+    const workspaceFolders = vscode.workspace.workspaceFolders ?? [];
+    const workspaces: BazelWorkspaceInfo[] = [];
+    for (const folder of workspaceFolders) {
+      const workspaceInfo = this.fromWorkspaceFolder(folder);
+      if (workspaceInfo) {
+        workspaces.push(workspaceInfo);
+      }
+    }
+    return workspaces;
+  }
+
+  /**
    * Initializes a new workspace info object.
    *
    * @param bazelWorkspacePath The closest directory to a document that contains

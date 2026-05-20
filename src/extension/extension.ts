@@ -115,9 +115,19 @@ export async function activate(context: vscode.ExtensionContext) {
       false, // ignoreDeleteEvents
     );
 
-    // Fire refresh when BUILD files change
+    // Fire refresh when BUILD files change, are created, or deleted
     buildWatcher.onDidChange(
-      () => completionItemProvider?.refresh(),
+      (uri) => completionItemProvider?.refresh(uri),
+      null,
+      context.subscriptions,
+    );
+    buildWatcher.onDidCreate(
+      (uri) => completionItemProvider?.refresh(uri),
+      null,
+      context.subscriptions,
+    );
+    buildWatcher.onDidDelete(
+      (uri) => completionItemProvider?.refresh(uri),
       null,
       context.subscriptions,
     );
