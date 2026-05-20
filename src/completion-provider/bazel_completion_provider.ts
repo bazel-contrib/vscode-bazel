@@ -170,7 +170,7 @@ export class BazelCompletionItemProvider
       try {
         const queryTargets = await queryQuickPickTargets({
           query: "kind('.* rule', ...)",
-          workspaceInfo: workspaceInfo,
+          workspaceInfo,
         });
         if (queryTargets.length !== 0) {
           const targetLabels = queryTargets.map(

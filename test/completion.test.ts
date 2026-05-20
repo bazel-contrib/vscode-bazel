@@ -22,12 +22,14 @@ describe("BazelCompletionItemProvider", () => {
     const workspacePath1 = "/path/to/workspace1";
     const workspacePath2 = "/path/to/workspace2";
 
-    provider["targetsMap"].set(workspacePath1, [
+    (provider as any).targetsMap.set(workspacePath1, [
       "//pkg1:target1",
       "//pkg1:target2",
       "//pkg2:target3",
     ]);
-    provider["targetsMap"].set(workspacePath2, ["//other_pkg:other_target"]);
+    (provider as any).targetsMap.set(workspacePath2, [
+      "//other_pkg:other_target",
+    ]);
 
     // Stub BazelWorkspaceInfo.fromDocument
     const mockWorkspaceInfo = {
