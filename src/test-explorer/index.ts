@@ -22,7 +22,7 @@ export function activateTesting(): vscode.Disposable[] {
   );
   coverageRunProfile.isDefault = false;
   // `loadDetailedCoverage` is important so that line coverage data is shown.
-  coverageRunProfile.loadDetailedCoverage = (_, coverage) =>
+  coverageRunProfile.loadDetailedCoverage = async (_, coverage) =>
     Promise.resolve((coverage as BazelFileCoverage).details);
 
   return subscriptions;

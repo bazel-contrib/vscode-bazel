@@ -117,7 +117,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // Fire refresh when BUILD files change
     buildWatcher.onDidChange(
-      () => completionItemProvider?.refresh(),
+      async () => completionItemProvider?.refresh(),
       null,
       context.subscriptions,
     );

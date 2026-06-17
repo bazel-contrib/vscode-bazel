@@ -66,7 +66,7 @@ export class BazelDebugConnection extends EventEmitter {
    * @param host The host name to connect to.
    * @param port The port number to connect to.
    */
-  public constructor(
+  constructor(
     host: string,
     port: number,
     private logger: (message: string, ...objects: object[]) => void,
@@ -84,7 +84,7 @@ export class BazelDebugConnection extends EventEmitter {
    * populated by this method.
    * @returns A {@code Promise} for the response to the request.
    */
-  public sendRequest(
+  public async sendRequest(
     options: skylark_debugging.IDebugRequest,
   ): Promise<skylark_debugging.IDebugEvent> {
     if (!this.socket) {

@@ -165,10 +165,10 @@ async function resolveSourceFilePath(
  */
 export class BazelFileCoverage extends vscode.FileCoverage {
   // The coverage details
-  details: vscode.FileCoverageDetail[] = [];
+  public details: vscode.FileCoverageDetail[] = [];
 
   // Construct the coverage info from the detailed coverage information
-  static fromDetails(
+  public static fromDetails(
     uri: vscode.Uri,
     details: vscode.FileCoverageDetail[],
   ): BazelFileCoverage {
@@ -206,10 +206,12 @@ export async function parseLcov(
   // Note that line numbers in LCOV files seem to be 1-based, while line
   // numbers for VS Code need to be 0-based.
   class FileCoverageInfo {
-    functionsByLine: Map<number, vscode.DeclarationCoverage> = new Map();
-    lineCoverage: Map<number, vscode.StatementCoverage> = new Map();
-    coverageByLineAndBranch: Map<number, Map<string, vscode.BranchCoverage>> =
-      new Map();
+    public functionsByLine: Map<number, vscode.DeclarationCoverage> = new Map();
+    public lineCoverage: Map<number, vscode.StatementCoverage> = new Map();
+    public coverageByLineAndBranch: Map<
+      number,
+      Map<string, vscode.BranchCoverage>
+    > = new Map();
   }
   const infosByFile: Map<string, FileCoverageInfo> = new Map();
   for (const block of lcov.split(/end_of_record(\n|$)/)) {

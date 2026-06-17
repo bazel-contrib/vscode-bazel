@@ -16,7 +16,7 @@ export class CodeLensFeature extends BaseExtensionFeature {
     super("CodeLens", context);
   }
 
-  enable(context: vscode.ExtensionContext): boolean {
+  protected enable(context: vscode.ExtensionContext): boolean {
     // Precondition: bazel executable available
     if (!checkBazelIsAvailable()) {
       this.logWarn("Can not activate, no bazel executable found.");
