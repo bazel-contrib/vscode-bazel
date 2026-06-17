@@ -83,14 +83,20 @@ export async function checkBuildifierIsAvailable(): Promise<string | null> {
   // Make sure it's a compatible version by running
   // buildifier on an empty input and see if it exits successfully and the
   // output parses.
-  const { stdout } = await executeBuildifier(
-    "",
-    // specify the --lint value even though off is the default in case
-    // a .buildifer.json with a different value is present
-    ["--format=json", "--mode=check", "--lint=off"],
-    false,
-    executablePath,
-  );
+  let stdout: string;
+  try {
+    ({ stdout } = await executeBuildifier(
+      "",
+      // specify the --lint value even though off is the default in case
+      // a .buildifer.json with a different value is present
+      ["--format=json", "--mode=check", "--lint=off"],
+      false,
+      executablePath,
+    ));
+  } catch (e) {
+    logWarn(`Buildifier version check failed: ${e}`);
+    return null;
+  }
   try {
     JSON.parse(stdout);
     logInfo(`Buildifier is available and compatible: ${executablePath}`);

@@ -34,13 +34,15 @@ export class BuildifierDiagnosticsManager implements vscode.Disposable {
    */
   private disposables: vscode.Disposable[] = [];
   private logger: ILogger;
+  private executable: string | undefined;
 
   /**
    * Initializes a new buildifier diagnostics manager and hooks into workspace
    * and window events so that diagnostics are updated live.
    */
-  constructor(logger: ILogger) {
+  constructor(logger: ILogger, executable?: string) {
     this.logger = logger;
+    this.executable = executable;
     let didChangeTextTimer: NodeJS.Timeout | null;
 
     this.disposables.push(
@@ -90,6 +92,7 @@ export class BuildifierDiagnosticsManager implements vscode.Disposable {
         document.getText(),
         absolutePath,
         "warn",
+        this.executable,
       );
       this.logger.logDebug(`Found ${warnings.length} warnings`);
 

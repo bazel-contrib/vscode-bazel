@@ -25,9 +25,11 @@ export class BuildifierFormatProvider
   implements vscode.DocumentFormattingEditProvider
 {
   private logger: ILogger;
+  private executable: string | undefined;
 
-  constructor(logger: ILogger) {
+  constructor(logger: ILogger, executable?: string) {
     this.logger = logger;
+    this.executable = executable;
   }
 
   public async provideDocumentFormattingEdits(
@@ -42,6 +44,7 @@ export class BuildifierFormatProvider
         fileContent,
         absolutePath,
         getBuildifierFixOnFormat(),
+        this.executable,
       );
       if (formattedContent === fileContent) {
         this.logger.logDebug("File did not change during formatting");

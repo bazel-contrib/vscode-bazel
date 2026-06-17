@@ -22,11 +22,11 @@ export class WorkspaceTreeFeature extends BaseExtensionFeature {
     super("WorkspaceTree", context);
   }
 
-  async enable(context: vscode.ExtensionContext): Promise<boolean> {
+  enable(context: vscode.ExtensionContext): Promise<boolean> {
     // Precondition: bazel executable available
     if (!checkBazelIsAvailable()) {
       this.logWarn("Can not activate, no bazel executable found.");
-      return false;
+      return Promise.resolve(false);
     }
 
     // Create and register the WorkspaceTree provider
@@ -62,7 +62,7 @@ export class WorkspaceTreeFeature extends BaseExtensionFeature {
     );
     this.disposables.push(refreshTargetsCommand);
 
-    return true;
+    return Promise.resolve(true);
   }
 
   /**

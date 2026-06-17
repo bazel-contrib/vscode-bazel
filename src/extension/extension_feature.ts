@@ -41,6 +41,7 @@ export abstract class BaseExtensionFeature
    * Whether the feature is currently enabled.
    */
   private isEnabled: boolean = false;
+  private pendingConfigChange: Promise<void> = Promise.resolve();
 
   /**
    * List of disposables registered by the feature.
@@ -102,13 +103,30 @@ export abstract class BaseExtensionFeature
    * Logs erros in case of a activation failure.
    * @param config The new configuration for the feature.
    */
-  private async onConfigurationChanged(
+  private onConfigurationChanged(
+    config: vscode.WorkspaceConfiguration,
+  ): Promise<void> {
+    const next = this.pendingConfigChange.then(() =>
+      this.doConfigurationChange(config),
+    );
+    this.pendingConfigChange = next.catch(() => {});
+    return next;
+  }
+
+  private async doConfigurationChange(
     config: vscode.WorkspaceConfiguration,
   ): Promise<void> {
     const shouldBeEnabled = this.isEnabledInConfig(config);
     if (shouldBeEnabled && !this.isEnabled) {
       this.logInfo(`Enabling ${this.constructor.name}`);
-      if (!(await this.enable(this.context))) {
+      let enabled: boolean;
+      try {
+        enabled = await this.enable(this.context);
+      } catch (e) {
+        this.logError(`Failed to enable ${this.constructor.name}: ${e}`);
+        return;
+      }
+      if (!enabled) {
         void showUserMessage(
           `Failed to enable ${this.constructor.name}`,
           vscode.LogLevel.Error,
