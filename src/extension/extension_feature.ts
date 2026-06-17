@@ -109,6 +109,7 @@ export abstract class BaseExtensionFeature
     const next = this.pendingConfigChange.then(() =>
       this.doConfigurationChange(config),
     );
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
     this.pendingConfigChange = next.catch(() => {});
     return next;
   }
@@ -167,9 +168,7 @@ export abstract class BaseExtensionFeature
    * - create any required resources and add disposables to the `this.disposables` array.
    * - return true after successfull enabling of the functionality
    */
-  protected abstract enable(
-    context: vscode.ExtensionContext,
-  ): Promise<boolean>;
+  protected abstract enable(context: vscode.ExtensionContext): Promise<boolean>;
 
   /**
    * Called when the feature is disabled.

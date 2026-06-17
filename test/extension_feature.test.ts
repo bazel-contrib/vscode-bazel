@@ -8,9 +8,7 @@ class TestExtensionFeature extends BaseExtensionFeature {
     super("TestFeature", context);
   }
 
-  protected async enable(
-    context: vscode.ExtensionContext,
-  ): Promise<boolean> {
+  protected async enable(context: vscode.ExtensionContext): Promise<boolean> {
     this.disposables.push({
       dispose: () => {
         /* empty */
@@ -25,9 +23,7 @@ class FailingTestFeature extends BaseExtensionFeature {
     super("FailingTestFeature", context);
   }
 
-  protected async enable(
-    context: vscode.ExtensionContext,
-  ): Promise<boolean> {
+  protected async enable(context: vscode.ExtensionContext): Promise<boolean> {
     return false;
   }
 }
