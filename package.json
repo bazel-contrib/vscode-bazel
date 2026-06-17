@@ -549,7 +549,7 @@
         "eslint-config-prettier": "^10.0.0",
         "eslint-plugin-jsdoc": "^62.0.0",
         "globals": "^17.4.0",
-        "js-yaml": "^4.1.1",
+        "js-yaml": "^4.2.0",
         "mocha": "^11.0.0",
         "prettier": "^3.2.5",
         "sinon": "^21.0.3",
