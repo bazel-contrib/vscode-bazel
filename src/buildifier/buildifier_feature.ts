@@ -15,10 +15,7 @@
 import * as vscode from "vscode";
 
 import { BaseExtensionFeature } from "../extension/extension_feature";
-import {
-  checkBuildifierIsAvailable,
-  showBuildifierDownloadPrompt,
-} from "./buildifier_availability";
+import { checkBuildifierIsAvailable } from "./buildifier_availability";
 import { BuildifierDiagnosticsManager } from "./buildifier_diagnostics_manager";
 import { BuildifierFormatProvider } from "./buildifier_format_provider";
 
@@ -38,15 +35,11 @@ export class BuildifierFeature extends BaseExtensionFeature {
     super("Buildifier", context);
   }
 
-  enable(context: vscode.ExtensionContext): boolean {
+  protected async enable(context: vscode.ExtensionContext): Promise<boolean> {
     // Precondition: buildifier executable available
-    if (!checkBuildifierIsAvailable()) {
+    const buildifierPath = await checkBuildifierIsAvailable();
+    if (!buildifierPath) {
       this.logWarn("Can not activate, no buildifier executable found.");
-
-      // Asynchronously show download prompt without waiting for it
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      showBuildifierDownloadPrompt("Buildifier was not found");
-
       return false;
     }
 

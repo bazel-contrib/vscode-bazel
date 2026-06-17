@@ -76,7 +76,7 @@ export abstract class BaseExtensionFeature
     // Register configuration change listener
     this.configCallback = vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration(this.configKey)) {
-        this.onConfigurationChanged(vscode.workspace.getConfiguration());
+        void this.onConfigurationChanged(vscode.workspace.getConfiguration());
       }
     });
   }
@@ -85,13 +85,13 @@ export abstract class BaseExtensionFeature
    * Static Factory pattern for creating and ensuring a subsequent call for initialization.
    * The feature will be initialized based on the current configuration.
    */
-  static create<T extends BaseExtensionFeature>(
+  static async create<T extends BaseExtensionFeature>(
     this: new (context: vscode.ExtensionContext) => T,
     context: vscode.ExtensionContext,
-  ): T {
+  ): Promise<T> {
     const instance = new this(context);
     // Enable/Disable feature based on current configuration
-    instance.onConfigurationChanged(vscode.workspace.getConfiguration());
+    await instance.onConfigurationChanged(vscode.workspace.getConfiguration());
     return instance;
   }
 
@@ -102,11 +102,13 @@ export abstract class BaseExtensionFeature
    * Logs erros in case of a activation failure.
    * @param config The new configuration for the feature.
    */
-  private onConfigurationChanged(config: vscode.WorkspaceConfiguration): void {
+  private async onConfigurationChanged(
+    config: vscode.WorkspaceConfiguration,
+  ): Promise<void> {
     const shouldBeEnabled = this.isEnabledInConfig(config);
     if (shouldBeEnabled && !this.isEnabled) {
       this.logInfo(`Enabling ${this.constructor.name}`);
-      if (!this.enable(this.context)) {
+      if (!(await this.enable(this.context))) {
         void showUserMessage(
           `Failed to enable ${this.constructor.name}`,
           vscode.LogLevel.Error,
@@ -147,7 +149,9 @@ export abstract class BaseExtensionFeature
    * - create any required resources and add disposables to the `this.disposables` array.
    * - return true after successfull enabling of the functionality
    */
-  protected abstract enable(context: vscode.ExtensionContext): boolean;
+  protected abstract enable(
+    context: vscode.ExtensionContext,
+  ): Promise<boolean>;
 
   /**
    * Called when the feature is disabled.

@@ -74,17 +74,17 @@ export async function activate(context: vscode.ExtensionContext) {
   registerBazelWorkspaceAvailabilityWatcher(context);
 
   // WorkspaceTreeFeature
-  const workspaceTreeFeature = WorkspaceTreeFeature.create(context);
+  const workspaceTreeFeature = await WorkspaceTreeFeature.create(context);
   context.subscriptions.push(workspaceTreeFeature);
   storeWorkspaceTreeProviderForTesting(
     workspaceTreeFeature.getWorkspaceTreeProvider(),
   );
 
   // CodeLensFeature
-  context.subscriptions.push(CodeLensFeature.create(context));
+  context.subscriptions.push(await CodeLensFeature.create(context));
 
   // BuildifierFeature
-  context.subscriptions.push(BuildifierFeature.create(context));
+  context.subscriptions.push(await BuildifierFeature.create(context));
 
   // Other components
   let completionItemProvider: BazelCompletionItemProvider | null = null;
