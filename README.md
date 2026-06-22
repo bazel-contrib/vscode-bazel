@@ -11,8 +11,8 @@ This extension provides support for Bazel in Visual Studio.
   workspace
 - **CodeLens** links in BUILD files to directly launch a build or test by simply
   clicking on the targets
-- **Buildifier** integration to lint and format your Bazel files (requires that
-  [Buildifier](https://github.com/bazelbuild/buildtools/releases) be installed)
+- **Buildifier** integration to lint and format your Bazel files
+- **Language Server** integration with starpls for enhanced IDE features
 - **Bazel Task** definitions for `tasks.json`
 - **Coverage Support** showing coverage results from `bazel coverage` directly
   in VS Code.
@@ -30,6 +30,16 @@ set the **Bazel: Executable** setting to the location of the Bazel executable.
 
 Similarly, the **Bazel: Buildifier Executable** setting can be configured if
 you install Buildifier in a location that is not on your system path.
+
+### Automatic Tool Installation
+
+This extension can automatically download and configure required tools for you:
+
+- **Buildifier** - Auto-installed when needed for formatting/linting
+- **Bazelisk** - Auto-installed when bazel executable is not found
+- **Starpls** - Auto-installed when language server features are enabled
+
+When a tool is missing, the extension will show a dialog offering to download it automatically.
 
 When Buildifier is installed, the **Format Document** command in Visual Studio
 code will reformat `BUILD`, `WORKSPACE`, `.bzl`, and `.sky` files using the
@@ -70,16 +80,14 @@ Once debugging is active and Bazel pauses, you can step through your Starlark co
 To stop the debugging session, click the "Stop" button in the debugger.
 This terminates the current Bazel process while keeping the Bazel server running for future builds.
 
-## Using a language server (experimental)
+## Using a language server
 
 This extension can use a language server for various features, such as go to definition and completions. There are currently two compatible language servers:
 
+- [starpls](https://github.com/withered-magic/starpls) is an implementation based on rust-analyzer which provides Bazel-specific functionality.
 - [bazel-lsp](https://github.com/cameron-martin/bazel-lsp) is based on Facebook's Starlark language server and extends it with additional, Bazel-specific functionality.
-- [starpls](https://github.com/withered-magic/starpls) is an implementation based on rust-analyzer which also provides Bazel-specific functionality.
 
-In general, you need to install the language server binary and then set the `bazel.lsp.command` setting. See the README of the corresponding repo for more specific setup instructions.
-
-We can't currently make any recommendation between these two. Both are under active development and are rapidly gaining more functionality.
+When no language server is found, the extension will offer to download starpls for you. You can also manually install the language server binary and then set the `bazel.lsp.command` setting.
 
 ## Bazel tasks
 
