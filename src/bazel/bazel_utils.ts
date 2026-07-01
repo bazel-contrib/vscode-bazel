@@ -14,8 +14,9 @@
 
 import * as fs from "fs";
 import * as path from "path";
+import * as vscode from "vscode";
 import { blaze_query } from "../protos";
-import { getPathsToIgnore } from "../extension/configuration";
+import { getPathsToIgnore, getWorkspacePath } from "../extension/configuration";
 import { logError } from "../extension/logger";
 import { BazelQuery } from "./bazel_query";
 
@@ -139,8 +140,70 @@ function findAncestorFile(
 }
 
 /**
+ * Resolves the manually configured workspace path to an absolute path.
+ *
+ * @param fsPath The path to a file, used to determine the VS Code workspace folder.
+ * @returns The resolved absolute workspace path, or undefined if not configured or invalid.
+ */
+function resolveConfiguredWorkspacePath(fsPath: string): string | undefined {
+  const uri = vscode.Uri.file(fsPath);
+  const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
+  const configuredPath = getWorkspacePath(uri);
+
+  if (!configuredPath) {
+    return undefined;
+  }
+
+  let resolvedPath: string;
+
+  // Check if it's an absolute path
+  if (path.isAbsolute(configuredPath)) {
+    resolvedPath = configuredPath;
+  } else if (workspaceFolder) {
+    // Resolve relative path from VS Code workspace folder
+    resolvedPath = path.join(workspaceFolder.uri.fsPath, configuredPath);
+  } else {
+    // No workspace folder, try to resolve from the file's directory
+    resolvedPath = path.resolve(path.dirname(fsPath), configuredPath);
+  }
+
+  // Verify the path exists and contains a workspace file
+  try {
+    const stat = fs.statSync(resolvedPath);
+    if (stat.isDirectory()) {
+      // Check if any workspace file exists in the directory
+      const workspaceFiles = [
+        "MODULE.bazel",
+        "REPO.bazel",
+        "WORKSPACE.bazel",
+        "WORKSPACE",
+      ];
+      for (const file of workspaceFiles) {
+        try {
+          fs.accessSync(path.join(resolvedPath, file), fs.constants.F_OK);
+          return resolvedPath;
+        } catch {
+          // File not found, continue
+        }
+      }
+      // No workspace file found, but directory exists - still use it
+      // (user explicitly configured it)
+      return resolvedPath;
+    }
+  } catch {
+    // Path doesn't exist
+    return undefined;
+  }
+
+  return undefined;
+}
+
+/**
  * Search for the path to the directory that has the Bazel WORKSPACE file for
  * the given file.
+ *
+ * If a workspace path is manually configured via `bazel.workspacePath`, it will
+ * be used instead of auto-detection.
  *
  * If multiple directories along the path to the file have workspace files,
  * the lowest path is returned.
@@ -150,6 +213,13 @@ function findAncestorFile(
  * otherwise undefined.
  */
 export function getBazelWorkspaceFolder(fsPath: string): string | undefined {
+  // First, check if a workspace path is manually configured
+  const configuredWorkspace = resolveConfiguredWorkspacePath(fsPath);
+  if (configuredWorkspace) {
+    return configuredWorkspace;
+  }
+
+  // Fall back to auto-detection
   const workspaceFile = findAncestorFile(fsPath, [
     "MODULE.bazel",
     "REPO.bazel",
