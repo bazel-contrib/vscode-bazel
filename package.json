@@ -527,7 +527,7 @@
         "prebuild": "node ./scripts/prepare.js",
         "pretest": "npm run build",
         "test:grammar": "vscode-tmgrammar-snap test/example.bazelrc",
-        "test:unit": "npm run build:unbundled && vscode-test",
+        "test:unit": "npm run build:unbundled && PATH=$(pwd)/bin:$PATH vscode-test",
         "test": "npm run typecheck && npm run test:grammar && npm run test:unit",
         "package": "npm run build && vsce package --no-dependencies",
         "update-snapshot": "vscode-tmgrammar-snap -u test/example.bazelrc"

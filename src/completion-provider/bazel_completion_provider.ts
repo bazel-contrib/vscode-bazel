@@ -16,6 +16,7 @@ import * as vscode from "vscode";
 import {
   BazelWorkspaceInfo,
   getPackageLabelForBuildFile,
+  pickBazelWorkspace,
   queryQuickPickTargets,
 } from "../bazel";
 
@@ -92,7 +93,7 @@ function getAbsoluteLabel(
 export class BazelCompletionItemProvider
   implements vscode.CompletionItemProvider
 {
-  private targets: string[] = [];
+  private targetsMap = new Map<string, string[]>();
 
   /**
    * Returns completion items matching the given prefix.
@@ -111,6 +112,13 @@ export class BazelCompletionItemProvider
       return [];
     }
 
+    const workspace = BazelWorkspaceInfo.fromDocument(document);
+    if (!workspace) {
+      return [];
+    }
+    const workspaceTargets =
+      this.targetsMap.get(workspace.bazelWorkspacePath) || [];
+
     candidateTarget = getAbsoluteLabel(candidateTarget, document);
 
     if (!candidateTarget.endsWith("/") && !candidateTarget.endsWith(":")) {
@@ -118,7 +126,7 @@ export class BazelCompletionItemProvider
     }
 
     const completionItems = new Array<vscode.CompletionItem>();
-    this.targets.forEach((target) => {
+    workspaceTargets.forEach((target) => {
       if (!target.startsWith(candidateTarget)) {
         return;
       }
@@ -142,14 +150,37 @@ export class BazelCompletionItemProvider
    * Runs a bazel query command to acquire labels of all the targets in the
    * workspace.
    */
-  public async refresh() {
-    const queryTargets = await queryQuickPickTargets({
-      query: "kind('.* rule', ...)",
-    });
-    if (queryTargets.length !== 0) {
-      this.targets = queryTargets.map((queryTarget) => {
-        return queryTarget.label;
-      });
+  public async refresh(uri?: vscode.Uri) {
+    let workspacesToRefresh: BazelWorkspaceInfo[] = [];
+
+    if (uri) {
+      const vscodeWorkspace = vscode.workspace.getWorkspaceFolder(uri);
+      if (vscodeWorkspace) {
+        const workspaceInfo =
+          BazelWorkspaceInfo.fromWorkspaceFolder(vscodeWorkspace);
+        if (workspaceInfo) {
+          workspacesToRefresh.push(workspaceInfo);
+        }
+      }
+    } else {
+      workspacesToRefresh = BazelWorkspaceInfo.getAll();
+    }
+
+    for (const workspaceInfo of workspacesToRefresh) {
+      try {
+        const queryTargets = await queryQuickPickTargets({
+          query: "kind('.* rule', ...)",
+          workspaceInfo,
+        });
+        if (queryTargets.length !== 0) {
+          const targetLabels = queryTargets.map(
+            (queryTarget) => queryTarget.label,
+          );
+          this.targetsMap.set(workspaceInfo.bazelWorkspacePath, targetLabels);
+        }
+      } catch (error) {
+        // Silence query errors during background refresh to avoid annoying dialogs
+      }
     }
   }
 }
