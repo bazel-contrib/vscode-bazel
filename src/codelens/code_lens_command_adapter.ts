@@ -34,7 +34,7 @@ export class CodeLensCommandAdapter implements IBazelCommandAdapter {
    * @param workspaceFolder Workspace folder from which to execute Bazel.
    * @param options Other command line arguments to pass to Bazel.
    */
-  public constructor(
+  constructor(
     workspaceInfo: BazelWorkspaceInfo,
     targets: string[],
     options: string[] = [],

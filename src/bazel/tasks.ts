@@ -64,11 +64,13 @@ function quotedOption(option: string): vscode.ShellQuotedString {
  * Task provider for `bazel` tasks.
  */
 class BazelTaskProvider implements vscode.TaskProvider {
-  provideTasks(): vscode.ProviderResult<vscode.Task[]> {
+  public provideTasks(): vscode.ProviderResult<vscode.Task[]> {
     // We don't auto-detect any tasks
     return [];
   }
-  async resolveTask(task: vscode.Task): Promise<vscode.Task | undefined> {
+  public async resolveTask(
+    task: vscode.Task,
+  ): Promise<vscode.Task | undefined> {
     // VSCode calls this
     //  * when rerunning a task from the task history in "Run Task"
     //  * for bazel tasks in the user's tasks.json,

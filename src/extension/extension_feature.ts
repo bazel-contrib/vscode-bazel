@@ -33,7 +33,7 @@ export abstract class BaseExtensionFeature
   /**
    * Name of the feature, used in settings.
    */
-  readonly featureName: string;
+  protected readonly featureName: string;
   private readonly configKey: string;
   private readonly contextKey: string;
 
@@ -85,7 +85,7 @@ export abstract class BaseExtensionFeature
    * Static Factory pattern for creating and ensuring a subsequent call for initialization.
    * The feature will be initialized based on the current configuration.
    */
-  static create<T extends BaseExtensionFeature>(
+  public static create<T extends BaseExtensionFeature>(
     this: new (context: vscode.ExtensionContext) => T,
     context: vscode.ExtensionContext,
   ): T {
@@ -203,7 +203,7 @@ export abstract class BaseExtensionFeature
    * Called when the extension is deactivated.
    * Cleanup and dispose all registered disposables, instance is unusable after.
    */
-  dispose() {
+  public dispose() {
     this.disable();
     this.configCallback.dispose();
   }

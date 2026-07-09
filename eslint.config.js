@@ -40,8 +40,39 @@ module.exports = [
       jsdoc,
     },
     rules: {
-      // TypeScript rules
+      "@typescript-eslint/prefer-optional-chain": "error",
+      "@typescript-eslint/return-await": ["error", "in-try-catch"],
+      "@typescript-eslint/await-thenable": "error",
+      "@typescript-eslint/promise-function-async": "error",
+      "@typescript-eslint/prefer-includes": "error",
+      "@typescript-eslint/explicit-member-accessibility": [
+        "error",
+        {
+          accessibility: "explicit",
+          overrides: { constructors: "no-public" },
+        },
+      ],
+      "@typescript-eslint/no-unnecessary-parameter-property-assignment":
+        "error",
+      "@typescript-eslint/no-duplicate-enum-values": "error",
       "@typescript-eslint/adjacent-overload-signatures": "error",
+      "@typescript-eslint/prefer-reduce-type-parameter": "error",
+      "jsdoc/require-throws": "warn",
+      "jsdoc/require-yields": "warn",
+      "jsdoc/no-undefined-types": "error",
+      // Rules that require activation of strictNullChecks in tsconfig.json first
+      // "@typescript-eslint/strict-boolean-expressions": ["error", {
+      //   "allowString": false,
+      //   "allowNumber": false,
+      //   "allowNullableObject": false,
+      //   "allowNullableBoolean": false,
+      //   "allowNullableString": false,
+      //   "allowNullableNumber": false,
+      //   "allowAny": false,
+      // }],
+      // "@typescript-eslint/prefer-nullish-coalescing": "error",
+      // "@typescript-eslint/no-unnecessary-boolean-literal-compare": "error",
+
       "@typescript-eslint/array-type": [
         "error",
         {
