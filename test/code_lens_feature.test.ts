@@ -29,15 +29,15 @@ describe("CodeLensFeature", () => {
   });
 
   describe("enable", () => {
-    it("returns false when Bazel executable is not available", () => {
+    it("returns false when Bazel executable is not available", async () => {
       sandbox.stub(bazel_availability, "checkBazelIsAvailable").returns(false);
 
-      const result = codeLensFeature.enable(mockContext);
+      const result = await codeLensFeature.enable(mockContext);
 
       assert.strictEqual(result, false);
     });
 
-    it("returns true when all preconditions are met", () => {
+    it("returns true when all preconditions are met", async () => {
       const registerStub = sandbox
         .stub(vscode.languages, "registerCodeLensProvider")
         .returns(mockDisposable);
@@ -47,7 +47,7 @@ describe("CodeLensFeature", () => {
           onDidChange: sinon.stub(),
         } as unknown as vscode.FileSystemWatcher);
 
-      const result = codeLensFeature.enable(mockContext);
+      const result = await codeLensFeature.enable(mockContext);
 
       // Assert that feature enables successfully
       assert.strictEqual(result, true);
