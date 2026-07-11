@@ -69,8 +69,10 @@ export class BazelWorkspaceInfo {
   /**
    * Returns a selected Bazel workspace from among the open VS workspace
    * folders. If there is only a single workspace folder open, it will be used.
-   * If there are multiple workspace folders open, a quick-pick window will be
-   * opened asking the user to choose one.
+   * If there are multiple workspace folders open, but they all belong to the
+   * same Bazel workspace (or only one of them belongs to a Bazel workspace),
+   * that workspace is used without prompting. Otherwise, a quick-pick window
+   * will be opened asking the user to choose one.
    */
   public static async fromWorkspaceFolders(): Promise<
     BazelWorkspaceInfo | undefined
@@ -82,10 +84,25 @@ export class BazelWorkspaceInfo {
       case 1:
         return this.fromWorkspaceFolder(vscode.workspace.workspaceFolders[0]);
       default: {
-        const workspaceFolder = await vscode.window.showWorkspaceFolderPick();
-        return workspaceFolder
-          ? this.fromWorkspaceFolder(workspaceFolder)
-          : undefined;
+        const workspaceInfos = vscode.workspace.workspaceFolders
+          .map((folder) => this.fromWorkspaceFolder(folder))
+          .filter((info): info is BazelWorkspaceInfo => info !== undefined);
+        const bazelWorkspacePaths = new Set(
+          workspaceInfos.map((info) => info.bazelWorkspacePath),
+        );
+        switch (bazelWorkspacePaths.size) {
+          case 0:
+            return undefined;
+          case 1:
+            return workspaceInfos[0];
+          default: {
+            const workspaceFolder =
+              await vscode.window.showWorkspaceFolderPick();
+            return workspaceFolder
+              ? this.fromWorkspaceFolder(workspaceFolder)
+              : undefined;
+          }
+        }
       }
     }
   }
