@@ -8,5 +8,11 @@
     "group:test",
     "group:unitTest",
     "security:minimumReleaseAgeNpm"
+  ],
+  "packageRules": [
+    {
+      "matchManagers": ["github-actions"],
+      "pinDigests": true
+    }
   ]
 }
