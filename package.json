@@ -562,7 +562,7 @@
     "dependencies": {
         "@vscode/debugadapter": "^1.68.0",
         "@vscode/debugprotocol": "^1.68.0",
-        "protobufjs": "^8.0.1",
+        "protobufjs": "^8.7.1",
         "protobufjs-cli": "^2.5.1",
         "vscode-languageclient": "^9.0.1",
         "vscode-uri": "^3.0.2",
