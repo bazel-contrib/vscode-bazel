@@ -170,6 +170,12 @@
                     "default": true,
                     "markdownDescription": "Whether to show Bazel packages and targets in a tree view in the Explorer panel. Deactivate to avoid running queries in the background."
                 },
+                "bazel.workspacePath": {
+                    "type": "string",
+                    "default": "",
+                    "markdownDescription": "Manually specify the path to the Bazel workspace directory. This can be an absolute path, or a relative path from the VS Code workspace folder. If set, this path will be used instead of auto-detecting the workspace by searching for `MODULE.bazel`, `REPO.bazel`, `WORKSPACE.bazel`, or `WORKSPACE` files.",
+                    "scope": "resource"
+                },
                 "bazel.pathsToIgnore": {
                     "type": "array",
                     "items": {
