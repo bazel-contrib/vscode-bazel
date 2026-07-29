@@ -529,6 +529,7 @@
         "test:grammar": "vscode-tmgrammar-snap test/example.bazelrc",
         "test:unit": "npm run build:unbundled && vscode-test",
         "test": "npm run typecheck && npm run test:grammar && npm run test:unit",
+        "download-tools-ci": "ts-node ./scripts/download-tools-for-ci.ts",
         "package": "npm run build && vsce package --no-dependencies",
         "update-snapshot": "vscode-tmgrammar-snap -u test/example.bazelrc"
     },
@@ -553,6 +554,7 @@
         "mocha": "^11.0.0",
         "prettier": "^3.2.5",
         "sinon": "^21.0.3",
+        "ts-node": "^10.9.2",
         "typescript": "^5.4.4",
         "vscode-tmgrammar-test": "^0.1.3"
     },
