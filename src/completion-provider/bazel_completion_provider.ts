@@ -16,9 +16,9 @@ import * as vscode from "vscode";
 import {
   BazelWorkspaceInfo,
   getPackageLabelForBuildFile,
-  pickBazelWorkspace,
   queryQuickPickTargets,
 } from "../bazel";
+import { logDebug } from "../extension/logger";
 
 function insertCompletionItemIfUnique(
   options: vscode.CompletionItem[],
@@ -179,7 +179,7 @@ export class BazelCompletionItemProvider
           this.targetsMap.set(workspaceInfo.bazelWorkspacePath, targetLabels);
         }
       } catch (error) {
-        // Silence query errors during background refresh to avoid annoying dialogs
+        logDebug("Failed to refresh completion targets", false, error);
       }
     }
   }

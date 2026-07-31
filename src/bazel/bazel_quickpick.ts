@@ -100,7 +100,7 @@ export class BazelTargetQuickPick
  * Use the active text editor's file to determine the directory of the Bazel
  * workspace, otherwise have them pick one.
  */
-export async function pickBazelWorkspace(): Promise<
+async function pickBazelWorkspace(): Promise<
   BazelWorkspaceInfo | undefined
 > {
   if (vscode.window.activeTextEditor === undefined) {
