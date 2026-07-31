@@ -6,6 +6,7 @@ import {
   getBuildFileLineWithSourceFilePath,
   getTargetNameAtBuildFileLocation,
   getBazelWorkspaceFolder,
+  getBazelWorkspaceRelativePath,
 } from "../src/bazel/bazel_utils";
 
 const workspacePath = path.join(
@@ -231,5 +232,58 @@ describe("Bazel Utils: getBazelWorkspaceFolder", () => {
 
     // Should return the configured workspace, not the nested one
     assert.strictEqual(result, workspacePath);
+  });
+
+  it("should not claim a file unrelated to the configured workspacePath", async () => {
+    await vscode.workspace
+      .getConfiguration("bazel")
+      .update(
+        "workspacePath",
+        workspacePath,
+        vscode.ConfigurationTarget.Workspace,
+      );
+
+    const unrelatedFile = path.join(
+      path.dirname(workspacePath),
+      "other_workspace",
+      "BUILD",
+    );
+    assert.strictEqual(getBazelWorkspaceFolder(unrelatedFile), undefined);
+  });
+});
+
+describe("Bazel Utils: getBazelWorkspaceRelativePath", () => {
+  it("returns an empty path for the workspace root", () => {
+    assert.strictEqual(
+      getBazelWorkspaceRelativePath(workspacePath, workspacePath),
+      "",
+    );
+  });
+
+  it("returns a Bazel-compatible path for a workspace descendant", () => {
+    assert.strictEqual(
+      getBazelWorkspaceRelativePath(
+        workspacePath,
+        path.join(workspacePath, "pkg2", "sub-pkg"),
+      ),
+      "pkg2/sub-pkg",
+    );
+  });
+
+  it("rejects a parent of the Bazel workspace", () => {
+    assert.strictEqual(
+      getBazelWorkspaceRelativePath(workspacePath, path.dirname(workspacePath)),
+      undefined,
+    );
+  });
+
+  it("rejects a sibling of the Bazel workspace", () => {
+    assert.strictEqual(
+      getBazelWorkspaceRelativePath(
+        workspacePath,
+        path.join(path.dirname(workspacePath), "other_workspace"),
+      ),
+      undefined,
+    );
   });
 });

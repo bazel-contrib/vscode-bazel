@@ -12,13 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as path from "path";
 import * as vscode from "vscode";
-import { BazelWorkspaceInfo, BazelQuery } from "../bazel";
+import {
+  BazelWorkspaceInfo,
+  BazelQuery,
+  getBazelWorkspaceRelativePath,
+} from "../bazel";
 import {
   getBazelExecutablePath,
   getQueryExpression,
 } from "../extension/configuration";
+import { logError } from "../extension/logger";
 import { blaze_query } from "../protos";
 import { BazelPackageTreeItem } from "./bazel_package_tree_item";
 import { BazelTargetTreeItem } from "./bazel_target_tree_item";
@@ -202,9 +206,26 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
     }
     const bazelWorkspacePath = this.workspaceInfo.bazelWorkspacePath;
     const workspaceFolderPath = this.workspaceInfo.workspaceFolder.uri.fsPath;
-    const relativePath = path
-      .relative(bazelWorkspacePath, workspaceFolderPath)
-      .replace(/\\/g, "/");
+    let relativePath = getBazelWorkspaceRelativePath(
+      bazelWorkspacePath,
+      workspaceFolderPath,
+    );
+    if (relativePath === undefined) {
+      const workspacePathFromFolder = getBazelWorkspaceRelativePath(
+        workspaceFolderPath,
+        bazelWorkspacePath,
+      );
+      if (workspacePathFromFolder === undefined) {
+        logError(
+          "Configured Bazel workspace is unrelated to the VS Code workspace folder",
+          false,
+          `Bazel workspace: ${bazelWorkspacePath}`,
+          `VS Code folder: ${workspaceFolderPath}`,
+        );
+        return [];
+      }
+      relativePath = "";
+    }
 
     const queryExpression = getQueryExpression();
     // When the VS Code folder is a subdirectory of the Bazel workspace,

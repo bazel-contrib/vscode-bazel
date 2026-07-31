@@ -171,6 +171,20 @@ function resolveConfiguredWorkspacePath(fsPath: string): string | undefined {
   try {
     const stat = fs.statSync(resolvedPath);
     if (stat.isDirectory()) {
+      const candidateIsInWorkspace =
+        getBazelWorkspaceRelativePath(resolvedPath, fsPath) !== undefined;
+      let candidateContainsWorkspace = false;
+      try {
+        candidateContainsWorkspace =
+          fs.statSync(fsPath).isDirectory() &&
+          getBazelWorkspaceRelativePath(fsPath, resolvedPath) !== undefined;
+      } catch {
+        // A nonexistent candidate cannot contain the configured workspace.
+      }
+      if (!candidateIsInWorkspace && !candidateContainsWorkspace) {
+        return undefined;
+      }
+
       // Check if any workspace file exists in the directory
       const workspaceFiles = [
         "MODULE.bazel",
@@ -227,6 +241,26 @@ export function getBazelWorkspaceFolder(fsPath: string): string | undefined {
     "WORKSPACE",
   ]);
   return workspaceFile ? path.dirname(workspaceFile) : undefined;
+}
+
+/**
+ * Returns a Bazel-compatible path relative to a workspace root.
+ *
+ * If the candidate is outside the workspace root, returns undefined.
+ */
+export function getBazelWorkspaceRelativePath(
+  workspaceRoot: string,
+  candidatePath: string,
+): string | undefined {
+  const relativePath = path.relative(workspaceRoot, candidatePath);
+  if (
+    path.isAbsolute(relativePath) ||
+    relativePath === ".." ||
+    relativePath.startsWith(`..${path.sep}`)
+  ) {
+    return undefined;
+  }
+  return relativePath.replace(/\\/g, "/");
 }
 
 /**
