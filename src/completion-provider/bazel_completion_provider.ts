@@ -172,12 +172,10 @@ export class BazelCompletionItemProvider
           query: "kind('.* rule', ...)",
           workspaceInfo,
         });
-        if (queryTargets.length !== 0) {
-          const targetLabels = queryTargets.map(
-            (queryTarget) => queryTarget.label,
-          );
-          this.targetsMap.set(workspaceInfo.bazelWorkspacePath, targetLabels);
-        }
+        const targetLabels = queryTargets.map(
+          (queryTarget) => queryTarget.label,
+        );
+        this.targetsMap.set(workspaceInfo.bazelWorkspacePath, targetLabels);
       } catch (error) {
         logDebug("Failed to refresh completion targets", false, error);
       }
