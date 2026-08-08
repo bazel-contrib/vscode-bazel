@@ -46,8 +46,7 @@ declare global {
 
 // Clean way to access the provider for testing
 export function getWorkspaceTreeProviderForTesting():
-  | BazelWorkspaceTreeProvider
-  | undefined {
+  BazelWorkspaceTreeProvider | undefined {
   return globalThis.bazelWorkspaceTreeProvider;
 }
 
