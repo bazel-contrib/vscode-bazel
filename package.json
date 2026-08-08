@@ -170,6 +170,11 @@
                     "default": true,
                     "markdownDescription": "Whether to show Bazel packages and targets in a tree view in the Explorer panel. Deactivate to avoid running queries in the background."
                 },
+                "bazel.enableBuildifier": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "Whether to enable Buildifier support for formatting and linting Bazel files. When enabled, provides document formatting and lint diagnostics for BUILD, WORKSPACE, and .bzl files."
+                },
                 "bazel.pathsToIgnore": {
                     "type": "array",
                     "items": {
