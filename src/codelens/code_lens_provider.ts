@@ -89,7 +89,7 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
       getBazelExecutablePath(),
       workspaceInfo.bazelWorkspacePath,
       document.uri.fsPath,
-    ).catch((error) => {
+    ).catch((error): undefined => {
       this.logger.logError(
         "Error getting targets for build file:",
         false,
