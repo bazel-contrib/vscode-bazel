@@ -13,31 +13,21 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import * as lc from "vscode-languageclient/node";
 
 import { activateTaskProvider } from "../bazel";
-import {
-  BuildifierDiagnosticsManager,
-  BuildifierFormatProvider,
-  checkBuildifierIsAvailable,
-} from "../buildifier";
+import { BuildifierFeature } from "../buildifier";
 import { CodeLensFeature } from "../codelens/code_lens_feature";
 import {
   BazelWorkspaceTreeProvider,
   WorkspaceTreeFeature,
 } from "../workspace-tree";
-import { BazelCompletionItemProvider } from "../completion-provider";
-import {
-  BazelGotoDefinitionProvider,
-  targetToUri,
-} from "../definition/bazel_goto_definition_provider";
-import { BazelTargetSymbolProvider } from "../symbols";
+import { targetToUri } from "../definition/bazel_goto_definition_provider";
 import { activateCommandVariables } from "./command_variables";
 import { activateTesting } from "../test-explorer";
 import { activateWrapperCommands } from "./bazel_wrapper_commands";
 import { registerLogger, logInfo, logError, showOutputChannel } from "./logger";
-import { startLspClientFromCurrentConfig } from "../lsp/language-server-client";
 import { registerBazelWorkspaceAvailabilityWatcher } from "../bazel/bazel_availability";
+import { LanguageSupportFeature } from "../language_support/language_support_feature";
 
 // Global reference to the workspace tree provider for testing
 declare global {
@@ -46,8 +36,7 @@ declare global {
 
 // Clean way to access the provider for testing
 export function getWorkspaceTreeProviderForTesting():
-  | BazelWorkspaceTreeProvider
-  | undefined {
+  BazelWorkspaceTreeProvider | undefined {
   return globalThis.bazelWorkspaceTreeProvider;
 }
 
@@ -78,71 +67,20 @@ export async function activate(context: vscode.ExtensionContext) {
   registerBazelWorkspaceAvailabilityWatcher(context);
 
   // WorkspaceTreeFeature
-  const workspaceTreeFeature = WorkspaceTreeFeature.create(context);
+  const workspaceTreeFeature = await WorkspaceTreeFeature.create(context);
   context.subscriptions.push(workspaceTreeFeature);
   storeWorkspaceTreeProviderForTesting(
     workspaceTreeFeature.getWorkspaceTreeProvider(),
   );
 
   // CodeLensFeature
-  context.subscriptions.push(CodeLensFeature.create(context));
+  context.subscriptions.push(await CodeLensFeature.create(context));
 
-  // Other components
-  const buildifierDiagnostics = new BuildifierDiagnosticsManager();
-  let completionItemProvider: BazelCompletionItemProvider | null = null;
-  let lspClient: lc.LanguageClient | undefined;
+  // BuildifierFeature
+  context.subscriptions.push(await BuildifierFeature.create(context));
 
-  // Set up LSP if enabled
-  const config = vscode.workspace.getConfiguration("bazel");
-  const lspEnabled = !!config.get<string>("lsp.command");
-  if (lspEnabled) {
-    context.subscriptions.push(
-      vscode.commands.registerCommand("bazel.lsp.restart", async () => {
-        await startLspClientFromCurrentConfig(lspClient, context);
-      }),
-    );
-    await startLspClientFromCurrentConfig(lspClient, context);
-  } else {
-    completionItemProvider = new BazelCompletionItemProvider();
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    completionItemProvider.refresh();
-
-    // Set up file watcher for BUILD files
-    const buildWatcher = vscode.workspace.createFileSystemWatcher(
-      "**/{BUILD,BUILD.bazel}",
-      false, // ignoreCreateEvents
-      false, // ignoreChangeEvents
-      false, // ignoreDeleteEvents
-    );
-
-    // Fire refresh when BUILD files change
-    buildWatcher.onDidChange(
-      async () => completionItemProvider?.refresh(),
-      null,
-      context.subscriptions,
-    );
-
-    context.subscriptions.push(
-      vscode.languages.registerCompletionItemProvider(
-        [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
-        completionItemProvider,
-        "/",
-        ":",
-      ),
-      // Symbol provider for BUILD files
-      vscode.languages.registerDocumentSymbolProvider(
-        [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
-        new BazelTargetSymbolProvider(),
-      ),
-      // Goto definition for BUILD files
-      vscode.languages.registerDefinitionProvider(
-        [{ pattern: "**/BUILD" }, { pattern: "**/BUILD.bazel" }],
-        new BazelGotoDefinitionProvider(),
-      ),
-    );
-  }
-
-  vscode.commands.executeCommand("setContext", "bazel.lsp.enabled", lspEnabled);
+  // LanguageSupportFeature
+  context.subscriptions.push(await LanguageSupportFeature.create(context));
 
   context.subscriptions.push(
     // Commands
@@ -170,20 +108,6 @@ export async function activate(context: vscode.ExtensionContext) {
         }
       },
     }),
-    // Buildifier formatting support
-    vscode.languages.registerDocumentFormattingEditProvider(
-      [
-        { language: "starlark" },
-        { pattern: "**/BUILD" },
-        { pattern: "**/*.bazel" },
-        { pattern: "**/WORKSPACE" },
-        { pattern: "**/*.BUILD" },
-        { pattern: "**/*.bzl" },
-        { pattern: "**/*.sky" },
-      ],
-      new BuildifierFormatProvider(),
-    ),
-    buildifierDiagnostics,
     // Task provider
     ...activateTaskProvider(),
     // Command variables
@@ -191,16 +115,6 @@ export async function activate(context: vscode.ExtensionContext) {
     // Test provider
     ...activateTesting(),
   );
-
-  // Notify the user if buildifier is not available on their path (or where
-  // their settings expect it).
-  // We intentionally do no `await` the completion because doing so would mean
-  // that VS Code considers the extension activation to be "in-flight" until the
-  // users closes the "Buildifier not found" notification. VS Code hence
-  // dislayed  never-finishing "Loading" indicator on top of the "Bazel Build
-  // Targets" tree view.
-  // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  checkBuildifierIsAvailable();
 }
 
 /** Called when the extension is deactivated. */
