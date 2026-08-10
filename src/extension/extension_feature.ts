@@ -103,10 +103,10 @@ export abstract class BaseExtensionFeature
    * Logs erros in case of a activation failure.
    * @param config The new configuration for the feature.
    */
-  private onConfigurationChanged(
+  private async onConfigurationChanged(
     config: vscode.WorkspaceConfiguration,
   ): Promise<void> {
-    const next = this.pendingConfigChange.then(() =>
+    const next = this.pendingConfigChange.then(async () =>
       this.doConfigurationChange(config),
     );
     // eslint-disable-next-line @typescript-eslint/no-empty-function
