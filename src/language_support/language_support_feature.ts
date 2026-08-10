@@ -36,7 +36,7 @@ export class LanguageSupportFeature extends BaseExtensionFeature {
     super("LanguageSupport", context);
   }
 
-  enable(context: vscode.ExtensionContext): boolean {
+  protected async enable(context: vscode.ExtensionContext): Promise<boolean> {
     // Determine which implementation to use
     const lspCommand = getLspServerExecutablePath();
     this.isUsingExternalLSP = !!lspCommand;

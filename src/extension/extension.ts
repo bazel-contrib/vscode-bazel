@@ -80,7 +80,7 @@ export async function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(await BuildifierFeature.create(context));
 
   // LanguageSupportFeature
-  context.subscriptions.push(LanguageSupportFeature.create(context));
+  context.subscriptions.push(await LanguageSupportFeature.create(context));
 
   context.subscriptions.push(
     // Commands
