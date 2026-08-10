@@ -13,11 +13,9 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import * as path from "path";
 import { buildifierFormat } from "./buildifier";
-import { BazelWorkspaceInfo } from "../bazel";
 import { getBuildifierFixOnFormat } from "../extension/configuration";
-import { logError } from "../extension/logger";
+import { ILogger } from "../extension/logger";
 
 /**
  * Provides document formatting functionality for Bazel files by invoking
@@ -26,25 +24,30 @@ import { logError } from "../extension/logger";
 export class BuildifierFormatProvider
   implements vscode.DocumentFormattingEditProvider
 {
+  private logger: ILogger;
+  private executable: string | undefined;
+
+  constructor(logger: ILogger, executable?: string) {
+    this.logger = logger;
+    this.executable = executable;
+  }
+
   public async provideDocumentFormattingEdits(
     document: vscode.TextDocument,
   ): Promise<vscode.TextEdit[]> {
+    this.logger.logDebug(`Formatting document: ${document.uri.fsPath}`);
+
     const fileContent = document.getText();
-    const workspaceInfo = BazelWorkspaceInfo.fromDocument(document);
-    if (!workspaceInfo) {
-      return [];
-    }
-    const workspaceRelativePath = path.relative(
-      workspaceInfo.bazelWorkspacePath,
-      document.uri.fsPath,
-    );
+    const absolutePath = document.uri.fsPath;
     try {
       const formattedContent = await buildifierFormat(
         fileContent,
-        workspaceRelativePath,
+        absolutePath,
         getBuildifierFixOnFormat(),
+        this.executable,
       );
       if (formattedContent === fileContent) {
+        this.logger.logDebug("File did not change during formatting");
         // If the file didn't change, return any empty array of edits.
         return [];
       }
@@ -58,9 +61,10 @@ export class BuildifierFormatProvider
           formattedContent,
         ),
       ];
+      this.logger.logDebug("Returning formatting edits");
       return edits;
     } catch (err: any) {
-      logError("Buildifier formatting failed", true, err);
+      this.logger.logError("Buildifier formatting failed", true, err);
       return [];
     }
   }

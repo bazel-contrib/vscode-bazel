@@ -249,10 +249,9 @@ describe("The logger", () => {
       logError("test error", true);
       // The mock function should be called synchronously when showUserMessage
       // calls messageFunc. However, since showUserMessage returns a promise
-      // that's called with void, we need to wait for the microtask queue.
-      await new Promise((resolve) =>
-        Promise.resolve().then(() => resolve(undefined)),
-      );
+      // that's called with void, we need to wait for the microtask queue (twice).
+      await Promise.resolve();
+      await Promise.resolve();
       assert.strictEqual(
         messageCalls.length,
         1,
@@ -278,9 +277,8 @@ describe("The logger", () => {
     it("shows warning message when showMessage is true", async () => {
       disposable = registerLogger(mockContext);
       logWarn("test warning", true);
-      await new Promise((resolve) =>
-        Promise.resolve().then(() => resolve(undefined)),
-      );
+      await Promise.resolve();
+      await Promise.resolve();
       assert.strictEqual(
         messageCalls.length,
         1,
@@ -306,9 +304,8 @@ describe("The logger", () => {
     it("shows info message when showMessage is true", async () => {
       disposable = registerLogger(mockContext);
       logInfo("test info", true);
-      await new Promise((resolve) =>
-        Promise.resolve().then(() => resolve(undefined)),
-      );
+      await Promise.resolve();
+      await Promise.resolve();
       assert.strictEqual(
         messageCalls.length,
         1,
@@ -466,9 +463,8 @@ describe("The logger", () => {
     it("shows message and formats additional arguments correctly", async () => {
       disposable = registerLogger(mockContext);
       logError("error occurred", true, "Error code:", 500);
-      await new Promise((resolve) =>
-        Promise.resolve().then(() => resolve(undefined)),
-      );
+      await Promise.resolve();
+      await Promise.resolve();
       const calls = (mockLogChannel as any)._calls;
       const errorCall = calls.find(
         (c: { method: string }) => c.method === "error",
@@ -501,9 +497,8 @@ describe("The logger", () => {
     it("shows warning message with multiple additional arguments", async () => {
       disposable = registerLogger(mockContext);
       logWarn("warning", true, "arg1", "arg2", 123);
-      await new Promise((resolve) =>
-        Promise.resolve().then(() => resolve(undefined)),
-      );
+      await Promise.resolve();
+      await Promise.resolve();
       const calls = (mockLogChannel as any)._calls;
       const warnCall = calls.find(
         (c: { method: string }) => c.method === "warn",
@@ -541,9 +536,8 @@ describe("The logger", () => {
       disposable = registerLogger(mockContext);
       const data = { userId: 123, action: "login" };
       logInfo("operation completed", true, "Data:", data);
-      await new Promise((resolve) =>
-        Promise.resolve().then(() => resolve(undefined)),
-      );
+      await Promise.resolve();
+      await Promise.resolve();
       const calls = (mockLogChannel as any)._calls;
       const infoCalls = calls.filter(
         (c: { method: string }) => c.method === "info",
