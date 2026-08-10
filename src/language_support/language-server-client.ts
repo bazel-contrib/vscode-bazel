@@ -22,11 +22,13 @@ import {
 } from "../extension/configuration";
 
 // Singleton output channel for LSP to prevent duplication
-let lspOutputChannel: vscode.OutputChannel | undefined;
+let lspOutputChannel: vscode.LogOutputChannel | undefined;
 
-function getLspOutputChannel(): vscode.OutputChannel {
+function getLspOutputChannel(): vscode.LogOutputChannel {
   if (!lspOutputChannel) {
-    lspOutputChannel = vscode.window.createOutputChannel("Bazel LSP Client");
+    lspOutputChannel = vscode.window.createOutputChannel("Bazel LSP Client", {
+      log: true,
+    });
   }
   return lspOutputChannel;
 }
