@@ -81,7 +81,7 @@ describe("The logger", () => {
     originalShowWarningMessage = vscode.window.showWarningMessage;
     originalShowInfoMessage = vscode.window.showInformationMessage;
 
-    (vscode.window.showErrorMessage as any) = (
+    (vscode.window.showErrorMessage as any) = async (
       message: string,
       ...items: string[]
     ) => {
@@ -91,7 +91,7 @@ describe("The logger", () => {
       return Promise.resolve(undefined);
     };
 
-    (vscode.window.showWarningMessage as any) = (
+    (vscode.window.showWarningMessage as any) = async (
       message: string,
       ...items: string[]
     ) => {
@@ -101,7 +101,7 @@ describe("The logger", () => {
       return Promise.resolve(undefined);
     };
 
-    (vscode.window.showInformationMessage as any) = (
+    (vscode.window.showInformationMessage as any) = async (
       message: string,
       ...items: string[]
     ) => {

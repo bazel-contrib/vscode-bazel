@@ -75,15 +75,15 @@ export class BazelTargetQuickPick
     return this.targetInfo;
   }
 
-  get alwaysShow(): boolean {
+  public get alwaysShow(): boolean {
     return true;
   }
 
-  get label(): string {
+  public get label(): string {
     return this.targetLabel;
   }
 
-  get picked(): boolean {
+  public get picked(): boolean {
     return false;
   }
 
@@ -253,7 +253,7 @@ export async function queryQuickPickPackage({
  * @param options.workspaceInfo Workspace information for the Bazel project
  * @returns A promise that resolves with the selected BazelTargetQuickPick, or undefined if no selection was made
  */
-export function showDynamicQuickPick({
+export async function showDynamicQuickPick({
   queryBuilder,
   queryFunctor,
   workspaceInfo,

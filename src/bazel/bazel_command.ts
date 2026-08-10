@@ -54,10 +54,10 @@ export abstract class BazelCommand {
    * @param options Command line options that will be passed to Bazel (targets,
    * query strings, flags, etc.).
    */
-  public constructor(
-    readonly bazelExecutable: string,
-    readonly workingDirectory: string,
-    readonly options: string[] = [],
+  constructor(
+    protected readonly bazelExecutable: string,
+    protected readonly workingDirectory: string,
+    protected readonly options: string[] = [],
   ) {}
 
   /**

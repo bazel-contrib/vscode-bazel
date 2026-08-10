@@ -76,7 +76,7 @@ export class BuildifierFeature extends BaseExtensionFeature {
   /**
    * Get the diagnostics manager for testing purposes.
    */
-  getDiagnosticsManager(): BuildifierDiagnosticsManager | undefined {
+  public getDiagnosticsManager(): BuildifierDiagnosticsManager | undefined {
     return this.diagnosticsManager;
   }
 }

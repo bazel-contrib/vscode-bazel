@@ -117,7 +117,7 @@ export class LanguageSupportFeature extends BaseExtensionFeature {
     );
 
     // Fire refresh when BUILD files change
-    const buildWatcherDisposable = buildWatcher.onDidChange(() =>
+    const buildWatcherDisposable = buildWatcher.onDidChange(async () =>
       this.completionItemProvider?.refresh(),
     );
 

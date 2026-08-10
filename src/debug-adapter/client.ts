@@ -136,7 +136,7 @@ class BazelDebugSession extends DebugSession {
   private valueThreadIds = new Map<number, number>();
 
   /** Initializes a new Bazel debug session. */
-  public constructor() {
+  constructor() {
     super();
 
     // Starlark uses 1-based line and column numbers.
@@ -154,7 +154,7 @@ class BazelDebugSession extends DebugSession {
     this.sendResponse(response);
   }
 
-  async _configurationDoneRequest(
+  private async _configurationDoneRequest(
     response: DebugProtocol.ConfigurationDoneResponse,
   ) {
     await this.bazelConnection.sendRequest({
@@ -170,7 +170,7 @@ class BazelDebugSession extends DebugSession {
     void this._configurationDoneRequest(response);
   }
 
-  async _launchRequest(
+  private async _launchRequest(
     response: DebugProtocol.LaunchResponse,
     args: ILaunchRequestArguments,
   ) {
@@ -294,7 +294,7 @@ class BazelDebugSession extends DebugSession {
     this.sendResponse(response);
   }
 
-  async _stackTraceRequest(
+  private async _stackTraceRequest(
     response: DebugProtocol.StackTraceResponse,
     args: DebugProtocol.StackTraceArguments,
   ) {
@@ -362,7 +362,7 @@ class BazelDebugSession extends DebugSession {
     this.sendResponse(response);
   }
 
-  async _variablesRequest(
+  private async _variablesRequest(
     response: DebugProtocol.VariablesResponse,
     args: DebugProtocol.VariablesArguments,
   ) {
@@ -425,7 +425,7 @@ class BazelDebugSession extends DebugSession {
     void this._variablesRequest(response, args);
   }
 
-  async _evaluateRequest(
+  private async _evaluateRequest(
     response: DebugProtocol.EvaluateResponse,
     args: DebugProtocol.EvaluateArguments,
   ) {

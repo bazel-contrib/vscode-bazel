@@ -98,7 +98,7 @@ async function bazelGetTargetOutput(
     case 1:
       return path.join(outputPath, "..", outputs[0]);
     default:
-      return await vscode.window.showQuickPick(outputs, {
+      return vscode.window.showQuickPick(outputs, {
         placeHolder: `Pick an output of ${target}`,
       });
   }
@@ -132,6 +132,7 @@ async function bazelInfo(key: string): Promise<string> {
  * @param argName the argument name
  * @param commandName the commmand name. Used in the error message
  * @returns the extracted string value
+ * @throws {Error} If the argument is not a string or is not present.
  */
 function getArgumentValue(
   args: Record<string, any>,
@@ -209,7 +210,7 @@ export function activateCommandVariables(): vscode.Disposable[] {
       const commandName = `bazel.${key}`;
       const funcs = [queryQuickPickPackage, queryQuickPickTargets];
       const func = funcs[idx];
-      return vscode.commands.registerCommand(commandName, (args) =>
+      return vscode.commands.registerCommand(commandName, async (args) =>
         wrapQuickPick(commandName, func, args),
       );
     }),
@@ -222,7 +223,7 @@ export function activateCommandVariables(): vscode.Disposable[] {
       "output_path",
       "workspace",
     ].map((key) =>
-      vscode.commands.registerCommand(`bazel.info.${key}`, () =>
+      vscode.commands.registerCommand(`bazel.info.${key}`, async () =>
         bazelInfo(key),
       ),
     ),

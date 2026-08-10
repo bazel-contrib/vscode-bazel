@@ -75,10 +75,12 @@ export class BazelWorkspaceTreeProvider
       buildFilesWatcher.onDidCreate(() => this.queueRefresh()),
       buildFilesWatcher.onDidDelete(() => this.queueRefresh()),
       vscode.workspace.onDidChangeWorkspaceFolders(() => this.refresh()),
-      vscode.window.onDidChangeActiveTextEditor(() =>
+      vscode.window.onDidChangeActiveTextEditor(async () =>
         this.syncSelectedTreeItem(),
       ),
-      vscode.workspace.onDidOpenTextDocument(() => this.syncSelectedTreeItem()),
+      vscode.workspace.onDidOpenTextDocument(async () =>
+        this.syncSelectedTreeItem(),
+      ),
     );
 
     this.updateWorkspaceFolderTreeItems();

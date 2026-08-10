@@ -33,7 +33,7 @@ export abstract class BaseExtensionFeature
   /**
    * Name of the feature, used in settings.
    */
-  readonly featureName: string;
+  protected readonly featureName: string;
   private readonly configKey: string;
   private readonly contextKey: string;
 
@@ -86,7 +86,7 @@ export abstract class BaseExtensionFeature
    * Static Factory pattern for creating and ensuring a subsequent call for initialization.
    * The feature will be initialized based on the current configuration.
    */
-  static async create<T extends BaseExtensionFeature>(
+  public static async create<T extends BaseExtensionFeature>(
     this: new (context: vscode.ExtensionContext) => T,
     context: vscode.ExtensionContext,
   ): Promise<T> {
@@ -103,10 +103,10 @@ export abstract class BaseExtensionFeature
    * Logs erros in case of a activation failure.
    * @param config The new configuration for the feature.
    */
-  private onConfigurationChanged(
+  private async onConfigurationChanged(
     config: vscode.WorkspaceConfiguration,
   ): Promise<void> {
-    const next = this.pendingConfigChange.then(() =>
+    const next = this.pendingConfigChange.then(async () =>
       this.doConfigurationChange(config),
     );
     // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -224,7 +224,7 @@ export abstract class BaseExtensionFeature
    * Called when the extension is deactivated.
    * Cleanup and dispose all registered disposables, instance is unusable after.
    */
-  dispose() {
+  public dispose() {
     this.disable();
     this.configCallback.dispose();
   }
