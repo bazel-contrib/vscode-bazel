@@ -175,6 +175,11 @@
                     "default": true,
                     "markdownDescription": "Whether to enable Buildifier support for formatting and linting Bazel files. When enabled, provides document formatting and lint diagnostics for BUILD, WORKSPACE, and .bzl files."
                 },
+                "bazel.enableTestExplorer": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "Whether to show `bazel coverage` results in the built-in Test Explorer view. Deactivate to avoid registering the Bazel Coverage test controller."
+                },
                 "bazel.pathsToIgnore": {
                     "type": "array",
                     "items": {
