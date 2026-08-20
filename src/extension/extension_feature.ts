@@ -24,7 +24,9 @@ import {
  *
  * To comply with the design, a feature must:
  * - have a unique `featureName`
- * - have a corresponding config for enabling: `bazel.enable<featureName>`
+ * - have a corresponding config for enabling: `bazel.<featureName>.enable`,
+ * clustering the rest of the feature's settings under the same
+ * `bazel.<featureName>` section (see e.g. `bazel.buildifier.*`)
  * - have a corresponding context key to communicate its current state: `bazel.feature.<featureName>.enabled`
  */
 export abstract class BaseExtensionFeature
@@ -70,7 +72,8 @@ export abstract class BaseExtensionFeature
    */
   constructor(featureName: string, context: vscode.ExtensionContext) {
     this.featureName = featureName;
-    this.configKey = `bazel.enable${featureName}`;
+    const settingsSection = featureName[0].toLowerCase() + featureName.slice(1);
+    this.configKey = `bazel.${settingsSection}.enable`;
     this.contextKey = `bazel.feature.${featureName}.enabled`;
     this.context = context;
 

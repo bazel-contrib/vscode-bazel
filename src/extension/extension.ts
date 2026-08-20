@@ -28,6 +28,7 @@ import { activateWrapperCommands } from "./bazel_wrapper_commands";
 import { registerLogger, logInfo, logError, showOutputChannel } from "./logger";
 import { registerBazelWorkspaceAvailabilityWatcher } from "../bazel/bazel_availability";
 import { LanguageSupportFeature } from "../language_support/language_support_feature";
+import { migrateRenamedSettings } from "./settings_migration";
 
 // Global reference to the workspace tree provider for testing
 declare global {
@@ -62,6 +63,10 @@ export async function activate(context: vscode.ExtensionContext) {
       showOutputChannel();
     }),
   );
+
+  // Migrate settings renamed by the #490 settings clustering pass, before any
+  // feature below gets a chance to read its (now possibly stale) config.
+  await migrateRenamedSettings();
 
   // Watch for availability of bazel workspace
   registerBazelWorkspaceAvailabilityWatcher(context);

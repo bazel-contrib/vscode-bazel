@@ -22,8 +22,8 @@ describe("buildifier_availability", () => {
     configString: string | undefined,
   ): Promise<void> {
     await vscode.workspace
-      .getConfiguration("bazel")
-      .update("buildifierExecutable", configString);
+      .getConfiguration("bazel.buildifier")
+      .update("executable", configString);
   }
 
   function addDummyExecutablesToPath(): void {
