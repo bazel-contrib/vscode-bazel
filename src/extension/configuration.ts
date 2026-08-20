@@ -79,6 +79,33 @@ export function getQueryExpression(): string {
 }
 
 /**
+ * Whether queries should share the same Bazel server as builds, as specified
+ * by the workspace configuration.
+ */
+export function getQueriesShareServer(): boolean {
+  return getConfigurationWithDefault<boolean>(
+    "bazel.commandLine",
+    "queriesShareServer",
+  );
+}
+
+/**
+ * Gets the output base directory to use for queries when they don't share a
+ * server with builds, as specified by the workspace configuration.
+ *
+ * Unlike most other settings, this one has no default value: an unset value
+ * means "let Bazel decide" (see `getQueriesShareServer`'s caller), so it
+ * can't go through `getConfigurationWithDefault`.
+ *
+ * @returns The configured output base directory, or `undefined` if unset.
+ */
+export function getQueryOutputBase(): string | undefined {
+  return vscode.workspace
+    .getConfiguration("bazel.commandLine")
+    .get<string>("queryOutputBase");
+}
+
+/**
  * Gets the path to the buildifier executable specified by the workspace
  * configuration.
  *
@@ -87,13 +114,16 @@ export function getQueryExpression(): string {
  */
 export function getBuildifierExecutablePath(): string {
   return getConfigurationWithDefault<string>(
-    "bazel",
-    "buildifierExecutable",
+    "bazel.buildifier",
+    "executable",
   ).trim();
 }
 
 export function getBuildifierFixOnFormat(): boolean {
-  return getConfigurationWithDefault<boolean>("bazel", "buildifierFixOnFormat");
+  return getConfigurationWithDefault<boolean>(
+    "bazel.buildifier",
+    "fixOnFormat",
+  );
 }
 
 /**
@@ -105,8 +135,8 @@ export function getBuildifierFixOnFormat(): boolean {
  */
 export function getBuildifierJsonConfigPath(): string {
   return getConfigurationWithDefault<string>(
-    "bazel",
-    "buildifierConfigJsonPath",
+    "bazel.buildifier",
+    "configJsonPath",
   ).trim();
 }
 

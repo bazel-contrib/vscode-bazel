@@ -133,53 +133,6 @@
                     "description": "The name of the Bazel executable. This may be an absolute path, or a simple name that will be searched for on the system path. If empty, \"bazel\" on the system path will be used.",
                     "scope": "machine-overridable"
                 },
-                "bazel.buildifierExecutable": {
-                    "type": "string",
-                    "default": "buildifier",
-                    "markdownDescription": "The name of the Buildifier executable. This may be an absolute path, or a simple name that will be searched for on the system path. Paths starting with `@` are interpreted as Bazel targets and are run via `bazel run`. If empty, \"buildifier\" on the system path will be used.\n\nBuildifier can be downloaded from https://github.com/bazelbuild/buildtools/releases.",
-                    "scope": "machine-overridable"
-                },
-                "bazel.buildifierConfigJsonPath": {
-                    "type": "string",
-                    "default": "",
-                    "markdownDescription": "The path of the Buildifier config json file, ex: `.buildifier.json`. This may be an absolute path, or a relative path within the workspace. If this option is unset, `buildifier` will automatically look for a `.buildifier.json` file in the workspace.",
-                    "scope": "machine-overridable"
-                },
-                "bazel.buildifierFixOnFormat": {
-                    "type": "boolean",
-                    "default": false,
-                    "description": "Whether to automatically apply lint fixes from buildifier when formatting a Bazel file."
-                },
-                "bazel.queriesShareServer": {
-                    "type": "boolean",
-                    "default": "true",
-                    "description": "Use the same Bazel server for queries and builds. By default, vscode-bazel uses the same server for queries and builds to make sure this extension works out-of-the-box. However, you may experience degraded performance in Visual Studio Code for operations that require queries. You can disable this setting so that queries and builds can be executed in parallel in some circumstances. See https://github.com/bazelbuild/vscode-bazel?tab=readme-ov-file#using-a-separate-output-base for more information."
-                },
-                "bazel.queryOutputBase": {
-                    "type": "string",
-                    "default": null,
-                    "description": "If queriesShareServer is false, this sets the directory in which bazel will create its output_base directory. Defaults to $TMPDIR."
-                },
-                "bazel.enableCodeLens": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "Whether to add a CodeLens to `BUILD`/`BUILD.bazel` files to provide actions while browsing the file. Deactivate to avoid running queries in the background."
-                },
-                "bazel.enableWorkspaceTree": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "Whether to show Bazel packages and targets in a tree view in the Explorer panel. Deactivate to avoid running queries in the background."
-                },
-                "bazel.enableBuildifier": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "Whether to enable Buildifier support for formatting and linting Bazel files. When enabled, provides document formatting and lint diagnostics for BUILD, WORKSPACE, and .bzl files."
-                },
-                "bazel.enableTestExplorer": {
-                    "type": "boolean",
-                    "default": true,
-                    "markdownDescription": "Whether to show `bazel coverage` results in the built-in Test Explorer view. Deactivate to avoid registering the Bazel Coverage test controller."
-                },
                 "bazel.pathsToIgnore": {
                     "type": "array",
                     "items": {
@@ -212,7 +165,54 @@
                     "default": "...:*",
                     "description": "A [query language expression](https://bazel.build/query/language) which determines the packages and targets displayed in the workspace tree and quick picker. The default inspects the entire workspace, but you could narrow it. For example: `//part/you/want/...:*` or `kind('.*_test rule', //...)`"
                 },
-                "bazel.enableLanguageSupport": {
+                "bazel.commandLine.queriesShareServer": {
+                    "type": "boolean",
+                    "default": "true",
+                    "description": "Use the same Bazel server for queries and builds. By default, vscode-bazel uses the same server for queries and builds to make sure this extension works out-of-the-box. However, you may experience degraded performance in Visual Studio Code for operations that require queries. You can disable this setting so that queries and builds can be executed in parallel in some circumstances. See https://github.com/bazelbuild/vscode-bazel?tab=readme-ov-file#using-a-separate-output-base for more information."
+                },
+                "bazel.commandLine.queryOutputBase": {
+                    "type": "string",
+                    "default": null,
+                    "description": "If queriesShareServer is false, this sets the directory in which bazel will create its output_base directory. Defaults to $TMPDIR."
+                },
+                "bazel.codeLens.enable": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "Whether to add a CodeLens to `BUILD`/`BUILD.bazel` files to provide actions while browsing the file. Deactivate to avoid running queries in the background."
+                },
+                "bazel.workspaceTree.enable": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "Whether to show Bazel packages and targets in a tree view in the Explorer panel. Deactivate to avoid running queries in the background."
+                },
+                "bazel.buildifier.enable": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "Whether to enable Buildifier support for formatting and linting Bazel files. When enabled, provides document formatting and lint diagnostics for BUILD, WORKSPACE, and .bzl files."
+                },
+                "bazel.buildifier.executable": {
+                    "type": "string",
+                    "default": "buildifier",
+                    "markdownDescription": "The name of the Buildifier executable. This may be an absolute path, or a simple name that will be searched for on the system path. Paths starting with `@` are interpreted as Bazel targets and are run via `bazel run`. If empty, \"buildifier\" on the system path will be used.\n\nBuildifier can be downloaded from https://github.com/bazelbuild/buildtools/releases.",
+                    "scope": "machine-overridable"
+                },
+                "bazel.buildifier.configJsonPath": {
+                    "type": "string",
+                    "default": "",
+                    "markdownDescription": "The path of the Buildifier config json file, ex: `.buildifier.json`. This may be an absolute path, or a relative path within the workspace. If this option is unset, `buildifier` will automatically look for a `.buildifier.json` file in the workspace.",
+                    "scope": "machine-overridable"
+                },
+                "bazel.buildifier.fixOnFormat": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Whether to automatically apply lint fixes from buildifier when formatting a Bazel file."
+                },
+                "bazel.testExplorer.enable": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "Whether to show `bazel coverage` results in the built-in Test Explorer view. Deactivate to avoid registering the Bazel Coverage test controller."
+                },
+                "bazel.languageSupport.enable": {
                     "type": "boolean",
                     "default": true,
                     "description": "Enable language support (Go To Definition, Symbols, Completion) for Bazel files. Automatically uses external LSP if configured, otherwise uses built-in completion, symbols, and go to definition."
@@ -247,6 +247,68 @@
                     ],
                     "default": "off",
                     "description": "Trace the communication between VS Code and Bazel LSP server (language server)."
+                },
+                "bazel.enableCodeLens": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDeprecationMessage": "Renamed to `bazel.codeLens.enable`. Any value set here is migrated automatically; this key can be removed once migrated.",
+                    "deprecationMessage": "Renamed to bazel.codeLens.enable."
+                },
+                "bazel.enableWorkspaceTree": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDeprecationMessage": "Renamed to `bazel.workspaceTree.enable`. Any value set here is migrated automatically; this key can be removed once migrated.",
+                    "deprecationMessage": "Renamed to bazel.workspaceTree.enable."
+                },
+                "bazel.enableBuildifier": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDeprecationMessage": "Renamed to `bazel.buildifier.enable`. Any value set here is migrated automatically; this key can be removed once migrated.",
+                    "deprecationMessage": "Renamed to bazel.buildifier.enable."
+                },
+                "bazel.enableTestExplorer": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDeprecationMessage": "Renamed to `bazel.testExplorer.enable`. Any value set here is migrated automatically; this key can be removed once migrated.",
+                    "deprecationMessage": "Renamed to bazel.testExplorer.enable."
+                },
+                "bazel.enableLanguageSupport": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDeprecationMessage": "Renamed to `bazel.languageSupport.enable`. Any value set here is migrated automatically; this key can be removed once migrated.",
+                    "deprecationMessage": "Renamed to bazel.languageSupport.enable."
+                },
+                "bazel.buildifierExecutable": {
+                    "type": "string",
+                    "default": "buildifier",
+                    "scope": "machine-overridable",
+                    "markdownDeprecationMessage": "Renamed to `bazel.buildifier.executable`. Any value set here is migrated automatically; this key can be removed once migrated.",
+                    "deprecationMessage": "Renamed to bazel.buildifier.executable."
+                },
+                "bazel.buildifierConfigJsonPath": {
+                    "type": "string",
+                    "default": "",
+                    "scope": "machine-overridable",
+                    "markdownDeprecationMessage": "Renamed to `bazel.buildifier.configJsonPath`. Any value set here is migrated automatically; this key can be removed once migrated.",
+                    "deprecationMessage": "Renamed to bazel.buildifier.configJsonPath."
+                },
+                "bazel.buildifierFixOnFormat": {
+                    "type": "boolean",
+                    "default": false,
+                    "markdownDeprecationMessage": "Renamed to `bazel.buildifier.fixOnFormat`. Any value set here is migrated automatically; this key can be removed once migrated.",
+                    "deprecationMessage": "Renamed to bazel.buildifier.fixOnFormat."
+                },
+                "bazel.queriesShareServer": {
+                    "type": "boolean",
+                    "default": "true",
+                    "markdownDeprecationMessage": "Renamed to `bazel.commandLine.queriesShareServer`. Any value set here is migrated automatically; this key can be removed once migrated.",
+                    "deprecationMessage": "Renamed to bazel.commandLine.queriesShareServer."
+                },
+                "bazel.queryOutputBase": {
+                    "type": "string",
+                    "default": null,
+                    "markdownDeprecationMessage": "Renamed to `bazel.commandLine.queryOutputBase`. Any value set here is migrated automatically; this key can be removed once migrated.",
+                    "deprecationMessage": "Renamed to bazel.commandLine.queryOutputBase."
                 }
             }
         },
