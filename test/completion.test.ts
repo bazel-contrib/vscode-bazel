@@ -1,4 +1,5 @@
 import * as assert from "assert";
+import * as path from "path";
 import * as vscode from "vscode";
 import { BazelCompletionItemProvider } from "../src/completion-provider/bazel_completion_provider";
 import { BazelWorkspaceInfo } from "../src/bazel";
@@ -6,13 +7,23 @@ import * as sinon from "sinon";
 
 describe("BazelCompletionItemProvider", () => {
   let sandbox: sinon.SinonSandbox;
+  const testWorkspacePath = path.join(
+    __dirname,
+    "..",
+    "..",
+    "test",
+    "bazel_workspace",
+  );
 
   beforeEach(() => {
     sandbox = sinon.createSandbox();
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     sandbox.restore();
+    await vscode.workspace
+      .getConfiguration("bazel")
+      .update("workspacePath", undefined, vscode.ConfigurationTarget.Workspace);
   });
 
   it("should return completion items filtered by workspace", async () => {
@@ -44,7 +55,7 @@ describe("BazelCompletionItemProvider", () => {
       }),
     } as any as vscode.TextDocument;
 
-    const position = new vscode.Position(0, 21);
+    const position = new vscode.Position(0, 20);
 
     const results = provider.provideCompletionItems(mockDocument, position);
 
@@ -55,5 +66,49 @@ describe("BazelCompletionItemProvider", () => {
     const labels = results.map((item) => item.label);
     assert.ok(labels.includes("target1"));
     assert.ok(labels.includes("target2"));
+  });
+
+  it("uses the pinned root cache in a nested module", async () => {
+    await vscode.workspace
+      .getConfiguration("bazel")
+      .update(
+        "workspacePath",
+        testWorkspacePath,
+        vscode.ConfigurationTarget.Workspace,
+      );
+
+    const nestedDocumentUri = vscode.Uri.file(
+      path.join(testWorkspacePath, "nested_module", "BUILD"),
+    );
+    const workspaceFolder =
+      vscode.workspace.getWorkspaceFolder(nestedDocumentUri);
+    assert.ok(workspaceFolder);
+    const staticallyResolvedWorkspace =
+      BazelWorkspaceInfo.fromWorkspaceFolder(workspaceFolder);
+    assert.ok(staticallyResolvedWorkspace);
+
+    const provider = new BazelCompletionItemProvider();
+    (provider as any).targetsMap.set(
+      staticallyResolvedWorkspace.bazelWorkspacePath,
+      ["//pkg1:target1", "//pkg1:target2"],
+    );
+    const nestedDocument = {
+      uri: nestedDocumentUri,
+      lineAt: () => ({ text: '    srcs = ["//pkg1:' }),
+    } as unknown as vscode.TextDocument;
+
+    const results = provider.provideCompletionItems(
+      nestedDocument,
+      new vscode.Position(0, 20),
+    );
+
+    assert.deepStrictEqual(
+      results.map((item) => item.label),
+      ["target1", "target2"],
+    );
+    assert.strictEqual(
+      BazelWorkspaceInfo.fromDocument(nestedDocument)?.bazelWorkspacePath,
+      staticallyResolvedWorkspace.bazelWorkspacePath,
+    );
   });
 });

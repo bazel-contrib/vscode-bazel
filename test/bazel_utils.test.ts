@@ -1,7 +1,9 @@
 import * as path from "path";
 import * as fs from "fs";
 import * as assert from "assert";
+import * as sinon from "sinon";
 import * as vscode from "vscode";
+import * as logger from "../src/extension/logger";
 import {
   getBuildFileLineWithSourceFilePath,
   getTargetNameAtBuildFileLocation,
@@ -145,7 +147,14 @@ describe("Bazel Utils: getTargetNameAtBuildFileLocation", () => {
 });
 
 describe("Bazel Utils: getBazelWorkspaceFolder", () => {
+  let sandbox: sinon.SinonSandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+  });
+
   afterEach(async () => {
+    sandbox.restore();
     // Reset workspacePath configuration after each test
     await vscode.workspace
       .getConfiguration("bazel")
@@ -213,6 +222,30 @@ describe("Bazel Utils: getBazelWorkspaceFolder", () => {
     const result = getBazelWorkspaceFolder(filePath);
     // Should fall back to auto-detection since configured path doesn't exist
     assert.strictEqual(result, workspacePath);
+  });
+
+  it("rejects and logs a configured directory without a marker", async () => {
+    const markerlessPath = path.join(workspacePath, "non-pkg");
+    await vscode.workspace
+      .getConfiguration("bazel")
+      .update(
+        "workspacePath",
+        markerlessPath,
+        vscode.ConfigurationTarget.Workspace,
+      );
+    const logError = sandbox.stub(logger, "logError");
+
+    const result = getBazelWorkspaceFolder(
+      path.join(markerlessPath, "bar.txt"),
+    );
+
+    assert.strictEqual(result, workspacePath);
+    assert.strictEqual(logError.callCount, 1);
+    assert.strictEqual(
+      logError.firstCall.args[0],
+      "Configured Bazel workspace path has no workspace marker file",
+    );
+    assert.ok(logError.firstCall.args.includes(`Path: ${markerlessPath}`));
   });
 
   it("prefers workspacePath over a nested MODULE.bazel", async () => {

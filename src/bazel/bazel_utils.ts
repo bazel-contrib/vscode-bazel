@@ -167,48 +167,61 @@ function resolveConfiguredWorkspacePath(fsPath: string): string | undefined {
     resolvedPath = path.resolve(path.dirname(fsPath), configuredPath);
   }
 
-  // Verify the path exists and contains a workspace file
+  // Verify the path exists and is a directory.
   try {
     const stat = fs.statSync(resolvedPath);
-    if (stat.isDirectory()) {
-      const candidateIsInWorkspace =
-        getBazelWorkspaceRelativePath(resolvedPath, fsPath) !== undefined;
-      let candidateContainsWorkspace = false;
-      try {
-        candidateContainsWorkspace =
-          fs.statSync(fsPath).isDirectory() &&
-          getBazelWorkspaceRelativePath(fsPath, resolvedPath) !== undefined;
-      } catch {
-        // A nonexistent candidate cannot contain the configured workspace.
-      }
-      if (!candidateIsInWorkspace && !candidateContainsWorkspace) {
-        return undefined;
-      }
-
-      // Check if any workspace file exists in the directory
-      const workspaceFiles = [
-        "MODULE.bazel",
-        "REPO.bazel",
-        "WORKSPACE.bazel",
-        "WORKSPACE",
-      ];
-      for (const file of workspaceFiles) {
-        try {
-          fs.accessSync(path.join(resolvedPath, file), fs.constants.F_OK);
-          return resolvedPath;
-        } catch {
-          // File not found, continue
-        }
-      }
-      // No workspace file found, but directory exists - still use it
-      // (user explicitly configured it)
-      return resolvedPath;
+    if (!stat.isDirectory()) {
+      logError(
+        "Configured Bazel workspace path is not a directory",
+        false,
+        `Path: ${resolvedPath}`,
+      );
+      return undefined;
     }
   } catch {
-    // Path doesn't exist
+    logError(
+      "Configured Bazel workspace path does not exist",
+      false,
+      `Path: ${resolvedPath}`,
+    );
     return undefined;
   }
 
+  const candidateIsInWorkspace =
+    getBazelWorkspaceRelativePath(resolvedPath, fsPath) !== undefined;
+  let candidateContainsWorkspace = false;
+  try {
+    candidateContainsWorkspace =
+      fs.statSync(fsPath).isDirectory() &&
+      getBazelWorkspaceRelativePath(fsPath, resolvedPath) !== undefined;
+  } catch {
+    // A nonexistent candidate cannot contain the configured workspace.
+  }
+  if (!candidateIsInWorkspace && !candidateContainsWorkspace) {
+    return undefined;
+  }
+
+  const workspaceFiles = [
+    "MODULE.bazel",
+    "REPO.bazel",
+    "WORKSPACE.bazel",
+    "WORKSPACE",
+  ];
+  for (const file of workspaceFiles) {
+    try {
+      fs.accessSync(path.join(resolvedPath, file), fs.constants.F_OK);
+      return resolvedPath;
+    } catch {
+      // File not found, continue.
+    }
+  }
+
+  logError(
+    "Configured Bazel workspace path has no workspace marker file",
+    false,
+    `Path: ${resolvedPath}`,
+    `Expected one of: ${workspaceFiles.join(", ")}`,
+  );
   return undefined;
 }
 

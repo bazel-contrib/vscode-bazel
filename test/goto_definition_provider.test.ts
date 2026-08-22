@@ -1,5 +1,12 @@
 import * as assert from "assert";
-import { LABEL_REGEX } from "../src/definition/bazel_goto_definition_provider";
+import * as sinon from "sinon";
+import * as vscode from "vscode";
+import { BazelQuery, BazelWorkspaceInfo } from "../src/bazel";
+import {
+  BazelGotoDefinitionProvider,
+  LABEL_REGEX,
+} from "../src/definition/bazel_goto_definition_provider";
+import { blaze_query } from "../src/protos";
 
 describe("LABEL_REGEX", () => {
   function match(input: string): string | undefined {
@@ -64,5 +71,55 @@ describe("LABEL_REGEX", () => {
     it("returns undefined for an unquoted label", () => {
       assert.strictEqual(match("//pkg:target"), undefined);
     });
+  });
+});
+
+describe("BazelGotoDefinitionProvider", () => {
+  let sandbox: sinon.SinonSandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
+  it("runs its query from the resolved Bazel workspace root", async () => {
+    const bazelWorkspacePath = "/workspace/root";
+    sandbox.stub(BazelWorkspaceInfo, "fromDocument").returns({
+      bazelWorkspacePath,
+    } as BazelWorkspaceInfo);
+    const queryTargets = sandbox
+      .stub(BazelQuery.prototype, "queryTargets")
+      .callsFake(async function (this: BazelQuery) {
+        assert.strictEqual(this.workingDirectory, bazelWorkspacePath);
+        return blaze_query.QueryResult.create({
+          target: [
+            {
+              type: blaze_query.Target.Discriminator.RULE,
+              rule: {
+                name: "//pkg:target",
+                ruleClass: "filegroup",
+                location: "/workspace/root/pkg/BUILD:1:1",
+              },
+            },
+          ],
+        });
+      });
+    const range = new vscode.Range(0, 0, 0, 14);
+    const document = {
+      uri: vscode.Uri.file("/workspace/root/nested/pkg/BUILD"),
+      getWordRangeAtPosition: () => range,
+      getText: () => '"//pkg:target"',
+    } as unknown as vscode.TextDocument;
+
+    const result = await new BazelGotoDefinitionProvider().provideDefinition(
+      document,
+      new vscode.Position(0, 5),
+    );
+
+    assert.strictEqual(queryTargets.callCount, 1);
+    assert.ok(Array.isArray(result));
   });
 });
