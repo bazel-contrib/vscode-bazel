@@ -217,7 +217,7 @@ export class BazelWorkspaceFolderTreeItem implements IBazelTreeItem {
       );
       if (workspacePathFromFolder === undefined) {
         logError(
-          "Configured Bazel workspace is unrelated to the VS Code workspace folder",
+          "Configured Bazel workspace is unrelated to the VS Code folder",
           false,
           `Bazel workspace: ${bazelWorkspacePath}`,
           `VS Code folder: ${workspaceFolderPath}`,

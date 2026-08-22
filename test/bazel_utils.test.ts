@@ -152,13 +152,13 @@ describe("Bazel Utils: getBazelWorkspaceFolder", () => {
       .update("workspacePath", undefined, vscode.ConfigurationTarget.Workspace);
   });
 
-  it("should find workspace via auto-detection when workspacePath is not configured", () => {
+  it("auto-detects when workspacePath is not configured", () => {
     const filePath = path.join(workspacePath, "pkg1", "main.py");
     const result = getBazelWorkspaceFolder(filePath);
     assert.strictEqual(result, workspacePath);
   });
 
-  it("should find workspace from nested subdirectory via auto-detection", () => {
+  it("auto-detects from a nested subdirectory", () => {
     const filePath = path.join(workspacePath, "pkg2", "sub-pkg", "mydata.txt");
     const result = getBazelWorkspaceFolder(filePath);
     assert.strictEqual(result, workspacePath);
@@ -200,7 +200,7 @@ describe("Bazel Utils: getBazelWorkspaceFolder", () => {
     assert.ok(result !== undefined);
   });
 
-  it("should return undefined when configured workspacePath does not exist", async () => {
+  it("falls back when configured workspacePath does not exist", async () => {
     await vscode.workspace
       .getConfiguration("bazel")
       .update(
@@ -215,9 +215,9 @@ describe("Bazel Utils: getBazelWorkspaceFolder", () => {
     assert.strictEqual(result, workspacePath);
   });
 
-  it("should prefer configured workspacePath over auto-detected nested MODULE.bazel", async () => {
-    // This tests the main use case: when a subdirectory has its own MODULE.bazel
-    // but user wants to use the parent workspace
+  it("prefers workspacePath over a nested MODULE.bazel", async () => {
+    // This tests the main use case: a subdirectory has its own MODULE.bazel,
+    // but the user wants to use the parent workspace.
     await vscode.workspace
       .getConfiguration("bazel")
       .update(
@@ -234,7 +234,7 @@ describe("Bazel Utils: getBazelWorkspaceFolder", () => {
     assert.strictEqual(result, workspacePath);
   });
 
-  it("should not claim a file unrelated to the configured workspacePath", async () => {
+  it("does not claim files unrelated to configured workspacePath", async () => {
     await vscode.workspace
       .getConfiguration("bazel")
       .update(
