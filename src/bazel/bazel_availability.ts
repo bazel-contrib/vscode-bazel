@@ -21,13 +21,19 @@ function fileExistsSync(filename: string): boolean {
  */
 export function checkBazelIsAvailable(): boolean {
   const bazelExecutable = getBazelExecutablePath();
-  const workspaceFolderPath =
-    vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  const workspaceFolders = vscode.workspace.workspaceFolders ?? [];
 
-  // Check if the program exists as a relative path of the workspace
-  const pathExists = workspaceFolderPath
-    ? fileExistsSync(path.join(workspaceFolderPath, bazelExecutable))
-    : false;
+  // Relative executable paths are evaluated from the directory where Bazel
+  // commands run. Prefer each resolved Bazel root (including a root pinned by
+  // bazel.workspacePath), and retain the VS Code folder as a fallback when no
+  // Bazel workspace can be resolved.
+  const pathExists = workspaceFolders.some((workspaceFolder) => {
+    const workspaceFolderPath = workspaceFolder.uri.fsPath;
+    const bazelWorkspacePath = getBazelWorkspaceFolder(workspaceFolderPath);
+    return fileExistsSync(
+      path.resolve(bazelWorkspacePath ?? workspaceFolderPath, bazelExecutable),
+    );
+  });
 
   if (!pathExists) {
     try {
