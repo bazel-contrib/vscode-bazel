@@ -14,7 +14,9 @@ import {
 } from "../src/workspace-tree";
 
 describe("Bazel Workspace Tree", function (this: Mocha.Suite) {
-  this.timeout(10000);
+  // These integration tests issue several sequential Bazel queries. Allow
+  // enough time for Bazel server startup on slower CI runners.
+  this.timeout(30000);
   const extensionPath: string = path.join(__dirname, "..", "..");
   const workspacePath = path.join(extensionPath, "test", "bazel_workspace");
   const rootBuildFilePath = path.join(workspacePath, "BUILD");
