@@ -1,9 +1,14 @@
 import * as path from "path";
 import * as fs from "fs";
 import * as assert from "assert";
+import * as sinon from "sinon";
+import * as vscode from "vscode";
+import * as logger from "../src/extension/logger";
 import {
   getBuildFileLineWithSourceFilePath,
   getTargetNameAtBuildFileLocation,
+  getBazelWorkspaceFolder,
+  getBazelWorkspaceRelativePath,
 } from "../src/bazel/bazel_utils";
 
 const workspacePath = path.join(
@@ -139,4 +144,179 @@ describe("Bazel Utils: getTargetNameAtBuildFileLocation", () => {
       });
     },
   );
+});
+
+describe("Bazel Utils: getBazelWorkspaceFolder", () => {
+  let sandbox: sinon.SinonSandbox;
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+  });
+
+  afterEach(async () => {
+    sandbox.restore();
+    // Reset workspacePath configuration after each test
+    await vscode.workspace
+      .getConfiguration("bazel")
+      .update("workspacePath", undefined, vscode.ConfigurationTarget.Workspace);
+  });
+
+  it("auto-detects when workspacePath is not configured", () => {
+    const filePath = path.join(workspacePath, "pkg1", "main.py");
+    const result = getBazelWorkspaceFolder(filePath);
+    assert.strictEqual(result, workspacePath);
+  });
+
+  it("auto-detects from a nested subdirectory", () => {
+    const filePath = path.join(workspacePath, "pkg2", "sub-pkg", "mydata.txt");
+    const result = getBazelWorkspaceFolder(filePath);
+    assert.strictEqual(result, workspacePath);
+  });
+
+  it("should return undefined for files outside any workspace", () => {
+    // Use a path that definitely doesn't have a workspace file
+    const filePath = "/tmp/no_workspace_here/somefile.txt";
+    const result = getBazelWorkspaceFolder(filePath);
+    assert.strictEqual(result, undefined);
+  });
+
+  it("should use configured absolute workspacePath when set", async () => {
+    // Configure an absolute path to the workspace
+    await vscode.workspace
+      .getConfiguration("bazel")
+      .update(
+        "workspacePath",
+        workspacePath,
+        vscode.ConfigurationTarget.Workspace,
+      );
+
+    // Even if we query from a nested module, it should use configured path
+    const nestedFilePath = path.join(workspacePath, "nested_module", "BUILD");
+    const result = getBazelWorkspaceFolder(nestedFilePath);
+    assert.strictEqual(result, workspacePath);
+  });
+
+  it("should use configured relative workspacePath when set", async () => {
+    // Configure a relative path (relative to VS Code workspace folder)
+    // The test workspace is opened at test/bazel_workspace
+    await vscode.workspace
+      .getConfiguration("bazel")
+      .update("workspacePath", ".", vscode.ConfigurationTarget.Workspace);
+
+    const filePath = path.join(workspacePath, "pkg1", "main.py");
+    const result = getBazelWorkspaceFolder(filePath);
+    // Should resolve to the workspace folder
+    assert.ok(result !== undefined);
+  });
+
+  it("falls back when configured workspacePath does not exist", async () => {
+    await vscode.workspace
+      .getConfiguration("bazel")
+      .update(
+        "workspacePath",
+        "/nonexistent/path/to/workspace",
+        vscode.ConfigurationTarget.Workspace,
+      );
+
+    const filePath = path.join(workspacePath, "pkg1", "main.py");
+    const result = getBazelWorkspaceFolder(filePath);
+    // Should fall back to auto-detection since configured path doesn't exist
+    assert.strictEqual(result, workspacePath);
+  });
+
+  it("rejects and logs a configured directory without a marker", async () => {
+    const markerlessPath = path.join(workspacePath, "non-pkg");
+    await vscode.workspace
+      .getConfiguration("bazel")
+      .update(
+        "workspacePath",
+        markerlessPath,
+        vscode.ConfigurationTarget.Workspace,
+      );
+    const logError = sandbox.stub(logger, "logError");
+
+    const result = getBazelWorkspaceFolder(
+      path.join(markerlessPath, "bar.txt"),
+    );
+
+    assert.strictEqual(result, workspacePath);
+    assert.strictEqual(logError.callCount, 1);
+    assert.strictEqual(
+      logError.firstCall.args[0],
+      "Configured Bazel workspace path has no workspace marker file",
+    );
+    assert.ok(logError.firstCall.args.includes(`Path: ${markerlessPath}`));
+  });
+
+  it("prefers workspacePath over a nested MODULE.bazel", async () => {
+    // This tests the main use case: a subdirectory has its own MODULE.bazel,
+    // but the user wants to use the parent workspace.
+    await vscode.workspace
+      .getConfiguration("bazel")
+      .update(
+        "workspacePath",
+        workspacePath,
+        vscode.ConfigurationTarget.Workspace,
+      );
+
+    // Query from a file inside nested_module which has its own MODULE.bazel
+    const nestedFilePath = path.join(workspacePath, "nested_module", "BUILD");
+    const result = getBazelWorkspaceFolder(nestedFilePath);
+
+    // Should return the configured workspace, not the nested one
+    assert.strictEqual(result, workspacePath);
+  });
+
+  it("does not claim files unrelated to configured workspacePath", async () => {
+    await vscode.workspace
+      .getConfiguration("bazel")
+      .update(
+        "workspacePath",
+        workspacePath,
+        vscode.ConfigurationTarget.Workspace,
+      );
+
+    const unrelatedFile = path.join(
+      path.dirname(workspacePath),
+      "other_workspace",
+      "BUILD",
+    );
+    assert.strictEqual(getBazelWorkspaceFolder(unrelatedFile), undefined);
+  });
+});
+
+describe("Bazel Utils: getBazelWorkspaceRelativePath", () => {
+  it("returns an empty path for the workspace root", () => {
+    assert.strictEqual(
+      getBazelWorkspaceRelativePath(workspacePath, workspacePath),
+      "",
+    );
+  });
+
+  it("returns a Bazel-compatible path for a workspace descendant", () => {
+    assert.strictEqual(
+      getBazelWorkspaceRelativePath(
+        workspacePath,
+        path.join(workspacePath, "pkg2", "sub-pkg"),
+      ),
+      "pkg2/sub-pkg",
+    );
+  });
+
+  it("rejects a parent of the Bazel workspace", () => {
+    assert.strictEqual(
+      getBazelWorkspaceRelativePath(workspacePath, path.dirname(workspacePath)),
+      undefined,
+    );
+  });
+
+  it("rejects a sibling of the Bazel workspace", () => {
+    assert.strictEqual(
+      getBazelWorkspaceRelativePath(
+        workspacePath,
+        path.join(path.dirname(workspacePath), "other_workspace"),
+      ),
+      undefined,
+    );
+  });
 });

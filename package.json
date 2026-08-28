@@ -175,6 +175,12 @@
                     "default": true,
                     "markdownDescription": "Whether to enable Buildifier support for formatting and linting Bazel files. When enabled, provides document formatting and lint diagnostics for BUILD, WORKSPACE, and .bzl files."
                 },
+                "bazel.workspacePath": {
+                    "type": "string",
+                    "default": "",
+                    "markdownDescription": "Pins the single Bazel workspace root used for this VS Code workspace folder. The path can be absolute or relative to the VS Code workspace folder. If unset, the extension searches for `MODULE.bazel`, `REPO.bazel`, `WORKSPACE.bazel`, or `WORKSPACE`. To use multiple independent Bazel roots, add each root as a folder in a VS Code multi-root workspace and configure this setting per folder.",
+                    "scope": "resource"
+                },
                 "bazel.pathsToIgnore": {
                     "type": "array",
                     "items": {
@@ -575,7 +581,6 @@
         "protobufjs": "^8.0.1",
         "protobufjs-cli": "^2.5.1",
         "vscode-languageclient": "^10.0.0",
-        "vscode-uri": "^3.0.2",
         "which": "^6.0.0"
     }
 }
