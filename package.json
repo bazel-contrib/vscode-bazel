@@ -218,6 +218,24 @@
                     "default": true,
                     "description": "Enable language support (Go To Definition, Symbols, Completion) for Bazel files. Automatically uses external LSP if configured, otherwise uses built-in completion, symbols, and go to definition."
                 },
+                "bazel.queryOptions.packages": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "uniqueItems": true,
+                    "default": [],
+                    "markdownDescription": "A list of additional command line options to pass to `bazel query` when querying packages. Useful for scenarios like git sparse-checkout where `--keep_going` can help handle missing packages. One option per entry, no shell escaping is needed."
+                },
+                "bazel.queryOptions.targets": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "uniqueItems": true,
+                    "default": [],
+                    "markdownDescription": "A list of additional command line options to pass to `bazel query` when querying targets. Useful for scenarios like git sparse-checkout where `--keep_going` can help handle missing packages. One option per entry, no shell escaping is needed."
+                },
                 "bazel.lsp.command": {
                     "type": "string",
                     "default": "",
