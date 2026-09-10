@@ -85,12 +85,24 @@ describe("BazelGotoDefinitionProvider", () => {
     sandbox.restore();
   });
 
-  it("runs its query from the resolved Bazel workspace root", async () => {
-    const bazelWorkspacePath = "/workspace/root";
+  // Regression test helper for
+  // https://github.com/bazel-contrib/vscode-bazel/issues/696: package-relative
+  // labels (e.g. srcs = ["client.py"]) must resolve relative to the BUILD
+  // file's package, even though the query itself always runs with the
+  // resolved Bazel workspace root as its cwd (so that it keeps respecting a
+  // pinned `bazel.workspacePath` root, per #687). Stubs `queryTargets`,
+  // asserts its cwd is always the workspace root, and returns the stub (to
+  // assert on the canonicalized query text) plus a `run` function that
+  // invokes `provideDefinition` for a given document/label.
+  function stubGotoDefinition(
+    bazelWorkspacePath: string,
+    documentPath: string,
+    labelText: string,
+  ) {
     sandbox.stub(BazelWorkspaceInfo, "fromDocument").returns({
       bazelWorkspacePath,
     } as BazelWorkspaceInfo);
-    const queryTargets = sandbox
+    const query = sandbox
       .stub(BazelQuery.prototype, "queryTargets")
       .callsFake(async function (this: BazelQuery) {
         assert.strictEqual(this.workingDirectory, bazelWorkspacePath);
@@ -101,25 +113,119 @@ describe("BazelGotoDefinitionProvider", () => {
               rule: {
                 name: "//pkg:target",
                 ruleClass: "filegroup",
-                location: "/workspace/root/pkg/BUILD:1:1",
+                location: `${bazelWorkspacePath}/pkg/BUILD:1:1`,
               },
             },
           ],
         });
       });
-    const range = new vscode.Range(0, 0, 0, 14);
+    const range = new vscode.Range(0, 0, 0, labelText.length);
     const document = {
-      uri: vscode.Uri.file("/workspace/root/nested/pkg/BUILD"),
+      uri: vscode.Uri.file(documentPath),
       getWordRangeAtPosition: () => range,
-      getText: () => '"//pkg:target"',
+      getText: () => labelText,
     } as unknown as vscode.TextDocument;
 
-    const result = await new BazelGotoDefinitionProvider().provideDefinition(
-      document,
-      new vscode.Position(0, 5),
+    return {
+      query,
+      run: () =>
+        new BazelGotoDefinitionProvider().provideDefinition(
+          document,
+          new vscode.Position(0, 5),
+        ),
+    };
+  }
+
+  it("queries an absolute label from the resolved workspace root", async () => {
+    const bazelWorkspacePath = "/workspace/root";
+    const { query, run } = stubGotoDefinition(
+      bazelWorkspacePath,
+      "/workspace/root/nested/pkg/BUILD",
+      '"//pkg:target"',
     );
 
-    assert.strictEqual(queryTargets.callCount, 1);
+    const result = await run();
+
+    assert.strictEqual(query.callCount, 1);
+    assert.match(query.firstCall.args[0], /"\/\/pkg:target"/);
     assert.ok(Array.isArray(result));
+  });
+
+  it("keeps an external repository label unchanged", async () => {
+    const bazelWorkspacePath = "/workspace/root";
+    const { query, run } = stubGotoDefinition(
+      bazelWorkspacePath,
+      "/workspace/root/pkg/BUILD",
+      '"@repo//pkg:target"',
+    );
+
+    await run();
+
+    assert.match(query.firstCall.args[0], /"@repo\/\/pkg:target"/);
+  });
+
+  it("canonicalizes a bare package-relative file label", async () => {
+    const bazelWorkspacePath = "/workspace/root";
+    const { query, run } = stubGotoDefinition(
+      bazelWorkspacePath,
+      "/workspace/root/pkg/BUILD",
+      '"client.py"',
+    );
+
+    await run();
+
+    assert.match(query.firstCall.args[0], /"\/\/pkg:client\.py"/);
+  });
+
+  it("canonicalizes a package-relative label in a subdirectory", async () => {
+    const bazelWorkspacePath = "/workspace/root";
+    const { query, run } = stubGotoDefinition(
+      bazelWorkspacePath,
+      "/workspace/root/pkg/BUILD",
+      '"subdir/client.py"',
+    );
+
+    await run();
+
+    assert.match(query.firstCall.args[0], /"\/\/pkg:subdir\/client\.py"/);
+  });
+
+  it("canonicalizes a colon-only same-package target label", async () => {
+    const bazelWorkspacePath = "/workspace/root";
+    const { query, run } = stubGotoDefinition(
+      bazelWorkspacePath,
+      "/workspace/root/pkg/BUILD",
+      '":target"',
+    );
+
+    await run();
+
+    assert.match(query.firstCall.args[0], /"\/\/pkg:target"/);
+  });
+
+  it("canonicalizes a package-relative Starlark file", async () => {
+    const bazelWorkspacePath = "/workspace/root";
+    const { query, run } = stubGotoDefinition(
+      bazelWorkspacePath,
+      "/workspace/root/pkg/BUILD",
+      '"helpers.bzl"',
+    );
+
+    await run();
+
+    assert.match(query.firstCall.args[0], /"\/\/pkg:helpers\.bzl"/);
+  });
+
+  it("canonicalizes a relative label at the workspace root", async () => {
+    const bazelWorkspacePath = "/workspace/root";
+    const { query, run } = stubGotoDefinition(
+      bazelWorkspacePath,
+      "/workspace/root/BUILD",
+      '"client.py"',
+    );
+
+    await run();
+
+    assert.match(query.firstCall.args[0], /"\/\/:client\.py"/);
   });
 });
