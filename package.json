@@ -170,6 +170,17 @@
                     "default": true,
                     "markdownDescription": "Whether to show Bazel packages and targets in a tree view in the Explorer panel. Deactivate to avoid running queries in the background."
                 },
+                "bazel.enableBuildifier": {
+                    "type": "boolean",
+                    "default": true,
+                    "markdownDescription": "Whether to enable Buildifier support for formatting and linting Bazel files. When enabled, provides document formatting and lint diagnostics for BUILD, WORKSPACE, and .bzl files."
+                },
+                "bazel.workspacePath": {
+                    "type": "string",
+                    "default": "",
+                    "markdownDescription": "Pins the single Bazel workspace root used for this VS Code workspace folder. The path can be absolute or relative to the VS Code workspace folder. If unset, the extension searches for `MODULE.bazel`, `REPO.bazel`, `WORKSPACE.bazel`, or `WORKSPACE`. To use multiple independent Bazel roots, add each root as a folder in a VS Code multi-root workspace and configure this setting per folder.",
+                    "scope": "resource"
+                },
                 "bazel.pathsToIgnore": {
                     "type": "array",
                     "items": {
@@ -201,6 +212,11 @@
                     "type": "string",
                     "default": "...:*",
                     "description": "A [query language expression](https://bazel.build/query/language) which determines the packages and targets displayed in the workspace tree and quick picker. The default inspects the entire workspace, but you could narrow it. For example: `//part/you/want/...:*` or `kind('.*_test rule', //...)`"
+                },
+                "bazel.enableLanguageSupport": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable language support (Go To Definition, Symbols, Completion) for Bazel files. Automatically uses external LSP if configured, otherwise uses built-in completion, symbols, and go to definition."
                 },
                 "bazel.lsp.command": {
                     "type": "string",
@@ -541,7 +557,7 @@
         "@types/which": "^3.0.3",
         "@typescript-eslint/eslint-plugin": "^8.44.1",
         "@typescript-eslint/parser": "^8.44.1",
-        "@vscode/test-cli": "^0.0.12",
+        "@vscode/test-cli": "^0.0.15",
         "@vscode/test-electron": "^2.3.9",
         "@vscode/vsce": "^3.0.0",
         "esbuild": "^0.28.1",
@@ -557,15 +573,14 @@
         "vscode-tmgrammar-test": "^0.1.3"
     },
     "overrides": {
-        "serialize-javascript": "7.0.5"
+        "serialize-javascript": "7.0.7"
     },
     "dependencies": {
         "@vscode/debugadapter": "^1.68.0",
         "@vscode/debugprotocol": "^1.68.0",
         "protobufjs": "^8.0.1",
         "protobufjs-cli": "^2.5.1",
-        "vscode-languageclient": "^9.0.1",
-        "vscode-uri": "^3.0.2",
+        "vscode-languageclient": "^10.0.0",
         "which": "^6.0.0"
     }
 }

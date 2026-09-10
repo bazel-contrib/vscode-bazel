@@ -28,11 +28,19 @@ describe("buildifier", () => {
     "bazel_workspace",
   );
 
+  // Create a mock logger
+  const mockLogger = {
+    logDebug: () => {}, // eslint-disable-line @typescript-eslint/no-empty-function
+    logInfo: () => {}, // eslint-disable-line @typescript-eslint/no-empty-function
+    logWarn: () => {}, // eslint-disable-line @typescript-eslint/no-empty-function
+    logError: () => {}, // eslint-disable-line @typescript-eslint/no-empty-function
+  };
+
   it("diagnostics are added from buildifier", async () => {
     // Create DiagnosticsManager and open file
     const buildFile = path.join(workspacePath, "buildifier", "BUILD");
     await openSourceFile(buildFile);
-    disposables.push(new BuildifierDiagnosticsManager());
+    disposables.push(new BuildifierDiagnosticsManager(mockLogger));
 
     // Promise that resolves when diagnostics are added to the file.
     const diagnosticsPromise = new Promise<vscode.Diagnostic[]>((resolve) => {

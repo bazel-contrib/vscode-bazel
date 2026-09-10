@@ -13,9 +13,8 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import * as path from "path";
 import { buildifierLint } from "./buildifier";
-import { BazelWorkspaceInfo } from "../bazel";
+import { ILogger } from "../extension/logger";
 
 /**
  * The delay to wait for the user to finish typing before invoking buildifier to
@@ -34,12 +33,16 @@ export class BuildifierDiagnosticsManager implements vscode.Disposable {
    * manager itself is disposed.
    */
   private disposables: vscode.Disposable[] = [];
+  private logger: ILogger;
+  private executable: string | undefined;
 
   /**
    * Initializes a new buildifier diagnostics manager and hooks into workspace
    * and window events so that diagnostics are updated live.
    */
-  constructor() {
+  constructor(logger: ILogger, executable?: string) {
+    this.logger = logger;
+    this.executable = executable;
     let didChangeTextTimer: NodeJS.Timeout | null;
 
     this.disposables.push(
@@ -81,22 +84,17 @@ export class BuildifierDiagnosticsManager implements vscode.Disposable {
    */
   public async updateDiagnostics(document: vscode.TextDocument) {
     if (document.languageId === "starlark") {
-      const workspaceInfo = BazelWorkspaceInfo.fromDocument(document);
-      if (!workspaceInfo) {
-        // eslint-disable-next-line no-console
-        console.warn("No workspace info found for document", document.uri);
-        return;
-      }
-      const workspaceRelativePath = path.relative(
-        workspaceInfo.bazelWorkspacePath,
-        document.uri.fsPath,
-      );
+      this.logger.logDebug(`Updating diagnostics for ${document.uri.fsPath}`);
+
+      const absolutePath = document.uri.fsPath;
 
       const warnings = await buildifierLint(
         document.getText(),
-        workspaceRelativePath,
+        absolutePath,
         "warn",
+        this.executable,
       );
+      this.logger.logDebug(`Found ${warnings.length} warnings`);
 
       this.diagnosticsCollection.set(
         document.uri,

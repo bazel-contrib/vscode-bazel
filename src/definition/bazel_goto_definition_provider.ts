@@ -20,13 +20,12 @@ import {
   TextDocument,
   Uri,
 } from "vscode";
-import { Utils } from "vscode-uri";
 import { BazelQuery, BazelWorkspaceInfo, QueryLocation } from "../bazel";
 import { getBazelExecutablePath } from "../extension/configuration";
 import { blaze_query } from "../protos";
 
 // LABEL_REGEX matches label strings, e.g. @r//x/y/z:abc
-const LABEL_REGEX = /"((?:@\w+)?\/\/|(?:.+\/)?[^:]*(?::[^:]+)?)"/;
+export const LABEL_REGEX = /"((?:@\w+)?\/\/|(?:.+\/)?[^:"]*(?::[^:"]+)?)"/;
 
 export async function targetToUri(
   targetText: string,
@@ -86,7 +85,10 @@ export class BazelGotoDefinitionProvider implements DefinitionProvider {
     const range = document.getWordRangeAtPosition(position, LABEL_REGEX);
     const targetText = document.getText(range);
 
-    const location = await targetToUri(targetText, Utils.dirname(document.uri));
+    const location = await targetToUri(
+      targetText,
+      Uri.file(workspaceInfo.bazelWorkspacePath),
+    );
 
     return location
       ? [

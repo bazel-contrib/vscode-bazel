@@ -50,12 +50,13 @@ export async function buildifierFormat(
   fileContent: string,
   filePath: string,
   applyLintFixes: boolean,
+  executable?: string,
 ): Promise<string> {
   const args = [`--mode=fix`, `--path=${filePath}`];
   if (applyLintFixes) {
     args.push(`--lint=fix`);
   }
-  return (await executeBuildifier(fileContent, args, false)).stdout;
+  return (await executeBuildifier(fileContent, args, false, executable)).stdout;
 }
 
 /**
@@ -73,6 +74,7 @@ export async function buildifierLint(
   fileContent: string,
   filePath: string,
   lintMode: "fix",
+  executable?: string,
 ): Promise<string>;
 
 /**
@@ -90,12 +92,14 @@ export async function buildifierLint(
   fileContent: string,
   filePath: string,
   lintMode: "warn",
+  executable?: string,
 ): Promise<IBuildifierWarning[]>;
 
 export async function buildifierLint(
   fileContent: string,
   filePath: string,
   lintMode: BuildifierLintMode,
+  executable?: string,
 ): Promise<string | IBuildifierWarning[]> {
   const args = [
     `--format=json`,
@@ -103,7 +107,7 @@ export async function buildifierLint(
     `--path=${filePath}`,
     `--lint=${lintMode}`,
   ];
-  const outputs = await executeBuildifier(fileContent, args, true);
+  const outputs = await executeBuildifier(fileContent, args, true, executable);
   switch (lintMode) {
     case "fix":
       return outputs.stdout;

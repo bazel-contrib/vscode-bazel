@@ -21,6 +21,18 @@ import {
   getLspServerExecutablePath,
 } from "../extension/configuration";
 
+// Singleton output channel for LSP to prevent duplication
+let lspOutputChannel: vscode.LogOutputChannel | undefined;
+
+function getLspOutputChannel(): vscode.LogOutputChannel {
+  if (!lspOutputChannel) {
+    lspOutputChannel = vscode.window.createOutputChannel("Bazel LSP Client", {
+      log: true,
+    });
+  }
+  return lspOutputChannel;
+}
+
 export async function startLspClientFromCurrentConfig(
   lspClient: lc.LanguageClient | undefined,
   context: vscode.ExtensionContext,
@@ -67,12 +79,15 @@ async function _createLspClient(): Promise<lc.LanguageClient> {
 
   const clientOptions: lc.LanguageClientOptions = {
     documentSelector: [{ scheme: "file", language: "starlark" }],
+    outputChannel: getLspOutputChannel(), // Set shared output channel
   };
 
-  return new lc.LanguageClient(
+  const client = new lc.LanguageClient(
     "bazel",
     "Bazel LSP Client",
     serverOptions,
     clientOptions,
   );
+
+  return client;
 }

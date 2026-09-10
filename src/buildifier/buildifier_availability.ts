@@ -19,7 +19,7 @@ import which from "which";
 
 import { executeBuildifier } from "./buildifier";
 import { getBuildifierExecutablePath } from "../extension/configuration";
-import { logWarn } from "../extension/logger";
+import { logInfo, logWarn } from "../extension/logger";
 
 async function fileExists(filename: string) {
   try {
@@ -52,6 +52,7 @@ const BUILDTOOLS_RELEASES_URL =
  */
 export async function checkBuildifierIsAvailable(): Promise<string | null> {
   const buildifierExecutable = getBuildifierExecutablePath();
+  logInfo(`Checking buildifier availability: ${buildifierExecutable}`);
 
   // Check if the program exists (in case it's an actual executable and not
   // an target name starting with `@`).
@@ -82,19 +83,27 @@ export async function checkBuildifierIsAvailable(): Promise<string | null> {
   // Make sure it's a compatible version by running
   // buildifier on an empty input and see if it exits successfully and the
   // output parses.
-  const { stdout } = await executeBuildifier(
-    "",
-    // specify the --lint value even though off is the default in case
-    // a .buildifer.json with a different value is present
-    ["--format=json", "--mode=check", "--lint=off"],
-    false,
-    executablePath,
-  );
+  let stdout: string;
+  try {
+    ({ stdout } = await executeBuildifier(
+      "",
+      // specify the --lint value even though off is the default in case
+      // a .buildifer.json with a different value is present
+      ["--format=json", "--mode=check", "--lint=off"],
+      false,
+      executablePath,
+    ));
+  } catch (e) {
+    logWarn(`Buildifier version check failed: ${e}`);
+    return null;
+  }
   try {
     JSON.parse(stdout);
+    logInfo(`Buildifier is available and compatible: ${executablePath}`);
     return executablePath;
   } catch {
     // If we got no valid JSON back, we don't have a compatible version.
+    logWarn("Buildifier version check failed - incompatible version");
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     showBuildifierDownloadPrompt(
       "Buildifier is too old (0.25.1 or higher is needed)",
@@ -110,7 +119,7 @@ export async function checkBuildifierIsAvailable(): Promise<string | null> {
  * @param reason The reason that Buildifier was not valid, which is displayed
  * to the user.
  */
-async function showBuildifierDownloadPrompt(reason: string) {
+export async function showBuildifierDownloadPrompt(reason: string) {
   const message =
     `${reason}; linting and formatting of Bazel files ` +
     "will not be available. Please download it from " +

@@ -15,5 +15,6 @@
 export * from "./buildifier";
 export * from "./buildifier_availability";
 export * from "./buildifier_diagnostics_manager";
+export * from "./buildifier_feature";
 export * from "./buildifier_format_provider";
 export * from "./buildifier_result";
