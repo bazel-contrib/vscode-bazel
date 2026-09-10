@@ -38,6 +38,19 @@ this extension does not automatically _fix_ lint warnings during formatting,
 but you can opt into this by enabling the **Bazel: Buildifier Fix on Format**
 setting.
 
+### Selecting the Bazel workspace root
+
+The extension automatically searches upward for a `MODULE.bazel`,
+`REPO.bazel`, `WORKSPACE.bazel`, or `WORKSPACE` file. If that selects the wrong
+root, or if the Bazel root is nested below the folder opened in VS Code, set
+`bazel.workspacePath` to the Bazel root. The value can be an absolute path or a
+path relative to the VS Code workspace folder.
+
+The extension supports one Bazel root per VS Code workspace folder. To work
+with multiple independent Bazel roots, use a VS Code multi-root workspace and
+add each Bazel root as a separate folder; `bazel.workspacePath` can then be set
+independently for each folder.
+
 ### Using a separate output base
 
 By default this extension will use the default output base for running queries. This will cause builds to block queries, potentially causing degraded performance. In Bazel versions since 7.1 it is safe to disable this by changing the `bazel.queriesShareServer` setting to `false`. In earlier versions it can be safely disabled after adding the convenience symlinks to `.bazelignore`, for example:

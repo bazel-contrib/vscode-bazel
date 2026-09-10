@@ -1,15 +1,22 @@
 import * as path from "path";
 import * as vscode from "vscode";
 import * as assert from "assert";
+import * as sinon from "sinon";
 import { getWorkspaceTreeProviderForTesting } from "../src/extension/extension";
 import * as fs from "fs";
+import { BazelQuery } from "../src/bazel";
+import { ILogger } from "../src/extension/logger";
+import { Resources } from "../src/extension/resources";
+import { blaze_query } from "../src/protos";
 import {
   BazelWorkspaceTreeProvider,
   IBazelTreeItem,
 } from "../src/workspace-tree";
 
 describe("Bazel Workspace Tree", function (this: Mocha.Suite) {
-  this.timeout(10000);
+  // These integration tests issue several sequential Bazel queries. Allow
+  // enough time for Bazel server startup on slower CI runners.
+  this.timeout(30000);
   const extensionPath: string = path.join(__dirname, "..", "..");
   const workspacePath = path.join(extensionPath, "test", "bazel_workspace");
   const rootBuildFilePath = path.join(workspacePath, "BUILD");
@@ -74,12 +81,17 @@ describe("Bazel Workspace Tree", function (this: Mocha.Suite) {
     } catch (e) {
       // ignore since not every test creates the file
     }
+
+    await vscode.workspace
+      .getConfiguration("bazel")
+      .update("workspacePath", undefined, vscode.ConfigurationTarget.Workspace);
   });
 
   it("should match workspace structure", async () => {
     await verifyTreeStructure(
       {
         "//buildifier": {},
+        "//nested_module": {},
         "//pkg1": {
           ":foo  (filegroup)": {},
           ":main  (py_binary)": {},
@@ -107,6 +119,7 @@ describe("Bazel Workspace Tree", function (this: Mocha.Suite) {
     await verifyTreeStructure(
       {
         "//buildifier": {},
+        "//nested_module": {},
         "//pkg1": {
           ":foo  (filegroup)": {},
           ":main  (py_binary)": {},
@@ -208,6 +221,64 @@ describe("Bazel Workspace Tree", function (this: Mocha.Suite) {
 
       await verifyTreeStructure({}, await workspaceTreeProvider.getChildren());
     });
+  });
+
+  it("queries a Bazel root nested below the VS Code folder", async () => {
+    await vscode.workspace
+      .getConfiguration("bazel")
+      .update(
+        "workspacePath",
+        "nested_module",
+        vscode.ConfigurationTarget.Workspace,
+      );
+
+    const sandbox = sinon.createSandbox();
+    const queryPackages = sandbox
+      .stub(BazelQuery.prototype, "queryPackages")
+      .resolves([]);
+    const queryTargets = sandbox
+      .stub(BazelQuery.prototype, "queryTargets")
+      .resolves(blaze_query.QueryResult.create());
+    const logger: ILogger = {
+      logDebug: sandbox.stub(),
+      logInfo: sandbox.stub(),
+      logWarn: sandbox.stub(),
+      logError: sandbox.stub(),
+    };
+    const provider = new BazelWorkspaceTreeProvider(
+      new Resources(extensionPath),
+      logger,
+    );
+
+    try {
+      await provider.getChildren();
+
+      const configuredRoot = path.join(workspacePath, "nested_module");
+      assert.strictEqual(provider.workspaceFolderTreeItems?.length, 1);
+      assert.strictEqual(
+        provider.workspaceFolderTreeItems?.[0].getWorkspaceInfo()
+          .bazelWorkspacePath,
+        configuredRoot,
+      );
+      assert.strictEqual(queryPackages.callCount, 1);
+      assert.strictEqual(queryTargets.callCount, 1);
+      assert.strictEqual(queryPackages.firstCall.args[0], "...:*");
+      assert.strictEqual(
+        queryTargets.firstCall.args[0],
+        "(...:*) intersect (:all)",
+      );
+      assert.strictEqual(
+        queryPackages.firstCall.thisValue.workingDirectory,
+        configuredRoot,
+      );
+      assert.strictEqual(
+        queryTargets.firstCall.thisValue.workingDirectory,
+        configuredRoot,
+      );
+    } finally {
+      provider.dispose();
+      sandbox.restore();
+    }
   });
 
   it("does not select tree item when bazel view is hidden", async () => {

@@ -14,8 +14,9 @@
 
 import * as fs from "fs";
 import * as path from "path";
+import * as vscode from "vscode";
 import { blaze_query } from "../protos";
-import { getPathsToIgnore } from "../extension/configuration";
+import { getPathsToIgnore, getWorkspacePath } from "../extension/configuration";
 import { logError } from "../extension/logger";
 import { BazelQuery } from "./bazel_query";
 
@@ -139,8 +140,97 @@ function findAncestorFile(
 }
 
 /**
+ * Resolves the manually configured workspace path to an absolute path.
+ *
+ * @param fsPath The path to a file, used to determine the VS Code workspace folder.
+ * @returns The resolved absolute workspace path, or undefined if not configured or invalid.
+ */
+function resolveConfiguredWorkspacePath(fsPath: string): string | undefined {
+  const uri = vscode.Uri.file(fsPath);
+  const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
+  const configuredPath = getWorkspacePath(uri);
+
+  if (!configuredPath) {
+    return undefined;
+  }
+
+  let resolvedPath: string;
+
+  // Check if it's an absolute path
+  if (path.isAbsolute(configuredPath)) {
+    resolvedPath = configuredPath;
+  } else if (workspaceFolder) {
+    // Resolve relative path from VS Code workspace folder
+    resolvedPath = path.join(workspaceFolder.uri.fsPath, configuredPath);
+  } else {
+    // No workspace folder, try to resolve from the file's directory
+    resolvedPath = path.resolve(path.dirname(fsPath), configuredPath);
+  }
+
+  // Verify the path exists and is a directory.
+  try {
+    const stat = fs.statSync(resolvedPath);
+    if (!stat.isDirectory()) {
+      logError(
+        "Configured Bazel workspace path is not a directory",
+        false,
+        `Path: ${resolvedPath}`,
+      );
+      return undefined;
+    }
+  } catch {
+    logError(
+      "Configured Bazel workspace path does not exist",
+      false,
+      `Path: ${resolvedPath}`,
+    );
+    return undefined;
+  }
+
+  const candidateIsInWorkspace =
+    getBazelWorkspaceRelativePath(resolvedPath, fsPath) !== undefined;
+  let candidateContainsWorkspace = false;
+  try {
+    candidateContainsWorkspace =
+      fs.statSync(fsPath).isDirectory() &&
+      getBazelWorkspaceRelativePath(fsPath, resolvedPath) !== undefined;
+  } catch {
+    // A nonexistent candidate cannot contain the configured workspace.
+  }
+  if (!candidateIsInWorkspace && !candidateContainsWorkspace) {
+    return undefined;
+  }
+
+  const workspaceFiles = [
+    "MODULE.bazel",
+    "REPO.bazel",
+    "WORKSPACE.bazel",
+    "WORKSPACE",
+  ];
+  for (const file of workspaceFiles) {
+    try {
+      fs.accessSync(path.join(resolvedPath, file), fs.constants.F_OK);
+      return resolvedPath;
+    } catch {
+      // File not found, continue.
+    }
+  }
+
+  logError(
+    "Configured Bazel workspace path has no workspace marker file",
+    false,
+    `Path: ${resolvedPath}`,
+    `Expected one of: ${workspaceFiles.join(", ")}`,
+  );
+  return undefined;
+}
+
+/**
  * Search for the path to the directory that has the Bazel WORKSPACE file for
  * the given file.
+ *
+ * If a workspace path is manually configured via `bazel.workspacePath`, it will
+ * be used instead of auto-detection.
  *
  * If multiple directories along the path to the file have workspace files,
  * the lowest path is returned.
@@ -150,6 +240,13 @@ function findAncestorFile(
  * otherwise undefined.
  */
 export function getBazelWorkspaceFolder(fsPath: string): string | undefined {
+  // First, check if a workspace path is manually configured
+  const configuredWorkspace = resolveConfiguredWorkspacePath(fsPath);
+  if (configuredWorkspace) {
+    return configuredWorkspace;
+  }
+
+  // Fall back to auto-detection
   const workspaceFile = findAncestorFile(fsPath, [
     "MODULE.bazel",
     "REPO.bazel",
@@ -157,6 +254,26 @@ export function getBazelWorkspaceFolder(fsPath: string): string | undefined {
     "WORKSPACE",
   ]);
   return workspaceFile ? path.dirname(workspaceFile) : undefined;
+}
+
+/**
+ * Returns a Bazel-compatible path relative to a workspace root.
+ *
+ * If the candidate is outside the workspace root, returns undefined.
+ */
+export function getBazelWorkspaceRelativePath(
+  workspaceRoot: string,
+  candidatePath: string,
+): string | undefined {
+  const relativePath = path.relative(workspaceRoot, candidatePath);
+  if (
+    path.isAbsolute(relativePath) ||
+    relativePath === ".." ||
+    relativePath.startsWith(`..${path.sep}`)
+  ) {
+    return undefined;
+  }
+  return relativePath.replace(/\\/g, "/");
 }
 
 /**
