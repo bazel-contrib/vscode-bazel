@@ -24,6 +24,7 @@ import {
   BazelQuery,
   BazelWorkspaceInfo,
   QueryLocation,
+  canonicalizeLabel,
   getPackageLabelForBuildFile,
 } from "../bazel";
 import { getBazelExecutablePath } from "../extension/configuration";
@@ -53,16 +54,9 @@ export async function targetToUri(
   // ":target") must be canonicalized to an absolute label before querying,
   // since the query below always runs from the Bazel workspace root (not the
   // BUILD file's package directory) so that it respects a pinned
-  // `bazel.workspacePath` root. Labels that are already absolute (starting
-  // with "//" or "@repo//") are left untouched.
-  if (
-    packageLabel &&
-    !targetName.startsWith("//") &&
-    !targetName.startsWith("@")
-  ) {
-    targetName = targetName.startsWith(":")
-      ? `${packageLabel}${targetName}`
-      : `${packageLabel}:${targetName}`;
+  // `bazel.workspacePath` root.
+  if (packageLabel) {
+    targetName = canonicalizeLabel(targetName, packageLabel);
   }
 
   const queryResult = await new BazelQuery(

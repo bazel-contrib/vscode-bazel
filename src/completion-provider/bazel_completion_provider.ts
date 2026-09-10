@@ -15,6 +15,7 @@
 import * as vscode from "vscode";
 import {
   BazelWorkspaceInfo,
+  canonicalizeLabel,
   getPackageLabelForBuildFile,
   queryQuickPickTargets,
 } from "../bazel";
@@ -76,7 +77,7 @@ function getAbsoluteLabel(
   target: string,
   document: vscode.TextDocument,
 ): string {
-  if (target.startsWith("//")) {
+  if (target.startsWith("//") || target.startsWith("@")) {
     return target;
   }
   const workspace = BazelWorkspaceInfo.fromDocument(document);
@@ -87,7 +88,7 @@ function getAbsoluteLabel(
     workspace.bazelWorkspacePath,
     document.uri.fsPath,
   );
-  return `${packageLabel}${target}`;
+  return canonicalizeLabel(target, packageLabel);
 }
 
 export class BazelCompletionItemProvider
