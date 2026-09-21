@@ -47,6 +47,36 @@ export function getPackageLabelForBuildFile(
 }
 
 /**
+ * Turn a possibly package-relative label into an absolute one.
+ *
+ * Labels that already start with `//` (this repository) or `@` (a named
+ * repository) are returned unchanged. A label starting with `:` refers to
+ * a target in the same package. Anything else is treated as a bare
+ * package-relative path (e.g. a source file), which becomes the target
+ * name within the package.
+ *
+ * Note this is a purely textual transformation: it has no knowledge of
+ * repository/module boundaries (e.g. a `local_path_override`'d nested
+ * module), so `packageLabel` must already be correct for the label's
+ * repository. See https://github.com/bazel-contrib/vscode-bazel/issues/416.
+ *
+ * @param target The label text as written in a BUILD/bzl file, e.g. "client.py", "subdir/client.py", ":lib", or "//pkg:target".
+ * @param packageLabel The absolute package label to resolve `target` against, e.g. "//pkg" (see getPackageLabelForBuildFile).
+ * @returns The absolute label.
+ */
+export function canonicalizeLabel(
+  target: string,
+  packageLabel: string,
+): string {
+  if (target.startsWith("//") || target.startsWith("@")) {
+    return target;
+  }
+  return target.startsWith(":")
+    ? `${packageLabel}${target}`
+    : `${packageLabel}:${target}`;
+}
+
+/**
  * Get the targets in the build file
  *
  * @param bazelExecutable The path to the Bazel executable.
