@@ -563,7 +563,7 @@
         "@typescript-eslint/eslint-plugin": "^8.44.1",
         "@typescript-eslint/parser": "^8.44.1",
         "@vscode/test-cli": "^0.0.15",
-        "@vscode/test-electron": "^2.3.9",
+        "@vscode/test-electron": "^3.0.0",
         "@vscode/vsce": "^3.0.0",
         "esbuild": "^0.28.1",
         "eslint": "^10.0.0",
