@@ -90,7 +90,7 @@ describe("BazelGotoDefinitionProvider", () => {
   // labels (e.g. srcs = ["client.py"]) must resolve relative to the BUILD
   // file's package, even though the query itself always runs with the
   // resolved Bazel workspace root as its cwd (so that it keeps respecting a
-  // pinned `bazel.workspacePath` root, per #687). Stubs `queryTargets`,
+  // pinned `bazel.workspace.path` root, per #687). Stubs `queryTargets`,
   // asserts its cwd is always the workspace root, and returns the stub (to
   // assert on the canonicalized query text) plus a `run` function that
   // invokes `provideDefinition` for a given document/label.

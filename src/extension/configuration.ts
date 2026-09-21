@@ -54,7 +54,10 @@ export function getBazelExecutablePath(): string {
 }
 
 export function getPathsToIgnore(): string[] {
-  return getConfigurationWithDefault<string[]>("bazel", "pathsToIgnore");
+  return getConfigurationWithDefault<string[]>(
+    "bazel.workspace",
+    "pathsToIgnore",
+  );
 }
 
 /**
@@ -66,8 +69,8 @@ export function getPathsToIgnore(): string[] {
  * @returns The manually specified workspace path, or an empty string if not set.
  */
 export function getWorkspacePath(scopeUri?: vscode.Uri): string {
-  const config = vscode.workspace.getConfiguration("bazel", scopeUri);
-  return (config.get<string>("workspacePath") || "").trim();
+  const config = vscode.workspace.getConfiguration("bazel.workspace", scopeUri);
+  return (config.get<string>("path") || "").trim();
 }
 
 export function getStartupOptions(): string[] {

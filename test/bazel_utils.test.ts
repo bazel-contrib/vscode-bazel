@@ -158,8 +158,8 @@ describe("Bazel Utils: getBazelWorkspaceFolder", () => {
     sandbox.restore();
     // Reset workspacePath configuration after each test
     await vscode.workspace
-      .getConfiguration("bazel")
-      .update("workspacePath", undefined, vscode.ConfigurationTarget.Workspace);
+      .getConfiguration("bazel.workspace")
+      .update("path", undefined, vscode.ConfigurationTarget.Workspace);
   });
 
   it("auto-detects when workspacePath is not configured", () => {
@@ -184,12 +184,8 @@ describe("Bazel Utils: getBazelWorkspaceFolder", () => {
   it("should use configured absolute workspacePath when set", async () => {
     // Configure an absolute path to the workspace
     await vscode.workspace
-      .getConfiguration("bazel")
-      .update(
-        "workspacePath",
-        workspacePath,
-        vscode.ConfigurationTarget.Workspace,
-      );
+      .getConfiguration("bazel.workspace")
+      .update("path", workspacePath, vscode.ConfigurationTarget.Workspace);
 
     // Even if we query from a nested module, it should use configured path
     const nestedFilePath = path.join(workspacePath, "nested_module", "BUILD");
@@ -201,8 +197,8 @@ describe("Bazel Utils: getBazelWorkspaceFolder", () => {
     // Configure a relative path (relative to VS Code workspace folder)
     // The test workspace is opened at test/bazel_workspace
     await vscode.workspace
-      .getConfiguration("bazel")
-      .update("workspacePath", ".", vscode.ConfigurationTarget.Workspace);
+      .getConfiguration("bazel.workspace")
+      .update("path", ".", vscode.ConfigurationTarget.Workspace);
 
     const filePath = path.join(workspacePath, "pkg1", "main.py");
     const result = getBazelWorkspaceFolder(filePath);
@@ -212,9 +208,9 @@ describe("Bazel Utils: getBazelWorkspaceFolder", () => {
 
   it("falls back when configured workspacePath does not exist", async () => {
     await vscode.workspace
-      .getConfiguration("bazel")
+      .getConfiguration("bazel.workspace")
       .update(
-        "workspacePath",
+        "path",
         "/nonexistent/path/to/workspace",
         vscode.ConfigurationTarget.Workspace,
       );
@@ -228,12 +224,8 @@ describe("Bazel Utils: getBazelWorkspaceFolder", () => {
   it("rejects and logs a configured directory without a marker", async () => {
     const markerlessPath = path.join(workspacePath, "non-pkg");
     await vscode.workspace
-      .getConfiguration("bazel")
-      .update(
-        "workspacePath",
-        markerlessPath,
-        vscode.ConfigurationTarget.Workspace,
-      );
+      .getConfiguration("bazel.workspace")
+      .update("path", markerlessPath, vscode.ConfigurationTarget.Workspace);
     const logError = sandbox.stub(logger, "logError");
 
     const result = getBazelWorkspaceFolder(
@@ -253,12 +245,8 @@ describe("Bazel Utils: getBazelWorkspaceFolder", () => {
     // This tests the main use case: a subdirectory has its own MODULE.bazel,
     // but the user wants to use the parent workspace.
     await vscode.workspace
-      .getConfiguration("bazel")
-      .update(
-        "workspacePath",
-        workspacePath,
-        vscode.ConfigurationTarget.Workspace,
-      );
+      .getConfiguration("bazel.workspace")
+      .update("path", workspacePath, vscode.ConfigurationTarget.Workspace);
 
     // Query from a file inside nested_module which has its own MODULE.bazel
     const nestedFilePath = path.join(workspacePath, "nested_module", "BUILD");
@@ -270,12 +258,8 @@ describe("Bazel Utils: getBazelWorkspaceFolder", () => {
 
   it("does not claim files unrelated to configured workspacePath", async () => {
     await vscode.workspace
-      .getConfiguration("bazel")
-      .update(
-        "workspacePath",
-        workspacePath,
-        vscode.ConfigurationTarget.Workspace,
-      );
+      .getConfiguration("bazel.workspace")
+      .update("path", workspacePath, vscode.ConfigurationTarget.Workspace);
 
     const unrelatedFile = path.join(
       path.dirname(workspacePath),

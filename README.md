@@ -43,12 +43,12 @@ setting.
 The extension automatically searches upward for a `MODULE.bazel`,
 `REPO.bazel`, `WORKSPACE.bazel`, or `WORKSPACE` file. If that selects the wrong
 root, or if the Bazel root is nested below the folder opened in VS Code, set
-`bazel.workspacePath` to the Bazel root. The value can be an absolute path or a
+`bazel.workspace.path` to the Bazel root. The value can be an absolute path or a
 path relative to the VS Code workspace folder.
 
 The extension supports one Bazel root per VS Code workspace folder. To work
 with multiple independent Bazel roots, use a VS Code multi-root workspace and
-add each Bazel root as a separate folder; `bazel.workspacePath` can then be set
+add each Bazel root as a separate folder; `bazel.workspace.path` can then be set
 independently for each folder.
 
 ### Using a separate output base

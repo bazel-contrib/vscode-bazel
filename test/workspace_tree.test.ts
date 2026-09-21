@@ -83,8 +83,8 @@ describe("Bazel Workspace Tree", function (this: Mocha.Suite) {
     }
 
     await vscode.workspace
-      .getConfiguration("bazel")
-      .update("workspacePath", undefined, vscode.ConfigurationTarget.Workspace);
+      .getConfiguration("bazel.workspace")
+      .update("path", undefined, vscode.ConfigurationTarget.Workspace);
   });
 
   it("should match workspace structure", async () => {
@@ -225,12 +225,8 @@ describe("Bazel Workspace Tree", function (this: Mocha.Suite) {
 
   it("queries a Bazel root nested below the VS Code folder", async () => {
     await vscode.workspace
-      .getConfiguration("bazel")
-      .update(
-        "workspacePath",
-        "nested_module",
-        vscode.ConfigurationTarget.Workspace,
-      );
+      .getConfiguration("bazel.workspace")
+      .update("path", "nested_module", vscode.ConfigurationTarget.Workspace);
 
     const sandbox = sinon.createSandbox();
     const queryPackages = sandbox

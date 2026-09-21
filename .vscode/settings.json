@@ -12,5 +12,5 @@
     },
     "prettier.trailingComma": "all",
     "editor.formatOnSave": true,
-    "bazel.workspacePath": "test/bazel_workspace"
+    "bazel.workspace.path": "test/bazel_workspace"
 }

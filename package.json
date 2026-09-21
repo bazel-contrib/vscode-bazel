@@ -133,13 +133,13 @@
                     "description": "The name of the Bazel executable. This may be an absolute path, or a simple name that will be searched for on the system path. If empty, \"bazel\" on the system path will be used.",
                     "scope": "machine-overridable"
                 },
-                "bazel.workspacePath": {
+                "bazel.workspace.path": {
                     "type": "string",
                     "default": "",
                     "markdownDescription": "Pins the single Bazel workspace root used for this VS Code workspace folder. The path can be absolute or relative to the VS Code workspace folder. If unset, the extension searches for `MODULE.bazel`, `REPO.bazel`, `WORKSPACE.bazel`, or `WORKSPACE`. To use multiple independent Bazel roots, add each root as a folder in a VS Code multi-root workspace and configure this setting per folder.",
                     "scope": "resource"
                 },
-                "bazel.pathsToIgnore": {
+                "bazel.workspace.pathsToIgnore": {
                     "type": "array",
                     "items": {
                         "type": "string"
@@ -315,6 +315,22 @@
                     "default": null,
                     "markdownDeprecationMessage": "Renamed to `bazel.commandLine.queryOutputBase`. Any value set here is migrated automatically; this key can be removed once migrated.",
                     "deprecationMessage": "Renamed to bazel.commandLine.queryOutputBase."
+                },
+                "bazel.workspacePath": {
+                    "type": "string",
+                    "default": "",
+                    "scope": "resource",
+                    "markdownDeprecationMessage": "Renamed to `bazel.workspace.path`. Any value set here is migrated automatically; this key can be removed once migrated.",
+                    "deprecationMessage": "Renamed to bazel.workspace.path."
+                },
+                "bazel.pathsToIgnore": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "default": [],
+                    "markdownDeprecationMessage": "Renamed to `bazel.workspace.pathsToIgnore`. Any value set here is migrated automatically; this key can be removed once migrated.",
+                    "deprecationMessage": "Renamed to bazel.workspace.pathsToIgnore."
                 }
             }
         },

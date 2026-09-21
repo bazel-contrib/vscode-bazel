@@ -259,7 +259,7 @@ function resolveConfiguredWorkspacePath(fsPath: string): string | undefined {
  * Search for the path to the directory that has the Bazel WORKSPACE file for
  * the given file.
  *
- * If a workspace path is manually configured via `bazel.workspacePath`, it will
+ * If a workspace path is manually configured via `bazel.workspace.path`, it will
  * be used instead of auto-detection.
  *
  * If multiple directories along the path to the file have workspace files,

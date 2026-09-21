@@ -6,6 +6,11 @@ interface RenamedSetting {
   oldName: string;
   newSection: string;
   newName: string;
+  /**
+   * Whether the setting has `resource` scope, i.e. may also be set per
+   * workspace folder in a multi-root workspace.
+   */
+  resourceScoped?: boolean;
 }
 
 /**
@@ -16,6 +21,19 @@ interface RenamedSetting {
  * is a no-op.
  */
 const RENAMED_SETTINGS: readonly RenamedSetting[] = [
+  {
+    oldSection: "bazel",
+    oldName: "workspacePath",
+    newSection: "bazel.workspace",
+    newName: "path",
+    resourceScoped: true,
+  },
+  {
+    oldSection: "bazel",
+    oldName: "pathsToIgnore",
+    newSection: "bazel.workspace",
+    newName: "pathsToIgnore",
+  },
   {
     oldSection: "bazel",
     oldName: "queriesShareServer",
@@ -83,12 +101,11 @@ const RENAMED_SETTINGS: readonly RenamedSetting[] = [
  * its new location, then clears the old one - for both User and Workspace
  * scope.
  *
- * Per-workspace-folder overrides are intentionally not migrated: there's no
- * general way to enumerate "the folder this applies to" outside of a
- * multi-root workspace, and folder-scoped overrides of these settings are
- * rare in practice. A user relying on one will see a one-time
- * "unknown configuration setting" warning from VS Code and can move the
- * value to the new key by hand.
+ * Workspace-folder values are migrated only for `resourceScoped` settings
+ * (e.g. `workspace.path`, which is documented as configurable per folder). For
+ * other settings, folder-scoped overrides are rare and not migrated: a user
+ * relying on one will see a one-time "unknown configuration setting" warning
+ * from VS Code and can move the value to the new key by hand.
  *
  * @returns Whether a value was migrated at either scope.
  */
@@ -113,6 +130,32 @@ async function migrateOne(setting: RenamedSetting): Promise<boolean> {
     await newConfig.update(setting.newName, value, target);
     await oldConfig.update(setting.oldName, undefined, target);
     migratedAny = true;
+  }
+
+  if (setting.resourceScoped) {
+    for (const folder of vscode.workspace.workspaceFolders ?? []) {
+      const folderOld = vscode.workspace.getConfiguration(
+        setting.oldSection,
+        folder.uri,
+      );
+      const value = folderOld.inspect(setting.oldName)?.workspaceFolderValue;
+      if (value === undefined) {
+        continue;
+      }
+      await vscode.workspace
+        .getConfiguration(setting.newSection, folder.uri)
+        .update(
+          setting.newName,
+          value,
+          vscode.ConfigurationTarget.WorkspaceFolder,
+        );
+      await folderOld.update(
+        setting.oldName,
+        undefined,
+        vscode.ConfigurationTarget.WorkspaceFolder,
+      );
+      migratedAny = true;
+    }
   }
   return migratedAny;
 }

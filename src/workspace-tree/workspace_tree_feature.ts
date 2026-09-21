@@ -47,7 +47,7 @@ export class WorkspaceTreeFeature extends BaseExtensionFeature {
     // Re-initialize when the configured Bazel workspace path changes
     this.disposables.push(
       vscode.workspace.onDidChangeConfiguration((e) => {
-        if (e.affectsConfiguration("bazel.workspacePath")) {
+        if (e.affectsConfiguration("bazel.workspace.path")) {
           setBazelWorkspaceAvailableContext();
           this.workspaceTreeProvider?.refresh();
         }
