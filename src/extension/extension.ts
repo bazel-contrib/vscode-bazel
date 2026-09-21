@@ -23,7 +23,7 @@ import {
 } from "../workspace-tree";
 import { targetToUri } from "../definition/bazel_goto_definition_provider";
 import { activateCommandVariables } from "./command_variables";
-import { activateTesting } from "../test-explorer";
+import { TestExplorerFeature } from "../test-explorer";
 import { activateWrapperCommands } from "./bazel_wrapper_commands";
 import { registerLogger, logInfo, logError, showOutputChannel } from "./logger";
 import { registerBazelWorkspaceAvailabilityWatcher } from "../bazel/bazel_availability";
@@ -82,6 +82,9 @@ export async function activate(context: vscode.ExtensionContext) {
   // LanguageSupportFeature
   context.subscriptions.push(await LanguageSupportFeature.create(context));
 
+  // TestExplorerFeature
+  context.subscriptions.push(await TestExplorerFeature.create(context));
+
   context.subscriptions.push(
     // Commands
     ...activateWrapperCommands(),
@@ -112,8 +115,6 @@ export async function activate(context: vscode.ExtensionContext) {
     ...activateTaskProvider(),
     // Command variables
     ...activateCommandVariables(),
-    // Test provider
-    ...activateTesting(),
   );
 }
 
