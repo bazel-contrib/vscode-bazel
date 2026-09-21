@@ -99,10 +99,11 @@ export function getQueryExpression(): string {
  * by the workspace configuration.
  */
 export function getQueriesShareServer(): boolean {
-  return getConfigurationWithDefault<boolean>(
-    "bazel.commandLine",
-    "queriesShareServer",
-  );
+  // Not `getConfigurationWithDefault`: that returns the default whenever the
+  // value is falsey, which would make it impossible to set this to `false`.
+  return vscode.workspace
+    .getConfiguration("bazel.commandLine")
+    .get<boolean>("queriesShareServer", true);
 }
 
 /**
