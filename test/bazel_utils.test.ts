@@ -9,6 +9,7 @@ import {
   getTargetNameAtBuildFileLocation,
   getBazelWorkspaceFolder,
   getBazelWorkspaceRelativePath,
+  canonicalizeLabel,
 } from "../src/bazel/bazel_utils";
 
 const workspacePath = path.join(
@@ -318,5 +319,47 @@ describe("Bazel Utils: getBazelWorkspaceRelativePath", () => {
       ),
       undefined,
     );
+  });
+});
+
+describe("Bazel Utils: canonicalizeLabel", () => {
+  it("leaves an absolute label unchanged", () => {
+    assert.strictEqual(
+      canonicalizeLabel("//pkg:target", "//other"),
+      "//pkg:target",
+    );
+  });
+
+  it("leaves a package-only label unchanged", () => {
+    assert.strictEqual(canonicalizeLabel("//pkg/sub", "//other"), "//pkg/sub");
+  });
+
+  it("leaves an external repository label unchanged", () => {
+    assert.strictEqual(
+      canonicalizeLabel("@repo//pkg:target", "//other"),
+      "@repo//pkg:target",
+    );
+  });
+
+  it("resolves a same-package target label against the package", () => {
+    assert.strictEqual(canonicalizeLabel(":target", "//pkg"), "//pkg:target");
+  });
+
+  it("resolves a bare file label against the package", () => {
+    assert.strictEqual(
+      canonicalizeLabel("client.py", "//pkg"),
+      "//pkg:client.py",
+    );
+  });
+
+  it("resolves a bare file label in a subdirectory against the package", () => {
+    assert.strictEqual(
+      canonicalizeLabel("subdir/client.py", "//pkg"),
+      "//pkg:subdir/client.py",
+    );
+  });
+
+  it("resolves a bare label against the root package", () => {
+    assert.strictEqual(canonicalizeLabel("client.py", "//"), "//:client.py");
   });
 });

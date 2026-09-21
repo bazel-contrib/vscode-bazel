@@ -20,7 +20,13 @@ import {
   TextDocument,
   Uri,
 } from "vscode";
-import { BazelQuery, BazelWorkspaceInfo, QueryLocation } from "../bazel";
+import {
+  BazelQuery,
+  BazelWorkspaceInfo,
+  QueryLocation,
+  canonicalizeLabel,
+  getPackageLabelForBuildFile,
+} from "../bazel";
 import { getBazelExecutablePath } from "../extension/configuration";
 import { blaze_query } from "../protos";
 
@@ -30,6 +36,7 @@ export const LABEL_REGEX = /"((?:@\w+)?\/\/|(?:.+\/)?[^:"]*(?::[^:"]+)?)"/;
 export async function targetToUri(
   targetText: string,
   workingDirectory: Uri,
+  packageLabel?: string,
 ): Promise<QueryLocation | undefined> {
   const match = LABEL_REGEX.exec(targetText);
 
@@ -37,10 +44,19 @@ export async function targetToUri(
     return undefined;
   }
 
-  const targetName = match[1];
+  let targetName = match[1];
   // don't try to process visibility targets.
   if (targetName.startsWith("//visibility")) {
     return undefined;
+  }
+
+  // Package-relative labels (e.g. "client.py", "subdir/client.py", or
+  // ":target") must be canonicalized to an absolute label before querying,
+  // since the query below always runs from the Bazel workspace root (not the
+  // BUILD file's package directory) so that it respects a pinned
+  // `bazel.workspacePath` root.
+  if (packageLabel) {
+    targetName = canonicalizeLabel(targetName, packageLabel);
   }
 
   const queryResult = await new BazelQuery(
@@ -85,9 +101,14 @@ export class BazelGotoDefinitionProvider implements DefinitionProvider {
     const range = document.getWordRangeAtPosition(position, LABEL_REGEX);
     const targetText = document.getText(range);
 
+    const packageLabel = getPackageLabelForBuildFile(
+      workspaceInfo.bazelWorkspacePath,
+      document.uri.fsPath,
+    );
     const location = await targetToUri(
       targetText,
       Uri.file(workspaceInfo.bazelWorkspacePath),
+      packageLabel,
     );
 
     return location
