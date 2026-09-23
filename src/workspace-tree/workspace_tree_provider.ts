@@ -19,7 +19,7 @@ import { IBazelTreeItem } from "./bazel_tree_item";
 import { BazelWorkspaceFolderTreeItem } from "./bazel_workspace_folder_tree_item";
 import { BazelPackageTreeItem } from "./bazel_package_tree_item";
 import { Resources } from "../extension/resources";
-import { ILogger } from "../extension/logger";
+import { ILogger } from "../extension/logger_interface";
 
 /**
  * Provides a tree of Bazel build packages and targets for the VS Code explorer

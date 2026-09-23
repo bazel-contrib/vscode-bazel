@@ -16,6 +16,7 @@ module.exports = [
       "out/",
       "src/protos/protos.d.ts",
       "src/protos/protos.js",
+      "scripts/",
     ],
   },
 
