@@ -13,8 +13,12 @@
 // limitations under the License.
 
 import * as fs from "fs/promises";
+import { createWriteStream } from "fs";
 import * as path from "path";
 import * as crypto from "crypto";
+import { Readable, Transform } from "stream";
+import { pipeline } from "stream/promises";
+import { ReadableStream } from "stream/web";
 import { ILogger } from "../extension/logger_interface";
 import { ToolConfig, detectPlatform } from "./tool_config";
 import {
@@ -24,23 +28,49 @@ import {
 } from "./github_api";
 
 /**
+ * Streams the given URL to a local file while computing its SHA256 checksum.
+ *
+ * @param url URL to download
+ * @param destination Local file path to write the downloaded content to
+ * @returns Hex-encoded SHA256 checksum of the downloaded content
+ */
+async function downloadToFile(
+  url: string,
+  destination: string,
+): Promise<string> {
+  const response = await fetch(url);
+  if (!response.ok || !response.body) {
+    throw new Error(`HTTP ${response.status} for ${url}`);
+  }
+
+  const hash = crypto.createHash("sha256");
+  const hashingPassThrough = new Transform({
+    transform(chunk: Buffer, _encoding, callback) {
+      hash.update(chunk);
+      callback(null, chunk);
+    },
+  });
+  await pipeline(
+    Readable.fromWeb(response.body as ReadableStream<Uint8Array>),
+    hashingPassThrough,
+    createWriteStream(destination),
+  );
+  return hash.digest("hex");
+}
+
+/**
  * Cryptographic binary integrity verifier.
  *
  * @param asset GitHub asset with digest for verification
- * @param filePath Local path to the downloaded file
+ * @param actualChecksum SHA256 checksum of the downloaded file
  * @param logger Logger instance for dependency injection.
  * @throws Security violation error with detailed context
  */
 function verifyBinaryIntegrity(
   asset: GitHubAsset,
-  filePath: string,
+  actualChecksum: string,
   logger: ILogger,
 ): void {
-  const fileBuffer = await fs.readFile(filePath);
-  const actualChecksum = crypto
-    .createHash("sha256")
-    .update(fileBuffer)
-    .digest("hex");
   const githubHash = asset.digest.replace("sha256:", "").toLowerCase();
 
   // Checksum verification for debugging
@@ -49,18 +79,11 @@ function verifyBinaryIntegrity(
   );
 
   if (actualChecksum !== githubHash) {
-    // If verification fails, clean up the downloaded file
-    try {
-      await fs.unlink(filePath);
-      logger.logDebug(`Cleaned up corrupted file: ${filePath}`);
-    } catch {
-      // Ignore cleanup errors
-    }
     const errorMsg =
       `Security violation: ${asset.name} failed checksum verification.\n` +
       `Expected: ${githubHash}\n` +
       `Actual: ${actualChecksum}\n` +
-      `The downloaded binary may be corrupted or tampered with. File removed.`;
+      `The downloaded binary may be corrupted or tampered with.`;
     logger.logError(errorMsg);
     throw new Error(errorMsg);
   }
@@ -99,27 +122,22 @@ export async function downloadAndVerify(
     );
   }
   try {
-    const response = await fetch(asset.browser_download_url);
-    if (!response.ok) {
-      throw new Error(
-        `HTTP ${response.status} for ${asset.browser_download_url}`,
-      );
-    }
-
-    const arrayBuffer = await response.arrayBuffer();
-    await fs.writeFile(destination, Buffer.from(arrayBuffer));
+    const actualChecksum = await downloadToFile(
+      asset.browser_download_url,
+      destination,
+    );
     logger.logDebug(
       `Downloaded ${asset.name} to ${destination}, starting verification`,
     );
-    verifyBinaryIntegrity(asset, destination, logger);
+    verifyBinaryIntegrity(asset, actualChecksum, logger);
     logger.logInfo(`Successfully downloaded and verified ${asset.name}`);
   } catch (error) {
-    // Clean up partial file on download error
+    // Clean up partial or corrupted file
     try {
       await fs.unlink(destination);
-      logger.logDebug(`Cleaned up partial download: ${destination}`);
+      logger.logDebug(`Removed invalid download: ${destination}`);
     } catch {
-      // Ignore cleanup errors, might have been removed by _verifyBinaryIntegrity already.
+      // Ignore cleanup errors, the file might not have been created.
     }
     logger.logError(
       `Failed to download ${asset.name}: ${error instanceof Error ? error.message : String(error)}`,
