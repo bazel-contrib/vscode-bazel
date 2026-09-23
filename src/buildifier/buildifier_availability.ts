@@ -134,7 +134,7 @@ export async function showBuildifierDownloadPrompt(reason: string) {
     title: "Download",
   });
 
-  if (item && item.title === "Download") {
+  if (item?.title === "Download") {
     await vscode.commands.executeCommand(
       "vscode.open",
       vscode.Uri.parse(BUILDTOOLS_RELEASES_URL),

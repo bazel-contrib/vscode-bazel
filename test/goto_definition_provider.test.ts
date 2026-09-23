@@ -128,7 +128,7 @@ describe("BazelGotoDefinitionProvider", () => {
 
     return {
       query,
-      run: () =>
+      run: async () =>
         new BazelGotoDefinitionProvider().provideDefinition(
           document,
           new vscode.Position(0, 5),

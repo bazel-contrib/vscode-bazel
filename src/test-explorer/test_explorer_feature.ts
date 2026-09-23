@@ -22,7 +22,7 @@ export class TestExplorerFeature extends BaseExtensionFeature {
     activeInstance = this;
   }
 
-  protected enable(context: vscode.ExtensionContext): Promise<boolean> {
+  protected async enable(context: vscode.ExtensionContext): Promise<boolean> {
     // Precondition: bazel executable available
     if (!checkBazelIsAvailable()) {
       this.logWarn("Can not activate, no bazel executable found.");
@@ -44,7 +44,7 @@ export class TestExplorerFeature extends BaseExtensionFeature {
     );
     coverageRunProfile.isDefault = false;
     // `loadDetailedCoverage` is important so that line coverage data is shown.
-    coverageRunProfile.loadDetailedCoverage = (_, coverage) =>
+    coverageRunProfile.loadDetailedCoverage = async (_, coverage) =>
       Promise.resolve((coverage as BazelFileCoverage).details);
 
     this.testController = testController;
@@ -66,7 +66,7 @@ export class TestExplorerFeature extends BaseExtensionFeature {
    * @param baseFolder The source file entries are relative paths to baseFolder.
    * @param lcov The lcov report data as a string.
    */
-  async showLcovCoverage(
+  public async showLcovCoverage(
     description: string,
     baseFolder: string,
     lcov: string,
@@ -93,7 +93,7 @@ export class TestExplorerFeature extends BaseExtensionFeature {
   /**
    * Get the test controller for testing purposes.
    */
-  getTestController(): vscode.TestController | undefined {
+  public getTestController(): vscode.TestController | undefined {
     return this.testController;
   }
 }

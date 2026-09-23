@@ -249,7 +249,7 @@ function getMessageFunctionForLevel(
 const activeMessages = new Map<string, Promise<string | undefined>>();
 
 /**
- * Shows an user message with an "Details" button that opens the output channel.
+ * Shows an user message with a "Details" button that opens the output channel.
  * Prevents duplicate messages from being shown simultaneously.
  * Returns a promise that resolves to the action selected by the user, or undefined if dismissed.
  *
@@ -258,7 +258,7 @@ const activeMessages = new Map<string, Promise<string | undefined>>();
  * @param showDetailsButton Whether to show the "Details" button.
  * @returns A promise that resolves to the selected action or undefined.
  */
-export function showUserMessage(
+export async function showUserMessage(
   message: string,
   level: vscode.LogLevel,
   showDetailsButton: boolean = true,

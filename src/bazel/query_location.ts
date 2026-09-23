@@ -54,7 +54,7 @@ export class QueryLocation {
    * This property handles the conversation from Bazel's 1-based line/column
    * indices to the 0-based indices that VS Code expects.
    */
-  get range(): vscode.Range {
+  public get range(): vscode.Range {
     return new vscode.Range(
       this.line - 1,
       this.column - 1,

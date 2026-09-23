@@ -5,6 +5,7 @@ let assertionFailureReported = false;
 
 /**
  * Asserts that the given value is true.
+ * @throws {Error} If the value is not true.
  */
 export function assert(value: boolean): asserts value {
   if (!value) {
