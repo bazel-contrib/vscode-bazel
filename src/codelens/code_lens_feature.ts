@@ -16,11 +16,11 @@ export class CodeLensFeature extends BaseExtensionFeature {
     super("CodeLens", context);
   }
 
-  enable(context: vscode.ExtensionContext): boolean {
+  enable(context: vscode.ExtensionContext): Promise<boolean> {
     // Precondition: bazel executable available
     if (!checkBazelIsAvailable()) {
       this.logWarn("Can not activate, no bazel executable found.");
-      return false;
+      return Promise.resolve(false);
     }
 
     // Create and register the CodeLens provider
@@ -48,6 +48,6 @@ export class CodeLensFeature extends BaseExtensionFeature {
 
     this.disposables.push(codeLensRegistration, buildWatcher);
 
-    return true;
+    return Promise.resolve(true);
   }
 }

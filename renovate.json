@@ -9,6 +9,14 @@
     "group:unitTest",
     "security:minimumReleaseAgeNpm"
   ],
+  "packageRules": [
+    {
+      "matchManagers": [
+        "github-actions"
+      ],
+      "pinDigests": true
+    }
+  ],
   "customManagers": [
     {
       "customType": "regex",

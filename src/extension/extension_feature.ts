@@ -24,7 +24,9 @@ import { ILogger } from "./logger_interface";
  *
  * To comply with the design, a feature must:
  * - have a unique `featureName`
- * - have a corresponding config for enabling: `bazel.enable<featureName>`
+ * - have a corresponding config for enabling: `bazel.<featureName>.enable`,
+ * clustering the rest of the feature's settings under the same
+ * `bazel.<featureName>` section (see e.g. `bazel.buildifier.*`)
  * - have a corresponding context key to communicate its current state: `bazel.feature.<featureName>.enabled`
  */
 export abstract class BaseExtensionFeature
@@ -41,6 +43,7 @@ export abstract class BaseExtensionFeature
    * Whether the feature is currently enabled.
    */
   private isEnabled: boolean = false;
+  private pendingConfigChange: Promise<void> = Promise.resolve();
 
   /**
    * List of disposables registered by the feature.
@@ -69,14 +72,15 @@ export abstract class BaseExtensionFeature
    */
   constructor(featureName: string, context: vscode.ExtensionContext) {
     this.featureName = featureName;
-    this.configKey = `bazel.enable${featureName}`;
+    const settingsSection = featureName[0].toLowerCase() + featureName.slice(1);
+    this.configKey = `bazel.${settingsSection}.enable`;
     this.contextKey = `bazel.feature.${featureName}.enabled`;
     this.context = context;
 
     // Register configuration change listener
     this.configCallback = vscode.workspace.onDidChangeConfiguration((e) => {
       if (e.affectsConfiguration(this.configKey)) {
-        this.onConfigurationChanged(vscode.workspace.getConfiguration());
+        void this.onConfigurationChanged(vscode.workspace.getConfiguration());
       }
     });
   }
@@ -85,13 +89,13 @@ export abstract class BaseExtensionFeature
    * Static Factory pattern for creating and ensuring a subsequent call for initialization.
    * The feature will be initialized based on the current configuration.
    */
-  static create<T extends BaseExtensionFeature>(
+  static async create<T extends BaseExtensionFeature>(
     this: new (context: vscode.ExtensionContext) => T,
     context: vscode.ExtensionContext,
-  ): T {
+  ): Promise<T> {
     const instance = new this(context);
     // Enable/Disable feature based on current configuration
-    instance.onConfigurationChanged(vscode.workspace.getConfiguration());
+    await instance.onConfigurationChanged(vscode.workspace.getConfiguration());
     return instance;
   }
 
@@ -102,13 +106,33 @@ export abstract class BaseExtensionFeature
    * Logs erros in case of a activation failure.
    * @param config The new configuration for the feature.
    */
-  private onConfigurationChanged(config: vscode.WorkspaceConfiguration): void {
+  private onConfigurationChanged(
+    config: vscode.WorkspaceConfiguration,
+  ): Promise<void> {
+    const next = this.pendingConfigChange.then(() =>
+      this.doConfigurationChange(config),
+    );
+    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    this.pendingConfigChange = next.catch(() => {});
+    return next;
+  }
+
+  private async doConfigurationChange(
+    config: vscode.WorkspaceConfiguration,
+  ): Promise<void> {
     const shouldBeEnabled = this.isEnabledInConfig(config);
     if (shouldBeEnabled && !this.isEnabled) {
-      this.logInfo(`Enabling ${this.constructor.name}`);
-      if (!this.enable(this.context)) {
+      this.logInfo(`Enabling feature`);
+      let enabled: boolean;
+      try {
+        enabled = await this.enable(this.context);
+      } catch (e) {
+        this.logError(`Failed to enable feature: ${e}`);
+        return;
+      }
+      if (!enabled) {
         void showUserMessage(
-          `Failed to enable ${this.constructor.name}`,
+          `Failed to enable ${this.featureName}`,
           vscode.LogLevel.Error,
           true,
         );
@@ -116,9 +140,9 @@ export abstract class BaseExtensionFeature
       }
       this.isEnabled = true;
     } else if (!shouldBeEnabled && this.isEnabled) {
-      this.logInfo(`Disabling ${this.constructor.name}`);
+      this.logInfo(`Disabling feature`);
       if (!this.disable()) {
-        this.logError(`Failed to disable ${this.constructor.name}`);
+        this.logError(`Failed to disable feature`);
         return;
       }
       this.isEnabled = false;
@@ -147,7 +171,7 @@ export abstract class BaseExtensionFeature
    * - create any required resources and add disposables to the `this.disposables` array.
    * - return true after successfull enabling of the functionality
    */
-  protected abstract enable(context: vscode.ExtensionContext): boolean;
+  protected abstract enable(context: vscode.ExtensionContext): Promise<boolean>;
 
   /**
    * Called when the feature is disabled.

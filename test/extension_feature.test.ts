@@ -8,7 +8,7 @@ class TestExtensionFeature extends BaseExtensionFeature {
     super("TestFeature", context);
   }
 
-  protected enable(context: vscode.ExtensionContext): boolean {
+  protected async enable(context: vscode.ExtensionContext): Promise<boolean> {
     this.disposables.push({
       dispose: () => {
         /* empty */
@@ -23,7 +23,7 @@ class FailingTestFeature extends BaseExtensionFeature {
     super("FailingTestFeature", context);
   }
 
-  protected enable(context: vscode.ExtensionContext): boolean {
+  protected async enable(context: vscode.ExtensionContext): Promise<boolean> {
     return false;
   }
 }
@@ -48,15 +48,15 @@ describe("BaseExtensionFeature", () => {
   });
 
   describe("create", () => {
-    it("creates and initializes the feature", () => {
+    it("creates and initializes the feature", async () => {
       const configStub = sandbox
         .stub(vscode.workspace, "getConfiguration")
         .returns({
-          get: sinon.stub().withArgs("bazel.enableTestFeature").returns(true),
+          get: sinon.stub().withArgs("bazel.testFeature.enable").returns(true),
         } as any);
       const setContextStub = sandbox.stub(vscode.commands, "executeCommand");
 
-      const feature = TestExtensionFeature.create(mockContext);
+      const feature = await TestExtensionFeature.create(mockContext);
 
       sinon.assert.calledOnce(configStub);
       assert.ok((feature as any).disposables.length > 0);
@@ -70,13 +70,13 @@ describe("BaseExtensionFeature", () => {
   });
 
   describe("onConfigurationChanged", () => {
-    it("enables when config is true and not enabled", () => {
+    it("enables when config is true and not enabled", async () => {
       const config = {
-        get: sinon.stub().withArgs("bazel.enableTestFeature").returns(true),
+        get: sinon.stub().withArgs("bazel.testFeature.enable").returns(true),
       } as any;
       const setContextStub = sandbox.stub(vscode.commands, "executeCommand");
 
-      (testFeature as any).onConfigurationChanged(config);
+      await (testFeature as any).onConfigurationChanged(config);
 
       assert.strictEqual((testFeature as any).isEnabled, true);
       assert.ok((testFeature as any).disposables.length > 0);
@@ -88,20 +88,20 @@ describe("BaseExtensionFeature", () => {
       );
     });
 
-    it("disables when config is false and enabled", () => {
+    it("disables when config is false and enabled", async () => {
       // First enable
       const configTrue = {
-        get: sinon.stub().withArgs("bazel.enableTestFeature").returns(true),
+        get: sinon.stub().withArgs("bazel.testFeature.enable").returns(true),
       } as any;
-      (testFeature as any).onConfigurationChanged(configTrue);
+      await (testFeature as any).onConfigurationChanged(configTrue);
       assert.strictEqual((testFeature as any).isEnabled, true);
 
       // Then disable
       const configFalse = {
-        get: sinon.stub().withArgs("bazel.enableTestFeature").returns(false),
+        get: sinon.stub().withArgs("bazel.testFeature.enable").returns(false),
       } as any;
       const setContextStub = sandbox.stub(vscode.commands, "executeCommand");
-      (testFeature as any).onConfigurationChanged(configFalse);
+      await (testFeature as any).onConfigurationChanged(configFalse);
 
       assert.strictEqual((testFeature as any).isEnabled, false);
       assert.strictEqual((testFeature as any).disposables.length, 0);
@@ -113,18 +113,18 @@ describe("BaseExtensionFeature", () => {
       );
     });
 
-    it("does not enable if enable returns false", () => {
+    it("does not enable if enable returns false", async () => {
       const config = {
         get: sinon
           .stub()
-          .withArgs("bazel.enableFailingTestFeature")
+          .withArgs("bazel.failingTestFeature.enable")
           .returns(true),
       } as any;
       const showMessageStub = sandbox
         .stub(vscode.window, "showErrorMessage")
         .resolves();
 
-      (failingFeature as any).onConfigurationChanged(config);
+      await (failingFeature as any).onConfigurationChanged(config);
 
       assert.strictEqual((failingFeature as any).isEnabled, false);
       sinon.assert.calledWith(
@@ -135,12 +135,12 @@ describe("BaseExtensionFeature", () => {
   });
 
   describe("disable", () => {
-    it("disposes all disposables", () => {
+    it("disposes all disposables", async () => {
       // Enable first
       const config = {
-        get: sinon.stub().withArgs("bazel.enableTestFeature").returns(true),
+        get: sinon.stub().withArgs("bazel.testFeature.enable").returns(true),
       } as any;
-      (testFeature as any).onConfigurationChanged(config);
+      await (testFeature as any).onConfigurationChanged(config);
       assert.ok((testFeature as any).disposables.length > 0);
 
       const disposeSpy = sandbox.spy(

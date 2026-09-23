@@ -13,8 +13,8 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
-import * as path from "path";
-import { BazelWorkspaceInfo } from "../bazel";
+
+import { BazelWorkspaceInfo, getBazelWorkspaceRelativePath } from "../bazel";
 import { IBazelTreeItem } from "./bazel_tree_item";
 import { BazelWorkspaceFolderTreeItem } from "./bazel_workspace_folder_tree_item";
 import { BazelPackageTreeItem } from "./bazel_package_tree_item";
@@ -331,11 +331,11 @@ export class BazelWorkspaceTreeProvider
       return undefined; // File does not belong to a detected bazel workspace
     }
 
-    const relativeFilePath = path.relative(
-      workspaceFolderVSCode.uri.fsPath,
+    const relativeFilePath = getBazelWorkspaceRelativePath(
+      workspaceFolderTreeItem.getWorkspaceInfo().bazelWorkspacePath,
       fileUri.fsPath,
     );
-    if (!relativeFilePath) {
+    if (relativeFilePath === undefined || relativeFilePath === "") {
       return undefined; // Sanity check, should never happen
     }
 

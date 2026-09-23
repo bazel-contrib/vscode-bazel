@@ -36,8 +36,7 @@ function groupLensesByLine(lenses: vscode.CodeLens[]): Map<number, LensInfo[]> {
     }
     if (lens.command?.title) {
       const commandAdapter = lens.command.arguments?.[0] as
-        | IBazelCommandAdapter
-        | undefined;
+        IBazelCommandAdapter | undefined;
       let target = "";
 
       // Extract target from CodeLensCommandAdapter
@@ -195,8 +194,7 @@ describe("CodeLensBuilder", () => {
       if (lens.title.startsWith("Copy") || lens.title.startsWith("Build")) {
         // All commands now use CodeLensCommandAdapter format
         const commandAdapter = command.arguments[0] as
-          | IBazelCommandAdapter
-          | undefined;
+          IBazelCommandAdapter | undefined;
         assert.ok(
           commandAdapter &&
             typeof commandAdapter.getBazelCommandOptions === "function",
@@ -239,8 +237,7 @@ describe("CodeLensBuilder", () => {
           "Single target commands should have 1 argument",
         );
         const commandAdapter = command.arguments[0] as
-          | IBazelCommandAdapter
-          | undefined;
+          IBazelCommandAdapter | undefined;
         assert.ok(
           commandAdapter &&
             typeof commandAdapter.getBazelCommandOptions === "function",
