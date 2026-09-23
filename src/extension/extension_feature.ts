@@ -24,7 +24,9 @@ import {
  *
  * To comply with the design, a feature must:
  * - have a unique `featureName`
- * - have a corresponding config for enabling: `bazel.enable<featureName>`
+ * - have a corresponding config for enabling: `bazel.<featureName>.enable`,
+ * clustering the rest of the feature's settings under the same
+ * `bazel.<featureName>` section (see e.g. `bazel.buildifier.*`)
  * - have a corresponding context key to communicate its current state: `bazel.feature.<featureName>.enabled`
  */
 export abstract class BaseExtensionFeature
@@ -70,7 +72,8 @@ export abstract class BaseExtensionFeature
    */
   constructor(featureName: string, context: vscode.ExtensionContext) {
     this.featureName = featureName;
-    this.configKey = `bazel.enable${featureName}`;
+    const settingsSection = featureName[0].toLowerCase() + featureName.slice(1);
+    this.configKey = `bazel.${settingsSection}.enable`;
     this.contextKey = `bazel.feature.${featureName}.enabled`;
     this.context = context;
 
@@ -119,17 +122,17 @@ export abstract class BaseExtensionFeature
   ): Promise<void> {
     const shouldBeEnabled = this.isEnabledInConfig(config);
     if (shouldBeEnabled && !this.isEnabled) {
-      this.logInfo(`Enabling ${this.constructor.name}`);
+      this.logInfo(`Enabling feature`);
       let enabled: boolean;
       try {
         enabled = await this.enable(this.context);
       } catch (e) {
-        this.logError(`Failed to enable ${this.constructor.name}: ${e}`);
+        this.logError(`Failed to enable feature: ${e}`);
         return;
       }
       if (!enabled) {
         void showUserMessage(
-          `Failed to enable ${this.constructor.name}`,
+          `Failed to enable ${this.featureName}`,
           vscode.LogLevel.Error,
           true,
         );
@@ -137,9 +140,9 @@ export abstract class BaseExtensionFeature
       }
       this.isEnabled = true;
     } else if (!shouldBeEnabled && this.isEnabled) {
-      this.logInfo(`Disabling ${this.constructor.name}`);
+      this.logInfo(`Disabling feature`);
       if (!this.disable()) {
-        this.logError(`Failed to disable ${this.constructor.name}`);
+        this.logError(`Failed to disable feature`);
         return;
       }
       this.isEnabled = false;

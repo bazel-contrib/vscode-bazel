@@ -35,11 +35,9 @@ describe("Bazel availability", () => {
       executable,
       vscode.ConfigurationTarget.Workspace,
     );
-    await configuration.update(
-      "workspacePath",
-      workspacePath,
-      vscode.ConfigurationTarget.Workspace,
-    );
+    await vscode.workspace
+      .getConfiguration("bazel.workspace")
+      .update("path", workspacePath, vscode.ConfigurationTarget.Workspace);
   }
 
   async function createExecutable(

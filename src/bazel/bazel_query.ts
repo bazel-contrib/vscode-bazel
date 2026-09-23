@@ -16,11 +16,14 @@ import { spawn } from "child_process";
 import * as crypto from "crypto";
 import * as os from "os";
 import * as path from "path";
-import * as vscode from "vscode";
 import { blaze_query } from "../protos";
 import { BazelCommand } from "./bazel_command";
 import { getBazelWorkspaceFolder } from "./bazel_utils";
 import { logDebug, logError } from "../extension/logger";
+import {
+  getQueriesShareServer,
+  getQueryOutputBase,
+} from "../extension/configuration";
 
 const protoOutputOptions = [
   "--proto:output_rule_attrs=''",
@@ -132,8 +135,7 @@ export class BazelQuery extends BazelCommand {
       abortSignal,
     }: { ignoresErrors?: boolean; abortSignal?: AbortSignal } = {},
   ): Promise<Buffer> {
-    const bazelConfig = vscode.workspace.getConfiguration("bazel");
-    const queriesShareServer = bazelConfig.get<boolean>("queriesShareServer");
+    const queriesShareServer = getQueriesShareServer();
     let additionalStartupOptions: string[] = [];
     if (!queriesShareServer) {
       // If not sharing the Bazel server, use a custom output_base.
@@ -152,10 +154,8 @@ export class BazelQuery extends BazelCommand {
         );
       }
       const hash = crypto.createHash("md5").update(ws).digest("hex");
-      const queryOutputBaseConfigValue =
-        bazelConfig.get<string>("queryOutputBase");
       const queryOutputBase = path.join(
-        queryOutputBaseConfigValue ?? os.tmpdir(),
+        getQueryOutputBase() ?? os.tmpdir(),
         hash,
       );
       additionalStartupOptions = additionalStartupOptions.concat([

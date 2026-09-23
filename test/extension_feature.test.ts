@@ -52,7 +52,7 @@ describe("BaseExtensionFeature", () => {
       const configStub = sandbox
         .stub(vscode.workspace, "getConfiguration")
         .returns({
-          get: sinon.stub().withArgs("bazel.enableTestFeature").returns(true),
+          get: sinon.stub().withArgs("bazel.testFeature.enable").returns(true),
         } as any);
       const setContextStub = sandbox.stub(vscode.commands, "executeCommand");
 
@@ -72,7 +72,7 @@ describe("BaseExtensionFeature", () => {
   describe("onConfigurationChanged", () => {
     it("enables when config is true and not enabled", async () => {
       const config = {
-        get: sinon.stub().withArgs("bazel.enableTestFeature").returns(true),
+        get: sinon.stub().withArgs("bazel.testFeature.enable").returns(true),
       } as any;
       const setContextStub = sandbox.stub(vscode.commands, "executeCommand");
 
@@ -91,14 +91,14 @@ describe("BaseExtensionFeature", () => {
     it("disables when config is false and enabled", async () => {
       // First enable
       const configTrue = {
-        get: sinon.stub().withArgs("bazel.enableTestFeature").returns(true),
+        get: sinon.stub().withArgs("bazel.testFeature.enable").returns(true),
       } as any;
       await (testFeature as any).onConfigurationChanged(configTrue);
       assert.strictEqual((testFeature as any).isEnabled, true);
 
       // Then disable
       const configFalse = {
-        get: sinon.stub().withArgs("bazel.enableTestFeature").returns(false),
+        get: sinon.stub().withArgs("bazel.testFeature.enable").returns(false),
       } as any;
       const setContextStub = sandbox.stub(vscode.commands, "executeCommand");
       await (testFeature as any).onConfigurationChanged(configFalse);
@@ -117,7 +117,7 @@ describe("BaseExtensionFeature", () => {
       const config = {
         get: sinon
           .stub()
-          .withArgs("bazel.enableFailingTestFeature")
+          .withArgs("bazel.failingTestFeature.enable")
           .returns(true),
       } as any;
       const showMessageStub = sandbox
@@ -138,7 +138,7 @@ describe("BaseExtensionFeature", () => {
     it("disposes all disposables", async () => {
       // Enable first
       const config = {
-        get: sinon.stub().withArgs("bazel.enableTestFeature").returns(true),
+        get: sinon.stub().withArgs("bazel.testFeature.enable").returns(true),
       } as any;
       await (testFeature as any).onConfigurationChanged(config);
       assert.ok((testFeature as any).disposables.length > 0);

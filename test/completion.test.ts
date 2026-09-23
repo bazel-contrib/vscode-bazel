@@ -22,8 +22,8 @@ describe("BazelCompletionItemProvider", () => {
   afterEach(async () => {
     sandbox.restore();
     await vscode.workspace
-      .getConfiguration("bazel")
-      .update("workspacePath", undefined, vscode.ConfigurationTarget.Workspace);
+      .getConfiguration("bazel.workspace")
+      .update("path", undefined, vscode.ConfigurationTarget.Workspace);
   });
 
   it("should return completion items filtered by workspace", async () => {
@@ -70,12 +70,8 @@ describe("BazelCompletionItemProvider", () => {
 
   it("uses the pinned root cache in a nested module", async () => {
     await vscode.workspace
-      .getConfiguration("bazel")
-      .update(
-        "workspacePath",
-        testWorkspacePath,
-        vscode.ConfigurationTarget.Workspace,
-      );
+      .getConfiguration("bazel.workspace")
+      .update("path", testWorkspacePath, vscode.ConfigurationTarget.Workspace);
 
     const nestedDocumentUri = vscode.Uri.file(
       path.join(testWorkspacePath, "nested_module", "BUILD"),

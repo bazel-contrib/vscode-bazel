@@ -3,7 +3,7 @@ import * as vscode from "vscode";
 import { BaseExtensionFeature } from "../extension/extension_feature";
 import {
   checkBazelIsAvailable,
-  checkBazelWorkspaceAvailable,
+  setBazelWorkspaceAvailableContext,
 } from "../bazel/bazel_availability";
 import { BazelWorkspaceTreeProvider } from "./workspace_tree_provider";
 import { Resources } from "../extension/resources";
@@ -43,6 +43,16 @@ export class WorkspaceTreeFeature extends BaseExtensionFeature {
     });
     this.disposables.push(treeView);
     this.workspaceTreeProvider.setTreeView(treeView);
+
+    // Re-initialize when the configured Bazel workspace path changes
+    this.disposables.push(
+      vscode.workspace.onDidChangeConfiguration((e) => {
+        if (e.affectsConfiguration("bazel.workspace.path")) {
+          setBazelWorkspaceAvailableContext();
+          this.workspaceTreeProvider?.refresh();
+        }
+      }),
+    );
 
     // Register command to manually refresh the tree view
     const refreshCommand = vscode.commands.registerCommand(

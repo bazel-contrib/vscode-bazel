@@ -25,7 +25,7 @@ export function checkBazelIsAvailable(): boolean {
 
   // Relative executable paths are evaluated from the directory where Bazel
   // commands run. Prefer each resolved Bazel root (including a root pinned by
-  // bazel.workspacePath), and retain the VS Code folder as a fallback when no
+  // bazel.workspace.path), and retain the VS Code folder as a fallback when no
   // Bazel workspace can be resolved.
   const pathExists = workspaceFolders.some((workspaceFolder) => {
     const workspaceFolderPath = workspaceFolder.uri.fsPath;

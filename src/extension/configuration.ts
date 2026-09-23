@@ -54,7 +54,10 @@ export function getBazelExecutablePath(): string {
 }
 
 export function getPathsToIgnore(): string[] {
-  return getConfigurationWithDefault<string[]>("bazel", "pathsToIgnore");
+  return getConfigurationWithDefault<string[]>(
+    "bazel.workspace",
+    "pathsToIgnore",
+  );
 }
 
 /**
@@ -66,8 +69,8 @@ export function getPathsToIgnore(): string[] {
  * @returns The manually specified workspace path, or an empty string if not set.
  */
 export function getWorkspacePath(scopeUri?: vscode.Uri): string {
-  const config = vscode.workspace.getConfiguration("bazel", scopeUri);
-  return (config.get<string>("workspacePath") || "").trim();
+  const config = vscode.workspace.getConfiguration("bazel.workspace", scopeUri);
+  return (config.get<string>("path") || "").trim();
 }
 
 export function getStartupOptions(): string[] {
@@ -92,6 +95,34 @@ export function getQueryExpression(): string {
 }
 
 /**
+ * Whether queries should share the same Bazel server as builds, as specified
+ * by the workspace configuration.
+ */
+export function getQueriesShareServer(): boolean {
+  // Not `getConfigurationWithDefault`: that returns the default whenever the
+  // value is falsey, which would make it impossible to set this to `false`.
+  return vscode.workspace
+    .getConfiguration("bazel.commandLine")
+    .get<boolean>("queriesShareServer", true);
+}
+
+/**
+ * Gets the output base directory to use for queries when they don't share a
+ * server with builds, as specified by the workspace configuration.
+ *
+ * Unlike most other settings, this one has no default value: an unset value
+ * means "let Bazel decide" (see `getQueriesShareServer`'s caller), so it
+ * can't go through `getConfigurationWithDefault`.
+ *
+ * @returns The configured output base directory, or `undefined` if unset.
+ */
+export function getQueryOutputBase(): string | undefined {
+  return vscode.workspace
+    .getConfiguration("bazel.commandLine")
+    .get<string>("queryOutputBase");
+}
+
+/**
  * Gets the path to the buildifier executable specified by the workspace
  * configuration.
  *
@@ -100,13 +131,16 @@ export function getQueryExpression(): string {
  */
 export function getBuildifierExecutablePath(): string {
   return getConfigurationWithDefault<string>(
-    "bazel",
-    "buildifierExecutable",
+    "bazel.buildifier",
+    "executable",
   ).trim();
 }
 
 export function getBuildifierFixOnFormat(): boolean {
-  return getConfigurationWithDefault<boolean>("bazel", "buildifierFixOnFormat");
+  return getConfigurationWithDefault<boolean>(
+    "bazel.buildifier",
+    "fixOnFormat",
+  );
 }
 
 /**
@@ -118,8 +152,8 @@ export function getBuildifierFixOnFormat(): boolean {
  */
 export function getBuildifierJsonConfigPath(): string {
   return getConfigurationWithDefault<string>(
-    "bazel",
-    "buildifierConfigJsonPath",
+    "bazel.buildifier",
+    "configJsonPath",
   ).trim();
 }
 
