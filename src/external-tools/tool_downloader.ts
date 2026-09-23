@@ -31,11 +31,11 @@ import {
  * @param logger Logger instance for dependency injection.
  * @throws Security violation error with detailed context
  */
-export async function _verifyBinaryIntegrity(
+function verifyBinaryIntegrity(
   asset: GitHubAsset,
   filePath: string,
   logger: ILogger,
-): Promise<void> {
+): void {
   const fileBuffer = await fs.readFile(filePath);
   const actualChecksum = crypto
     .createHash("sha256")
@@ -111,7 +111,7 @@ export async function downloadAndVerify(
     logger.logDebug(
       `Downloaded ${asset.name} to ${destination}, starting verification`,
     );
-    await _verifyBinaryIntegrity(asset, destination, logger);
+    verifyBinaryIntegrity(asset, destination, logger);
     logger.logInfo(`Successfully downloaded and verified ${asset.name}`);
   } catch (error) {
     // Clean up partial file on download error

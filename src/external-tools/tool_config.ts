@@ -103,23 +103,6 @@ export function loadToolsConfig(logger: ILogger): {
 }
 
 /**
- * Finds tool configuration by name or executable name.
- * @param toolNameOrKey The tool name or executable name to search for.
- * @returns Object containing the config and the config key, or null if not found.
- */
-export function findToolConfig(
-  toolNameOrKey: string,
-  toolsConfig: ToolsConfig,
-): { config: any; configKey: string } {
-  for (const [key, value] of Object.entries(toolsConfig)) {
-    if (value.executableName === toolNameOrKey || key === toolNameOrKey) {
-      return { config: value, configKey: key };
-    }
-  }
-  throw new Error(`Unknown tool: ${toolNameOrKey}`);
-}
-
-/**
  * Detects the current platform and architecture.
  * @param logger Logger instance for dependency injection.
  * @returns The detected platform string value.
