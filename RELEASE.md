@@ -22,6 +22,59 @@ Having this standalone package available before uploading the release to the Mar
 
 - Verify that everything works as intended in a deployment environment rather than a development environment. (For example, you can check that you haven't [accidentally listed dependencies you need at runtime as `devDependencies`](https://github.com/bazelbuild/vscode-bazel/issues/14).)
 
+### Manual Test Plan
+
+Install the packaged extension and run through the following checks to
+catch regressions before publishing.
+
+**Security**
+
+- No open security warnings/findings
+- No warnings from socket.dev during `npm install`
+- No open dependabot/renovate PRs
+
+**Workspace Tree**
+
+- Displays tree correctly
+- Keeps selected subtree in sync with the editor when visible
+- Skips syncing when not visible (check debug output in the output pane)
+- Jump to target is possible from the tree
+- Right-clicking for building/testing works
+- Enable/Disable from settings works interactively
+
+**Code Navigation**
+
+- Copy label works
+- Go to label works
+- External LSP (e.g. starpls)
+  - Ctrl+click works in build files
+  - Jump to source files works
+  - Jump to external modules works
+  - Hover over function calls shows a tooltip
+  - With `bazel.workspace.path` set to a subdirectory: the language
+    server resolves labels correctly relative to that subdirectory
+    (not the VS Code workspace root)
+- Built-in (non-LSP): Ctrl+click on labels of the same repo works
+
+**CodeLens**
+
+- Enable/Disable works interactively
+- Copy/Build/Test works as expected
+
+**Buildifier**
+
+- Enable/Disable works interactively
+- Wrong load statements produce squiggly lines
+
+**Bazel Configuration**
+
+- Setting `bazel` to a wrong executable shows an error notification
+  with a link to the output pane
+- Setting `bazel.workspace.path` to a subdirectory pins all queries
+  to that workspace
+- Setting command args influences the build invocation
+- Setting the query expression affects the workspace tree
+
 Once you're confident that the release works, deploy it using the steps below.
 
 ## Deploy the Release

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as path from "path";
 import * as lc from "vscode-languageclient/node";
 import * as vscode from "vscode";
 import { logError } from "../extension/logger";
@@ -19,6 +20,7 @@ import {
   getLspServerArgs,
   getLspServerEnv,
   getLspServerExecutablePath,
+  getWorkspacePath,
 } from "../extension/configuration";
 
 // Singleton output channel for LSP to prevent duplication
@@ -55,6 +57,28 @@ export async function startLspClientFromCurrentConfig(
   }
 }
 
+/**
+ * Resolves the Bazel workspace path to use for LSP initialization.
+ *
+ * Returns the absolute path when `bazel.workspace.path` is configured,
+ * resolving relative paths against the first VS Code workspace folder.
+ * Returns undefined when the setting is not configured (default behavior).
+ */
+export function getEffectiveLspWorkspacePath(): string | undefined {
+  const configuredPath = getWorkspacePath();
+  if (!configuredPath) {
+    return undefined;
+  }
+  if (path.isAbsolute(configuredPath)) {
+    return configuredPath;
+  }
+  const folders = vscode.workspace.workspaceFolders;
+  if (folders && folders.length > 0) {
+    return path.join(folders[0].uri.fsPath, configuredPath);
+  }
+  return undefined;
+}
+
 async function _createLspClient(): Promise<lc.LanguageClient> {
   const lspServerExecutable = getLspServerExecutablePath();
   if (!lspServerExecutable) {
@@ -63,11 +87,13 @@ async function _createLspClient(): Promise<lc.LanguageClient> {
 
   const args = getLspServerArgs();
   const env = getLspServerEnv();
+  const workspacePath = getEffectiveLspWorkspacePath();
 
   const lspServer: lc.Executable = {
     args,
     command: lspServerExecutable,
     options: {
+      cwd: workspacePath,
       env: { ...process.env, ...env },
     },
   };
@@ -79,7 +105,14 @@ async function _createLspClient(): Promise<lc.LanguageClient> {
 
   const clientOptions: lc.LanguageClientOptions = {
     documentSelector: [{ scheme: "file", language: "starlark" }],
-    outputChannel: getLspOutputChannel(), // Set shared output channel
+    workspaceFolder: workspacePath
+      ? {
+          uri: vscode.Uri.file(workspacePath),
+          name: path.basename(workspacePath),
+          index: 0,
+        }
+      : undefined,
+    outputChannel: getLspOutputChannel(),
   };
 
   const client = new lc.LanguageClient(
