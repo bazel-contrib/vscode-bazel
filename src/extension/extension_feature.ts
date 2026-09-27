@@ -81,7 +81,7 @@ export abstract class BaseExtensionFeature
     // Register configuration change listener
     this.configCallback = vscode.workspace.onDidChangeConfiguration((e) => {
       if (affectsRenamedSetting(e, this.configKey)) {
-        void this.onConfigurationChanged(vscode.workspace.getConfiguration());
+        void this.onConfigurationChanged();
       }
     });
   }
@@ -96,7 +96,7 @@ export abstract class BaseExtensionFeature
   ): Promise<T> {
     const instance = new this(context);
     // Enable/Disable feature based on current configuration
-    await instance.onConfigurationChanged(vscode.workspace.getConfiguration());
+    await instance.onConfigurationChanged();
     return instance;
   }
 
@@ -105,22 +105,17 @@ export abstract class BaseExtensionFeature
    * Calls enable or disable as required by config change.
    * Keeps the context key in sync with the feature state.
    * Logs erros in case of a activation failure.
-   * @param config The new configuration for the feature.
    */
-  private onConfigurationChanged(
-    config: vscode.WorkspaceConfiguration,
-  ): Promise<void> {
+  private onConfigurationChanged(): Promise<void> {
     const next = this.pendingConfigChange.then(() =>
-      this.doConfigurationChange(config),
+      this.doConfigurationChange(),
     );
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     this.pendingConfigChange = next.catch(() => {});
     return next;
   }
 
-  private async doConfigurationChange(
-    config: vscode.WorkspaceConfiguration,
-  ): Promise<void> {
+  private async doConfigurationChange(): Promise<void> {
     const shouldBeEnabled = this.isEnabledInConfig();
     if (shouldBeEnabled && !this.isEnabled) {
       this.logInfo(`Enabling feature`);
@@ -157,7 +152,6 @@ export abstract class BaseExtensionFeature
 
   /**
    * Returns true if the feature is enabled in the current configuration
-   * @param config The configuration to check
    */
   private isEnabledInConfig(): boolean {
     const lastDot = this.configKey.lastIndexOf(".");
