@@ -7,6 +7,7 @@ import {
   ILogger,
   logDebug,
 } from "./logger";
+import { affectsRenamedSetting, getRenamedSetting } from "./settings_migration";
 
 /**
  * Represents a feature of the Bazel extension.
@@ -79,7 +80,7 @@ export abstract class BaseExtensionFeature
 
     // Register configuration change listener
     this.configCallback = vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration(this.configKey)) {
+      if (affectsRenamedSetting(e, this.configKey)) {
         void this.onConfigurationChanged(vscode.workspace.getConfiguration());
       }
     });
@@ -120,7 +121,7 @@ export abstract class BaseExtensionFeature
   private async doConfigurationChange(
     config: vscode.WorkspaceConfiguration,
   ): Promise<void> {
-    const shouldBeEnabled = this.isEnabledInConfig(config);
+    const shouldBeEnabled = this.isEnabledInConfig();
     if (shouldBeEnabled && !this.isEnabled) {
       this.logInfo(`Enabling feature`);
       let enabled: boolean;
@@ -158,8 +159,14 @@ export abstract class BaseExtensionFeature
    * Returns true if the feature is enabled in the current configuration
    * @param config The configuration to check
    */
-  private isEnabledInConfig(config: vscode.WorkspaceConfiguration): boolean {
-    return config.get<boolean>(this.configKey) ?? false;
+  private isEnabledInConfig(): boolean {
+    const lastDot = this.configKey.lastIndexOf(".");
+    return (
+      getRenamedSetting<boolean>(
+        this.configKey.slice(0, lastDot),
+        this.configKey.slice(lastDot + 1),
+      ) ?? false
+    );
   }
 
   /**
