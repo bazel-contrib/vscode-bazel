@@ -1,5 +1,13 @@
 # Change Log
 
+## [0.15.1](https://github.com/bazel-contrib/vscode-bazel/compare/v0.15.0...v0.15.1) (2026-09-28)
+
+
+### Bug Fixes
+
+* **lsp:** propagate bazel.workspace.path to external LSP client root URI ([#705](https://github.com/bazel-contrib/vscode-bazel/issues/705)) ([f1d29c8](https://github.com/bazel-contrib/vscode-bazel/commit/f1d29c8b2c6da159c44e6a6e9d2c6ed71344c61a))
+* stop rewriting settings.json for renamed settings ([#707](https://github.com/bazel-contrib/vscode-bazel/issues/707)) ([d70e199](https://github.com/bazel-contrib/vscode-bazel/commit/d70e199c5e0ebee88b5bfd27e3b9ddd0bdf1de4e)), closes [#706](https://github.com/bazel-contrib/vscode-bazel/issues/706)
+
 ## [0.15.0](https://github.com/bazel-contrib/vscode-bazel/compare/v0.14.0...v0.15.0) (2026-09-23)
 
 
