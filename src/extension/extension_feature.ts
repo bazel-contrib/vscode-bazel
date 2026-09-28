@@ -7,6 +7,7 @@ import {
   ILogger,
   logDebug,
 } from "./logger";
+import { affectsRenamedSetting, getRenamedSetting } from "./settings_migration";
 
 /**
  * Represents a feature of the Bazel extension.
@@ -79,8 +80,8 @@ export abstract class BaseExtensionFeature
 
     // Register configuration change listener
     this.configCallback = vscode.workspace.onDidChangeConfiguration((e) => {
-      if (e.affectsConfiguration(this.configKey)) {
-        void this.onConfigurationChanged(vscode.workspace.getConfiguration());
+      if (affectsRenamedSetting(e, this.configKey)) {
+        void this.onConfigurationChanged();
       }
     });
   }
@@ -95,7 +96,7 @@ export abstract class BaseExtensionFeature
   ): Promise<T> {
     const instance = new this(context);
     // Enable/Disable feature based on current configuration
-    await instance.onConfigurationChanged(vscode.workspace.getConfiguration());
+    await instance.onConfigurationChanged();
     return instance;
   }
 
@@ -104,23 +105,18 @@ export abstract class BaseExtensionFeature
    * Calls enable or disable as required by config change.
    * Keeps the context key in sync with the feature state.
    * Logs erros in case of a activation failure.
-   * @param config The new configuration for the feature.
    */
-  private onConfigurationChanged(
-    config: vscode.WorkspaceConfiguration,
-  ): Promise<void> {
+  private onConfigurationChanged(): Promise<void> {
     const next = this.pendingConfigChange.then(() =>
-      this.doConfigurationChange(config),
+      this.doConfigurationChange(),
     );
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     this.pendingConfigChange = next.catch(() => {});
     return next;
   }
 
-  private async doConfigurationChange(
-    config: vscode.WorkspaceConfiguration,
-  ): Promise<void> {
-    const shouldBeEnabled = this.isEnabledInConfig(config);
+  private async doConfigurationChange(): Promise<void> {
+    const shouldBeEnabled = this.isEnabledInConfig();
     if (shouldBeEnabled && !this.isEnabled) {
       this.logInfo(`Enabling feature`);
       let enabled: boolean;
@@ -156,10 +152,15 @@ export abstract class BaseExtensionFeature
 
   /**
    * Returns true if the feature is enabled in the current configuration
-   * @param config The configuration to check
    */
-  private isEnabledInConfig(config: vscode.WorkspaceConfiguration): boolean {
-    return config.get<boolean>(this.configKey) ?? false;
+  private isEnabledInConfig(): boolean {
+    const lastDot = this.configKey.lastIndexOf(".");
+    return (
+      getRenamedSetting<boolean>(
+        this.configKey.slice(0, lastDot),
+        this.configKey.slice(lastDot + 1),
+      ) ?? false
+    );
   }
 
   /**

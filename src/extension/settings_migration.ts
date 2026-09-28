@@ -1,24 +1,19 @@
 import * as vscode from "vscode";
-import { logInfo, showInfoMessage } from "./logger";
+import { logInfo } from "./logger";
 
 interface RenamedSetting {
   oldSection: string;
   oldName: string;
   newSection: string;
   newName: string;
-  /**
-   * Whether the setting has `resource` scope, i.e. may also be set per
-   * workspace folder in a multi-root workspace.
-   */
-  resourceScoped?: boolean;
 }
 
 /**
  * Settings renamed while clustering each feature's configuration under its
- * own `bazel.<featureName>.*` section (see #490). Each entry is migrated
- * automatically on activation - see `migrateRenamedSettings` - so this list
- * only ever needs to grow: migrating an already-migrated (now unset) old key
- * is a no-op.
+ * own `bazel.<featureName>.*` section (see #490). The old names stay supported
+ * as read-only aliases (see `getRenamedSetting`) so a checked-in
+ * `.vscode/settings.json` keeps working across extension versions without the
+ * extension ever rewriting it (#706).
  */
 const RENAMED_SETTINGS: readonly RenamedSetting[] = [
   {
@@ -26,7 +21,6 @@ const RENAMED_SETTINGS: readonly RenamedSetting[] = [
     oldName: "workspacePath",
     newSection: "bazel.workspace",
     newName: "path",
-    resourceScoped: true,
   },
   {
     oldSection: "bazel",
@@ -96,97 +90,79 @@ const RENAMED_SETTINGS: readonly RenamedSetting[] = [
   },
 ];
 
+const RENAMED_BY_NEW_KEY: ReadonlyMap<string, RenamedSetting> = new Map(
+  RENAMED_SETTINGS.map((s) => [`${s.newSection}.${s.newName}`, s]),
+);
+
 /**
- * Copies any explicitly-set value at a renamed setting's old location over to
- * its new location, then clears the old one - for both User and Workspace
- * scope.
+ * Reads a setting by its new name, falling back to its pre-#490 name.
  *
- * Workspace-folder values are migrated only for `resourceScoped` settings
- * (e.g. `workspace.path`, which is documented as configurable per folder). For
- * other settings, folder-scoped overrides are rare and not migrated: a user
- * relying on one will see a one-time "unknown configuration setting" warning
- * from VS Code and can move the value to the new key by hand.
+ * Mirrors VS Code's own precedence (folder > workspace > user > default), and
+ * at each scope a value under the new name wins over one under the old name.
+ * That makes "set both keys" a valid way to support old and new extension
+ * versions from one checked-in settings.json.
  *
- * @returns Whether a value was migrated at either scope.
+ * Never writes to any settings file.
  */
-async function migrateOne(setting: RenamedSetting): Promise<boolean> {
-  const oldConfig = vscode.workspace.getConfiguration(setting.oldSection);
-  const inspected = oldConfig.inspect(setting.oldName);
-  if (!inspected) {
-    return false;
+export function getRenamedSetting<T>(
+  section: string,
+  name: string,
+  scope?: vscode.ConfigurationScope,
+): T | undefined {
+  const config = vscode.workspace.getConfiguration(section, scope);
+  const legacy = RENAMED_BY_NEW_KEY.get(`${section}.${name}`);
+  if (!legacy) {
+    return config.get<T>(name);
   }
-
-  const newConfig = vscode.workspace.getConfiguration(setting.newSection);
-  const valuesByTarget: [vscode.ConfigurationTarget, unknown][] = [
-    [vscode.ConfigurationTarget.Global, inspected.globalValue],
-    [vscode.ConfigurationTarget.Workspace, inspected.workspaceValue],
-  ];
-
-  let migratedAny = false;
-  for (const [target, value] of valuesByTarget) {
-    if (value === undefined) {
-      continue;
-    }
-    await newConfig.update(setting.newName, value, target);
-    await oldConfig.update(setting.oldName, undefined, target);
-    migratedAny = true;
-  }
-
-  if (setting.resourceScoped) {
-    for (const folder of vscode.workspace.workspaceFolders ?? []) {
-      const folderOld = vscode.workspace.getConfiguration(
-        setting.oldSection,
-        folder.uri,
-      );
-      const value = folderOld.inspect(setting.oldName)?.workspaceFolderValue;
-      if (value === undefined) {
-        continue;
-      }
-      await vscode.workspace
-        .getConfiguration(setting.newSection, folder.uri)
-        .update(
-          setting.newName,
-          value,
-          vscode.ConfigurationTarget.WorkspaceFolder,
-        );
-      await folderOld.update(
-        setting.oldName,
-        undefined,
-        vscode.ConfigurationTarget.WorkspaceFolder,
-      );
-      migratedAny = true;
-    }
-  }
-  return migratedAny;
+  const current = config.inspect<T>(name);
+  const old = vscode.workspace
+    .getConfiguration(legacy.oldSection, scope)
+    .inspect<T>(legacy.oldName);
+  return (
+    current?.workspaceFolderValue ??
+    old?.workspaceFolderValue ??
+    current?.workspaceValue ??
+    old?.workspaceValue ??
+    current?.globalValue ??
+    old?.globalValue ??
+    current?.defaultValue
+  );
 }
 
 /**
- * Migrates every setting renamed during the #490 settings clustering pass.
- *
- * Must run before any `BaseExtensionFeature` reads its configuration, i.e.
- * at the very start of `activate()` - features only ever look at the new
- * setting names, so a value left behind at the old name would otherwise
- * silently stop applying.
- *
- * @returns The `old -> new` setting keys that had a value migrated, for
- * logging/testing purposes.
+ * `ConfigurationChangeEvent.affectsConfiguration`, also matching the old name
+ * of a renamed setting.
  */
-export async function migrateRenamedSettings(): Promise<string[]> {
-  const migrated: string[] = [];
-  for (const setting of RENAMED_SETTINGS) {
-    if (await migrateOne(setting)) {
-      migrated.push(
-        `${setting.oldSection}.${setting.oldName} -> ${setting.newSection}.${setting.newName}`,
-      );
-    }
-  }
+export function affectsRenamedSetting(
+  event: vscode.ConfigurationChangeEvent,
+  key: string,
+): boolean {
+  const legacy = RENAMED_BY_NEW_KEY.get(key);
+  return (
+    event.affectsConfiguration(key) ||
+    (legacy !== undefined &&
+      event.affectsConfiguration(`${legacy.oldSection}.${legacy.oldName}`))
+  );
+}
 
-  if (migrated.length > 0) {
-    logInfo(`Migrated renamed settings:\n  ${migrated.join("\n  ")}`);
-    void showInfoMessage(
-      `Bazel: ${migrated.length} setting(s) were renamed and have been migrated to their new names automatically. See the "Bazel" output channel for details.`,
+/**
+ * Logs (but does not rewrite) any explicitly set old setting names, so users
+ * learn about the rename without their working tree being modified.
+ */
+export function logDeprecatedSettingsInUse(): void {
+  const inUse = RENAMED_SETTINGS.filter((s) => {
+    const i = vscode.workspace
+      .getConfiguration(s.oldSection)
+      .inspect(s.oldName);
+    return (
+      i?.globalValue !== undefined ||
+      i?.workspaceValue !== undefined ||
+      i?.workspaceFolderValue !== undefined
+    );
+  }).map((s) => `${s.oldSection}.${s.oldName} -> ${s.newSection}.${s.newName}`);
+  if (inUse.length > 0) {
+    logInfo(
+      `Deprecated setting names in use (still honored, but consider switching to the new names):\n  ${inUse.join("\n  ")}`,
     );
   }
-
-  return migrated;
 }

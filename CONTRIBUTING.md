@@ -82,20 +82,19 @@ directly under `bazel.*`.
 Renaming or moving an existing setting is a breaking change for anyone who
 has it set: add the rename to `RENAMED_SETTINGS` in
 [`src/extension/settings_migration.ts`](src/extension/settings_migration.ts)
-so `migrateRenamedSettings()` (run once at the start of `activate()`, before
-any feature reads its config) copies a user's existing value to the new key
-and clears the old one automatically, and mention the rename in your PR
-description/commit message.
+so the old key keeps being honored as a read-only alias (read the setting via
+`getRenamedSetting()` and listen for changes via `affectsRenamedSetting()`),
+and mention the rename in your PR description/commit message. The extension
+never rewrites a user's settings files, since `.vscode/settings.json` is often
+checked in and shared across extension versions.
 
 Also keep the old key registered in `package.json`, with a
 `markdownDeprecationMessage`/`deprecationMessage` pointing at its
 replacement (see the deprecated block at the end of `contributes.configuration.properties`)
-instead of deleting it outright: `vscode.workspace.getConfiguration().update()`
-refuses to clear a setting that isn't registered, so removing the old key
-entirely would leave `migrateRenamedSettings()` unable to clean it up for
-anyone who still has it set. Once a rename has had a release or two to reach
-users, its deprecated entry and matching `RENAMED_SETTINGS` entry can be
-deleted together.
+instead of deleting it outright, so VS Code does not flag it as an unknown
+setting. Once a rename has had a release or two to reach users, its
+deprecated entry and matching `RENAMED_SETTINGS` entry can be deleted
+together.
 
 ## Testing
 
