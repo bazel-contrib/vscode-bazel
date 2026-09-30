@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import * as vscode from "vscode";
+import { getRenamedSetting } from "./settings_migration";
 
 /**
  * Gets a configuration value, returning the default set in the package.json if
@@ -27,7 +28,7 @@ export function getConfigurationWithDefault<T>(
 ): T {
   const config = vscode.workspace.getConfiguration(section);
 
-  const value = config.get<T>(name);
+  const value = getRenamedSetting<T>(section, name);
 
   if (!value) {
     const info = config.inspect<T>(name);
@@ -69,8 +70,9 @@ export function getPathsToIgnore(): string[] {
  * @returns The manually specified workspace path, or an empty string if not set.
  */
 export function getWorkspacePath(scopeUri?: vscode.Uri): string {
-  const config = vscode.workspace.getConfiguration("bazel.workspace", scopeUri);
-  return (config.get<string>("path") || "").trim();
+  return (
+    getRenamedSetting<string>("bazel.workspace", "path", scopeUri) || ""
+  ).trim();
 }
 
 export function getStartupOptions(): string[] {
@@ -101,9 +103,10 @@ export function getQueryExpression(): string {
 export function getQueriesShareServer(): boolean {
   // Not `getConfigurationWithDefault`: that returns the default whenever the
   // value is falsey, which would make it impossible to set this to `false`.
-  return vscode.workspace
-    .getConfiguration("bazel.commandLine")
-    .get<boolean>("queriesShareServer", true);
+  return (
+    getRenamedSetting<boolean>("bazel.commandLine", "queriesShareServer") ??
+    true
+  );
 }
 
 /**
@@ -117,9 +120,7 @@ export function getQueriesShareServer(): boolean {
  * @returns The configured output base directory, or `undefined` if unset.
  */
 export function getQueryOutputBase(): string | undefined {
-  return vscode.workspace
-    .getConfiguration("bazel.commandLine")
-    .get<string>("queryOutputBase");
+  return getRenamedSetting<string>("bazel.commandLine", "queryOutputBase");
 }
 
 /**

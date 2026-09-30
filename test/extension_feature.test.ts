@@ -47,13 +47,32 @@ describe("BaseExtensionFeature", () => {
     sandbox.restore();
   });
 
+  /**
+   * Stubs `vscode.workspace.getConfiguration` so that `<section>.enable`
+   * reads as `enabled`. Returns a setter to change the value later on.
+   */
+  function stubEnableSetting(
+    section: string,
+    enabled: boolean,
+  ): { stub: sinon.SinonStub; set: (value: boolean) => void } {
+    let value = enabled;
+    const stub = sandbox
+      .stub(vscode.workspace, "getConfiguration")
+      .withArgs(section)
+      .returns({
+        get: (name: string) => (name === "enable" ? value : undefined),
+      } as any);
+    return {
+      stub,
+      set: (v) => {
+        value = v;
+      },
+    };
+  }
+
   describe("create", () => {
     it("creates and initializes the feature", async () => {
-      const configStub = sandbox
-        .stub(vscode.workspace, "getConfiguration")
-        .returns({
-          get: sinon.stub().withArgs("bazel.testFeature.enable").returns(true),
-        } as any);
+      const { stub: configStub } = stubEnableSetting("bazel.testFeature", true);
       const setContextStub = sandbox.stub(vscode.commands, "executeCommand");
 
       const feature = await TestExtensionFeature.create(mockContext);
@@ -71,12 +90,10 @@ describe("BaseExtensionFeature", () => {
 
   describe("onConfigurationChanged", () => {
     it("enables when config is true and not enabled", async () => {
-      const config = {
-        get: sinon.stub().withArgs("bazel.testFeature.enable").returns(true),
-      } as any;
+      stubEnableSetting("bazel.testFeature", true);
       const setContextStub = sandbox.stub(vscode.commands, "executeCommand");
 
-      await (testFeature as any).onConfigurationChanged(config);
+      await (testFeature as any).onConfigurationChanged();
 
       assert.strictEqual((testFeature as any).isEnabled, true);
       assert.ok((testFeature as any).disposables.length > 0);
@@ -90,18 +107,14 @@ describe("BaseExtensionFeature", () => {
 
     it("disables when config is false and enabled", async () => {
       // First enable
-      const configTrue = {
-        get: sinon.stub().withArgs("bazel.testFeature.enable").returns(true),
-      } as any;
-      await (testFeature as any).onConfigurationChanged(configTrue);
+      const setting = stubEnableSetting("bazel.testFeature", true);
+      await (testFeature as any).onConfigurationChanged();
       assert.strictEqual((testFeature as any).isEnabled, true);
 
       // Then disable
-      const configFalse = {
-        get: sinon.stub().withArgs("bazel.testFeature.enable").returns(false),
-      } as any;
+      setting.set(false);
       const setContextStub = sandbox.stub(vscode.commands, "executeCommand");
-      await (testFeature as any).onConfigurationChanged(configFalse);
+      await (testFeature as any).onConfigurationChanged();
 
       assert.strictEqual((testFeature as any).isEnabled, false);
       assert.strictEqual((testFeature as any).disposables.length, 0);
@@ -114,17 +127,12 @@ describe("BaseExtensionFeature", () => {
     });
 
     it("does not enable if enable returns false", async () => {
-      const config = {
-        get: sinon
-          .stub()
-          .withArgs("bazel.failingTestFeature.enable")
-          .returns(true),
-      } as any;
+      stubEnableSetting("bazel.failingTestFeature", true);
       const showMessageStub = sandbox
         .stub(vscode.window, "showErrorMessage")
         .resolves();
 
-      await (failingFeature as any).onConfigurationChanged(config);
+      await (failingFeature as any).onConfigurationChanged();
 
       assert.strictEqual((failingFeature as any).isEnabled, false);
       sinon.assert.calledWith(
@@ -137,10 +145,8 @@ describe("BaseExtensionFeature", () => {
   describe("disable", () => {
     it("disposes all disposables", async () => {
       // Enable first
-      const config = {
-        get: sinon.stub().withArgs("bazel.testFeature.enable").returns(true),
-      } as any;
-      await (testFeature as any).onConfigurationChanged(config);
+      stubEnableSetting("bazel.testFeature", true);
+      await (testFeature as any).onConfigurationChanged();
       assert.ok((testFeature as any).disposables.length > 0);
 
       const disposeSpy = sandbox.spy(

@@ -2,7 +2,7 @@
     "name": "vscode-bazel",
     "displayName": "Bazel",
     "description": "Bazel BUILD integration",
-    "version": "0.15.0",
+    "version": "0.15.1",
     "publisher": "BazelBuild",
     "license": "Apache-2.0",
     "repository": {
@@ -305,70 +305,70 @@
                     "bazel.enableCodeLens": {
                         "type": "boolean",
                         "default": true,
-                        "markdownDeprecationMessage": "Renamed to `bazel.codeLens.enable`. Any value set here is migrated automatically; this key can be removed once migrated.",
+                        "markdownDeprecationMessage": "Renamed to `bazel.codeLens.enable`. Still honored when the new setting is not set in the same scope, so it can be kept alongside the new name for older extension versions.",
                         "deprecationMessage": "Renamed to bazel.codeLens.enable."
                     },
                     "bazel.enableWorkspaceTree": {
                         "type": "boolean",
                         "default": true,
-                        "markdownDeprecationMessage": "Renamed to `bazel.workspaceTree.enable`. Any value set here is migrated automatically; this key can be removed once migrated.",
+                        "markdownDeprecationMessage": "Renamed to `bazel.workspaceTree.enable`. Still honored when the new setting is not set in the same scope, so it can be kept alongside the new name for older extension versions.",
                         "deprecationMessage": "Renamed to bazel.workspaceTree.enable."
                     },
                     "bazel.enableBuildifier": {
                         "type": "boolean",
                         "default": true,
-                        "markdownDeprecationMessage": "Renamed to `bazel.buildifier.enable`. Any value set here is migrated automatically; this key can be removed once migrated.",
+                        "markdownDeprecationMessage": "Renamed to `bazel.buildifier.enable`. Still honored when the new setting is not set in the same scope, so it can be kept alongside the new name for older extension versions.",
                         "deprecationMessage": "Renamed to bazel.buildifier.enable."
                     },
                     "bazel.enableTestExplorer": {
                         "type": "boolean",
                         "default": true,
-                        "markdownDeprecationMessage": "Renamed to `bazel.testExplorer.enable`. Any value set here is migrated automatically; this key can be removed once migrated.",
+                        "markdownDeprecationMessage": "Renamed to `bazel.testExplorer.enable`. Still honored when the new setting is not set in the same scope, so it can be kept alongside the new name for older extension versions.",
                         "deprecationMessage": "Renamed to bazel.testExplorer.enable."
                     },
                     "bazel.enableLanguageSupport": {
                         "type": "boolean",
                         "default": true,
-                        "markdownDeprecationMessage": "Renamed to `bazel.languageSupport.enable`. Any value set here is migrated automatically; this key can be removed once migrated.",
+                        "markdownDeprecationMessage": "Renamed to `bazel.languageSupport.enable`. Still honored when the new setting is not set in the same scope, so it can be kept alongside the new name for older extension versions.",
                         "deprecationMessage": "Renamed to bazel.languageSupport.enable."
                     },
                     "bazel.buildifierExecutable": {
                         "type": "string",
                         "default": "buildifier",
                         "scope": "machine-overridable",
-                        "markdownDeprecationMessage": "Renamed to `bazel.buildifier.executable`. Any value set here is migrated automatically; this key can be removed once migrated.",
+                        "markdownDeprecationMessage": "Renamed to `bazel.buildifier.executable`. Still honored when the new setting is not set in the same scope, so it can be kept alongside the new name for older extension versions.",
                         "deprecationMessage": "Renamed to bazel.buildifier.executable."
                     },
                     "bazel.buildifierConfigJsonPath": {
                         "type": "string",
                         "default": "",
                         "scope": "machine-overridable",
-                        "markdownDeprecationMessage": "Renamed to `bazel.buildifier.configJsonPath`. Any value set here is migrated automatically; this key can be removed once migrated.",
+                        "markdownDeprecationMessage": "Renamed to `bazel.buildifier.configJsonPath`. Still honored when the new setting is not set in the same scope, so it can be kept alongside the new name for older extension versions.",
                         "deprecationMessage": "Renamed to bazel.buildifier.configJsonPath."
                     },
                     "bazel.buildifierFixOnFormat": {
                         "type": "boolean",
                         "default": false,
-                        "markdownDeprecationMessage": "Renamed to `bazel.buildifier.fixOnFormat`. Any value set here is migrated automatically; this key can be removed once migrated.",
+                        "markdownDeprecationMessage": "Renamed to `bazel.buildifier.fixOnFormat`. Still honored when the new setting is not set in the same scope, so it can be kept alongside the new name for older extension versions.",
                         "deprecationMessage": "Renamed to bazel.buildifier.fixOnFormat."
                     },
                     "bazel.queriesShareServer": {
                         "type": "boolean",
                         "default": true,
-                        "markdownDeprecationMessage": "Renamed to `bazel.commandLine.queriesShareServer`. Any value set here is migrated automatically; this key can be removed once migrated.",
+                        "markdownDeprecationMessage": "Renamed to `bazel.commandLine.queriesShareServer`. Still honored when the new setting is not set in the same scope, so it can be kept alongside the new name for older extension versions.",
                         "deprecationMessage": "Renamed to bazel.commandLine.queriesShareServer."
                     },
                     "bazel.queryOutputBase": {
                         "type": "string",
                         "default": null,
-                        "markdownDeprecationMessage": "Renamed to `bazel.commandLine.queryOutputBase`. Any value set here is migrated automatically; this key can be removed once migrated.",
+                        "markdownDeprecationMessage": "Renamed to `bazel.commandLine.queryOutputBase`. Still honored when the new setting is not set in the same scope, so it can be kept alongside the new name for older extension versions.",
                         "deprecationMessage": "Renamed to bazel.commandLine.queryOutputBase."
                     },
                     "bazel.workspacePath": {
                         "type": "string",
                         "default": "",
                         "scope": "resource",
-                        "markdownDeprecationMessage": "Renamed to `bazel.workspace.path`. Any value set here is migrated automatically; this key can be removed once migrated.",
+                        "markdownDeprecationMessage": "Renamed to `bazel.workspace.path`. Still honored when the new setting is not set in the same scope, so it can be kept alongside the new name for older extension versions.",
                         "deprecationMessage": "Renamed to bazel.workspace.path."
                     },
                     "bazel.pathsToIgnore": {
@@ -377,7 +377,7 @@
                             "type": "string"
                         },
                         "default": [],
-                        "markdownDeprecationMessage": "Renamed to `bazel.workspace.pathsToIgnore`. Any value set here is migrated automatically; this key can be removed once migrated.",
+                        "markdownDeprecationMessage": "Renamed to `bazel.workspace.pathsToIgnore`. Still honored when the new setting is not set in the same scope, so it can be kept alongside the new name for older extension versions.",
                         "deprecationMessage": "Renamed to bazel.workspace.pathsToIgnore."
                     }
                 }

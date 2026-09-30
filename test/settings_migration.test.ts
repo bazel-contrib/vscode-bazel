@@ -1,109 +1,48 @@
 import * as vscode from "vscode";
 import * as assert from "assert";
-import { migrateRenamedSettings } from "../src/extension/settings_migration";
+import { getRenamedSetting } from "../src/extension/settings_migration";
 
-describe("migrateRenamedSettings", () => {
+describe("getRenamedSetting", () => {
+  const G = vscode.ConfigurationTarget.Global;
+  const W = vscode.ConfigurationTarget.Workspace;
+  const bazel = () => vscode.workspace.getConfiguration("bazel");
+  const buildifier = () =>
+    vscode.workspace.getConfiguration("bazel.buildifier");
+
   afterEach(async () => {
-    // Best-effort cleanup of every key this suite might have touched, at
-    // both scopes, so a failing assertion can't leak config into other
-    // test files.
-    const resets: [string, string][] = [
-      ["bazel", "enableBuildifier"],
-      ["bazel.buildifier", "enable"],
-      ["bazel", "buildifierExecutable"],
-      ["bazel.buildifier", "executable"],
-      ["bazel", "queryOutputBase"],
-      ["bazel.commandLine", "queryOutputBase"],
-    ];
-    for (const [section, name] of resets) {
-      const config = vscode.workspace.getConfiguration(section);
-      await config.update(name, undefined, vscode.ConfigurationTarget.Global);
-      await config.update(
-        name,
-        undefined,
-        vscode.ConfigurationTarget.Workspace,
-      );
+    for (const t of [G, W]) {
+      await bazel().update("buildifierExecutable", undefined, t);
+      await buildifier().update("executable", undefined, t);
     }
   });
 
-  it("does nothing when no renamed setting has an explicit value", async () => {
-    const migrated = await migrateRenamedSettings();
-    assert.deepStrictEqual(migrated, []);
-  });
-
-  it("copies a User-scope value and clears the old key", async () => {
-    await vscode.workspace
-      .getConfiguration("bazel")
-      .update("enableBuildifier", false, vscode.ConfigurationTarget.Global);
-
-    const migrated = await migrateRenamedSettings();
-
-    assert.ok(
-      migrated.includes("bazel.enableBuildifier -> bazel.buildifier.enable"),
-    );
-    // Use inspect(), not get(): a cleared setting still falls back to its
-    // schema default via get(), which happens to also be `true` here.
+  it("falls back to the old name without rewriting settings", async () => {
+    await bazel().update("buildifierExecutable", "old/buildifier", W);
     assert.strictEqual(
-      vscode.workspace.getConfiguration("bazel").inspect("enableBuildifier")
-        ?.globalValue,
-      undefined,
+      getRenamedSetting("bazel.buildifier", "executable"),
+      "old/buildifier",
     );
     assert.strictEqual(
-      vscode.workspace.getConfiguration("bazel.buildifier").get("enable"),
-      false,
+      bazel().inspect("buildifierExecutable")?.workspaceValue,
+      "old/buildifier",
     );
   });
 
-  it("copies a Workspace-scope value and clears the old key", async () => {
-    await vscode.workspace
-      .getConfiguration("bazel")
-      .update(
-        "buildifierExecutable",
-        "/custom/buildifier",
-        vscode.ConfigurationTarget.Workspace,
-      );
-
-    const migrated = await migrateRenamedSettings();
-
-    assert.ok(
-      migrated.includes(
-        "bazel.buildifierExecutable -> bazel.buildifier.executable",
-      ),
-    );
+  it("prefers the new name when both are set in the same scope", async () => {
+    await bazel().update("buildifierExecutable", "old/buildifier", W);
+    await buildifier().update("executable", "new/buildifier", W);
     assert.strictEqual(
-      vscode.workspace.getConfiguration("bazel").inspect("buildifierExecutable")
-        ?.workspaceValue,
-      undefined,
-    );
-    assert.strictEqual(
-      vscode.workspace.getConfiguration("bazel.buildifier").get("executable"),
-      "/custom/buildifier",
+      getRenamedSetting("bazel.buildifier", "executable"),
+      "new/buildifier",
     );
   });
 
-  it("is a no-op the second time it runs (already migrated)", async () => {
-    await vscode.workspace
-      .getConfiguration("bazel")
-      .update(
-        "queryOutputBase",
-        "/tmp/custom-base",
-        vscode.ConfigurationTarget.Workspace,
-      );
-
-    const firstRun = await migrateRenamedSettings();
-    assert.ok(
-      firstRun.includes(
-        "bazel.queryOutputBase -> bazel.commandLine.queryOutputBase",
-      ),
-    );
-
-    const secondRun = await migrateRenamedSettings();
-    assert.deepStrictEqual(secondRun, []);
+  it("lets an old name in a narrower scope win over a new name", async () => {
+    await buildifier().update("executable", "user/buildifier", G);
+    await bazel().update("buildifierExecutable", "repo/buildifier", W);
     assert.strictEqual(
-      vscode.workspace
-        .getConfiguration("bazel.commandLine")
-        .get("queryOutputBase"),
-      "/tmp/custom-base",
+      getRenamedSetting("bazel.buildifier", "executable"),
+      "repo/buildifier",
     );
   });
 });

@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 
 import { BaseExtensionFeature } from "../extension/extension_feature";
+import { affectsRenamedSetting } from "../extension/settings_migration";
 import {
   checkBazelIsAvailable,
   setBazelWorkspaceAvailableContext,
@@ -47,7 +48,7 @@ export class WorkspaceTreeFeature extends BaseExtensionFeature {
     // Re-initialize when the configured Bazel workspace path changes
     this.disposables.push(
       vscode.workspace.onDidChangeConfiguration((e) => {
-        if (e.affectsConfiguration("bazel.workspace.path")) {
+        if (affectsRenamedSetting(e, "bazel.workspace.path")) {
           setBazelWorkspaceAvailableContext();
           this.workspaceTreeProvider?.refresh();
         }
