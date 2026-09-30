@@ -105,8 +105,7 @@ export class LanguageSupportFeature extends BaseExtensionFeature {
 
     // Create completion provider
     this.completionItemProvider = new BazelCompletionItemProvider();
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    this.completionItemProvider.refresh();
+    this.completionItemProvider.scheduleRefresh();
 
     // Set up file watcher for BUILD files
     const buildWatcher = vscode.workspace.createFileSystemWatcher(
@@ -118,7 +117,7 @@ export class LanguageSupportFeature extends BaseExtensionFeature {
 
     // Fire refresh when BUILD files change, are created, or deleted
     const refreshOnEvent = (uri: vscode.Uri) =>
-      this.completionItemProvider?.refresh(uri);
+      this.completionItemProvider?.scheduleRefresh(uri);
     const onDidChangeDisposable = buildWatcher.onDidChange(refreshOnEvent);
     const onDidCreateDisposable = buildWatcher.onDidCreate(refreshOnEvent);
     const onDidDeleteDisposable = buildWatcher.onDidDelete(refreshOnEvent);
@@ -144,6 +143,7 @@ export class LanguageSupportFeature extends BaseExtensionFeature {
 
     // Add all disposables
     this.disposables.push(
+      this.completionItemProvider,
       buildWatcher,
       onDidChangeDisposable,
       onDidCreateDisposable,
