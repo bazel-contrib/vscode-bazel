@@ -20,6 +20,10 @@ import { BazelWorkspaceFolderTreeItem } from "./bazel_workspace_folder_tree_item
 import { BazelPackageTreeItem } from "./bazel_package_tree_item";
 import { Resources } from "../extension/resources";
 import { ILogger } from "../extension/logger";
+import {
+  BUILD_FILE_CHANGE_DELAY_MS,
+  CoalescingRunner,
+} from "../extension/coalescing_runner";
 
 /**
  * Provides a tree of Bazel build packages and targets for the VS Code explorer
@@ -44,10 +48,11 @@ export class BazelWorkspaceTreeProvider
   // For testing, keep track of last revealed tree item
   public lastRevealedTreeItem: IBazelTreeItem | undefined = undefined;
 
-  // Debouncing timeout to reduce refresh frequency
-  private refreshTimeout: NodeJS.Timeout | undefined = undefined;
-  // Flag to avoid running multiple refreshes in parallel
-  private isCurrentlyRefreshing: boolean = false;
+  // Debounces refreshes during bulk BUILD file changes like git checkout
+  private readonly refreshRunner = new CoalescingRunner(
+    BUILD_FILE_CHANGE_DELAY_MS,
+    () => this.refresh(),
+  );
   // Flag to track if a refresh is necessary when the tree view becomes visible
   private runRefreshWhenTreeViewBecomesVisible: boolean = false;
 
@@ -70,10 +75,11 @@ export class BazelWorkspaceTreeProvider
     );
 
     this.disposables.push(
+      this.refreshRunner,
       buildFilesWatcher,
-      buildFilesWatcher.onDidChange(() => this.queueRefresh()),
-      buildFilesWatcher.onDidCreate(() => this.queueRefresh()),
-      buildFilesWatcher.onDidDelete(() => this.queueRefresh()),
+      buildFilesWatcher.onDidChange(() => this.refreshRunner.schedule()),
+      buildFilesWatcher.onDidCreate(() => this.refreshRunner.schedule()),
+      buildFilesWatcher.onDidDelete(() => this.refreshRunner.schedule()),
       vscode.workspace.onDidChangeWorkspaceFolders(() => this.refresh()),
       vscode.window.onDidChangeActiveTextEditor(() =>
         this.syncSelectedTreeItem(),
@@ -156,47 +162,12 @@ export class BazelWorkspaceTreeProvider
     }
 
     try {
-      this.isCurrentlyRefreshing = true;
       this.runRefreshWhenTreeViewBecomesVisible = false;
       this.updateWorkspaceFolderTreeItems();
       this.onDidChangeTreeDataEmitter.fire();
     } catch (error) {
       this.logger.logError("Tree refresh failed", false, error);
-    } finally {
-      this.isCurrentlyRefreshing = false;
     }
-  }
-
-  /**
-   * Queues a refresh operation with debouncing to handle rapid file changes.
-   * This ensures that the last change is always picked up while avoiding
-   * excessive refresh operations during bulk operations like git checkout.
-   * Called when BUILD files are created, deleted, or changed.
-   */
-  private queueRefresh(): void {
-    this.logger.logDebug("Queueing refresh with debouncing");
-
-    // Clear and restart any existing timeout
-    if (this.refreshTimeout) {
-      clearTimeout(this.refreshTimeout);
-      this.logger.logDebug("Clearing existing refresh timeout");
-    }
-
-    // Set a timeout to perform refresh after a short delay
-    // This avoids excessive refreshes during bulk operations like git checkout
-    this.refreshTimeout = setTimeout(() => {
-      this.refreshTimeout = undefined;
-      if (this.isCurrentlyRefreshing) {
-        // We don't want to run multiple refreshes in parallel,
-        // but we want to ensure that the last change is always picked up,
-        // so just queue another refresh.
-        this.logger.logDebug("Refresh already in progress, re-queuing");
-        this.queueRefresh();
-      } else {
-        this.logger.logDebug("Executing queued refresh");
-        this.refresh();
-      }
-    }, 500); // Wait 500ms after the last change
   }
 
   /**
@@ -246,12 +217,6 @@ export class BazelWorkspaceTreeProvider
   }
 
   public dispose() {
-    // Clear any pending timeout
-    if (this.refreshTimeout) {
-      clearTimeout(this.refreshTimeout);
-      this.refreshTimeout = undefined;
-    }
-
     for (const disposable of this.disposables) {
       disposable.dispose();
     }
