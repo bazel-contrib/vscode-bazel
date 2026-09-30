@@ -15,7 +15,7 @@
 import * as vscode from "vscode";
 import { buildifierFormat } from "./buildifier";
 import { getBuildifierFixOnFormat } from "../extension/configuration";
-import { ILogger } from "../extension/logger";
+import { ILogger } from "../extension/logger_interface";
 
 /**
  * Provides document formatting functionality for Bazel files by invoking

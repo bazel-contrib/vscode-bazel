@@ -17,7 +17,7 @@ import * as vscode from "vscode";
 import { BazelWorkspaceInfo } from "../bazel";
 import { getTargetsForBuildFile } from "../bazel";
 import { getBazelExecutablePath } from "../extension/configuration";
-import { ILogger } from "../extension/logger";
+import { ILogger } from "../extension/logger_interface";
 import { CodeLensBuilder } from "./code_lens_builder";
 
 /**
