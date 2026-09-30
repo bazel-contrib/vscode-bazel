@@ -39,8 +39,13 @@ function setCursorInEditor(
 interface TestCase {
   name: string;
   cursorPos: vscode.Position;
-  expectedLabel: string;
+  // `undefined` means nothing should be copied.
+  expectedLabel: string | undefined;
 }
+
+// Chromium ignores writes of empty text, so `writeText("")` cannot reset the
+// clipboard. Seed it with a marker instead.
+const CLIPBOARD_MARKER = "<clipboard-marker>";
 
 describe("Copy Label To Clipboard", () => {
   const workspacePath = path.join(
@@ -91,23 +96,30 @@ describe("Copy Label To Clipboard", () => {
     {
       name: "should not misinterpret a rule name as a label",
       cursorPos: new vscode.Position(7, 5),
-      expectedLabel: "",
+      expectedLabel: undefined,
     },
     {
       name: "should not misinterpret an empty line as a label",
       cursorPos: new vscode.Position(17, 0),
-      expectedLabel: "",
+      expectedLabel: undefined,
     },
     {
       name: "should not misinterpret an attribute as a label",
       cursorPos: new vscode.Position(14, 9),
-      expectedLabel: "",
+      expectedLabel: undefined,
     },
   ];
 
   beforeEach(async () => {
     await vscode.commands.executeCommand("workbench.action.closeAllEditors");
-    await vscode.env.clipboard.writeText("");
+    await vscode.env.clipboard.writeText(CLIPBOARD_MARKER);
+    assert.strictEqual(
+      await vscode.env.clipboard.readText(),
+      CLIPBOARD_MARKER,
+      "Test clipboard is not writable. On a Wayland desktop, run the tests " +
+        "under X11, e.g. `env -u WAYLAND_DISPLAY XDG_SESSION_TYPE=x11 " +
+        "xvfb-run -a npm test`.",
+    );
   });
 
   testCases.forEach(({ name, cursorPos, expectedLabel }) => {
@@ -121,7 +133,10 @@ describe("Copy Label To Clipboard", () => {
       await vscode.commands.executeCommand("bazel.copyLabelToClipboard");
 
       // THEN
-      assert.strictEqual(await vscode.env.clipboard.readText(), expectedLabel);
+      assert.strictEqual(
+        await vscode.env.clipboard.readText(),
+        expectedLabel ?? CLIPBOARD_MARKER,
+      );
     });
   });
 });
