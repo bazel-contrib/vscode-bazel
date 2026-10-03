@@ -15,6 +15,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import * as assert from "assert";
+import * as sinon from "sinon";
 
 async function openSourceFile(sourceFile: string) {
   const doc = await vscode.workspace.openTextDocument(
@@ -122,6 +123,41 @@ describe("Copy Label To Clipboard", () => {
 
       // THEN
       assert.strictEqual(await vscode.env.clipboard.readText(), expectedLabel);
+    });
+  });
+
+  describe("outside the active Bazel root", () => {
+    let sandbox: sinon.SinonSandbox;
+
+    beforeEach(async () => {
+      sandbox = sinon.createSandbox();
+      await vscode.workspace
+        .getConfiguration("bazel.workspace")
+        .update("path", "nested_module", vscode.ConfigurationTarget.Workspace);
+    });
+
+    afterEach(async () => {
+      sandbox.restore();
+      await vscode.workspace
+        .getConfiguration("bazel.workspace")
+        .update("path", undefined, vscode.ConfigurationTarget.Workspace);
+    });
+
+    it("copies nothing and tells the user why", async () => {
+      // The command runs in the bundled extension, so stub the VS Code API.
+      const showInfoMessage = sandbox
+        .stub(vscode.window, "showInformationMessage")
+        .resolves(undefined);
+      const editor = await openSourceFile(buildFilePath);
+      // A full label, which would be copied unchanged inside the root.
+      const cursorPos = new vscode.Position(14, 20);
+      setCursorInEditor(editor, cursorPos, cursorPos);
+
+      await vscode.commands.executeCommand("bazel.copyLabelToClipboard");
+
+      assert.strictEqual(await vscode.env.clipboard.readText(), "");
+      assert.strictEqual(showInfoMessage.callCount, 1);
+      assert.ok(showInfoMessage.firstCall.args[0].includes(workspacePath));
     });
   });
 });
