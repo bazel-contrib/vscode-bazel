@@ -156,8 +156,18 @@ describe("Copy Label To Clipboard", () => {
       await vscode.commands.executeCommand("bazel.copyLabelToClipboard");
 
       assert.strictEqual(await vscode.env.clipboard.readText(), "");
-      assert.strictEqual(showInfoMessage.callCount, 1);
-      assert.ok(showInfoMessage.firstCall.args[0].includes(workspacePath));
+      // Opening the file may also show the workspace root hint.
+      const messages = showInfoMessage
+        .getCalls()
+        .map((call) => call.args[0] as string);
+      assert.ok(
+        messages.some(
+          (message) =>
+            message.includes(workspacePath) &&
+            message.includes("not the active Bazel workspace"),
+        ),
+        messages.join("\n"),
+      );
     });
   });
 });

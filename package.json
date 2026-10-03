@@ -113,6 +113,11 @@
             },
             {
                 "category": "Bazel",
+                "command": "bazel.openWorkspacePathSetting",
+                "title": "Open Workspace Root Setting"
+            },
+            {
+                "category": "Bazel",
                 "command": "bazel.lsp.restart",
                 "title": "Restart language server",
                 "when": "bazel.lsp.enabled"
