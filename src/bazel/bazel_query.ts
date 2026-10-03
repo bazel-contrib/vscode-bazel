@@ -147,12 +147,10 @@ export class BazelQuery extends BazelCommand {
       // NOTE: This does NOT use a random directory for each query instead it
       // uses a generated tmp directory based on the Bazel workspace, this way
       // the server is shared for all the queries.
-      const ws = getBazelWorkspaceFolder(this.workingDirectory);
-      if (!ws) {
-        throw new Error(
-          `Could not determine Bazel workspace for ${this.workingDirectory}`,
-        );
-      }
+      // The working directory is usually the Bazel root already, which may
+      // lie outside every VS Code folder (a folder opened below the root).
+      const ws =
+        getBazelWorkspaceFolder(this.workingDirectory) ?? this.workingDirectory;
       const hash = crypto.createHash("md5").update(ws).digest("hex");
       const queryOutputBase = path.join(
         getQueryOutputBase() ?? os.tmpdir(),

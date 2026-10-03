@@ -113,6 +113,11 @@
             },
             {
                 "category": "Bazel",
+                "command": "bazel.openWorkspacePathSetting",
+                "title": "Open Workspace Root Setting"
+            },
+            {
+                "category": "Bazel",
                 "command": "bazel.lsp.restart",
                 "title": "Restart language server",
                 "when": "bazel.lsp.enabled"
@@ -138,7 +143,7 @@
                     "bazel.workspace.path": {
                         "type": "string",
                         "default": "",
-                        "markdownDescription": "Pins the single Bazel workspace root used for this VS Code workspace folder. The path can be absolute or relative to the VS Code workspace folder. If unset, the extension searches for `MODULE.bazel`, `REPO.bazel`, `WORKSPACE.bazel`, or `WORKSPACE`. To use multiple independent Bazel roots, add each root as a folder in a VS Code multi-root workspace and configure this setting per folder.",
+                        "markdownDescription": "Pins the single Bazel workspace root used for every file in this VS Code workspace folder. The path can be absolute or relative to the VS Code workspace folder. If unset, the extension searches upward from the folder for `MODULE.bazel`, `REPO.bazel`, `WORKSPACE.bazel`, or `WORKSPACE`. Files outside the root are not supported. To use multiple independent Bazel roots, add each root as a folder in a VS Code multi-root workspace and configure this setting per folder.",
                         "scope": "resource"
                     },
                     "bazel.workspace.pathsToIgnore": {

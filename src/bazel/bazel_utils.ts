@@ -17,7 +17,7 @@ import * as path from "path";
 import * as vscode from "vscode";
 import { blaze_query } from "../protos";
 import { getPathsToIgnore, getWorkspacePath } from "../extension/configuration";
-import { logError } from "../extension/logger";
+import { logError, showInfoMessage } from "../extension/logger";
 import { BazelQuery } from "./bazel_query";
 
 /**
@@ -169,33 +169,33 @@ function findAncestorFile(
   return undefined;
 }
 
-/**
- * Resolves the manually configured workspace path to an absolute path.
- *
- * @param fsPath The path to a file, used to determine the VS Code workspace folder.
- * @returns The resolved absolute workspace path, or undefined if not configured or invalid.
- */
-function resolveConfiguredWorkspacePath(fsPath: string): string | undefined {
-  const uri = vscode.Uri.file(fsPath);
-  const workspaceFolder = vscode.workspace.getWorkspaceFolder(uri);
-  const configuredPath = getWorkspacePath(uri);
+const WORKSPACE_MARKER_FILES = [
+  "MODULE.bazel",
+  "REPO.bazel",
+  "WORKSPACE.bazel",
+  "WORKSPACE",
+];
 
+/**
+ * Resolves the Bazel root pinned via `bazel.workspace.path` for a VS Code
+ * workspace folder.
+ *
+ * @param workspaceFolder The VS Code workspace folder whose setting is read.
+ * Relative paths are resolved against it.
+ * @returns The resolved absolute workspace path, or undefined if not
+ * configured or invalid.
+ */
+function resolveConfiguredWorkspacePath(
+  workspaceFolder: vscode.WorkspaceFolder,
+): string | undefined {
+  const configuredPath = getWorkspacePath(workspaceFolder.uri);
   if (!configuredPath) {
     return undefined;
   }
 
-  let resolvedPath: string;
-
-  // Check if it's an absolute path
-  if (path.isAbsolute(configuredPath)) {
-    resolvedPath = configuredPath;
-  } else if (workspaceFolder) {
-    // Resolve relative path from VS Code workspace folder
-    resolvedPath = path.join(workspaceFolder.uri.fsPath, configuredPath);
-  } else {
-    // No workspace folder, try to resolve from the file's directory
-    resolvedPath = path.resolve(path.dirname(fsPath), configuredPath);
-  }
+  const resolvedPath = path.isAbsolute(configuredPath)
+    ? configuredPath
+    : path.join(workspaceFolder.uri.fsPath, configuredPath);
 
   // Verify the path exists and is a directory.
   try {
@@ -217,27 +217,7 @@ function resolveConfiguredWorkspacePath(fsPath: string): string | undefined {
     return undefined;
   }
 
-  const candidateIsInWorkspace =
-    getBazelWorkspaceRelativePath(resolvedPath, fsPath) !== undefined;
-  let candidateContainsWorkspace = false;
-  try {
-    candidateContainsWorkspace =
-      fs.statSync(fsPath).isDirectory() &&
-      getBazelWorkspaceRelativePath(fsPath, resolvedPath) !== undefined;
-  } catch {
-    // A nonexistent candidate cannot contain the configured workspace.
-  }
-  if (!candidateIsInWorkspace && !candidateContainsWorkspace) {
-    return undefined;
-  }
-
-  const workspaceFiles = [
-    "MODULE.bazel",
-    "REPO.bazel",
-    "WORKSPACE.bazel",
-    "WORKSPACE",
-  ];
-  for (const file of workspaceFiles) {
+  for (const file of WORKSPACE_MARKER_FILES) {
     try {
       fs.accessSync(path.join(resolvedPath, file), fs.constants.F_OK);
       return resolvedPath;
@@ -250,40 +230,126 @@ function resolveConfiguredWorkspacePath(fsPath: string): string | undefined {
     "Configured Bazel workspace path has no workspace marker file",
     false,
     `Path: ${resolvedPath}`,
-    `Expected one of: ${workspaceFiles.join(", ")}`,
+    `Expected one of: ${WORKSPACE_MARKER_FILES.join(", ")}`,
   );
   return undefined;
 }
 
+/** The active Bazel root of a VS Code workspace folder, and its origin. */
+export interface ActiveBazelRoot {
+  /** The path of the Bazel root. */
+  readonly path: string;
+  /** Whether `bazel.workspace.path` pins it, or it was detected. */
+  readonly pinned: boolean;
+}
+
 /**
- * Search for the path to the directory that has the Bazel WORKSPACE file for
- * the given file.
+ * Resolves the active Bazel root of a VS Code workspace folder. There is
+ * exactly one per folder (see "Workspace model" in CONTRIBUTING.md).
  *
- * If a workspace path is manually configured via `bazel.workspace.path`, it will
- * be used instead of auto-detection.
+ * The root is `bazel.workspace.path` if it is set and valid. Otherwise it is
+ * the nearest directory at or above the folder root that contains a Bazel
+ * workspace marker file. Nested marker files below the folder root are never
+ * considered.
  *
- * If multiple directories along the path to the file have workspace files,
- * the lowest path is returned.
+ * @param workspaceFolder The VS Code workspace folder.
+ * @returns The active Bazel root, or undefined if there is none.
+ */
+export function resolveActiveBazelRoot(
+  workspaceFolder: vscode.WorkspaceFolder,
+): ActiveBazelRoot | undefined {
+  const configuredWorkspace = resolveConfiguredWorkspacePath(workspaceFolder);
+  if (configuredWorkspace) {
+    return { path: configuredWorkspace, pinned: true };
+  }
+  const workspaceFile = findAncestorFile(
+    workspaceFolder.uri.fsPath,
+    WORKSPACE_MARKER_FILES,
+  );
+  return workspaceFile
+    ? { path: path.dirname(workspaceFile), pinned: false }
+    : undefined;
+}
+
+/**
+ * Returns the path of the active Bazel root of a VS Code workspace folder, see
+ * `resolveActiveBazelRoot`.
+ */
+export function getActiveBazelRoot(
+  workspaceFolder: vscode.WorkspaceFolder,
+): string | undefined {
+  return resolveActiveBazelRoot(workspaceFolder)?.path;
+}
+
+/**
+ * Returns the Bazel root that the given file belongs to: the active Bazel root
+ * of the file's VS Code workspace folder (see `getActiveBazelRoot`), provided
+ * the file lies inside it.
  *
- * @param fsPath The path to a file in a Bazel workspace.
- * @returns The path to the directory with the Bazel workspace file if found,
- * otherwise undefined.
+ * Files outside every VS Code workspace folder, or outside their folder's
+ * active root (e.g. in Bazel's repository cache, reached via Go to
+ * Definition), don't belong to any Bazel root: features must not spawn Bazel
+ * for them or compute labels for them.
+ *
+ * @param fsPath The path to a file or directory.
+ * @returns The path to the Bazel root, or undefined if the file doesn't
+ * belong to one.
  */
 export function getBazelWorkspaceFolder(fsPath: string): string | undefined {
-  // First, check if a workspace path is manually configured
-  const configuredWorkspace = resolveConfiguredWorkspacePath(fsPath);
-  if (configuredWorkspace) {
-    return configuredWorkspace;
+  if (shouldIgnorePath(fsPath)) {
+    return undefined;
   }
+  const workspaceFolder = vscode.workspace.getWorkspaceFolder(
+    vscode.Uri.file(fsPath),
+  );
+  if (!workspaceFolder) {
+    return undefined;
+  }
+  const root = getActiveBazelRoot(workspaceFolder);
+  if (!root || getBazelWorkspaceRelativePath(root, fsPath) === undefined) {
+    return undefined;
+  }
+  return root;
+}
 
-  // Fall back to auto-detection
-  const workspaceFile = findAncestorFile(fsPath, [
-    "MODULE.bazel",
-    "REPO.bazel",
-    "WORKSPACE.bazel",
-    "WORKSPACE",
-  ]);
+/**
+ * For a file that doesn't belong to its folder's active Bazel root (see
+ * `getBazelWorkspaceFolder`), returns the Bazel workspace it would belong to
+ * on its own: the nearest directory at or above it with a workspace marker
+ * file (e.g. a repository in Bazel's cache, or a nested project that isn't the
+ * active root).
+ *
+ * @param fsPath The path to a file.
+ * @returns The path of that Bazel workspace, or undefined if the file belongs
+ * to the active root or to no Bazel workspace at all.
+ */
+export function getForeignBazelWorkspace(fsPath: string): string | undefined {
+  if (getBazelWorkspaceFolder(fsPath)) {
+    return undefined;
+  }
+  const workspaceFile = findAncestorFile(fsPath, WORKSPACE_MARKER_FILES);
   return workspaceFile ? path.dirname(workspaceFile) : undefined;
+}
+
+/**
+ * Tells the user that an explicitly invoked command does nothing for a file
+ * outside the active Bazel root, if `fsPath` is such a file.
+ *
+ * @param fsPath The path to the file the command was invoked on.
+ * @returns Whether the file is outside the active Bazel root (and the user
+ * was told).
+ */
+export function notifyIfForeignFile(fsPath: string): boolean {
+  const foreignWorkspace = getForeignBazelWorkspace(fsPath);
+  if (foreignWorkspace === undefined) {
+    return false;
+  }
+  void showInfoMessage(
+    `This file belongs to the Bazel workspace at ${foreignWorkspace}, ` +
+      "which is not the active Bazel workspace of its VS Code folder. " +
+      "Bazel features are unavailable for it.",
+  );
+  return true;
 }
 
 /**

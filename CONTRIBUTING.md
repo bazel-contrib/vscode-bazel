@@ -96,6 +96,36 @@ setting. Once a rename has had a release or two to reach users, its
 deprecated entry and matching `RENAMED_SETTINGS` entry can be deleted
 together.
 
+### Workspace model
+
+Every feature must agree on which Bazel workspace a file belongs to
+(see [#684](https://github.com/bazel-contrib/vscode-bazel/issues/684) and
+[#416](https://github.com/bazel-contrib/vscode-bazel/issues/416)):
+
+- There is exactly one active Bazel root per VS Code workspace folder. Users
+  with several independent roots open them as folders of a multi-root
+  workspace.
+- The root is `bazel.workspace.path` if set, for the whole folder. Otherwise
+  it is the nearest `MODULE.bazel`/`REPO.bazel`/`WORKSPACE.bazel`/`WORKSPACE`
+  at or above the folder root. Never search upwards from an individual file;
+  use `resolveActiveBazelRoot(folder)` for a folder and
+  `getBazelWorkspaceFolder(file)` for a file (in
+  [`src/bazel/bazel_utils.ts`](src/bazel/bazel_utils.ts)), and subscribe to
+  `onDidChangeActiveBazelRoot` if your feature caches anything per root.
+- Files inside the root get `//pkg` labels, even below a nested marker file
+  (Bazel does not treat those as repository boundaries). Files inside a local
+  override of the root's `MODULE.bazel` (e.g. `local_path_override`) will get
+  `@repo//pkg` labels, wherever the override lives (work in progress, #416).
+- Every other file (e.g. one in Bazel's repository cache reached via Go to
+  Definition) is unsupported: never spawn Bazel for it and never compute a
+  label for it. Passive features (CodeLens, symbols, definitions, completion)
+  stay silent; explicit commands (e.g. Copy Label) tell the user why they did
+  nothing (`notifyIfForeignFile`).
+- Once the external-module mapping for #416 exists, don't call a file
+  unsupported while it is still resolving.
+- Never write to the user's settings to "fix" their workspace setup; point
+  them to `bazel.workspace.path` or multi-root workspaces instead.
+
 ## Testing
 
 We expect contributions to include tests that demonstrate and validate the intended behavior.

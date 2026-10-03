@@ -40,16 +40,25 @@ setting.
 
 ### Selecting the Bazel workspace root
 
-The extension automatically searches upward for a `MODULE.bazel`,
-`REPO.bazel`, `WORKSPACE.bazel`, or `WORKSPACE` file. If that selects the wrong
-root, or if the Bazel root is nested below the folder opened in VS Code, set
-`bazel.workspace.path` to the Bazel root. The value can be an absolute path or a
-path relative to the VS Code workspace folder.
+The extension uses exactly one Bazel root per VS Code workspace folder. By
+default, it searches upward from the folder for a `MODULE.bazel`,
+`REPO.bazel`, `WORKSPACE.bazel`, or `WORKSPACE` file. Marker files in
+subdirectories of the folder are ignored: from the root, Bazel treats those
+directories as ordinary packages.
 
-The extension supports one Bazel root per VS Code workspace folder. To work
-with multiple independent Bazel roots, use a VS Code multi-root workspace and
-add each Bazel root as a separate folder; `bazel.workspace.path` can then be set
-independently for each folder.
+If the Bazel root is nested below the folder opened in VS Code, or the search
+selects the wrong root, set `bazel.workspace.path` to the Bazel root. The value
+can be an absolute path or a path relative to the VS Code workspace folder, and
+applies to every file in that folder.
+
+Files outside the active root (for example a dependency's file in Bazel's
+repository cache, reached via Go to Definition) are not supported: CodeLens,
+symbols, Go to Definition and completion stay inactive there, and commands like
+**Copy Label to Clipboard** explain why they do nothing.
+
+To work with multiple independent Bazel roots, use a VS Code multi-root
+workspace and add each Bazel root as a separate folder; `bazel.workspace.path`
+can then be set independently for each folder.
 
 ### Using a separate output base
 
