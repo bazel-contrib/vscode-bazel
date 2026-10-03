@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 
 import { BaseExtensionFeature } from "../extension/extension_feature";
-import { affectsRenamedSetting } from "../extension/settings_migration";
+import { onDidChangeActiveBazelRoot } from "../bazel/active_bazel_roots";
 import {
   checkBazelIsAvailable,
   setBazelWorkspaceAvailableContext,
@@ -45,13 +45,11 @@ export class WorkspaceTreeFeature extends BaseExtensionFeature {
     this.disposables.push(treeView);
     this.workspaceTreeProvider.setTreeView(treeView);
 
-    // Re-initialize when the configured Bazel workspace path changes
+    // Re-initialize when a folder's active Bazel root changes
     this.disposables.push(
-      vscode.workspace.onDidChangeConfiguration((e) => {
-        if (affectsRenamedSetting(e, "bazel.workspace.path")) {
-          setBazelWorkspaceAvailableContext();
-          this.workspaceTreeProvider?.refresh();
-        }
+      onDidChangeActiveBazelRoot(() => {
+        setBazelWorkspaceAvailableContext();
+        this.workspaceTreeProvider?.refresh();
       }),
     );
 
