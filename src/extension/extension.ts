@@ -27,6 +27,7 @@ import { TestExplorerFeature } from "../test-explorer";
 import { activateWrapperCommands } from "./bazel_wrapper_commands";
 import { registerLogger, logInfo, logError, showOutputChannel } from "./logger";
 import { registerBazelWorkspaceAvailabilityWatcher } from "../bazel/bazel_availability";
+import { resolveActiveBazelRoot } from "../bazel/bazel_utils";
 import { LanguageSupportFeature } from "../language_support/language_support_feature";
 import { logDeprecatedSettingsInUse } from "./settings_migration";
 
@@ -70,6 +71,16 @@ export async function activate(context: vscode.ExtensionContext) {
 
   // Watch for availability of bazel workspace
   registerBazelWorkspaceAvailabilityWatcher(context);
+
+  for (const folder of vscode.workspace.workspaceFolders ?? []) {
+    const root = resolveActiveBazelRoot(folder);
+    logInfo(
+      root
+        ? `Bazel workspace of folder "${folder.name}": ${root.path}` +
+            (root.pinned ? " (pinned by bazel.workspace.path)" : "")
+        : `No Bazel workspace found for folder "${folder.name}".`,
+    );
+  }
 
   // WorkspaceTreeFeature
   const workspaceTreeFeature = await WorkspaceTreeFeature.create(context);

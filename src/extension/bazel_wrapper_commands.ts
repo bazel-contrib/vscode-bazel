@@ -28,6 +28,7 @@ import {
   getBazelWorkspaceFolder,
   getBazelPackageFolder,
   getBuildFileLineWithSourceFilePath,
+  notifyIfForeignFile,
 } from "../bazel/bazel_utils";
 import {
   queryQuickPickTargets,
@@ -452,6 +453,14 @@ function extractLabelFromCursor(): string | undefined {
   }
 
   const document = editor.document;
+  // Even absolute labels in such a file refer to another repository.
+  if (
+    document.uri.scheme === "file" &&
+    notifyIfForeignFile(document.uri.fsPath)
+  ) {
+    return undefined;
+  }
+
   const position = editor.selection.active;
   const wordRange = document.getWordRangeAtPosition(
     position,

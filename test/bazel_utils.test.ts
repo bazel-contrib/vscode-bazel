@@ -1,5 +1,6 @@
 import * as path from "path";
 import * as fs from "fs";
+import * as os from "os";
 import * as assert from "assert";
 import * as sinon from "sinon";
 import * as vscode from "vscode";
@@ -9,6 +10,9 @@ import {
   getTargetNameAtBuildFileLocation,
   getBazelWorkspaceFolder,
   getBazelWorkspaceRelativePath,
+  getForeignBazelWorkspace,
+  notifyIfForeignFile,
+  resolveActiveBazelRoot,
   canonicalizeLabel,
 } from "../src/bazel/bazel_utils";
 
@@ -267,6 +271,104 @@ describe("Bazel Utils: getBazelWorkspaceFolder", () => {
       "BUILD",
     );
     assert.strictEqual(getBazelWorkspaceFolder(unrelatedFile), undefined);
+  });
+});
+
+describe("Bazel Utils: workspace model", () => {
+  let sandbox: sinon.SinonSandbox;
+  let temporaryDirectories: string[];
+  const nestedModulePath = path.join(workspacePath, "nested_module");
+
+  function testWorkspaceFolder(): vscode.WorkspaceFolder {
+    const folder = vscode.workspace.getWorkspaceFolder(
+      vscode.Uri.file(workspacePath),
+    );
+    assert.ok(folder);
+    return folder;
+  }
+
+  async function pin(configuredPath: string | undefined): Promise<void> {
+    await vscode.workspace
+      .getConfiguration("bazel.workspace")
+      .update("path", configuredPath, vscode.ConfigurationTarget.Workspace);
+  }
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    temporaryDirectories = [];
+  });
+
+  afterEach(async () => {
+    sandbox.restore();
+    await pin(undefined);
+    for (const directory of temporaryDirectories) {
+      fs.rmSync(directory, { recursive: true, force: true });
+    }
+  });
+
+  it("ignores a nested marker file without a pin", () => {
+    assert.strictEqual(
+      getBazelWorkspaceFolder(path.join(nestedModulePath, "BUILD")),
+      workspacePath,
+    );
+    assert.deepStrictEqual(resolveActiveBazelRoot(testWorkspaceFolder()), {
+      path: workspacePath,
+      pinned: false,
+    });
+  });
+
+  it("applies a pin to the whole folder", async () => {
+    await pin("nested_module");
+
+    assert.deepStrictEqual(resolveActiveBazelRoot(testWorkspaceFolder()), {
+      path: nestedModulePath,
+      pinned: true,
+    });
+    assert.strictEqual(
+      getBazelWorkspaceFolder(path.join(nestedModulePath, "BUILD")),
+      nestedModulePath,
+    );
+    // Outside the pinned root: no fallback to the nearest marker file.
+    const outsideFile = path.join(workspacePath, "pkg1", "BUILD");
+    assert.strictEqual(getBazelWorkspaceFolder(outsideFile), undefined);
+    assert.strictEqual(getForeignBazelWorkspace(outsideFile), workspacePath);
+  });
+
+  it("treats a file outside every folder as foreign", () => {
+    const repo = fs.mkdtempSync(path.join(os.tmpdir(), "vscode-bazel-repo-"));
+    temporaryDirectories.push(repo);
+    fs.writeFileSync(path.join(repo, "MODULE.bazel"), "");
+    fs.mkdirSync(path.join(repo, "lib"));
+    const file = path.join(repo, "lib", "paths.bzl");
+    fs.writeFileSync(file, "");
+
+    assert.strictEqual(getBazelWorkspaceFolder(file), undefined);
+    assert.strictEqual(getForeignBazelWorkspace(file), repo);
+  });
+
+  it("has no foreign workspace for a file in the active root", () => {
+    const file = path.join(workspacePath, "pkg1", "BUILD");
+    assert.strictEqual(getForeignBazelWorkspace(file), undefined);
+  });
+
+  it("notifies only for foreign files", async () => {
+    await pin("nested_module");
+    const showInfoMessage = sandbox
+      .stub(logger, "showInfoMessage")
+      .resolves(undefined);
+
+    assert.strictEqual(
+      notifyIfForeignFile(path.join(nestedModulePath, "BUILD")),
+      false,
+    );
+    assert.strictEqual(showInfoMessage.called, false);
+
+    assert.strictEqual(
+      notifyIfForeignFile(path.join(workspacePath, "pkg1", "BUILD")),
+      true,
+    );
+    assert.strictEqual(showInfoMessage.callCount, 1);
+    assert.ok(showInfoMessage.firstCall.args[0].includes(workspacePath));
   });
 });
 
