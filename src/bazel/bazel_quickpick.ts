@@ -104,8 +104,12 @@ async function pickBazelWorkspace(): Promise<BazelWorkspaceInfo | undefined> {
   if (vscode.window.activeTextEditor === undefined) {
     return BazelWorkspaceInfo.fromWorkspaceFolders();
   } else {
+    // A file outside the active Bazel root falls back to the folder's root.
     const document = vscode.window.activeTextEditor.document;
-    return BazelWorkspaceInfo.fromDocument(document);
+    return (
+      BazelWorkspaceInfo.fromDocument(document) ??
+      BazelWorkspaceInfo.fromWorkspaceFolders()
+    );
   }
 }
 
@@ -271,8 +275,9 @@ export function showDynamicQuickPick({
   quickPick.placeholder = "Start typing to search for targets...";
   const initialPattern = getQueryExpression();
   // But if we can guess the label of interest from the current cursor position, we use it to improve the starting point
+  const activeDocument = vscode.window.activeTextEditor?.document;
   const guessedLabelOfInterest = guessLabelOfInterest(
-    vscode.window.activeTextEditor?.document.uri.fsPath,
+    activeDocument?.uri.fsPath,
     vscode.window.activeTextEditor?.selection.active.line,
   );
   if (guessedLabelOfInterest) {

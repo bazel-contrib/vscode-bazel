@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 
 import { BaseExtensionFeature } from "../extension/extension_feature";
+import { onDidChangeActiveBazelRoot } from "../bazel/active_bazel_roots";
 import { checkBazelIsAvailable } from "../bazel/bazel_availability";
 import { CodeLensProvider } from "./code_lens_provider";
 
@@ -39,6 +40,13 @@ export class CodeLensFeature extends BaseExtensionFeature {
       () => codelensProvider.refresh(),
       this,
       this.disposables,
+    );
+
+    // The labels and the Bazel root behind every lens may change.
+    // TODO(#712): go through the same CoalescingRunner as the BUILD file
+    // watcher, so both kinds of change cost one refresh.
+    this.disposables.push(
+      onDidChangeActiveBazelRoot(() => codelensProvider.refresh()),
     );
 
     const codeLensRegistration = vscode.languages.registerCodeLensProvider(
