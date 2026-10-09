@@ -17,7 +17,7 @@ concurrency:
 jobs:
   build_vscode_ext:
     name: Build VS Code extension
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     if: ${{ github.repository == 'bazel-contrib/vscode-bazel' }} # Allow CI-runs only for events from/to this repository
     steps:
       - name: Checkout
