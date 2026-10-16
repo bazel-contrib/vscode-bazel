@@ -27,6 +27,13 @@ version of this extension install what trying to work on it can some times
 confuse things, so it is usually best to not have the release version installed
 at the same time.
 
+The extension is also built, tested and packaged with [Bazel](https://bazel.build)
+(via [bazelisk](https://github.com/bazelbuild/bazelisk)), which is what CI
+uses. Bazel downloads its own Node.js and npm packages, so nothing besides
+Bazel needs to be installed for `bazel build //...` and `bazel test //...`.
+`package.json`/`package-lock.json` stay the source of truth for dependencies;
+Bazel regenerates the committed `pnpm-lock.yaml` from them when they change.
+
 To enforce a consistent code style through our code base, we have configured
 the project to use **prettier** and **eslint** to perform formatting and
 linting. We strongly recommend installing the following Visual Studio Code
@@ -100,7 +107,7 @@ together.
 
 We expect contributions to include tests that demonstrate and validate the intended behavior.
 
-- Running tests: Use `npm run test` to run the tests. These tests will download a local version of vscode into the `.vscode-test` directory and will run integration tests against the extension in that workspace.
+- Running tests: Use `bazel test //...` (or `npm run test`) to run the tests. This typechecks, lints and format-checks the sources, checks the grammar snapshot and runs the VS Code integration tests. These tests download a local version of vscode (into `~/.cache/vscode-bazel/vscode-test` under Bazel, `.vscode-test` under npm) and run integration tests against the extension in that workspace. They need a display (use `xvfb-run -a bazel test //...` on a headless Linux machine) and `bazel`, `buildifier`, `c++filt` and `rustfilt` on `PATH`.
 
 - New features: add a set of VS Code integration tests that demo the intended behaviour by making use of the mock workspace under `test/bazel_workspace` (vscode-tests will be executed within this workspace). Integration tests should exercise the extension as a user would (for example: open editors, execute commands with `vscode.commands.executeCommand`, and assert on the editor state or extension outputs). See `test/go_to_label.test.ts` for a minimal integration-style example.
 

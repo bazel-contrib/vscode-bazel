@@ -1,0 +1,30 @@
+###############################################################################
+## Bazel Configuration Flags
+##
+## `.bazelrc` is a Bazel configuration file.
+## https://bazel.build/docs/best-practices#bazelrc-file
+###############################################################################
+
+# The test/bazel_workspace fixture is data, not part of our build. Each
+# fixture BUILD file references labels that only resolve inside the
+# fixture's own workspace context (e.g. //pkg1), so we tell Bazel to
+# pretend those packages don't exist. Unlike ignore_directories, this
+# leaves the files visible to glob() from the enclosing //test package
+# so we can stage them into the vscode-test runtime tree.
+common --deleted_packages=test/bazel_workspace/pkg1,test/bazel_workspace/pkg2,test/bazel_workspace/pkg2/sub-pkg,test/bazel_workspace/buildifier,test/bazel_workspace/nested_module
+
+# Keep host environment out of actions so the build is reproducible across
+# machines that may or may not have Node/npm installed on PATH.
+build --incompatible_strict_action_env
+
+# Surface failures without pagination.
+test --test_output=errors
+
+# The VS Code integration tests (//test:unit) drive a real VS Code, which
+# needs a display, and the extension under test shells out to the host's
+# bazel/bazelisk and buildifier. Shared download caches (VS Code, bazelisk)
+# live under HOME. Passing these through is intentionally non-hermetic.
+test --test_env=DISPLAY --test_env=XAUTHORITY --test_env=HOME --test_env=PATH
+
+# Local convenience: user overrides in .bazelrc.user (git-ignored) are honored.
+try-import %workspace%/.bazelrc.user

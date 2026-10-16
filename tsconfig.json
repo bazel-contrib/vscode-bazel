@@ -16,6 +16,8 @@
         "esModuleInterop": true,
     },
     "exclude": [
+        // Bazel's convenience symlinks into its output tree.
+        "bazel-*",
         "dist",
         "node_modules",
         "out",
