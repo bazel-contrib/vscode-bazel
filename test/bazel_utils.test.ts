@@ -1,5 +1,6 @@
 import * as path from "path";
 import * as fs from "fs";
+import * as os from "os";
 import * as assert from "assert";
 import * as sinon from "sinon";
 import * as vscode from "vscode";
@@ -261,9 +262,12 @@ describe("Bazel Utils: getBazelWorkspaceFolder", () => {
       .getConfiguration("bazel.workspace")
       .update("path", workspacePath, vscode.ConfigurationTarget.Workspace);
 
+    // Somewhere with no workspace marker in any ancestor. This repository
+    // itself is a Bazel workspace, so a sibling of the test fixture would
+    // resolve to it.
     const unrelatedFile = path.join(
-      path.dirname(workspacePath),
-      "other_workspace",
+      os.tmpdir(),
+      "vscode-bazel-other-workspace",
       "BUILD",
     );
     assert.strictEqual(getBazelWorkspaceFolder(unrelatedFile), undefined);

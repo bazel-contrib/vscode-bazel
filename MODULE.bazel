@@ -1,0 +1,61 @@
+"""vscode-bazel"""
+
+module(name = "vscode_bazel")
+
+bazel_dep(name = "aspect_rules_js", version = "3.2.2")
+bazel_dep(name = "aspect_rules_ts", version = "3.9.1")
+bazel_dep(name = "aspect_rules_esbuild", version = "0.26.0")
+bazel_dep(name = "bazel_lib", version = "3.5.0")
+bazel_dep(name = "rules_nodejs", version = "6.7.5")
+bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "buildifier_prebuilt", version = "8.5.1.4")
+
+# Makes package.json's version available to BUILD files as
+# @package_version//:version.bzl.
+package_version = use_repo_rule("//tools:package_version.bzl", "package_version")
+
+package_version(
+    name = "package_version",
+    package_json = "//:package.json",
+)
+
+rules_ts_ext = use_extension("@aspect_rules_ts//ts:extensions.bzl", "ext")
+rules_ts_ext.deps(ts_version = "5.4.4")
+use_repo(rules_ts_ext, "npm_typescript")
+
+# Bazel supplies its own Node — contributors do NOT need Node on PATH.
+node = use_extension("@rules_nodejs//nodejs:extensions.bzl", "node")
+node.toolchain(node_version = "22.11.0")
+
+# rules_js reads a pnpm-lock.yaml. We drive it from the existing npm
+# package-lock.json via update_pnpm_lock: Bazel runs its bundled pnpm to
+# generate/refresh pnpm-lock.yaml whenever package.json or
+# package-lock.json changes. Both files should be committed.
+#
+# The repository gets a module-specific name rather than the conventional
+# `npm`, so it can never be confused with another module's.
+npm = use_extension("@aspect_rules_js//npm:extensions.bzl", "npm")
+npm.npm_translate_lock(
+    name = "vscode_bazel_npm",
+    data = ["//:package.json"],
+    npm_package_lock = "//:package-lock.json",
+    pnpm_lock = "//:pnpm-lock.yaml",
+    # vsce's secret scanner resolves its rule/formatter packages by bare name from
+    # the root node_modules, which only works in npm's hoisted layout.
+    # Hoist them so `//:vsix` can hand them to the vsce tool.
+    public_hoist_packages = {
+        "@secretlint/secretlint-formatter-sarif": [""],
+        "@secretlint/secretlint-rule-no-dotenv": [""],
+        "@secretlint/secretlint-rule-preset-recommend": [""],
+    },
+    update_pnpm_lock = True,
+)
+use_repo(npm, "vscode_bazel_npm")
+
+# Pin the esbuild binary rules_esbuild downloads to the newest version it
+# knows about, matching the esbuild in package.json as closely as possible.
+esbuild = use_extension("@aspect_rules_esbuild//esbuild:extensions.bzl", "esbuild")
+esbuild.toolchain(esbuild_version = "0.28.0")
+use_repo(esbuild, "esbuild_toolchains")
+
+register_toolchains("@esbuild_toolchains//:all")

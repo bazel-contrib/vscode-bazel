@@ -1,3 +1,4 @@
 *.json
 src/protos/protos.js
 CHANGELOG.md
+pnpm-lock.yaml

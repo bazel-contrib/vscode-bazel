@@ -15,8 +15,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build_vscode_ext:
-    name: Build VS Code extension
+  # The npm scripts remain the day-to-day developer workflow (VS Code tasks,
+  # launch configs, `npm test`), so keep them working too. Packaging and
+  # releasing happen in the Bazel job below.
+  npm_workflow:
+    name: Check npm workflow
     runs-on: ubuntu-latest
     if: ${{ github.repository == 'bazel-contrib/vscode-bazel' }} # Allow CI-runs only for events from/to this repository
     steps:
@@ -61,10 +64,49 @@ jobs:
         run: sudo apt install -y binutils rustfilt
 
       - run: xvfb-run -a npm test
-        if: runner.os == 'Linux'
 
       - name: Package VS Code extension
         run: npm run package
+
+  build_vscode_ext:
+    name: Build VS Code extension
+    runs-on: ubuntu-latest
+    if: ${{ github.repository == 'bazel-contrib/vscode-bazel' }} # Allow CI-runs only for events from/to this repository
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Install buildifier
+        uses: ./.github/actions/install-buildifier
+        with:
+          version: "8.2.1"
+
+      # Bazel provides Node.js and all npm dependencies; no npm install needed.
+      - uses: bazel-contrib/setup-bazel@c5acdfb288317d0b5c0bbd7a396a3dc868bb0f86 # 0.19.0
+        with:
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}
+          repository-cache: true
+
+      # The integration tests run bazel inside this fixture workspace. Building
+      # it up front catches fixture breakage early and warms bazelisk's cache.
+      - name: Build the test fixture workspace
+        run: bazel build //...
+        working-directory: ${{ github.workspace }}/test/bazel_workspace/
+
+      # Required for the test cases
+      - name: Install system dependencies
+        run: sudo apt install -y binutils rustfilt
+
+      # Typecheck, lint, format check, grammar snapshot and VS Code
+      # integration tests. xvfb provides the display VS Code needs.
+      - name: Test
+        run: xvfb-run -a bazel test //...
+
+      # Writes vscode-bazel-<version>.vsix into the checkout for the artifact
+      # step below.
+      - name: Package VS Code extension
+        run: bazel run //:export_vsix
 
       - name: Upload Workflow Artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -81,9 +123,6 @@ jobs:
 
       - name: Upload Release Artifact
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && steps.release.outputs.release_created }}
-        shell: bash
-        run: |
-          filename=`echo vscode-bazel-*.vsix`;
-          gh release upload ${{ steps.release.outputs.tag_name }} "$filename"
+        run: bazel run //:upload_release_asset -- "${{ steps.release.outputs.tag_name }}"
         env:
           GH_TOKEN: ${{ github.token }}

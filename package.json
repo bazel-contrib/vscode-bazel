@@ -707,9 +707,13 @@
     "overrides": {
         "serialize-javascript": "7.1.1"
     },
+    "pnpm": {
+        "onlyBuiltDependencies": []
+    },
     "dependencies": {
         "@vscode/debugadapter": "^1.68.0",
         "@vscode/debugprotocol": "^1.68.0",
+        "long": "^5.3.2",
         "protobufjs": "^8.0.1",
         "protobufjs-cli": "^2.5.1",
         "vscode-languageclient": "^10.0.0",

@@ -1,0 +1,6 @@
+"""Repo-level Bazel configuration."""
+
+# rules_js links npm packages into node_modules directories that Bazel
+# must not descend into. Bazel 8+ replaces .bazelignore's coarse pattern
+# with this scoped directive.
+ignore_directories(["**/node_modules"])

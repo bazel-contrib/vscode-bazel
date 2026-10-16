@@ -1,0 +1,15 @@
+node_modules
+dist
+out
+.vscode-test
+bazel-bin
+bazel-out
+bazel-testlogs
+bazel-vscode-bazel
+# Convenience symlinks Bazel creates when the test fixture workspace is built
+# in place (CI does this to warm caches). Without this the //test glob
+# would follow them into the fixture's output tree.
+test/bazel_workspace/bazel-bazel_workspace
+test/bazel_workspace/bazel-bin
+test/bazel_workspace/bazel-out
+test/bazel_workspace/bazel-testlogs

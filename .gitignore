@@ -9,3 +9,9 @@ node_modules
 src/protos/protos.d.ts
 src/protos/protos.js
 MODULE.bazel.lock
+bazel-bin
+bazel-out
+bazel-testlogs
+bazel-vscode-bazel
+.aspect
+.bazelrc.user
