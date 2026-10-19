@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.15.2](https://github.com/bazel-contrib/vscode-bazel/compare/v0.15.1...v0.15.2) (2026-10-19)
+
+
+### Bug Fixes
+
+* coalesce bazel queries triggered by BUILD file changes ([#712](https://github.com/bazel-contrib/vscode-bazel/issues/712)) ([e9d8f92](https://github.com/bazel-contrib/vscode-bazel/commit/e9d8f924fe12da23ee149ceaf7cfa57d58ce052b))
+
 ## [0.15.1](https://github.com/bazel-contrib/vscode-bazel/compare/v0.15.0...v0.15.1) (2026-09-28)
 
 
