@@ -2,7 +2,8 @@ import * as assert from "assert";
 import * as path from "path";
 import * as vscode from "vscode";
 import { BazelCompletionItemProvider } from "../src/completion-provider/bazel_completion_provider";
-import { BazelWorkspaceInfo } from "../src/bazel";
+import { BazelQuery, BazelWorkspaceInfo } from "../src/bazel";
+import { blaze_query } from "../src/protos";
 import * as sinon from "sinon";
 
 describe("BazelCompletionItemProvider", () => {
@@ -106,5 +107,49 @@ describe("BazelCompletionItemProvider", () => {
       BazelWorkspaceInfo.fromDocument(nestedDocument)?.bazelWorkspacePath,
       staticallyResolvedWorkspace.bazelWorkspacePath,
     );
+  });
+
+  describe("scheduleRefresh", () => {
+    let clock: sinon.SinonFakeTimers;
+    const buildFileUri = vscode.Uri.file(path.join(testWorkspacePath, "BUILD"));
+
+    beforeEach(() => {
+      clock = sandbox.useFakeTimers();
+    });
+
+    it("runs one query for a burst of BUILD file changes", async () => {
+      const queryStub = sandbox
+        .stub(BazelQuery.prototype, "queryTargets")
+        .resolves(blaze_query.QueryResult.create());
+      const provider = new BazelCompletionItemProvider();
+
+      for (let i = 0; i < 1000; i++) {
+        provider.scheduleRefresh(buildFileUri);
+      }
+      await clock.tickAsync(1000);
+
+      sinon.assert.calledOnceWithMatch(queryStub, "kind('.* rule', ...)");
+      provider.dispose();
+    });
+
+    it("aborts the query in flight on dispose", async () => {
+      let signal: AbortSignal | undefined;
+      sandbox
+        .stub(BazelQuery.prototype, "queryTargets")
+        .callsFake((_query, options) => {
+          signal = options?.abortSignal;
+          return new Promise(() => {
+            /* never settles */
+          });
+        });
+      const provider = new BazelCompletionItemProvider();
+
+      provider.scheduleRefresh(buildFileUri);
+      await clock.tickAsync(1000);
+      assert.strictEqual(signal?.aborted, false);
+
+      provider.dispose();
+      assert.strictEqual(signal?.aborted, true);
+    });
   });
 });

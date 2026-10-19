@@ -62,5 +62,32 @@ describe("CodeLensFeature", () => {
       // Assert that createFileSystemWatcher was called
       sinon.assert.calledOnce(createWatcherStub);
     });
+
+    it("refreshes once for a burst of BUILD file changes", async () => {
+      const clock = sandbox.useFakeTimers();
+      sandbox.stub(bazel_availability, "checkBazelIsAvailable").returns(true);
+      sandbox
+        .stub(vscode.languages, "registerCodeLensProvider")
+        .returns(mockDisposable);
+      let fireChange: (() => void) | undefined;
+      sandbox.stub(vscode.workspace, "createFileSystemWatcher").returns({
+        onDidChange: (listener: () => void) => {
+          fireChange = listener;
+          return mockDisposable;
+        },
+        dispose: () => {
+          /* empty */
+        },
+      } as unknown as vscode.FileSystemWatcher);
+      const refreshStub = sandbox.stub(CodeLensProvider.prototype, "refresh");
+
+      await codeLensFeature.enable(mockContext);
+      for (let i = 0; i < 1000; i++) {
+        fireChange!();
+      }
+      await clock.tickAsync(1000);
+
+      sinon.assert.calledOnce(refreshStub);
+    });
   });
 });
