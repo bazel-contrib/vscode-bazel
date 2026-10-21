@@ -114,7 +114,13 @@ describe("BazelCompletionItemProvider", () => {
     const buildFileUri = vscode.Uri.file(path.join(testWorkspacePath, "BUILD"));
 
     beforeEach(() => {
-      clock = sandbox.useFakeTimers();
+      clock = sandbox.useFakeTimers({
+        // The extension host is shared with VS Code's built-in extensions, whose
+        // pending native timers must stay clearable, and which must keep their
+        // other timer functions. Only fake what CoalescingRunner uses.
+        shouldClearNativeTimers: true,
+        toFake: ["setTimeout", "clearTimeout"],
+      });
     });
 
     it("runs one query for a burst of BUILD file changes", async () => {

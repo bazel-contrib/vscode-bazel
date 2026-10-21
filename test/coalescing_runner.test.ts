@@ -6,7 +6,13 @@ describe("CoalescingRunner", () => {
   let clock: sinon.SinonFakeTimers;
 
   beforeEach(() => {
-    clock = sinon.useFakeTimers();
+    clock = sinon.useFakeTimers({
+      // The extension host is shared with VS Code's built-in extensions, whose
+      // pending native timers must stay clearable, and which must keep their
+      // other timer functions. Only fake what CoalescingRunner uses.
+      shouldClearNativeTimers: true,
+      toFake: ["setTimeout", "clearTimeout"],
+    });
   });
 
   afterEach(() => {

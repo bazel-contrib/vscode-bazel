@@ -1,6 +1,8 @@
+import * as assert from "assert";
+import * as fs from "fs";
+import * as os from "os";
 import * as path from "path";
 import * as vscode from "vscode";
-import * as assert from "assert";
 
 async function openSourceFile(sourceFile: string) {
   const doc = await vscode.workspace.openTextDocument(
@@ -46,6 +48,18 @@ describe("Go to Build File", () => {
     "bazel_workspace",
   );
 
+  // A file with no BUILD file in any ancestor directory. Files in this
+  // repository don't qualify, since the repository is itself a Bazel
+  // workspace, so use a fresh directory under the system temp dir.
+  const outsideDir = fs.mkdtempSync(
+    path.join(fs.realpathSync(os.tmpdir()), "vscode-bazel-test-"),
+  );
+  const outsideFile = path.join(outsideDir, "outside.txt");
+  fs.writeFileSync(outsideFile, "not in a Bazel workspace\n");
+  after(() => {
+    fs.rmSync(outsideDir, { recursive: true, force: true });
+  });
+
   const testCases: TestCase[] = [
     {
       name: "should find BUILD file from package root",
@@ -83,7 +97,7 @@ describe("Go to Build File", () => {
     },
     {
       name: "should not change active file if outside a Bazel workspace",
-      sourceFile: __filename,
+      sourceFile: outsideFile,
       expectedBuildFile: null,
     },
   ];
