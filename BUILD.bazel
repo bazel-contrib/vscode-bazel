@@ -14,7 +14,7 @@ load("@vscode_bazel_npm//:prettier/package_json.bzl", prettier_bin = "bin")
 load("@vscode_bazel_npm//:protobufjs-cli/package_json.bzl", pbjs_bin = "bin")
 load("@vscode_bazel_npm//:vscode-tmgrammar-test/package_json.bzl", tmgrammar_bin = "bin")
 load("//tools:dev.bzl", "source_tree_tool")
-load("//tools:release.bzl", "github_release_upload", "vscode_install")
+load("//tools:release.bzl", "vscode_install")
 
 npm_link_all_packages(name = "node_modules")
 
@@ -119,9 +119,9 @@ js_library(
     visibility = ["//visibility:public"],
 )
 
-# Hand-written TypeScript sources. The generated protos.d.ts is excluded
-# because `npm run prebuild` also writes it into the source tree; Bazel
-# always uses its own generated copy (added explicitly below).
+# Hand-written TypeScript sources. The generated protos.d.ts is excluded in
+# case a stale copy from the former npm build is still in the source tree;
+# Bazel always uses its own generated copy (added explicitly below).
 _TS_SRCS = glob(
     ["src/**/*.ts"],
     exclude = ["src/protos/protos.d.ts"],
@@ -280,13 +280,6 @@ vsce_bin.vsce_binary(
         "$(rootpath :vsix)",
     ],
     data = [":vsix"] + _VSCE_TOOL_DATA,
-)
-
-# `bazel run //:upload_release_asset -- <tag>` attaches the built .vsix to
-# the GitHub release for <tag>, as the release workflow does.
-github_release_upload(
-    name = "upload_release_asset",
-    asset = ":vsix",
 )
 
 # `bazel run //:install` installs the built .vsix into the local VS Code

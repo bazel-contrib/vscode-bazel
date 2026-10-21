@@ -670,7 +670,7 @@
         "lint-check": "bazel test //:lint",
         "lint-fix": "bazel run //:lint_fix",
         "test:grammar": "bazel test //:grammar",
-        "test:unit": "bazel test //test:unit",
+        "test:unit": "bazel test //test:integration",
         "test": "bazel test //...",
         "package": "bazel run //:export_vsix",
         "update-snapshot": "bazel run //test:update_snapshot",

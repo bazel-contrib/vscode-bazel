@@ -10,7 +10,8 @@
 # fixture's own workspace context (e.g. //pkg1), so we tell Bazel to
 # pretend those packages don't exist. Unlike ignore_directories, this
 # leaves the files visible to glob() from the enclosing //test package
-# so we can stage them into the vscode-test runtime tree.
+# so we can stage them into the vscode-test runtime tree. A new fixture
+# package that is missing here fails loudly: Bazel tries to load it.
 common --deleted_packages=test/bazel_workspace/pkg1,test/bazel_workspace/pkg2,test/bazel_workspace/pkg2/sub-pkg,test/bazel_workspace/buildifier,test/bazel_workspace/nested_module
 
 # Keep host environment out of actions so the build is reproducible across
@@ -19,12 +20,6 @@ build --incompatible_strict_action_env
 
 # Surface failures without pagination.
 test --test_output=errors
-
-# The VS Code integration tests (//test:unit) drive a real VS Code, which
-# needs a display, and the extension under test shells out to the host's
-# bazel/bazelisk and buildifier. Shared download caches (VS Code, bazelisk)
-# live under HOME. Passing these through is intentionally non-hermetic.
-test --test_env=DISPLAY --test_env=XAUTHORITY --test_env=HOME --test_env=PATH
 
 # The Aspect rulesets (rules_js, rules_ts, rules_esbuild) report usage
 # telemetry to Aspect while fetching repositories. Opt out for every

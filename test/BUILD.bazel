@@ -1,8 +1,8 @@
-# This BUILD file exists as a fixture for the "go to build file" feature:
-# it is one level above test/bazel_workspace and should not be surfaced as
-# a match when the extension walks up from a file inside that fixture. Its
-# contents are irrelevant to that test, so Bazel rules for the outer build
-# can safely live here alongside the fixture role.
+# This BUILD file doubles as a fixture for the "go to build file" feature:
+# it is one level above test/bazel_workspace, and the "no parent BUILD
+# file" test (test/go_to_build_file.test.ts, non-pkg/bar.txt) checks that
+# walking up from inside the fixture stops at the fixture's workspace root
+# instead of finding this file. Its contents are irrelevant to that test.
 
 load("@aspect_rules_js//js:defs.bzl", "js_library", "js_test")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config", "ts_project")
@@ -105,7 +105,7 @@ ts_config(
 # //:tsc emits next to the sources in bazel-out.
 ts_project(
     name = "tsc",
-    srcs = glob(["*.test.ts"]),
+    srcs = glob(["*.ts"]),
     allow_js = True,
     composite = True,
     declaration = True,
@@ -157,24 +157,36 @@ copy_to_directory(
 # The VS Code integration test suite (`npm run test:unit`). The launcher
 # copies unit_runtime into a scratch directory, because VS Code and the
 # extension's own `bazel` invocations in the fixture workspace need a
-# writable tree, then runs vscode-test there. vscode-test downloads VS Code on first run
-# (~170MB, cached under ~/.cache/vscode-bazel/vscode-test), the extension
-# needs the host's bazel + buildifier, and VS Code needs a display: see
-# the test --test_env lines in .bazelrc.
+# writable tree, then runs vscode-test there. vscode-test downloads VS Code
+# on first run (~170MB, cached under ~/.cache/vscode-bazel/vscode-test),
+# the extension under test needs the host's bazel, and VS Code needs a
+# display; hence the inherited environment and the tags. Deliberately not
+# hermetic.
 js_library(
-    name = "unit_launcher",
+    name = "integration_launcher",
     srcs = ["run_vscode_test.js"],
 )
 
 js_test(
-    name = "unit",
+    name = "integration",
     size = "large",
-    args = ["$(rootpath :unit_runtime)"],
+    args = [
+        "$(rootpath :unit_runtime)",
+        "$(rootpath @buildifier_prebuilt//buildifier)",
+    ],
     data = [
         ":unit_runtime",
         "//:node_modules",
+        "@buildifier_prebuilt//buildifier",
     ],
-    entry_point = ":unit_launcher",
+    entry_point = ":integration_launcher",
+    env_inherit = [
+        "DISPLAY",
+        "HOME",
+        "PATH",
+        "WAYLAND_DISPLAY",
+        "XAUTHORITY",
+    ],
     tags = [
         "no-sandbox",
         "requires-network",

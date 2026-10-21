@@ -22,13 +22,15 @@ fi
 export JS_BINARY__CHDIR="$BUILD_WORKSPACE_DIRECTORY"
 exec "$PWD/{tool}" "$@"
 """.format(
+            # str(ctx.label) would print the canonical @@//... form.
             label = "//%s:%s" % (ctx.label.package, ctx.label.name),
             tool = ctx.executable.tool.short_path,
             link_node_modules = """
 # Node-based tooling run in the checkout resolves packages from
-# node_modules/ there; point it at the packages Bazel linked.
-if [[ ! -e "$BUILD_WORKSPACE_DIRECTORY/node_modules" ]]; then
-  ln -s bazel-bin/node_modules "$BUILD_WORKSPACE_DIRECTORY/node_modules"
+# node_modules/ there; point it at the packages Bazel linked. Replace a
+# (possibly dangling) link, but leave a real directory alone.
+if [[ -L "$BUILD_WORKSPACE_DIRECTORY/node_modules" || ! -e "$BUILD_WORKSPACE_DIRECTORY/node_modules" ]]; then
+  ln -sfn bazel-bin/node_modules "$BUILD_WORKSPACE_DIRECTORY/node_modules"
 fi""" if ctx.attr.link_node_modules else "",
         ),
         is_executable = True,

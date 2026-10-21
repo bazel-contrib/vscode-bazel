@@ -83,7 +83,7 @@ To deploy the release, merge the auto-generated release PR. This will contain a 
 
 We deploy the extension to **two** destinations:
 
-1. We create a .vsix package to upload as a GitHub release, since this is a useful archiving method and it allows users to download and roll back to a previous version of the plugin if necessary. This is automated by the "Build VS Code extension" GitHub workflow which will automatically run as soon as a new GitHub release gets created (`bazel run //:upload_release_asset -- <tag>` does the same by hand).
+1. We create a .vsix package to upload as a GitHub release, since this is a useful archiving method and it allows users to download and roll back to a previous version of the plugin if necessary. This is automated by the "Build VS Code extension" GitHub workflow: on every push to master it runs release-please, and when that creates a release it attaches the `.vsix` built and tested in the same run.
 2. We publish the extension to the Visual Studio Marketplace so that it can be found in search results and downloaded from Visual Studio Code's Extensions area. This is a manual step and requires publishing rights for the Bazel organization on the Visual Studio Marketplace. Florian Weikert <fwe@google.com> has handled recent versions. With a [Personal Access Token](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#get-a-personal-access-token) for that publisher, the upload is:
 
    ```

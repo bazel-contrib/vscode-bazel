@@ -9,7 +9,7 @@ module.exports = defineConfig({
   workspaceFolder: "test/bazel_workspace",
   version: "1.111.0",
   // Where to download VS Code to; defaults to .vscode-test/ next to this
-  // file. `bazel test //test:unit` runs from a scratch copy and points this
+  // file. `bazel test //test:integration` runs from a scratch copy and points this
   // at a cache that survives between runs.
   cachePath: process.env.VSCODE_TEST_CACHE_PATH,
 });
