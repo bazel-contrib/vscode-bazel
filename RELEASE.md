@@ -7,17 +7,17 @@ Most of the releasing is done by [release please](https://github.com/googleapis/
 Check out the branch of the auto-generated release PR and, run the following command from the directory of the extension source code:
 
 ```
-$ npm run package
+$ bazel build //:vsix
 ```
 
-This will compile and bundle the extension into a file named `vscode-bazel-x.y.z.vsix`, where `x.y.z` is the version number of the extension as defined in `package.json`.
+This will compile and bundle the extension into a file named `vscode-bazel-x.y.z.vsix`, where `x.y.z` is the version number of the extension as defined in `package.json`. To get a copy of the file in the source tree, run `bazel run //:export_vsix`. `npm run package` still produces the same file.
 
 Having this standalone package available before uploading the release to the Marketplace or to GitHub is useful for testing:
 
-- Install it manually by running the following command:
+- Install it into your local VS Code by running the following command (set `VSCODE_BIN=code-insiders` to target another build):
 
   ```
-  $ code --install-extension vscode-bazel-x.y.z.vsix
+  $ bazel run //:install
   ```
 
 - Verify that everything works as intended in a deployment environment rather than a development environment. (For example, you can check that you haven't [accidentally listed dependencies you need at runtime as `devDependencies`](https://github.com/bazelbuild/vscode-bazel/issues/14).)
@@ -83,5 +83,11 @@ To deploy the release, merge the auto-generated release PR. This will contain a 
 
 We deploy the extension to **two** destinations:
 
-1. We create a .vsix package to upload as a GitHub release, since this is a useful archiving method and it allows users to download and roll back to a previous version of the plugin if necessary. This is automated by the "Build VS Code extension" GitHub workflow which will automatically run as soon as a new GitHub release gets created.
-2. We publish the extension to the Visual Studio Marketplace so that it can be found in search results and downloaded from Visual Studio Code's Extensions area. This is a manual step and requires publishing rights for the Bazel organization on the Visual Studio Marketplace. Florian Weikert <fwe@google.com> has handled recent versions.
+1. We create a .vsix package to upload as a GitHub release, since this is a useful archiving method and it allows users to download and roll back to a previous version of the plugin if necessary. This is automated by the "Build VS Code extension" GitHub workflow which will automatically run as soon as a new GitHub release gets created (`bazel run //:upload_release_asset -- <tag>` does the same by hand).
+2. We publish the extension to the Visual Studio Marketplace so that it can be found in search results and downloaded from Visual Studio Code's Extensions area. This is a manual step and requires publishing rights for the Bazel organization on the Visual Studio Marketplace. Florian Weikert <fwe@google.com> has handled recent versions. With a [Personal Access Token](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#get-a-personal-access-token) for that publisher, the upload is:
+
+   ```
+   $ VSCE_PAT=<token> bazel run //:publish
+   ```
+
+   Extra `vsce publish` flags can be appended after `--`, e.g. `bazel run //:publish -- --pre-release`.

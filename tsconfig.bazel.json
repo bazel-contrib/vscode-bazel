@@ -1,0 +1,13 @@
+{
+    // Used by Bazel only (see BUILD.bazel). Emits next to the sources in
+    // bazel-out instead of into dist/, and turns on the composite/declaration
+    // output rules_ts needs so test/*.test.ts can import ../src/*.
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "outDir": ".",
+        "rootDir": ".",
+        "composite": true,
+        "declaration": true,
+        "skipLibCheck": true
+    }
+}

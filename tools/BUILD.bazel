@@ -1,0 +1,17 @@
+# Starlark helpers: release.bzl (publishing run targets), dev.bzl (run
+# targets acting on the checkout) and package_version.bzl (version from
+# package.json).
+
+load("@aspect_rules_js//js:defs.bzl", "js_library")
+
+js_library(
+    name = "package_vsix",
+    srcs = ["package_vsix.js"],
+    visibility = ["//:__pkg__"],
+)
+
+js_library(
+    name = "export_dev_tree",
+    srcs = ["export_dev_tree.js"],
+    visibility = ["//:__pkg__"],
+)
