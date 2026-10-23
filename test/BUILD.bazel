@@ -154,7 +154,7 @@ copy_to_directory(
     root_paths = [],
 )
 
-# The VS Code integration test suite (`npm run test:unit`). The launcher
+# The VS Code integration test suite (`npm run test:integration`). The launcher
 # copies unit_runtime into a scratch directory, because VS Code and the
 # extension's own `bazel` invocations in the fixture workspace need a
 # writable tree, then runs vscode-test there. vscode-test downloads VS Code

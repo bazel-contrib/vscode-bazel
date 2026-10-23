@@ -54,9 +54,13 @@ if (!realBazel) {
   process.exit(1);
 }
 
+// Resolve to absolute paths first: rules_js patches fs.realpathSync so that
+// a symlink escaping the runfiles tree is not followed, and in that case it
+// returns its input unchanged, which for a relative `rootpath` would break
+// once used from another working directory.
 const [runtime, buildifier] = process.argv
   .slice(2, 4)
-  .map((p) => fs.realpathSync(p));
+  .map((p) => fs.realpathSync(path.resolve(p)));
 const vscodeTestArgs = process.argv.slice(4);
 
 const scratch = fs.mkdtempSync(
