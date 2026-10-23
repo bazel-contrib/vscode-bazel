@@ -139,7 +139,7 @@ async function onTaskProcessEnd(event: vscode.TaskProcessEndEvent) {
   const bazelTaskInfo = taskDefinition.bazelTaskInfo;
 
   // Show a notification that the build is finished
-  if (bazelTaskInfo) {
+  if (bazelTaskInfo && rawExitCode !== undefined) {
     if (rawExitCode !== 0) {
       logError(
         `Bazel ${command} failed: ${exitCodeToUserString(exitCode)}`,
