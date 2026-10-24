@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.15.3](https://github.com/bazel-contrib/vscode-bazel/compare/v0.15.2...v0.15.3) (2026-10-24)
+
+
+### Bug Fixes
+
+* do not show "Bazel run failed: Success!" when terminating a task ([#728](https://github.com/bazel-contrib/vscode-bazel/issues/728)) ([2ba1f70](https://github.com/bazel-contrib/vscode-bazel/commit/2ba1f70fea7ee90685c35e3e0e776a53fb5664b4))
+
 ## [0.15.2](https://github.com/bazel-contrib/vscode-bazel/compare/v0.15.1...v0.15.2) (2026-10-19)
 
 
