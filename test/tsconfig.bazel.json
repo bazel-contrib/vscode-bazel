@@ -1,0 +1,9 @@
+{
+    // Used by Bazel only (see BUILD.bazel); editors use the root tsconfig.json.
+    "extends": "../tsconfig.bazel.json",
+    "compilerOptions": {
+        "rootDir": ".",
+        "outDir": "."
+    },
+    "include": ["*.ts"]
+}

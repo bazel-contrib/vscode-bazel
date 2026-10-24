@@ -1,12 +1,13 @@
 import * as assert from "assert";
 import * as sinon from "sinon";
 import { CoalescingRunner } from "../src/extension/coalescing_runner";
+import { useFakeTimers } from "./fake_timers";
 
 describe("CoalescingRunner", () => {
   let clock: sinon.SinonFakeTimers;
 
   beforeEach(() => {
-    clock = sinon.useFakeTimers();
+    clock = useFakeTimers();
   });
 
   afterEach(() => {

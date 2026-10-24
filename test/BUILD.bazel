@@ -1,0 +1,194 @@
+# This BUILD file doubles as a fixture for the "go to build file" feature:
+# it is one level above test/bazel_workspace, and the "no parent BUILD
+# file" test (test/go_to_build_file.test.ts, non-pkg/bar.txt) checks that
+# walking up from inside the fixture stops at the fixture's workspace root
+# instead of finding this file. Its contents are irrelevant to that test.
+
+load("@aspect_rules_js//js:defs.bzl", "js_library", "js_test")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config", "ts_project")
+load("@bazel_lib//lib:copy_file.bzl", "copy_file")
+load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@bazel_lib//lib:write_source_files.bzl", "write_source_file")
+load("@vscode_bazel_npm//:vscode-tmgrammar-test/package_json.bzl", tmgrammar_bin = "bin")
+
+package(default_visibility = ["//visibility:private"])
+
+# Grammar test fixtures — cross-package data has to travel through a
+# js_library so rules_js can stage them into the sandbox.
+js_library(
+    name = "grammar_fixtures",
+    srcs = [
+        "example.bazelrc",
+        "example.bazelrc.snap",
+    ],
+    visibility = ["//:__pkg__"],
+)
+
+# `bazel run //test:update_snapshot` regenerates example.bazelrc.snap from
+# the current grammar (//:grammar checks it). The tool writes the snapshot
+# next to its input, so work on a copy of the input to avoid clashing with
+# the checked-in snapshot.
+copy_file(
+    name = "snapshot_input",
+    src = "example.bazelrc",
+    out = "snapshot/example.bazelrc",
+)
+
+tmgrammar_bin.vscode_tmgrammar_snap(
+    name = "gen_snapshot",
+    srcs = [
+        ":snapshot_input",
+        "//:grammars",
+        "//:package_json",
+    ],
+    outs = ["snapshot/example.bazelrc.snap"],
+    args = [
+        "-u",
+        "test/snapshot/example.bazelrc",
+    ],
+)
+
+write_source_file(
+    name = "update_snapshot",
+    diff_test = False,
+    in_file = ":gen_snapshot",
+    out_file = "example.bazelrc.snap",
+)
+
+# Sources for //:format and //:lint (a js_library so rules_js can stage
+# them from another package).
+js_library(
+    name = "lint_srcs",
+    srcs = glob([
+        "*.js",
+        "*.ts",
+        "lcov/*.md",
+    ]),
+    visibility = ["//:__pkg__"],
+)
+
+# The example Bazel workspace vscode-test opens as the working folder.
+# Its subpackages are declared in --deleted_packages (.bazelrc) so Bazel
+# doesn't try to parse the fixture BUILDs' inner-workspace label refs.
+# With those declared deleted, glob can pick up every file under the
+# fixture as data belonging to this //test package.
+filegroup(
+    name = "bazel_workspace_fixture",
+    srcs = glob(
+        ["bazel_workspace/**/*"],
+        # Artifacts of building the fixture in place (CI does this to warm
+        # caches): its bazel-* convenience symlinks, which .bazelignore also
+        # covers, and the lockfile Bazel writes.
+        exclude = [
+            "bazel_workspace/MODULE.bazel.lock",
+            "bazel_workspace/bazel-*/**",
+        ],
+    ),
+)
+
+# Coverage reports parsed by lcov_parser.test.ts.
+filegroup(
+    name = "lcov_fixtures",
+    srcs = glob(["lcov/*.lcov"]),
+)
+
+# Package-local tsconfig extends root so rootDir stays inside test/. Named
+# tsconfig.bazel.json so editors keep using the root tsconfig.json.
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.bazel.json",
+    deps = ["//:tsconfig"],
+)
+
+# Compile the test .ts files to JS so vscode-test (mocha) has files to
+# run. The tests' `../src/*` imports resolve against the .d.ts files that
+# //:tsc emits next to the sources in bazel-out.
+ts_project(
+    name = "tsc",
+    srcs = glob(["*.ts"]),
+    allow_js = True,
+    composite = True,
+    declaration = True,
+    source_map = True,
+    transpiler = "tsc",
+    tsconfig = ":tsconfig",
+    visibility = ["//:__pkg__"],
+    deps = [
+        "//:node_modules",
+        "//:tsc",
+    ],
+)
+
+# Assemble the runtime tree vscode-test needs, laid out like a source
+# checkout after `bazel run //:build`: .vscode-test.js, package.json,
+# grammars and assets at their canonical paths, the bundles under dist/,
+# unbundled src compiled by //:tsc under dist/src/, compiled tests under
+# dist/test/, and the fixtures under test/.
+copy_to_directory(
+    name = "unit_runtime",
+    srcs = [
+        ":bazel_workspace_fixture",
+        ":lcov_fixtures",
+        ":tsc",
+        "//:.vscode-test.js",
+        "//:assets",
+        "//:dist",
+        "//:grammars",
+        "//:package.json",
+        "//:protos_lib",
+        "//:tsc",
+    ],
+    replace_prefixes = {
+        # Unbundled src → dist/src so tests' `../src/*` resolves inside
+        # dist/. protos.js already lives under src/protos/.
+        "src/": "dist/src/",
+        # Compiled tests → dist/test/*.test.js per .vscode-test config.
+        "test/": "dist/test/",
+        # Keep the fixtures at their original paths (longest prefix wins
+        # over the generic "test/" rule above).
+        "test/bazel_workspace/": "test/bazel_workspace/",
+        "test/lcov/": "test/lcov/",
+    },
+    # Empty root_paths keeps each src at its workspace-relative path so
+    # replace_prefixes can rewrite specific prefixes above.
+    root_paths = [],
+)
+
+# The VS Code integration test suite (`npm run test:integration`). The launcher
+# copies unit_runtime into a scratch directory, because VS Code and the
+# extension's own `bazel` invocations in the fixture workspace need a
+# writable tree, then runs vscode-test there. vscode-test downloads VS Code
+# on first run (~170MB, cached under ~/.cache/vscode-bazel/vscode-test),
+# the extension under test needs the host's bazel, and VS Code needs a
+# display; hence the inherited environment and the tags. Deliberately not
+# hermetic.
+js_library(
+    name = "integration_launcher",
+    srcs = ["run_vscode_test.js"],
+)
+
+js_test(
+    name = "integration",
+    size = "large",
+    args = [
+        "$(rootpath :unit_runtime)",
+        "$(rootpath @buildifier_prebuilt//buildifier)",
+    ],
+    data = [
+        ":unit_runtime",
+        "//:node_modules",
+        "@buildifier_prebuilt//buildifier",
+    ],
+    entry_point = ":integration_launcher",
+    env_inherit = [
+        "DISPLAY",
+        "HOME",
+        "PATH",
+        "WAYLAND_DISPLAY",
+        "XAUTHORITY",
+    ],
+    tags = [
+        "no-sandbox",
+        "requires-network",
+    ],
+)

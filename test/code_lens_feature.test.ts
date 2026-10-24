@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import * as assert from "assert";
 import * as sinon from "sinon";
+import { useFakeTimers } from "./fake_timers";
 import { CodeLensFeature } from "../src/codelens/code_lens_feature";
 import { CodeLensProvider } from "../src/codelens/code_lens_provider";
 import * as bazel_availability from "../src/bazel/bazel_availability";
@@ -64,7 +65,7 @@ describe("CodeLensFeature", () => {
     });
 
     it("refreshes once for a burst of BUILD file changes", async () => {
-      const clock = sandbox.useFakeTimers();
+      const clock = useFakeTimers(sandbox);
       sandbox.stub(bazel_availability, "checkBazelIsAvailable").returns(true);
       sandbox
         .stub(vscode.languages, "registerCodeLensProvider")
