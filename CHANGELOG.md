@@ -1,5 +1,17 @@
 # Change Log
 
+## [0.16.0](https://github.com/bazel-contrib/vscode-bazel/compare/v0.15.2...v0.16.0) (2026-10-26)
+
+
+### Features
+
+* Introduce external tool downloader ([#637](https://github.com/bazel-contrib/vscode-bazel/issues/637)) ([1ba8280](https://github.com/bazel-contrib/vscode-bazel/commit/1ba828041f2c39c91e3797f091befe02abf17fbb))
+
+
+### Bug Fixes
+
+* do not show "Bazel run failed: Success!" when terminating a task ([#728](https://github.com/bazel-contrib/vscode-bazel/issues/728)) ([2ba1f70](https://github.com/bazel-contrib/vscode-bazel/commit/2ba1f70fea7ee90685c35e3e0e776a53fb5664b4))
+
 ## [0.15.2](https://github.com/bazel-contrib/vscode-bazel/compare/v0.15.1...v0.15.2) (2026-10-19)
 
 
