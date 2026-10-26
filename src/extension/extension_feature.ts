@@ -4,9 +4,9 @@ import {
   logWarn,
   logError,
   showUserMessage,
-  ILogger,
   logDebug,
 } from "./logger";
+import { ILogger } from "./logger_interface";
 import { affectsRenamedSetting, getRenamedSetting } from "./settings_migration";
 
 /**

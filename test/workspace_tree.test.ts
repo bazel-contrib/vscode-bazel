@@ -5,7 +5,7 @@ import * as sinon from "sinon";
 import { getWorkspaceTreeProviderForTesting } from "../src/extension/extension";
 import * as fs from "fs";
 import { BazelQuery } from "../src/bazel";
-import { ILogger } from "../src/extension/logger";
+import { ILogger } from "../src/extension/logger_interface";
 import { Resources } from "../src/extension/resources";
 import { blaze_query } from "../src/protos";
 import {
