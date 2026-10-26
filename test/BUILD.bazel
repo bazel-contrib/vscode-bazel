@@ -9,6 +9,7 @@ load("@aspect_rules_ts//ts:defs.bzl", "ts_config", "ts_project")
 load("@bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_lib//lib:write_source_files.bzl", "write_source_file")
+load("@vscode_bazel_npm//:mocha/package_json.bzl", mocha_bin = "bin")
 load("@vscode_bazel_npm//:vscode-tmgrammar-test/package_json.bzl", tmgrammar_bin = "bin")
 
 package(default_visibility = ["//visibility:private"])
@@ -100,15 +101,23 @@ ts_config(
     deps = ["//:tsconfig"],
 )
 
+# Tests that run under plain mocha instead of inside VS Code (see
+# //test:tool_checksums below).
+_NODE_TESTS = ["tool_checksums_validator.test.ts"]
+
 # Compile the test .ts files to JS so vscode-test (mocha) has files to
 # run. The tests' `../src/*` imports resolve against the .d.ts files that
 # //:tsc emits next to the sources in bazel-out.
 ts_project(
     name = "tsc",
-    srcs = glob(["*.ts"]),
+    srcs = glob(
+        ["*.ts"],
+        exclude = _NODE_TESTS,
+    ),
     allow_js = True,
     composite = True,
     declaration = True,
+    resolve_json_module = True,
     source_map = True,
     transpiler = "tsc",
     tsconfig = ":tsconfig",
@@ -191,4 +200,37 @@ js_test(
         "no-sandbox",
         "requires-network",
     ],
+)
+
+ts_project(
+    name = "node_tests_tsc",
+    srcs = _NODE_TESTS,
+    allow_js = True,
+    composite = True,
+    declaration = True,
+    resolve_json_module = True,
+    source_map = True,
+    transpiler = "tsc",
+    tsconfig = ":tsconfig",
+    visibility = ["//:__pkg__"],
+    deps = [
+        "//:node_modules",
+        "//:tsc",
+    ],
+)
+
+# Checks the pinned checksums in src/external-tools/external-tools-config.json
+# against the GitHub releases and downloads every asset to verify it. Needs
+# no VS Code, so it runs under plain mocha. Bazel caches the result, so the
+# downloads only repeat when the configuration or the downloader changes,
+# e.g. after Renovate bumps a tool version.
+mocha_bin.mocha_test(
+    name = "tool_checksums",
+    size = "medium",
+    args = ["test/tool_checksums_validator.test.js"],
+    data = [
+        ":node_tests_tsc",
+        "//:node_modules",
+    ],
+    tags = ["requires-network"],
 )
