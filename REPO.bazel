@@ -1,0 +1,17 @@
+"""Repo-level Bazel configuration."""
+
+# Directories Bazel must not descend into or treat as source. (Bazel 8+'s
+# replacement for .bazelignore, with glob support.)
+ignore_directories([
+    # node_modules trees rules_js links, plus the link `bazel run //:build`
+    # puts in the checkout.
+    "**/node_modules",
+    # Outputs of `bazel run //:build` and of the VS Code test tooling.
+    "dist",
+    "out",
+    ".vscode-test",
+    # Bazel's own convenience symlinks, here and in the test fixture
+    # workspace (CI builds the fixture in place to warm caches).
+    "bazel-*",
+    "test/bazel_workspace/bazel-*",
+])

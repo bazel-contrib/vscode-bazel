@@ -8,4 +8,12 @@ node_modules
 # tree.
 src/protos/protos.d.ts
 src/protos/protos.js
+
+# Bazel ignores
 MODULE.bazel.lock
+bazel-bin
+bazel-out
+bazel-testlogs
+bazel-vscode-bazel
+.aspect
+user.bazelrc

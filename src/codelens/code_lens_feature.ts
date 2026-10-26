@@ -2,6 +2,10 @@ import * as vscode from "vscode";
 
 import { BaseExtensionFeature } from "../extension/extension_feature";
 import { onDidChangeActiveBazelRoot } from "../bazel/active_bazel_roots";
+import {
+  BUILD_FILE_CHANGE_DELAY_MS,
+  CoalescingRunner,
+} from "../extension/coalescing_runner";
 import { checkBazelIsAvailable } from "../bazel/bazel_availability";
 import { CodeLensProvider } from "./code_lens_provider";
 
@@ -35,9 +39,13 @@ export class CodeLensFeature extends BaseExtensionFeature {
       true, // ignoreDeleteEvents
     );
 
-    // Fire refresh when BUILD files change
+    // Fire refresh when BUILD files change, coalescing bursts of changes
+    // (e.g. git checkout): each refresh re-queries every visible BUILD file.
+    const refreshRunner = new CoalescingRunner(BUILD_FILE_CHANGE_DELAY_MS, () =>
+      codelensProvider.refresh(),
+    );
     buildWatcher.onDidChange(
-      () => codelensProvider.refresh(),
+      () => refreshRunner.schedule(),
       this,
       this.disposables,
     );
@@ -54,7 +62,7 @@ export class CodeLensFeature extends BaseExtensionFeature {
       codelensProvider,
     );
 
-    this.disposables.push(codeLensRegistration, buildWatcher);
+    this.disposables.push(codeLensRegistration, buildWatcher, refreshRunner);
 
     return Promise.resolve(true);
   }
