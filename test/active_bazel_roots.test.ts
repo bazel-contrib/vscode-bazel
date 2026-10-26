@@ -5,8 +5,8 @@ import * as vscode from "vscode";
 import {
   ActiveBazelRootChange,
   ActiveBazelRoots,
-  ROOT_CHANGE_DELAY_MS,
 } from "../src/bazel/active_bazel_roots";
+import { BUILD_FILE_CHANGE_DELAY_MS } from "../src/extension/coalescing_runner";
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -63,7 +63,7 @@ describe("ActiveBazelRoots", () => {
 
   it("re-resolves on its own after a setting change", async () => {
     await pin("nested_module");
-    await sleep(ROOT_CHANGE_DELAY_MS + 200);
+    await sleep(BUILD_FILE_CHANGE_DELAY_MS + 200);
 
     assert.strictEqual(changes.length, 1);
     assert.strictEqual(
@@ -75,7 +75,7 @@ describe("ActiveBazelRoots", () => {
   it("ignores a setting change reverted within the delay", async () => {
     await pin("nested_module");
     await pin(undefined);
-    await sleep(ROOT_CHANGE_DELAY_MS + 200);
+    await sleep(BUILD_FILE_CHANGE_DELAY_MS + 200);
 
     assert.deepStrictEqual(changes, []);
   });

@@ -122,11 +122,10 @@ export class LanguageSupportFeature extends BaseExtensionFeature {
     const onDidChangeDisposable = buildWatcher.onDidChange(refreshOnEvent);
     const onDidCreateDisposable = buildWatcher.onDidCreate(refreshOnEvent);
     const onDidDeleteDisposable = buildWatcher.onDidDelete(refreshOnEvent);
-    // TODO(#712): call scheduleRefresh(change.folder.uri) instead, so this
-    // shares the coalesced, abortable refresh with BUILD file changes.
-    const onDidChangeRootDisposable = onDidChangeActiveBazelRoot((change) => {
-      void this.completionItemProvider?.refresh(change.folder.uri);
-    });
+    // Shares the coalesced, abortable refresh with BUILD file changes.
+    const onDidChangeRootDisposable = onDidChangeActiveBazelRoot((change) =>
+      this.completionItemProvider?.scheduleRefresh(change.folder.uri),
+    );
 
     // Register language providers
     const completionRegistration =

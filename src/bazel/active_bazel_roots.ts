@@ -14,6 +14,10 @@
 
 import * as vscode from "vscode";
 
+import {
+  BUILD_FILE_CHANGE_DELAY_MS,
+  CoalescingRunner,
+} from "../extension/coalescing_runner";
 import { affectsRenamedSetting } from "../extension/settings_migration";
 import { logInfo } from "../extension/logger";
 import { ActiveBazelRoot, resolveActiveBazelRoot } from "./bazel_utils";
@@ -47,45 +51,6 @@ function describeRoot(
   );
 }
 
-/**
- * How long to wait after the last trigger before re-resolving the roots, so
- * that bursts (e.g. a `git checkout`, or a setting changed and reverted)
- * cost at most one round of refreshes.
- */
-export const ROOT_CHANGE_DELAY_MS = 500;
-
-/**
- * Runs `task` `delayMs` after the last `schedule()` call.
- *
- * TODO(#712): replace with `CoalescingRunner` from
- * `src/extension/coalescing_runner.ts` once merged, which has the same
- * interface, and use its `BUILD_FILE_CHANGE_DELAY_MS` instead of
- * `ROOT_CHANGE_DELAY_MS`, i.e.
- * `new CoalescingRunner(BUILD_FILE_CHANGE_DELAY_MS, () => this.update())`.
- */
-class DebouncedRunner implements vscode.Disposable {
-  private timeout: NodeJS.Timeout | undefined;
-
-  constructor(
-    private readonly delayMs: number,
-    private readonly task: (signal: AbortSignal) => void,
-  ) {}
-
-  /** Requests a run of the task, `delayMs` after the last request. */
-  public schedule(): void {
-    clearTimeout(this.timeout);
-    this.timeout = setTimeout(
-      () => this.task(new AbortController().signal),
-      this.delayMs,
-    );
-  }
-
-  /** Cancels any pending run. */
-  public dispose(): void {
-    clearTimeout(this.timeout);
-  }
-}
-
 interface TrackedFolder {
   readonly folder: vscode.WorkspaceFolder;
   readonly root: ActiveBazelRoot | undefined;
@@ -95,7 +60,7 @@ interface TrackedFolder {
  * Keeps track of the active Bazel root of every VS Code workspace folder (see
  * `resolveActiveBazelRoot`) and fires an event whenever one changes.
  *
- * Re-resolves `ROOT_CHANGE_DELAY_MS` after the last change to
+ * Re-resolves `BUILD_FILE_CHANGE_DELAY_MS` after the last change to
  * `bazel.workspace.path` or `bazel.workspace.pathsToIgnore`, to the set of
  * workspace folders, or to marker files directly in a folder root. Marker
  * files above a folder root are not watched.
@@ -108,8 +73,9 @@ export class ActiveBazelRoots implements vscode.Disposable {
 
   private readonly folders = new Map<string, TrackedFolder>();
   private readonly disposables: vscode.Disposable[] = [];
-  private readonly updater = new DebouncedRunner(ROOT_CHANGE_DELAY_MS, () =>
-    this.update(),
+  private readonly updater = new CoalescingRunner(
+    BUILD_FILE_CHANGE_DELAY_MS,
+    () => this.update(),
   );
 
   constructor() {
