@@ -4,6 +4,7 @@ import * as sinon from "sinon";
 import { useFakeTimers } from "./fake_timers";
 import { CodeLensFeature } from "../src/codelens/code_lens_feature";
 import { CodeLensProvider } from "../src/codelens/code_lens_provider";
+import * as active_bazel_roots from "../src/bazel/active_bazel_roots";
 import * as bazel_availability from "../src/bazel/bazel_availability";
 
 describe("CodeLensFeature", () => {
@@ -86,6 +87,39 @@ describe("CodeLensFeature", () => {
       for (let i = 0; i < 1000; i++) {
         fireChange!();
       }
+      await clock.tickAsync(1000);
+
+      sinon.assert.calledOnce(refreshStub);
+    });
+
+    it("refreshes once for a BUILD file change and an active root change", async () => {
+      const clock = useFakeTimers(sandbox);
+      sandbox.stub(bazel_availability, "checkBazelIsAvailable").returns(true);
+      sandbox
+        .stub(vscode.languages, "registerCodeLensProvider")
+        .returns(mockDisposable);
+      let fireChange: (() => void) | undefined;
+      sandbox.stub(vscode.workspace, "createFileSystemWatcher").returns({
+        onDidChange: (listener: () => void) => {
+          fireChange = listener;
+          return mockDisposable;
+        },
+        dispose: () => {
+          /* empty */
+        },
+      } as unknown as vscode.FileSystemWatcher);
+      let fireRootChange: (() => void) | undefined;
+      sandbox
+        .stub(active_bazel_roots, "onDidChangeActiveBazelRoot")
+        .callsFake((listener) => {
+          fireRootChange = () => listener({} as never);
+          return mockDisposable;
+        });
+      const refreshStub = sandbox.stub(CodeLensProvider.prototype, "refresh");
+
+      await codeLensFeature.enable(mockContext);
+      fireChange!();
+      fireRootChange!();
       await clock.tickAsync(1000);
 
       sinon.assert.calledOnce(refreshStub);

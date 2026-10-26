@@ -3,7 +3,7 @@ import * as path from "path";
 import * as vscode from "vscode";
 import * as which from "which";
 import { getBazelExecutablePath } from "../extension/configuration";
-import { getBazelWorkspaceFolder } from "./bazel_utils";
+import { getActiveBazelRoot } from "./bazel_utils";
 import { logDebug } from "../extension/logger";
 
 function fileExistsSync(filename: string): boolean {
@@ -29,7 +29,7 @@ export function checkBazelIsAvailable(): boolean {
   // Bazel workspace can be resolved.
   const pathExists = workspaceFolders.some((workspaceFolder) => {
     const workspaceFolderPath = workspaceFolder.uri.fsPath;
-    const bazelWorkspacePath = getBazelWorkspaceFolder(workspaceFolderPath);
+    const bazelWorkspacePath = getActiveBazelRoot(workspaceFolder);
     return fileExistsSync(
       path.resolve(bazelWorkspacePath ?? workspaceFolderPath, bazelExecutable),
     );
@@ -50,7 +50,7 @@ export function checkBazelIsAvailable(): boolean {
 export function checkBazelWorkspaceAvailable(): boolean {
   const workspaceFolders =
     vscode.workspace.workspaceFolders
-      ?.map((folder) => getBazelWorkspaceFolder(folder.uri.fsPath))
+      ?.map((folder) => getActiveBazelRoot(folder))
       .filter((folder) => folder !== undefined) ?? [];
   return workspaceFolders.length > 0;
 }

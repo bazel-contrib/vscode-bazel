@@ -15,6 +15,7 @@
 import * as vscode from "vscode";
 import * as lc from "vscode-languageclient/node";
 
+import { onDidChangeActiveBazelRoot } from "../bazel/active_bazel_roots";
 import { BaseExtensionFeature } from "../extension/extension_feature";
 import { BazelCompletionItemProvider } from "../completion-provider";
 import { BazelGotoDefinitionProvider } from "../definition/bazel_goto_definition_provider";
@@ -121,6 +122,10 @@ export class LanguageSupportFeature extends BaseExtensionFeature {
     const onDidChangeDisposable = buildWatcher.onDidChange(refreshOnEvent);
     const onDidCreateDisposable = buildWatcher.onDidCreate(refreshOnEvent);
     const onDidDeleteDisposable = buildWatcher.onDidDelete(refreshOnEvent);
+    // Shares the coalesced, abortable refresh with BUILD file changes.
+    const onDidChangeRootDisposable = onDidChangeActiveBazelRoot((change) =>
+      this.completionItemProvider?.scheduleRefresh(change.folder.uri),
+    );
 
     // Register language providers
     const completionRegistration =
@@ -148,6 +153,7 @@ export class LanguageSupportFeature extends BaseExtensionFeature {
       onDidChangeDisposable,
       onDidCreateDisposable,
       onDidDeleteDisposable,
+      onDidChangeRootDisposable,
       completionRegistration,
       symbolRegistration,
       definitionRegistration,
