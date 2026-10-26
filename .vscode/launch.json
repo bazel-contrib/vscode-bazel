@@ -13,7 +13,7 @@
             "outFiles": [
                 "${workspaceFolder}/dist/**/*.js"
             ],
-            "preLaunchTask": "npm: build"
+            "preLaunchTask": "bazel: build"
         },
         {
             "name": "Launch Debug Server",
@@ -28,7 +28,7 @@
             "outFiles": [
                 "${workspaceFolder}/dist/**/*.js"
             ],
-            "preLaunchTask": "npm: build:debugadapter"
+            "preLaunchTask": "bazel: build"
         },
         {
             "name": "Launch Extension Tests",
@@ -42,7 +42,7 @@
             "outFiles": [
                 "${workspaceFolder}/dist/**/*.js"
             ],
-            "preLaunchTask": "npm: build:tests"
+            "preLaunchTask": "bazel: build"
         }
     ],
     "compounds": [

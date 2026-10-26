@@ -1,0 +1,446 @@
+load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_library", "js_run_binary")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config", "ts_project")
+load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
+load("@bazel_lib//lib:write_source_files.bzl", "write_source_file")
+load("@bazel_skylib//rules:build_test.bzl", "build_test")
+load("@buildifier_prebuilt//:rules.bzl", "buildifier", "buildifier_test")
+load("@package_version//:version.bzl", "VERSION")
+load("@vscode_bazel_npm//:@vscode/vsce/package_json.bzl", vsce_bin = "bin")
+load("@vscode_bazel_npm//:defs.bzl", "npm_link_all_packages")
+load("@vscode_bazel_npm//:esbuild/package_json.bzl", esbuild_bin = "bin")
+load("@vscode_bazel_npm//:eslint/package_json.bzl", eslint_bin = "bin")
+load("@vscode_bazel_npm//:js-yaml/package_json.bzl", js_yaml_bin = "bin")
+load("@vscode_bazel_npm//:prettier/package_json.bzl", prettier_bin = "bin")
+load("@vscode_bazel_npm//:protobufjs-cli/package_json.bzl", pbjs_bin = "bin")
+load("@vscode_bazel_npm//:vscode-tmgrammar-test/package_json.bzl", tmgrammar_bin = "bin")
+load("//tools:dev.bzl", "source_tree_tool")
+load("//tools:release.bzl", "vscode_install")
+
+npm_link_all_packages(name = "node_modules")
+
+# The packaged extension's file name, versioned from package.json.
+VSIX = "vscode-bazel-%s.vsix" % VERSION
+
+# Make root-level source files referenceable from //test.
+exports_files(
+    [
+        ".vscode-test.js",
+        "package.json",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# The extension manifest, as a js_library so rules_js tools in other
+# packages (//test:gen_snapshot) can take it as an input.
+js_library(
+    name = "package_json",
+    srcs = ["package.json"],
+    visibility = ["//visibility:public"],
+)
+
+# The TextMate grammars and language configurations package.json
+# contributes. bazelrc.tmLanguage.json is generated from its yaml below.
+js_library(
+    name = "grammars",
+    srcs = [
+        "syntaxes/bazelrc.configuration.json",
+        "syntaxes/bazelrc.tmLanguage.json",
+        "syntaxes/starlark.configuration.json",
+        "syntaxes/starlark.tmLanguage.json",
+        "syntaxes/starlark.tmLanguage.license",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# Static assets the extension loads at runtime (tree icons, marketplace
+# logo). Shared by the packaged .vsix and the integration-test runtime tree.
+filegroup(
+    name = "assets",
+    srcs = glob([
+        "icons/*",
+        "media/*",
+    ]),
+    visibility = ["//visibility:public"],
+)
+
+# Bazel-specific tsconfig — extends the checked-in tsconfig.json but
+# drops outDir so tsc emits alongside sources in bazel-out. This is what
+# lets test/*.test.ts import ../src/* — the compiled .d.ts files land at
+# src/foo.d.ts (rather than dist/src/foo.d.ts), matching what TypeScript's
+# module resolver looks for.
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.bazel.json",
+    visibility = ["//visibility:public"],
+    deps = ["tsconfig.json"],
+)
+
+# The vendored Bazel .proto files; scripts/update_protos.sh refreshes them
+# from the list in src/protos/protos_list.txt (see src/protos/README.md).
+filegroup(
+    name = "proto_srcs",
+    srcs = glob(["src/protos/src/**/*.proto"]),
+)
+
+pbjs_bin.pbjs(
+    name = "gen_protos_js",
+    srcs = [":proto_srcs"],
+    outs = ["src/protos/protos.js"],
+    args = [
+        "--path",
+        "src/protos",
+        "-t",
+        "static-module",
+        "-o",
+        "src/protos/protos.js",
+        "$(rootpaths :proto_srcs)",
+    ],
+)
+
+pbjs_bin.pbts(
+    name = "gen_protos_dts",
+    srcs = ["src/protos/protos.js"],
+    outs = ["src/protos/protos.d.ts"],
+    args = [
+        "-o",
+        "src/protos/protos.d.ts",
+        "src/protos/protos.js",
+    ],
+)
+
+# The generated proto module — grouped so the esbuild bundle and other
+# consumers can depend on one label.
+js_library(
+    name = "protos_lib",
+    srcs = [
+        "src/protos/protos.d.ts",
+        "src/protos/protos.js",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# Hand-written TypeScript sources. The generated protos.d.ts is excluded in
+# case a stale copy from the former npm build is still in the source tree;
+# Bazel always uses its own generated copy (added explicitly below).
+_TS_SRCS = glob(
+    ["src/**/*.ts"],
+    exclude = ["src/protos/protos.d.ts"],
+)
+
+# The whole non-test TypeScript compile. Adding protos.d.ts to srcs lets
+# tsc resolve `../protos` (which points at src/protos/index.ts + protos.d.ts).
+ts_project(
+    name = "tsc",
+    srcs = _TS_SRCS + ["src/protos/protos.d.ts"],
+    allow_js = True,
+    composite = True,
+    data = ["src/protos/protos.js"],
+    declaration = True,
+    source_map = True,
+    transpiler = "tsc",
+    tsconfig = ":tsconfig",
+    visibility = ["//test:__pkg__"],
+    deps = [":node_modules"],
+)
+
+# `bazel test //:typecheck` = "does every .ts under this project compile?"
+# Equivalent of `npm run typecheck`.
+build_test(
+    name = "typecheck",
+    targets = [
+        ":tsc",
+        "//test:tsc",
+    ],
+)
+
+# Grammar codegen: yaml → json for the bazelrc TextMate grammar.
+# vscode-tmgrammar-snap and the packaged extension both consume the .json.
+js_yaml_bin.js_yaml(
+    name = "gen_bazelrc_tmlanguage_json",
+    srcs = ["syntaxes/bazelrc.tmLanguage.yaml"],
+    args = ["bazelrc.tmLanguage.yaml"],
+    chdir = "syntaxes",
+    stdout = "syntaxes/bazelrc.tmLanguage.json",
+    visibility = ["//visibility:public"],
+)
+
+# Grammar snapshot test — mirrors `npm run test:grammar`. The tool reads
+# package.json to find contributes.grammars, loads the .json grammar, and
+# tokenizes example.bazelrc, comparing to the .snap. Runs from workspace
+# root so all these paths resolve as they do in the npm script.
+tmgrammar_bin.vscode_tmgrammar_snap_test(
+    name = "grammar",
+    args = ["test/example.bazelrc"],
+    data = [
+        "package.json",
+        ":grammars",
+        "//test:grammar_fixtures",
+    ],
+)
+
+# The two bundles that ship in the extension. Built with the esbuild from
+# pnpm-lock.yaml, with the same flags the former npm scripts used. Outputs
+# land under dist/ so they sit where package.json's "main"
+# (./dist/extension.js) and the debug adapter contribution expect them.
+_BUNDLE_SRCS = _TS_SRCS + [
+    "src/protos/protos.d.ts",
+    "src/protos/protos.js",
+    "tsconfig.json",
+    ":node_modules",
+]
+
+[
+    esbuild_bin.esbuild(
+        name = name,
+        srcs = _BUNDLE_SRCS,
+        outs = ["dist/%s.js" % output],
+        args = [
+            entry_point,
+            "--bundle",
+            "--outfile=dist/%s.js" % output,
+            "--external:vscode",
+            "--format=cjs",
+            "--platform=node",
+            "--minify",
+        ],
+        visibility = ["//visibility:public"],
+    )
+    for name, entry_point, output in [
+        ("extension", "src/extension/extension.ts", "extension"),
+        ("debug_adapter", "src/debug-adapter/client.ts", "debug-adapter-client"),
+    ]
+]
+
+js_library(
+    name = "dist",
+    srcs = [
+        ":debug_adapter",
+        ":extension",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# Everything `vsce package` needs, laid out exactly as it is in a source
+# checkout after `npm run build`. .vscodeignore does the final filtering,
+# just as it does for the npm flow. Dependencies are bundled by esbuild, so
+# no node_modules are needed (hence --no-dependencies below).
+copy_to_directory(
+    name = "vsix_staging",
+    srcs = [
+        ".vscodeignore",
+        "CHANGELOG.md",
+        "LICENSE",
+        "README.md",
+        "package.json",
+        ":assets",
+        ":dist",
+        ":grammars",
+    ],
+)
+
+# vsce scans the package for secrets with secretlint, which loads these
+# rule and formatter packages by bare name from the root node_modules. They
+# are hoisted there in MODULE.bazel and handed to the vsce tools here.
+_VSCE_TOOL_DATA = [
+    ":node_modules/@secretlint/secretlint-formatter-sarif",
+    ":node_modules/@secretlint/secretlint-rule-no-dotenv",
+    ":node_modules/@secretlint/secretlint-rule-preset-recommend",
+]
+
+# Runs vsce on a copy of the staging directory with normal file modes; see
+# tools/package_vsix.js.
+js_binary(
+    name = "package_vsix",
+    data = [":node_modules/@vscode/vsce"] + _VSCE_TOOL_DATA,
+    entry_point = "//tools:package_vsix",
+)
+
+# `bazel build //:vsix` packages the extension as vscode-bazel-<version>.vsix,
+# the equivalent of `npm run package`. Consumers should depend on this
+# target (or use the run targets below) rather than locate the file.
+js_run_binary(
+    name = "vsix",
+    srcs = [":vsix_staging"],
+    outs = [VSIX],
+    args = [
+        "vsix_staging",
+        VSIX,
+    ],
+    tool = ":package_vsix",
+)
+
+# `VSCE_PAT=... bazel run //:publish` uploads the built .vsix to the
+# Visual Studio Marketplace. Extra vsce flags can be appended, e.g.
+# `bazel run //:publish -- --pre-release`.
+vsce_bin.vsce_binary(
+    name = "publish",
+    args = [
+        "publish",
+        "--packagePath",
+        "$(rootpath :vsix)",
+    ],
+    data = [":vsix"] + _VSCE_TOOL_DATA,
+)
+
+# `bazel run //:install` installs the built .vsix into the local VS Code
+# (VSCODE_BIN=code-insiders to target another build).
+vscode_install(
+    name = "install",
+    vsix = ":vsix",
+)
+
+# `bazel run //:export_vsix` copies the built .vsix into the source tree
+# root as vscode-bazel-<version>.vsix (git-ignored), e.g. for handing it to
+# a CI artifact step. The file does not normally exist, so skip the
+# up-to-date test.
+write_source_file(
+    name = "export_vsix",
+    check_that_out_file_exists = False,
+    diff_test = False,
+    in_file = ":vsix",
+    out_file = VSIX,
+)
+
+# What a source checkout looks like after a build: the bundles at the top,
+# the compiled sources under src/ and the compiled tests under test/.
+# `bazel run //:build` copies it to dist/ for the editor workflows that
+# expect it there (F5 launch configurations, the Extension Test Runner).
+copy_to_directory(
+    name = "dist_tree",
+    srcs = [
+        ":dist",
+        ":protos_lib",
+        ":tsc",
+        "//test:tsc",
+    ],
+    replace_prefixes = {"dist/": ""},
+    root_paths = [],
+)
+
+js_binary(
+    name = "build",
+    args = [
+        "$(rootpath :dist_tree)",
+        "$(rootpath syntaxes/bazelrc.tmLanguage.json)",
+    ],
+    data = [
+        "syntaxes/bazelrc.tmLanguage.json",
+        ":dist_tree",
+        ":node_modules",
+    ],
+    entry_point = "//tools:export_dev_tree",
+)
+
+# Tools that modify the checkout: `bazel run //:format_fix`, `//:lint_fix`,
+# and `//:pnpm -- install --lockfile-only` after a dependency change in
+# package.json. (`//test:update_snapshot` refreshes the grammar snapshot.)
+prettier_bin.prettier_binary(
+    name = "prettier",
+    tags = ["manual"],
+)
+
+source_tree_tool(
+    name = "format_fix",
+    args = [
+        "--write",
+        ".",
+    ],
+    tool = ":prettier",
+)
+
+eslint_bin.eslint_binary(
+    name = "eslint",
+    tags = ["manual"],
+)
+
+source_tree_tool(
+    name = "lint_fix",
+    args = [
+        "--fix",
+        ".",
+    ],
+    link_node_modules = True,
+    tool = ":eslint",
+)
+
+source_tree_tool(
+    name = "pnpm",
+    tool = "@pnpm",
+)
+
+# Sources that prettier and eslint look at (`npm run format-check` /
+# `npm run lint-check`). The root glob stops at the //test package, whose
+# files come in through //test:lint_srcs.
+filegroup(
+    name = "lint_srcs",
+    srcs = glob(
+        [
+            "**/*.js",
+            "**/*.md",
+            "**/*.ts",
+            "**/*.yaml",
+            "**/*.yml",
+        ],
+        exclude = [
+            "pnpm-lock.yaml",
+            "src/protos/protos.*",
+        ],
+    ) + [
+        ".prettierignore",
+        "package.json",
+        "tsconfig.json",
+    ],
+)
+
+# Starlark files to skip when running buildifier over the source tree: the
+# test fixture workspace is test data (some of it deliberately unformatted),
+# and node_modules may contain third-party BUILD files.
+_BUILDIFIER_EXCLUDES = [
+    "./node_modules/*",
+    "./test/bazel_workspace/*",
+]
+
+# `bazel test //:buildifier_check` fails on formatting or lint findings in
+# this repository's Starlark; `bazel run //:buildifier_fix` applies them.
+buildifier_test(
+    name = "buildifier_check",
+    exclude_patterns = _BUILDIFIER_EXCLUDES,
+    lint_mode = "warn",
+    mode = "diff",
+    no_sandbox = True,
+    workspace = "//:MODULE.bazel",
+)
+
+buildifier(
+    name = "buildifier_fix",
+    exclude_patterns = _BUILDIFIER_EXCLUDES,
+    lint_mode = "fix",
+    mode = "fix",
+)
+
+prettier_bin.prettier_test(
+    name = "format",
+    args = [
+        "--check",
+        ".",
+    ],
+    data = [
+        ":lint_srcs",
+        "//test:lint_srcs",
+        "//tools:export_dev_tree",
+        "//tools:package_vsix",
+    ],
+)
+
+eslint_bin.eslint_test(
+    name = "lint",
+    args = ["."],
+    data = [
+        ":lint_srcs",
+        ":node_modules",
+        ":protos_lib",
+        "//test:lint_srcs",
+        "//tools:export_dev_tree",
+        "//tools:package_vsix",
+    ],
+)

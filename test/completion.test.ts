@@ -5,6 +5,7 @@ import { BazelCompletionItemProvider } from "../src/completion-provider/bazel_co
 import { BazelQuery, BazelWorkspaceInfo } from "../src/bazel";
 import { blaze_query } from "../src/protos";
 import * as sinon from "sinon";
+import { useFakeTimers } from "./fake_timers";
 
 describe("BazelCompletionItemProvider", () => {
   let sandbox: sinon.SinonSandbox;
@@ -114,7 +115,7 @@ describe("BazelCompletionItemProvider", () => {
     const buildFileUri = vscode.Uri.file(path.join(testWorkspacePath, "BUILD"));
 
     beforeEach(() => {
-      clock = sandbox.useFakeTimers();
+      clock = useFakeTimers(sandbox);
     });
 
     it("runs one query for a burst of BUILD file changes", async () => {

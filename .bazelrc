@@ -1,0 +1,31 @@
+###############################################################################
+## Bazel Configuration Flags
+##
+## `.bazelrc` is a Bazel configuration file.
+## https://bazel.build/docs/best-practices#bazelrc-file
+###############################################################################
+
+# The test/bazel_workspace fixture is data, not part of our build. Each
+# fixture BUILD file references labels that only resolve inside the
+# fixture's own workspace context (e.g. //pkg1), so we tell Bazel to
+# pretend those packages don't exist. Unlike ignore_directories, this
+# leaves the files visible to glob() from the enclosing //test package
+# so we can stage them into the vscode-test runtime tree. A new fixture
+# package that is missing here fails loudly: Bazel tries to load it.
+common --deleted_packages=test/bazel_workspace/pkg1,test/bazel_workspace/pkg2,test/bazel_workspace/pkg2/sub-pkg,test/bazel_workspace/buildifier,test/bazel_workspace/nested_module
+
+# Keep host environment out of actions so the build is reproducible across
+# machines that may or may not have Node/npm installed on PATH.
+build --incompatible_strict_action_env
+
+# Surface failures without pagination.
+test --test_output=errors
+
+# The Aspect rulesets (rules_js, rules_ts, rules_esbuild) report usage
+# telemetry to Aspect while fetching repositories. Opt out for every
+# checkout and CI run; the data they would send is written to
+# @aspect_tools_telemetry_report//:report.json for inspection.
+common --repo_env=ASPECT_TOOLS_TELEMETRY=-all
+
+# Local convenience: user overrides in user.bazelrc are honored.
+try-import %workspace%/user.bazelrc
