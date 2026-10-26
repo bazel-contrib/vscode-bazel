@@ -9,5 +9,7 @@
         "composite": true,
         "declaration": true,
         "skipLibCheck": true
-    }
+    },
+    // Composite projects must list JSON modules explicitly.
+    "include": ["**/*", "src/**/*.json"]
 }

@@ -11,18 +11,14 @@
   ],
   "packageRules": [
     {
-      "matchManagers": [
-        "github-actions"
-      ],
+      "matchManagers": ["github-actions"],
       "pinDigests": true
     }
   ],
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": [
-        "external-tools-config\\.json$"
-      ],
+      "managerFilePatterns": ["/(^|/)external-tools-config\\.json$/"],
       "matchStrings": [
         "\"Buildifier\":\\s*\\{[^}]*\"version\":\\s*\"(?<currentValue>[^\"]+)\""
       ],
@@ -31,9 +27,7 @@
     },
     {
       "customType": "regex",
-      "fileMatch": [
-        "external-tools-config\\.json$"
-      ],
+      "managerFilePatterns": ["/(^|/)external-tools-config\\.json$/"],
       "matchStrings": [
         "\"Bazelisk\":\\s*\\{[^}]*\"version\":\\s*\"(?<currentValue>[^\"]+)\""
       ],
@@ -42,9 +36,7 @@
     },
     {
       "customType": "regex",
-      "fileMatch": [
-        "external-tools-config\\.json$"
-      ],
+      "managerFilePatterns": ["/(^|/)external-tools-config\\.json$/"],
       "matchStrings": [
         "\"Starlark Language Server\":\\s*\\{[^}]*\"version\":\\s*\"(?<currentValue>[^\"]+)\""
       ],

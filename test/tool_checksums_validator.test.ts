@@ -1,5 +1,5 @@
 /**
- * VSCode Test for Tool Checksum Validator
+ * Tool Checksum Validator
  *
  * This test validates SHA256 checksums for tool binaries against GitHub API.
  * It can detect outdated checksums and verify binary integrity validation.
@@ -20,25 +20,25 @@ import {
   Platform,
 } from "../src/external-tools/tool_config";
 import { ILogger } from "../src/extension/logger_interface";
-import { logDebug, logInfo, logWarn, logError } from "../src/extension/logger";
-// Real vscode logger so we see failure messages.
-const mockLogger: ILogger = {
-  logDebug: (message: string, showMessage: boolean, ...args: unknown[]) => {
-    logDebug(message, showMessage, ...args);
+
+// Runs under plain mocha (//test:tool_checksums), outside VS Code, so log to
+// the console.
+const consoleLogger: ILogger = {
+  logDebug: (message: string, _showMessage?: boolean, ...args: unknown[]) => {
+    console.debug(message, ...args);
   },
-  logInfo: (message: string, showMessage: boolean, ...args: unknown[]) => {
-    logInfo(message, showMessage, ...args);
+  logInfo: (message: string, _showMessage?: boolean, ...args: unknown[]) => {
+    console.info(message, ...args);
   },
-  logWarn: (message: string, showMessage: boolean, ...args: unknown[]) => {
-    logWarn(message, showMessage, ...args);
+  logWarn: (message: string, _showMessage?: boolean, ...args: unknown[]) => {
+    console.warn(message, ...args);
   },
-  logError: (message: string, showMessage: boolean, ...args: unknown[]) => {
-    logError(message, showMessage, ...args);
+  logError: (message: string, _showMessage?: boolean, ...args: unknown[]) => {
+    console.error(message, ...args);
   },
 };
 
-// Load actual configuration for dynamic test generation
-const actualConfig = loadToolsConfig(mockLogger).config;
+const actualConfig = loadToolsConfig();
 
 describe("Tool Checksum Validator", () => {
   describe("Configuration Loading", () => {
@@ -61,7 +61,7 @@ describe("Tool Checksum Validator", () => {
         githubRelease = await getGitHubRelease(
           typedToolConfig.repository,
           typedToolConfig.version,
-          mockLogger,
+          consoleLogger,
         );
       });
 
@@ -136,7 +136,7 @@ describe("Tool Checksum Validator", () => {
                 platformAsset,
                 expectedChecksum,
                 tempFile,
-                mockLogger,
+                consoleLogger,
               );
               assert.ok(
                 true,

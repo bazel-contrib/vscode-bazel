@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as path from "path";
 import { ILogger } from "../extension/logger_interface";
+import toolsConfig from "./external-tools-config.json";
 
 /**
  * Tool configuration schema.
@@ -25,7 +25,8 @@ import { ILogger } from "../extension/logger_interface";
  * - repository: GitHub repository in "owner/repo" format
  * - version: Semantic version tag (e.g., "v8.5.1")
  * - configKey: VSCode configuration key for updating the setting
- * - assets: Platform-to-filename mapping for binary downloads
+ * - assets: Platform-to-filename mapping for binary downloads (unsupported
+ *   platforms are omitted)
  * - executableName: Platform-independent executable identifier
  * - checksums: Platform-to-SHA256 checksum mapping for integrity verification
  */
@@ -33,7 +34,7 @@ export interface ToolConfig {
   repository: string;
   version: string;
   configKey: string;
-  assets: { [key in Platform]: string };
+  assets: { [key in Platform]?: string };
   executableName: string;
   checksums: {
     [platform: string]: string;
@@ -56,50 +57,13 @@ export type Platform =
   | "darwin-arm64";
 
 /**
- * Attempts to load tool configuration from multiple possible paths to support
- * different execution contexts (development vs. production, extension vs. script).
+ * Returns the external tool configuration.
  *
- * @param logger Logger instance for dependency injection.
- * @returns Object containing loaded configuration and the successful path
- * @throws Error if no valid configuration file found in any location
+ * The configuration is imported statically, so esbuild inlines it into the
+ * extension bundle and tsc copies it next to the compiled sources.
  */
-export function loadToolsConfig(logger: ILogger): {
-  config: ToolsConfig;
-  path: string;
-} {
-  // Try relative require paths like the test pattern
-  const requirePaths = [
-    "../../external-tools-config.json", // When called from script (src dir)
-    "../../../external-tools-config.json", // When called from unittests (dist dir)
-  ];
-
-  logger.logDebug(
-    `Attempting to load tool configuration from require paths: ${requirePaths.join(", ")}`,
-  );
-
-  for (const requirePath of requirePaths) {
-    try {
-      const resolvedPath = path.resolve(__dirname, requirePath);
-
-      logger.logDebug(`Trying to load config from: ${resolvedPath}`);
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const config = require(requirePath);
-      logger.logDebug(
-        `Successfully loaded tool configuration from: ${resolvedPath}`,
-      );
-      return { config, path: resolvedPath };
-    } catch (error) {
-      logger.logDebug(
-        `Failed to load config from ${requirePath}: ${error instanceof Error ? error.message : String(error)}`,
-      );
-      // Continue to next path
-      continue;
-    }
-  }
-
-  const errorMsg = `Failed to load tool configuration from any of these require paths: ${requirePaths.join(", ")}`;
-  logger.logError(errorMsg);
-  throw new Error(errorMsg);
+export function loadToolsConfig(): ToolsConfig {
+  return toolsConfig as ToolsConfig;
 }
 
 /**
