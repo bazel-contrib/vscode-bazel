@@ -9,6 +9,8 @@ module.exports = [
   // Global ignores
   {
     ignores: [
+      // Bazel's convenience symlinks into its output tree.
+      "bazel-*/",
       ".vscode-test/",
       "dist/",
       "esbuild*.js",
@@ -16,7 +18,6 @@ module.exports = [
       "out/",
       "src/protos/protos.d.ts",
       "src/protos/protos.js",
-      "scripts/",
     ],
   },
 

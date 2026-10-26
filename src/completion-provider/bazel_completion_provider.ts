@@ -19,6 +19,10 @@ import {
   getPackageLabelForBuildFile,
   queryQuickPickTargets,
 } from "../bazel";
+import {
+  BUILD_FILE_CHANGE_DELAY_MS,
+  CoalescingRunner,
+} from "../extension/coalescing_runner";
 import { logDebug } from "../extension/logger";
 
 function insertCompletionItemIfUnique(
@@ -92,9 +96,19 @@ function getAbsoluteLabel(
 }
 
 export class BazelCompletionItemProvider
-  implements vscode.CompletionItemProvider
+  implements vscode.CompletionItemProvider, vscode.Disposable
 {
   private targetsMap = new Map<string, string[]>();
+
+  /** Workspaces waiting for the next query, keyed by workspace path. */
+  private staleWorkspaces = new Map<string, BazelWorkspaceInfo>();
+
+  // BUILD file changes arrive in bursts (e.g. `git checkout`), and each
+  // query covers the whole workspace, so run at most one at a time.
+  private refreshRunner = new CoalescingRunner(
+    BUILD_FILE_CHANGE_DELAY_MS,
+    (signal) => this.queryStaleWorkspaces(signal),
+  );
 
   /**
    * Returns completion items matching the given prefix.
@@ -148,10 +162,10 @@ export class BazelCompletionItemProvider
   }
 
   /**
-   * Runs a bazel query command to acquire labels of all the targets in the
-   * workspace.
+   * Schedules a bazel query to acquire the labels of all targets in the
+   * workspace containing `uri`, or in all workspaces if `uri` is omitted.
    */
-  public async refresh(uri?: vscode.Uri) {
+  public scheduleRefresh(uri?: vscode.Uri) {
     let workspacesToRefresh: BazelWorkspaceInfo[] = [];
 
     if (uri) {
@@ -168,10 +182,30 @@ export class BazelCompletionItemProvider
     }
 
     for (const workspaceInfo of workspacesToRefresh) {
+      this.staleWorkspaces.set(workspaceInfo.bazelWorkspacePath, workspaceInfo);
+    }
+    if (this.staleWorkspaces.size > 0) {
+      this.refreshRunner.schedule();
+    }
+  }
+
+  public dispose() {
+    this.refreshRunner.dispose();
+  }
+
+  private async queryStaleWorkspaces(signal: AbortSignal) {
+    const workspacesToRefresh = [...this.staleWorkspaces.values()];
+    this.staleWorkspaces.clear();
+
+    for (const workspaceInfo of workspacesToRefresh) {
+      if (signal.aborted) {
+        return;
+      }
       try {
         const queryTargets = await queryQuickPickTargets({
           query: "kind('.* rule', ...)",
           workspaceInfo,
+          abortSignal: signal,
         });
         const targetLabels = queryTargets.map(
           (queryTarget) => queryTarget.label,
