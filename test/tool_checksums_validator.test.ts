@@ -23,6 +23,7 @@ import { ILogger } from "../src/extension/logger_interface";
 
 // Runs under plain mocha (//test:tool_checksums), outside VS Code, so log to
 // the console.
+/* eslint-disable no-console */
 const consoleLogger: ILogger = {
   logDebug: (message: string, _showMessage?: boolean, ...args: unknown[]) => {
     console.debug(message, ...args);
@@ -37,6 +38,7 @@ const consoleLogger: ILogger = {
     console.error(message, ...args);
   },
 };
+/* eslint-enable no-console */
 
 const actualConfig = loadToolsConfig();
 
