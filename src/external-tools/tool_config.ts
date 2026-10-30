@@ -47,9 +47,61 @@ export interface ToolConfig {
 export const AUTO_TOOL_SETTING = "auto";
 
 /** Keys of the tools in `external-tools-config.json`. */
-export type ToolKey = "Bazelisk" | "Buildifier" | "Starlark Language Server";
+export const TOOL_KEYS = [
+  "Bazelisk",
+  "Buildifier",
+  "Starlark Language Server",
+] as const;
+
+export type ToolKey = (typeof TOOL_KEYS)[number];
 
 export type ToolsConfig = Record<ToolKey, ToolConfig>;
+
+/** How the extension presents, locates and runs a tool. */
+export interface ToolInfo {
+  /** Name of the tool as shown in the status, e.g. "Bazel". */
+  displayName: string;
+  /** Name of the downloadable release, e.g. "Bazelisk". */
+  label: string;
+  /** What the tool is needed for, used as "… to <purpose>". */
+  purpose: string;
+  /** Status detail while the tool is missing, instead of the reason. */
+  missingDetail?: string;
+  /** Whether the setting may name a Bazel target (`@…`) to run instead. */
+  allowsBazelTarget?: boolean;
+  /**
+   * Where the tool is started. A relative path in its setting is then kept
+   * as configured (it may resolve differently in each Bazel root) and looked
+   * up from there. Tools without one get the path resolved against the first
+   * workspace folder.
+   */
+  runsIn?: "bazelRoot" | "workspaceFolder";
+  /** Other settings that change which tool is found. */
+  extraSettings?: string[];
+}
+
+export const TOOL_INFO: Record<ToolKey, ToolInfo> = {
+  Bazelisk: {
+    displayName: "Bazel",
+    label: "Bazelisk",
+    purpose: "build, test and query Bazel targets",
+    runsIn: "bazelRoot",
+    extraSettings: ["bazel.workspace.path"],
+  },
+  Buildifier: {
+    displayName: "Buildifier",
+    label: "Buildifier",
+    purpose: "format and lint Bazel files",
+    allowsBazelTarget: true,
+  },
+  "Starlark Language Server": {
+    displayName: "Language Server",
+    label: "starpls",
+    purpose: "provide Starlark language support",
+    missingDetail: "using built-in language support",
+    runsIn: "workspaceFolder",
+  },
+};
 
 /**
  * Platform detection utilities for tool downloads.

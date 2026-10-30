@@ -89,7 +89,8 @@ To comply with the pattern, a feature must:
 
 - Live in its own directory, exposing a single `<Name>Feature extends BaseExtensionFeature` class, conventionally named `<name>_feature.ts` (e.g. `src/codelens/code_lens_feature.ts`).
 - Pass a unique `featureName` to `super()`. The base class derives from it both the `bazel.<featureName>.enable` setting and the `bazel.feature.<featureName>.enabled` context key (useful for `when` clauses in `package.json`) - add the setting to `package.json`, but don't manage either yourself. Any other settings the feature needs belong in the same `bazel.<featureName>.*` section (e.g. `bazel.buildifier.executable` alongside `bazel.buildifier.enable`) rather than as flat top-level `bazel.*` keys - see "Settings" below.
-- Implement `enable(context)` to check preconditions (e.g. `checkBazelIsAvailable()`) and return `false` if they aren't met, then create providers/commands/watchers and register them in `this.disposables`.
+- List the external tools it can't work without (Bazel, Buildifier, the language server) in `requiredTools()`, and those it only uses if available in `optionalTools()`. Don't look for the tools yourself: the base class resolves them through the tool registry (`src/external-tools/tool_registry.ts`), which also offers missing ones for download. While a required tool is missing, the feature waits instead of failing (context key `bazel.feature.<featureName>.waiting`), and it is enabled, or restarted, when a tool it lists changes.
+- Implement `enable(context)` to check any remaining preconditions and return `false` if they aren't met, then create providers/commands/watchers and register them in `this.disposables`. Read a required tool's command through `src/extension/configuration.ts` (e.g. `getBazelExecutablePath()`), which returns the resolved tool.
 - Rely on the default `disable()`, which disposes everything in `this.disposables`, unless the feature holds extra state that needs resetting (see `LanguageSupportFeature.disable()` for an example that does).
 - Be instantiated in `activate()` via `await <Name>Feature.create(context)` and pushed onto `context.subscriptions` - don't call `enable()`/`disable()` directly.
 
@@ -139,7 +140,7 @@ We expect contributions to include tests that demonstrate and validate the inten
 
 - Utilities and bug fixes: extend the existing unit tests. If you add a new util or fix an existing one, include unit tests that cover the happy path and at least one edge case. See `test/code_lens_provider.test.ts` for a unit-style example.
 
-- New features: alongside the `<Name>Feature` class itself, add a `test/<name>_feature.test.ts` unit test covering at least the "preconditions not met" and "preconditions met" branches of `enable()`. See `test/code_lens_feature.test.ts` or `test/test_explorer_feature.test.ts` for examples.
+- New features: alongside the `<Name>Feature` class itself, add a `test/<name>_feature.test.ts` unit test covering at least the "preconditions not met" and "preconditions met" branches, e.g. which tools `requiredTools()` lists (see `test/code_lens_feature.test.ts`) and how the feature reacts to a tool becoming available (fake the registry with `setToolRegistry`, see `test/language_support_feature.test.ts`). See `test/code_lens_feature.test.ts` or `test/test_explorer_feature.test.ts` for examples.
 
 - Note: If you are getting test failures from files that no longer exist, try running `npm run clean` to clean the workspace and then `bazel run //:build && bazel test //...` again.
 

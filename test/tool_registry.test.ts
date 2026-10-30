@@ -5,15 +5,18 @@ import * as path from "path";
 import * as sinon from "sinon";
 import * as vscode from "vscode";
 
+import * as configuration from "../src/extension/configuration";
+import * as toolConfigModule from "../src/external-tools/tool_config";
 import {
   ToolConfig,
   ToolKey,
   loadToolsConfig,
 } from "../src/external-tools/tool_config";
+import * as toolDownloader from "../src/external-tools/tool_downloader";
 import { getManagedToolPath } from "../src/external-tools/tool_downloader";
+import * as toolLocator from "../src/external-tools/tool_locator";
 import { LocatedTool } from "../src/external-tools/tool_locator";
 import {
-  AutoDownloadMode,
   ExternalToolRegistry,
   ToolRegistryOptions,
   ToolStateChange,
@@ -54,11 +57,14 @@ describe("ExternalToolRegistry", () => {
   let showWarningStub: sinon.SinonStub;
   let showErrorStub: sinon.SinonStub;
   let downloadStub: sinon.SinonStub;
+  let locateOnPathStub: sinon.SinonStub;
+  let detectPlatformStub: sinon.SinonStub;
 
-  // Inputs of the registry, set per test.
+  // Inputs of the registry, set per test. The configured value and tool
+  // apply to Buildifier; the other tools are located automatically.
   let workspaceAvailable: boolean;
   let configuredValue: string | undefined;
-  let autoDownloadMode: AutoDownloadMode;
+  let autoDownloadMode: configuration.AutoDownloadMode;
   let onPath: LocatedTool | undefined;
   let configuredTool: LocatedTool | undefined;
 
@@ -69,12 +75,6 @@ describe("ExternalToolRegistry", () => {
       toolsDir,
       globalState,
       isBazelWorkspaceAvailable: () => workspaceAvailable,
-      platform: "linux-amd64",
-      getConfiguredValue: () => configuredValue,
-      getAutoDownloadMode: () => autoDownloadMode,
-      locateConfigured: async () => configuredTool,
-      locateOnPath: async () => onPath,
-      download: downloadStub,
       ...overrides,
     });
     registries.push(registry);
@@ -123,10 +123,27 @@ describe("ExternalToolRegistry", () => {
         ),
       );
     downloadStub = sandbox
-      .stub()
-      .callsFake(async (key: ToolKey, config: ToolConfig) =>
-        createManagedCopy(key, config),
+      .stub(toolDownloader, "downloadExternalTool")
+      .callsFake(async (key: string, config: ToolConfig) =>
+        createManagedCopy(key as ToolKey, config),
       );
+    detectPlatformStub = sandbox
+      .stub(toolConfigModule, "detectPlatform")
+      .returns("linux-amd64");
+    sandbox
+      .stub(toolLocator, "getConfiguredToolValue")
+      .callsFake((config: ToolConfig) =>
+        config === toolsConfig.Buildifier ? configuredValue : undefined,
+      );
+    sandbox
+      .stub(configuration, "getAutoDownloadMode")
+      .callsFake(() => autoDownloadMode);
+    sandbox
+      .stub(toolLocator, "locateConfiguredTool")
+      .callsFake(async () => configuredTool);
+    locateOnPathStub = sandbox
+      .stub(toolLocator, "locateToolOnPath")
+      .callsFake(async () => onPath);
   });
 
   afterEach(async () => {
@@ -190,6 +207,26 @@ describe("ExternalToolRegistry", () => {
       );
     });
 
+    it("resolves a Bazel target only once Bazel is available", async () => {
+      configuredValue = "@buildtools//buildifier";
+      configuredTool = {
+        command: configuredValue,
+        location: configuredValue,
+        source: "setting",
+      };
+      const registry = createRegistry();
+
+      const state = await registry.resolve("Buildifier");
+
+      assert.strictEqual(state.kind, "missing");
+      assert.match((state as { reason: string }).reason, /needs Bazel to run/);
+
+      onPath = { command: "bazel", location: "/usr/bin/bazel", source: "path" };
+      await registry.resolve("Bazelisk", true);
+
+      await waitFor(() => registry.getResolvedTool("Buildifier") !== undefined);
+    });
+
     it("uses an explicitly configured tool as is", async () => {
       configuredValue = "tools/buildifier";
       configuredTool = {
@@ -210,8 +247,7 @@ describe("ExternalToolRegistry", () => {
     });
 
     it("locates a tool only once for concurrent requests", async () => {
-      const locateOnPath = sandbox.stub().resolves(undefined);
-      const registry = createRegistry({ locateOnPath });
+      const registry = createRegistry();
 
       await Promise.all([
         registry.resolve("Bazelisk"),
@@ -219,11 +255,12 @@ describe("ExternalToolRegistry", () => {
         registry.ensure("Bazelisk"),
       ]);
 
-      sinon.assert.calledOnce(locateOnPath);
+      sinon.assert.calledOnce(locateOnPathStub);
     });
 
     it("reports a platform without release as unsupported", async () => {
-      const registry = createRegistry({ platform: "win32-arm64" });
+      detectPlatformStub.returns("win32-arm64");
+      const registry = createRegistry();
 
       const state = await registry.ensure("Starlark Language Server");
 

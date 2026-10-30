@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import * as child_process from "child_process";
 import * as path from "path";
+import * as util from "util";
 import * as lc from "vscode-languageclient/node";
 import * as vscode from "vscode";
-import { logError } from "../extension/logger";
+import { logError, logWarn } from "../extension/logger";
 import {
   getLspServerArgs,
   getLspServerEnv,
@@ -29,19 +31,54 @@ export interface LanguageServerCommand {
   args: string[];
 }
 
+const execFile = util.promisify(child_process.execFile);
+
 /**
  * Returns how to start the given language server, with the arguments from
  * `bazel.lsp.args`. starpls, when located by the extension rather than
- * configured explicitly, needs its `server` subcommand.
+ * configured explicitly, needs its `server` subcommand, and runs `bazel` from
+ * the PATH unless it is given the Bazel the extension uses.
+ *
+ * @param bazel The Bazel the extension uses, if resolved.
  */
 export function getLanguageServerCommand(
   tool: LocatedTool,
+  bazel?: LocatedTool,
 ): LanguageServerCommand {
   const args = getLspServerArgs();
-  if (tool.source !== "setting" && args[0] !== "server") {
-    return { command: tool.command, args: ["server", ...args] };
+  if (tool.source === "setting") {
+    return { command: tool.command, args };
   }
-  return { command: tool.command, args };
+  const serverArgs = args[0] === "server" ? args.slice(1) : args;
+  const bazelArgs =
+    bazel &&
+    bazel.source !== "path" &&
+    !serverArgs.some((arg) => arg.startsWith("--bazel_path"))
+      ? [`--bazel_path=${bazel.location}`]
+      : [];
+  return {
+    command: tool.command,
+    args: ["server", ...bazelArgs, ...serverArgs],
+  };
+}
+
+/**
+ * Checks that starpls can be run (`starpls version` succeeds). An explicitly
+ * configured language server may not be starpls, so it is not checked.
+ */
+export async function validateLanguageServer(
+  tool: LocatedTool,
+): Promise<boolean> {
+  if (tool.source === "setting") {
+    return true;
+  }
+  try {
+    await execFile(tool.command, ["version"], { timeout: 10000 });
+    return true;
+  } catch (e) {
+    logWarn(`Language server check failed for ${tool.location}: ${e}`);
+    return false;
+  }
 }
 
 // Singleton output channel for LSP to prevent duplication

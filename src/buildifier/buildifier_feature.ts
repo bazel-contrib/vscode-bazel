@@ -17,6 +17,7 @@ import * as vscode from "vscode";
 import { BaseExtensionFeature } from "../extension/extension_feature";
 import { getBuildifierExecutablePath } from "../extension/configuration";
 import { ToolKey } from "../external-tools/tool_config";
+import { isBazelTarget } from "../external-tools/tool_locator";
 import { BuildifierDiagnosticsManager } from "./buildifier_diagnostics_manager";
 import { BuildifierFormatProvider } from "./buildifier_format_provider";
 
@@ -36,9 +37,14 @@ export class BuildifierFeature extends BaseExtensionFeature {
     super("Buildifier", context);
   }
 
-  /** See `BaseExtensionFeature.requiredTools`. */
+  /**
+   * See `BaseExtensionFeature.requiredTools`. A buildifier built from a Bazel
+   * target needs Bazel to run.
+   */
   protected requiredTools(): ToolKey[] {
-    return ["Buildifier"];
+    return isBazelTarget("Buildifier", getBuildifierExecutablePath())
+      ? ["Bazelisk", "Buildifier"]
+      : ["Buildifier"];
   }
 
   protected async enable(context: vscode.ExtensionContext): Promise<boolean> {

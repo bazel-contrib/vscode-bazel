@@ -19,7 +19,12 @@ import which from "which";
 
 import { getBazelWorkspaceFolder } from "../bazel/bazel_utils";
 import { getRenamedSetting } from "../extension/settings_migration";
-import { AUTO_TOOL_SETTING, ToolConfig, ToolKey } from "./tool_config";
+import {
+  AUTO_TOOL_SETTING,
+  TOOL_INFO,
+  ToolConfig,
+  ToolKey,
+} from "./tool_config";
 
 /** Where a resolved tool came from. */
 export type ToolSource = "setting" | "path" | "managed";
@@ -58,6 +63,20 @@ export function getToolSetting(config: ToolConfig): ToolSetting {
   };
 }
 
+/** A command that opens the Settings UI at the tool's setting. */
+export function openToolSettingCommand(config: ToolConfig): vscode.Command {
+  return {
+    title: "Configure",
+    command: "workbench.action.openSettings",
+    arguments: [getToolSetting(config).key],
+  };
+}
+
+/** Whether a setting value names a Bazel target the tool is run from. */
+export function isBazelTarget(toolKey: ToolKey, value: string): boolean {
+  return TOOL_INFO[toolKey].allowsBazelTarget === true && value.startsWith("@");
+}
+
 /**
  * Returns the explicitly configured value of a tool's setting, or `undefined`
  * if the extension should locate the tool itself (`"auto"`, empty, or the
@@ -92,16 +111,16 @@ export async function isExecutableFile(filePath: string): Promise<boolean> {
 /**
  * Directories a relative executable path is resolved against.
  *
- * Bazel commands run in the Bazel workspace root, so a relative Bazel path is
- * looked up from each resolved Bazel root (including one pinned by
- * `bazel.workspace.path`), falling back to the VS Code folder when no Bazel
- * workspace can be resolved. The other tools run in the first VS Code folder.
+ * A tool that runs in the Bazel workspace root is looked up from each
+ * resolved Bazel root (including one pinned by `bazel.workspace.path`),
+ * falling back to the VS Code folder when no Bazel workspace can be resolved.
+ * The other tools are looked up in the first VS Code folder.
  */
 function relativePathBases(toolKey: ToolKey): string[] {
   const folders = (vscode.workspace.workspaceFolders ?? []).map(
     (folder) => folder.uri.fsPath,
   );
-  if (toolKey === "Bazelisk") {
+  if (TOOL_INFO[toolKey].runsIn === "bazelRoot") {
     return folders.map((folder) => getBazelWorkspaceFolder(folder) ?? folder);
   }
   return folders.slice(0, 1);
@@ -116,7 +135,7 @@ export async function locateConfiguredTool(
   toolKey: ToolKey,
   value: string,
 ): Promise<LocatedTool | undefined> {
-  if (toolKey === "Buildifier" && value.startsWith("@")) {
+  if (isBazelTarget(toolKey, value)) {
     return { command: value, location: value, source: "setting" };
   }
 
@@ -125,10 +144,7 @@ export async function locateConfiguredTool(
     : relativePathBases(toolKey).map((base) => path.resolve(base, value));
   for (const candidate of candidates) {
     if (await isExecutableFile(candidate)) {
-      // Bazel and the language server are started with the workspace as
-      // working directory, so keep relative values as configured; they may
-      // resolve differently in each Bazel root.
-      const command = toolKey === "Buildifier" ? candidate : value;
+      const command = TOOL_INFO[toolKey].runsIn ? value : candidate;
       return { command, location: candidate, source: "setting" };
     }
   }

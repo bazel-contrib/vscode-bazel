@@ -32,15 +32,12 @@ import {
   registerBazelWorkspaceAvailabilityWatcher,
 } from "../bazel/bazel_availability";
 import { ToolKey } from "../external-tools/tool_config";
-import {
-  getConfiguredToolValue,
-  getToolSetting,
-} from "../external-tools/tool_locator";
 import { registerToolRegistry } from "../external-tools/tool_registry";
 import {
   DOWNLOAD_TOOL_COMMAND,
   registerToolStatusItems,
 } from "../external-tools/tool_status";
+import { validateLanguageServer } from "../language_support/language-server-client";
 import { LanguageSupportFeature } from "../language_support/language_support_feature";
 import { logDeprecatedSettingsInUse } from "./settings_migration";
 
@@ -86,7 +83,10 @@ export async function activate(context: vscode.ExtensionContext) {
   // Missing tools are only offered for download in a Bazel workspace.
   const toolRegistry = registerToolRegistry(context, {
     isBazelWorkspaceAvailable: checkBazelWorkspaceAvailable,
-    validators: { Buildifier: validateBuildifierExecutable },
+    validators: {
+      Buildifier: (tool) => validateBuildifierExecutable(tool.command),
+      "Starlark Language Server": validateLanguageServer,
+    },
   });
   context.subscriptions.push(
     onDidCheckBazelWorkspaceAvailability((available) => {
@@ -95,20 +95,8 @@ export async function activate(context: vscode.ExtensionContext) {
       }
     }),
     registerToolStatusItems(toolRegistry),
-    vscode.commands.registerCommand(
-      DOWNLOAD_TOOL_COMMAND,
-      async (key: ToolKey) => {
-        const config = toolRegistry.getToolConfig(key);
-        if (getConfiguredToolValue(config) !== undefined) {
-          // A download would not be used in place of an explicit setting.
-          await vscode.commands.executeCommand(
-            "workbench.action.openSettings",
-            getToolSetting(config).key,
-          );
-          return;
-        }
-        await toolRegistry.download(key);
-      },
+    vscode.commands.registerCommand(DOWNLOAD_TOOL_COMMAND, (key: ToolKey) =>
+      toolRegistry.downloadOrConfigure(key),
     ),
   );
 

@@ -115,7 +115,6 @@ describe("tool_downloader", () => {
       toolsDir,
       "Tool",
       toolConfig,
-      "linux-amd64",
     );
 
     assert.deepStrictEqual(outdated, {
