@@ -1,50 +1,5 @@
-import * as fs from "fs";
-import * as path from "path";
 import * as vscode from "vscode";
-import * as which from "which";
-import { getBazelExecutablePath } from "../extension/configuration";
 import { getBazelWorkspaceFolder } from "./bazel_utils";
-import { logDebug } from "../extension/logger";
-
-function fileExistsSync(filename: string): boolean {
-  try {
-    fs.statSync(filename);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Checks whether bazel is available (either at the system PATH or a
- * user-specified path, depending on the value in Settings).
- */
-export function checkBazelIsAvailable(): boolean {
-  const bazelExecutable = getBazelExecutablePath();
-  const workspaceFolders = vscode.workspace.workspaceFolders ?? [];
-
-  // Relative executable paths are evaluated from the directory where Bazel
-  // commands run. Prefer each resolved Bazel root (including a root pinned by
-  // bazel.workspace.path), and retain the VS Code folder as a fallback when no
-  // Bazel workspace can be resolved.
-  const pathExists = workspaceFolders.some((workspaceFolder) => {
-    const workspaceFolderPath = workspaceFolder.uri.fsPath;
-    const bazelWorkspacePath = getBazelWorkspaceFolder(workspaceFolderPath);
-    return fileExistsSync(
-      path.resolve(bazelWorkspacePath ?? workspaceFolderPath, bazelExecutable),
-    );
-  });
-
-  if (!pathExists) {
-    try {
-      which.sync(bazelExecutable);
-    } catch (e) {
-      logDebug(`Bazel not found: ${bazelExecutable} got ${e}`);
-      return false;
-    }
-  }
-  return true;
-}
 
 /** Checks if any Bazel workspace is available. */
 export function checkBazelWorkspaceAvailable(): boolean {
@@ -55,12 +10,20 @@ export function checkBazelWorkspaceAvailable(): boolean {
   return workspaceFolders.length > 0;
 }
 
+const workspaceAvailabilityEmitter = new vscode.EventEmitter<boolean>();
+
+/** Fires with the new availability whenever it is re-evaluated. */
+export const onDidCheckBazelWorkspaceAvailability =
+  workspaceAvailabilityEmitter.event;
+
 export function setBazelWorkspaceAvailableContext() {
+  const available = checkBazelWorkspaceAvailable();
   vscode.commands.executeCommand(
     "setContext",
     "bazel.haveWorkspace",
-    checkBazelWorkspaceAvailable(),
+    available,
   );
+  workspaceAvailabilityEmitter.fire(available);
 }
 
 export function registerBazelWorkspaceAvailabilityWatcher(

@@ -8,6 +8,8 @@ import {
 } from "./logger";
 import { ILogger } from "./logger_interface";
 import { affectsRenamedSetting, getRenamedSetting } from "./settings_migration";
+import { ToolKey } from "../external-tools/tool_config";
+import { getToolRegistry } from "../external-tools/tool_registry_instance";
 
 /**
  * Represents a feature of the Bazel extension.
@@ -21,6 +23,8 @@ import { affectsRenamedSetting, getRenamedSetting } from "./settings_migration";
  * - Upon disabling, a feature disposes of all it's internal resources
  * - Upon enabling, a feature recreates it's internal resources
  * - Upon enabling, a feature checks it's required constraints and signals success or failure.
+ * - A feature lists the external tools it requires (`requiredTools`). While one is missing, the feature waits
+ * instead of failing, and is enabled as soon as the tool becomes available. It restarts when a tool it uses changes.
  * - A named logger is used to log messages to the output pane.
  *
  * To comply with the design, a feature must:
@@ -29,6 +33,7 @@ import { affectsRenamedSetting, getRenamedSetting } from "./settings_migration";
  * clustering the rest of the feature's settings under the same
  * `bazel.<featureName>` section (see e.g. `bazel.buildifier.*`)
  * - have a corresponding context key to communicate its current state: `bazel.feature.<featureName>.enabled`
+ * and `bazel.feature.<featureName>.waiting` (enabled in settings, but waiting for a tool)
  */
 export abstract class BaseExtensionFeature
   implements vscode.Disposable, ILogger
@@ -39,11 +44,17 @@ export abstract class BaseExtensionFeature
   readonly featureName: string;
   private readonly configKey: string;
   private readonly contextKey: string;
+  private readonly waitingContextKey: string;
 
   /**
    * Whether the feature is currently enabled.
    */
   private isEnabled: boolean = false;
+
+  /**
+   * Whether the feature is enabled in the settings, but waits for a tool.
+   */
+  private isWaiting: boolean = false;
   private pendingConfigChange: Promise<void> = Promise.resolve();
 
   /**
@@ -61,6 +72,12 @@ export abstract class BaseExtensionFeature
   private configCallback: vscode.Disposable;
 
   /**
+   * Disposable for the tool registry's change callback; lives as long as the
+   * configCallback.
+   */
+  private toolCallback: vscode.Disposable | undefined;
+
+  /**
    * The extension context. Will be handed to enable() method when toggled.
    */
   private context: vscode.ExtensionContext;
@@ -76,6 +93,7 @@ export abstract class BaseExtensionFeature
     const settingsSection = featureName[0].toLowerCase() + featureName.slice(1);
     this.configKey = `bazel.${settingsSection}.enable`;
     this.contextKey = `bazel.feature.${featureName}.enabled`;
+    this.waitingContextKey = `bazel.feature.${featureName}.waiting`;
     this.context = context;
 
     // Register configuration change listener
@@ -84,6 +102,33 @@ export abstract class BaseExtensionFeature
         void this.onConfigurationChanged();
       }
     });
+
+    // Enable a waiting feature, or restart an enabled one, when a tool it
+    // depends on changes.
+    this.toolCallback = getToolRegistry()?.onDidChangeTool((change) => {
+      if (
+        !change.initial &&
+        [...this.requiredTools(), ...this.optionalTools()].includes(change.key)
+      ) {
+        void this.onToolsChanged();
+      }
+    });
+  }
+
+  /**
+   * External tools the feature can't work without. The feature is only
+   * enabled once all of them are resolved.
+   */
+  protected requiredTools(): ToolKey[] {
+    return [];
+  }
+
+  /**
+   * External tools the feature uses if available. The feature restarts when
+   * one of them changes.
+   */
+  protected optionalTools(): ToolKey[] {
+    return [];
   }
 
   /**
@@ -107,9 +152,27 @@ export abstract class BaseExtensionFeature
    * Logs erros in case of a activation failure.
    */
   private onConfigurationChanged(): Promise<void> {
-    const next = this.pendingConfigChange.then(() =>
-      this.doConfigurationChange(),
-    );
+    return this.enqueue(() => this.doConfigurationChange());
+  }
+
+  /**
+   * Called when a tool the feature depends on changed: restarts the feature
+   * if enabled, and enables it if it was waiting for the tool.
+   */
+  private onToolsChanged(): Promise<void> {
+    return this.enqueue(async () => {
+      if (this.isEnabled) {
+        this.logInfo("Restarting feature, a tool it uses changed");
+        this.disable();
+        this.isEnabled = false;
+      }
+      await this.doConfigurationChange();
+    });
+  }
+
+  /** Serializes state transitions. */
+  private enqueue(transition: () => Promise<void>): Promise<void> {
+    const next = this.pendingConfigChange.then(transition);
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     this.pendingConfigChange = next.catch(() => {});
     return next;
@@ -118,6 +181,16 @@ export abstract class BaseExtensionFeature
   private async doConfigurationChange(): Promise<void> {
     const shouldBeEnabled = this.isEnabledInConfig();
     if (shouldBeEnabled && !this.isEnabled) {
+      const missingTools = await this.findMissingTools();
+      if (missingTools.length > 0) {
+        if (!this.isWaiting) {
+          this.logInfo(`Waiting for ${missingTools.join(", ")}`);
+        }
+        this.setWaiting(true);
+        vscode.commands.executeCommand("setContext", this.contextKey, false);
+        return;
+      }
+      this.setWaiting(false);
       this.logInfo(`Enabling feature`);
       let enabled: boolean;
       try {
@@ -135,7 +208,10 @@ export abstract class BaseExtensionFeature
         return;
       }
       this.isEnabled = true;
-    } else if (!shouldBeEnabled && this.isEnabled) {
+    } else if (!shouldBeEnabled) {
+      this.setWaiting(false);
+    }
+    if (!shouldBeEnabled && this.isEnabled) {
       this.logInfo(`Disabling feature`);
       if (!this.disable()) {
         this.logError(`Failed to disable feature`);
@@ -147,6 +223,31 @@ export abstract class BaseExtensionFeature
       "setContext",
       this.contextKey,
       this.isEnabled,
+    );
+  }
+
+  /**
+   * Resolves the required tools; returns those that are not available.
+   */
+  private async findMissingTools(): Promise<ToolKey[]> {
+    const registry = getToolRegistry();
+    if (!registry) {
+      return [];
+    }
+    const required = this.requiredTools();
+    const states = await Promise.all(required.map((t) => registry.ensure(t)));
+    return required.filter((_, i) => states[i].kind !== "resolved");
+  }
+
+  private setWaiting(waiting: boolean) {
+    if (this.isWaiting === waiting) {
+      return;
+    }
+    this.isWaiting = waiting;
+    vscode.commands.executeCommand(
+      "setContext",
+      this.waitingContextKey,
+      waiting,
     );
   }
 
@@ -231,5 +332,6 @@ export abstract class BaseExtensionFeature
   dispose() {
     this.disable();
     this.configCallback.dispose();
+    this.toolCallback?.dispose();
   }
 }

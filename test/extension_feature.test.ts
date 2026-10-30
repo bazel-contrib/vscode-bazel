@@ -2,6 +2,13 @@ import * as vscode from "vscode";
 import * as assert from "assert";
 import * as sinon from "sinon";
 import { BaseExtensionFeature } from "../src/extension/extension_feature";
+import { ToolKey } from "../src/external-tools/tool_config";
+import {
+  ExternalToolRegistry,
+  ToolState,
+  ToolStateChange,
+} from "../src/external-tools/tool_registry";
+import { setToolRegistry } from "../src/external-tools/tool_registry_instance";
 
 class TestExtensionFeature extends BaseExtensionFeature {
   constructor(context: vscode.ExtensionContext) {
@@ -25,6 +32,23 @@ class FailingTestFeature extends BaseExtensionFeature {
 
   protected async enable(context: vscode.ExtensionContext): Promise<boolean> {
     return false;
+  }
+}
+
+class ToolTestFeature extends BaseExtensionFeature {
+  enableCount = 0;
+
+  constructor(context: vscode.ExtensionContext) {
+    super("ToolTestFeature", context);
+  }
+
+  protected requiredTools(): ToolKey[] {
+    return ["Bazelisk"];
+  }
+
+  protected async enable(context: vscode.ExtensionContext): Promise<boolean> {
+    this.enableCount++;
+    return true;
   }
 }
 
@@ -158,6 +182,101 @@ describe("BaseExtensionFeature", () => {
 
       sinon.assert.calledOnce(disposeSpy);
       assert.strictEqual((testFeature as any).disposables.length, 0);
+    });
+  });
+
+  describe("required tools", () => {
+    const missing: ToolState = {
+      kind: "missing",
+      reason: "Bazelisk was not found",
+      configured: false,
+    };
+    const resolved: ToolState = {
+      kind: "resolved",
+      tool: { command: "bazel", location: "/usr/bin/bazel", source: "path" },
+    };
+    let toolState: ToolState;
+    let toolChanges: vscode.EventEmitter<ToolStateChange>;
+
+    beforeEach(() => {
+      toolState = missing;
+      toolChanges = new vscode.EventEmitter<ToolStateChange>();
+      setToolRegistry({
+        onDidChangeTool: toolChanges.event,
+        ensure: async () => toolState,
+      } as unknown as ExternalToolRegistry);
+    });
+
+    afterEach(() => {
+      setToolRegistry(undefined);
+      toolChanges.dispose();
+    });
+
+    async function changeTool(key: ToolKey, feature: ToolTestFeature) {
+      toolChanges.fire({ key, state: toolState, initial: false });
+      await (feature as any).pendingConfigChange;
+    }
+
+    it("waits for a missing tool, then enables once available", async () => {
+      stubEnableSetting("bazel.toolTestFeature", true);
+      const setContextStub = sandbox.stub(vscode.commands, "executeCommand");
+      const showMessageStub = sandbox.stub(vscode.window, "showErrorMessage");
+
+      const feature = await ToolTestFeature.create(mockContext);
+
+      assert.strictEqual(feature.enableCount, 0);
+      sinon.assert.notCalled(showMessageStub);
+      sinon.assert.calledWith(
+        setContextStub,
+        "setContext",
+        "bazel.feature.ToolTestFeature.waiting",
+        true,
+      );
+
+      toolState = resolved;
+      await changeTool("Bazelisk", feature);
+
+      assert.strictEqual(feature.enableCount, 1);
+      sinon.assert.calledWith(
+        setContextStub,
+        "setContext",
+        "bazel.feature.ToolTestFeature.waiting",
+        false,
+      );
+      sinon.assert.calledWith(
+        setContextStub,
+        "setContext",
+        "bazel.feature.ToolTestFeature.enabled",
+        true,
+      );
+      feature.dispose();
+    });
+
+    it("restarts when a required tool changes", async () => {
+      toolState = resolved;
+      stubEnableSetting("bazel.toolTestFeature", true);
+      sandbox.stub(vscode.commands, "executeCommand");
+      const feature = await ToolTestFeature.create(mockContext);
+      assert.strictEqual(feature.enableCount, 1);
+
+      await changeTool("Bazelisk", feature);
+
+      assert.strictEqual(feature.enableCount, 2);
+      feature.dispose();
+    });
+
+    it("ignores changes of other tools and initial resolutions", async () => {
+      toolState = resolved;
+      stubEnableSetting("bazel.toolTestFeature", true);
+      sandbox.stub(vscode.commands, "executeCommand");
+      const feature = await ToolTestFeature.create(mockContext);
+
+      await changeTool("Buildifier", feature);
+      toolChanges.fire({ key: "Bazelisk", state: toolState, initial: true });
+      await (feature as any).pendingConfigChange;
+
+      assert.strictEqual(feature.enableCount, 1);
+      feature.dispose();
     });
   });
 

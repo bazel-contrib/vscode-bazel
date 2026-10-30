@@ -24,9 +24,9 @@ import toolsConfig from "./external-tools-config.json";
  * Schema Details:
  * - repository: GitHub repository in "owner/repo" format
  * - version: Semantic version tag (e.g., "v8.5.1")
- * - configKey: VSCode configuration key for updating the setting
+ * - configKey: Setting (below the `bazel` section) that configures the tool
  * - assets: Platform-to-filename mapping; unsupported platforms are omitted
- * - executableName: Platform-independent executable identifier
+ * - executableName: Name the tool is looked up by on the system PATH
  * - checksums: Platform-to-SHA256 checksum mapping for integrity verification
  */
 export interface ToolConfig {
@@ -40,9 +40,16 @@ export interface ToolConfig {
   };
 }
 
-export interface ToolsConfig {
-  [toolKey: string]: ToolConfig;
-}
+/**
+ * Setting value that lets the extension locate a tool: on the system PATH
+ * first, then a copy the extension downloaded itself.
+ */
+export const AUTO_TOOL_SETTING = "auto";
+
+/** Keys of the tools in `external-tools-config.json`. */
+export type ToolKey = "Bazelisk" | "Buildifier" | "Starlark Language Server";
+
+export type ToolsConfig = Record<ToolKey, ToolConfig>;
 
 /**
  * Platform detection utilities for tool downloads.
