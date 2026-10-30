@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 
 import { BaseExtensionFeature } from "../extension/extension_feature";
-import { checkBazelIsAvailable } from "../bazel/bazel_availability";
+import { ToolKey } from "../external-tools/tool_config";
 import { BazelFileCoverage, parseLcov } from "./lcov_parser";
 import { logWarn } from "../extension/logger";
 
@@ -22,13 +22,12 @@ export class TestExplorerFeature extends BaseExtensionFeature {
     activeInstance = this;
   }
 
-  protected enable(context: vscode.ExtensionContext): Promise<boolean> {
-    // Precondition: bazel executable available
-    if (!checkBazelIsAvailable()) {
-      this.logWarn("Can not activate, no bazel executable found.");
-      return Promise.resolve(false);
-    }
+  /** Bazel must be available, see `BaseExtensionFeature.requiredTools`. */
+  protected requiredTools(): ToolKey[] {
+    return ["Bazelisk"];
+  }
 
+  protected enable(context: vscode.ExtensionContext): Promise<boolean> {
     // Create the test controller
     const testController = vscode.tests.createTestController(
       "bazel-coverage",

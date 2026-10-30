@@ -19,37 +19,78 @@ import { BaseExtensionFeature } from "../extension/extension_feature";
 import { BazelCompletionItemProvider } from "../completion-provider";
 import { BazelGotoDefinitionProvider } from "../definition/bazel_goto_definition_provider";
 import { BazelTargetSymbolProvider } from "../symbols";
-import { startLspClientFromCurrentConfig } from "./language-server-client";
+import {
+  LanguageServerCommand,
+  getLanguageServerCommand,
+  startLspClient,
+} from "./language-server-client";
 import { getLspServerExecutablePath } from "../extension/configuration";
+import { AUTO_TOOL_SETTING, ToolKey } from "../external-tools/tool_config";
+import { LocatedTool } from "../external-tools/tool_locator";
+import { describeToolState } from "../external-tools/tool_registry";
+import { getToolRegistry } from "../external-tools/tool_registry_instance";
 
 /**
  * Language Support feature for Bazel.
  * Handles both external LSP and built-in language support implementations.
- * Automatically chooses implementation based on LSP configuration.
+ * Uses the language server (starpls by default, see `bazel.lsp.command`)
+ * when it is available, and falls back to the built-in support otherwise.
  */
 export class LanguageSupportFeature extends BaseExtensionFeature {
   private lspClient: lc.LanguageClient | undefined;
   private completionItemProvider: BazelCompletionItemProvider | null = null;
-  private isUsingExternalLSP: boolean = false;
+  /** Incremented on disable, to stop clients that finish starting later. */
+  private clientGeneration = 0;
 
   constructor(context: vscode.ExtensionContext) {
     super("LanguageSupport", context);
   }
 
+  /**
+   * Switches between the language server and the built-in support when the
+   * language server becomes (un)available.
+   */
+  protected optionalTools(): ToolKey[] {
+    return ["Starlark Language Server"];
+  }
+
   protected async enable(context: vscode.ExtensionContext): Promise<boolean> {
     // Determine which implementation to use
-    const lspCommand = getLspServerExecutablePath();
-    this.isUsingExternalLSP = !!lspCommand;
-
-    if (this.isUsingExternalLSP) {
-      return this.enableExternalLSP(context);
+    const languageServer = await this.resolveLanguageServer();
+    if (languageServer) {
+      return this.enableExternalLSP(languageServer);
     } else {
       return this.enableBuiltInSupport(context);
     }
   }
 
+  /**
+   * Resolves the language server, or returns undefined to use the built-in
+   * support instead.
+   */
+  private async resolveLanguageServer(): Promise<LocatedTool | undefined> {
+    const registry = getToolRegistry();
+    if (!registry) {
+      // No tool registry (outside of the activated extension): only use an
+      // explicitly configured language server.
+      const command = getLspServerExecutablePath();
+      return command && command !== AUTO_TOOL_SETTING
+        ? { command, location: command, source: "setting" }
+        : undefined;
+    }
+    const state = await registry.ensure("Starlark Language Server");
+    if (state.kind !== "resolved") {
+      this.logInfo(
+        `No language server (${describeToolState(state)}), using built-in language support`,
+      );
+      return undefined;
+    }
+    return state.tool;
+  }
+
   protected disable(): boolean {
     // Clean up both implementations to be safe
+    this.clientGeneration++;
     if (this.lspClient) {
       this.lspClient.stop().catch((error) => {
         this.logError("Error stopping language server", true, error);
@@ -68,33 +109,43 @@ export class LanguageSupportFeature extends BaseExtensionFeature {
   /**
    * Enables external LSP implementation
    */
-  private enableExternalLSP(context: vscode.ExtensionContext): boolean {
-    this.logInfo("Enabling external language server support");
+  private enableExternalLSP(languageServer: LocatedTool): boolean {
+    this.logInfo(
+      `Enabling external language server support: ${languageServer.location}`,
+    );
 
-    // Register restart command
+    // Register restart command. It picks up changed `bazel.lsp.args`.
     const restartCommand = vscode.commands.registerCommand(
       "bazel.lsp.restart",
       async () => {
         this.logInfo("Restarting language server...");
-        await startLspClientFromCurrentConfig(this.lspClient, context);
+        await this.startClient(getLanguageServerCommand(languageServer));
       },
     );
     this.disposables.push(restartCommand);
 
     // Start the LSP client
-    startLspClientFromCurrentConfig(this.lspClient, context)
-      .then(() => {
-        this.logInfo("External language server started successfully");
-      })
-      .catch((error: any) => {
-        this.logError("Failed to start external language server", true, error);
-        return false;
-      });
+    void this.startClient(getLanguageServerCommand(languageServer)).then(() => {
+      this.logInfo("External language server started");
+    });
 
     // Set context key for use in package.json
     vscode.commands.executeCommand("setContext", "bazel.lsp.enabled", true);
 
     return true;
+  }
+
+  private async startClient(server: LanguageServerCommand) {
+    const generation = this.clientGeneration;
+    const previous = this.lspClient;
+    this.lspClient = undefined;
+    const client = await startLspClient(previous, server);
+    if (generation !== this.clientGeneration) {
+      // Disabled while starting.
+      await client?.stop().catch((): void => undefined);
+      return;
+    }
+    this.lspClient = client;
   }
 
   /**

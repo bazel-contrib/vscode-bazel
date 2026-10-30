@@ -4,7 +4,6 @@ import * as sinon from "sinon";
 import { useFakeTimers } from "./fake_timers";
 import { CodeLensFeature } from "../src/codelens/code_lens_feature";
 import { CodeLensProvider } from "../src/codelens/code_lens_provider";
-import * as bazel_availability from "../src/bazel/bazel_availability";
 
 describe("CodeLensFeature", () => {
   let codeLensFeature: CodeLensFeature;
@@ -30,12 +29,10 @@ describe("CodeLensFeature", () => {
   });
 
   describe("enable", () => {
-    it("returns false when Bazel executable is not available", async () => {
-      sandbox.stub(bazel_availability, "checkBazelIsAvailable").returns(false);
-
-      const result = await codeLensFeature.enable(mockContext);
-
-      assert.strictEqual(result, false);
+    it("requires Bazel", () => {
+      assert.deepStrictEqual((codeLensFeature as any).requiredTools(), [
+        "Bazelisk",
+      ]);
     });
 
     it("returns true when all preconditions are met", async () => {
@@ -66,7 +63,6 @@ describe("CodeLensFeature", () => {
 
     it("refreshes once for a burst of BUILD file changes", async () => {
       const clock = useFakeTimers(sandbox);
-      sandbox.stub(bazel_availability, "checkBazelIsAvailable").returns(true);
       sandbox
         .stub(vscode.languages, "registerCodeLensProvider")
         .returns(mockDisposable);

@@ -15,7 +15,8 @@
 import * as vscode from "vscode";
 
 import { BaseExtensionFeature } from "../extension/extension_feature";
-import { checkBuildifierIsAvailable } from "./buildifier_availability";
+import { getBuildifierExecutablePath } from "../extension/configuration";
+import { ToolKey } from "../external-tools/tool_config";
 import { BuildifierDiagnosticsManager } from "./buildifier_diagnostics_manager";
 import { BuildifierFormatProvider } from "./buildifier_format_provider";
 
@@ -35,13 +36,14 @@ export class BuildifierFeature extends BaseExtensionFeature {
     super("Buildifier", context);
   }
 
+  /** See `BaseExtensionFeature.requiredTools`. */
+  protected requiredTools(): ToolKey[] {
+    return ["Buildifier"];
+  }
+
   protected async enable(context: vscode.ExtensionContext): Promise<boolean> {
-    // Precondition: buildifier executable available
-    const buildifierPath = await checkBuildifierIsAvailable();
-    if (!buildifierPath) {
-      this.logWarn("Can not activate, no buildifier executable found.");
-      return false;
-    }
+    // The required buildifier was resolved before enable() is called.
+    const buildifierPath = getBuildifierExecutablePath();
 
     // Create and register the diagnostics manager for lint warnings
     this.diagnosticsManager = new BuildifierDiagnosticsManager(

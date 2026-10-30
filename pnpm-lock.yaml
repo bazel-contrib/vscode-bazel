@@ -46,7 +46,7 @@ importers:
         specifier: ^21.0.0
         version: 21.0.1
       '@types/vscode':
-        specifier: ^1.88.0
+        specifier: ^1.96.0
         version: 1.140.0
       '@types/which':
         specifier: ^3.0.3

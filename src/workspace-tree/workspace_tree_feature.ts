@@ -2,10 +2,8 @@ import * as vscode from "vscode";
 
 import { BaseExtensionFeature } from "../extension/extension_feature";
 import { affectsRenamedSetting } from "../extension/settings_migration";
-import {
-  checkBazelIsAvailable,
-  setBazelWorkspaceAvailableContext,
-} from "../bazel/bazel_availability";
+import { setBazelWorkspaceAvailableContext } from "../bazel/bazel_availability";
+import { ToolKey } from "../external-tools/tool_config";
 import { BazelWorkspaceTreeProvider } from "./workspace_tree_provider";
 import { Resources } from "../extension/resources";
 
@@ -23,13 +21,12 @@ export class WorkspaceTreeFeature extends BaseExtensionFeature {
     super("WorkspaceTree", context);
   }
 
-  enable(context: vscode.ExtensionContext): Promise<boolean> {
-    // Precondition: bazel executable available
-    if (!checkBazelIsAvailable()) {
-      this.logWarn("Can not activate, no bazel executable found.");
-      return Promise.resolve(false);
-    }
+  /** Bazel must be available, see `BaseExtensionFeature.requiredTools`. */
+  protected requiredTools(): ToolKey[] {
+    return ["Bazelisk"];
+  }
 
+  enable(context: vscode.ExtensionContext): Promise<boolean> {
     // Create and register the WorkspaceTree provider
     this.workspaceTreeProvider = new BazelWorkspaceTreeProvider(
       Resources.fromExtensionContext(context),

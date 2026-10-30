@@ -135,7 +135,7 @@ describe("Tool Checksum Validator", () => {
               // Test download and verification (simplified version)
               const tempFile = path.join(os.tmpdir(), `${toolKey}-${platform}`);
               await downloadAndVerify(
-                platformAsset,
+                platformAsset.browser_download_url,
                 expectedChecksum,
                 tempFile,
                 consoleLogger,
