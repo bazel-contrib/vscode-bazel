@@ -5,7 +5,6 @@ import {
   TestExplorerFeature,
   showLcovCoverage,
 } from "../src/test-explorer/test_explorer_feature";
-import * as bazel_availability from "../src/bazel/bazel_availability";
 
 describe("TestExplorerFeature", () => {
   let testExplorerFeature: TestExplorerFeature;
@@ -37,16 +36,13 @@ describe("TestExplorerFeature", () => {
   });
 
   describe("enable", () => {
-    it("returns false when Bazel executable is not available", async () => {
-      sandbox.stub(bazel_availability, "checkBazelIsAvailable").returns(false);
-
-      const result = await (testExplorerFeature as any).enable(mockContext);
-
-      assert.strictEqual(result, false);
+    it("requires Bazel", () => {
+      assert.deepStrictEqual((testExplorerFeature as any).requiredTools(), [
+        "Bazelisk",
+      ]);
     });
 
     it("returns true and registers a controller when available", async () => {
-      sandbox.stub(bazel_availability, "checkBazelIsAvailable").returns(true);
       const createControllerStub = sandbox
         .stub(vscode.tests, "createTestController")
         .returns(mockTestController);
@@ -75,7 +71,6 @@ describe("TestExplorerFeature", () => {
     });
 
     it("creates a test run and adds coverage once enabled", async () => {
-      sandbox.stub(bazel_availability, "checkBazelIsAvailable").returns(true);
       sandbox
         .stub(vscode.tests, "createTestController")
         .returns(mockTestController);

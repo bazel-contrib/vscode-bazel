@@ -14,6 +14,8 @@
 
 import * as vscode from "vscode";
 import { getRenamedSetting } from "./settings_migration";
+import { AUTO_TOOL_SETTING, ToolKey } from "../external-tools/tool_config";
+import { getToolRegistry } from "../external-tools/tool_registry_instance";
 
 /**
  * Gets a configuration value, returning the default set in the package.json if
@@ -44,14 +46,33 @@ export function getConfigurationWithDefault<T>(
 }
 
 /**
- * Gets the path to the Bazel executable specified by the workspace
- * configuration.
- *
- * @returns The path to the Bazel executable specified in the workspace
- * configuration, or its default.
+ * Gets how to invoke Bazel: the executable resolved by the tool registry
+ * (see `ExternalToolRegistry`), or the configured value.
  */
 export function getBazelExecutablePath(): string {
-  return getConfigurationWithDefault<string>("bazel", "executable").trim();
+  return getToolCommand(
+    "Bazelisk",
+    getConfigurationWithDefault<string>("bazel", "executable"),
+    "bazel",
+  );
+}
+
+/**
+ * Returns how to invoke a tool: as resolved by the tool registry if it was
+ * resolved, else the configured value, with `"auto"` mapped to the tool's
+ * plain executable name.
+ */
+function getToolCommand(
+  toolKey: ToolKey,
+  configuredValue: string,
+  executableName: string,
+): string {
+  const resolved = getToolRegistry()?.getResolvedTool(toolKey);
+  if (resolved) {
+    return resolved.command;
+  }
+  const value = configuredValue.trim();
+  return value === AUTO_TOOL_SETTING ? executableName : value;
 }
 
 export function getPathsToIgnore(): string[] {
@@ -124,17 +145,15 @@ export function getQueryOutputBase(): string | undefined {
 }
 
 /**
- * Gets the path to the buildifier executable specified by the workspace
- * configuration.
- *
- * @returns The path to the buildifier executable specified in the workspace
- * configuration, or its default.
+ * Gets how to invoke buildifier: the executable resolved by the tool registry
+ * (see `ExternalToolRegistry`), or the configured value.
  */
 export function getBuildifierExecutablePath(): string {
-  return getConfigurationWithDefault<string>(
-    "bazel.buildifier",
-    "executable",
-  ).trim();
+  return getToolCommand(
+    "Buildifier",
+    getConfigurationWithDefault<string>("bazel.buildifier", "executable"),
+    "buildifier",
+  );
 }
 
 export function getBuildifierFixOnFormat(): boolean {
@@ -176,4 +195,14 @@ export function getLspServerEnv(): Record<string, string> {
     "bazel.lsp",
     "env",
   );
+}
+
+/** How missing tools are downloaded (`bazel.externalTools.autoDownload`). */
+export type AutoDownloadMode = "ask" | "always" | "never";
+
+export function getAutoDownloadMode(): AutoDownloadMode {
+  const mode = vscode.workspace
+    .getConfiguration("bazel.externalTools")
+    .get<string>("autoDownload");
+  return mode === "always" || mode === "never" ? mode : "ask";
 }

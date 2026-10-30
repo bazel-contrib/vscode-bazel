@@ -11,8 +11,9 @@ This extension provides support for Bazel in Visual Studio.
   workspace
 - **CodeLens** links in BUILD files to directly launch a build or test by simply
   clicking on the targets
-- **Buildifier** integration to lint and format your Bazel files (requires that
-  [Buildifier](https://github.com/bazelbuild/buildtools/releases) be installed)
+- **Buildifier** integration to lint and format your Bazel files
+- **Language server** support through [starpls](https://github.com/withered-magic/starpls)
+  or another Starlark language server
 - **Bazel Task** definitions for `tasks.json`
 - **Coverage Support** showing coverage results from `bazel coverage` directly
   in VS Code.
@@ -30,6 +31,32 @@ set the **Bazel: Executable** setting to the location of the Bazel executable.
 
 Similarly, the **Bazel: Buildifier Executable** setting can be configured if
 you install Buildifier in a location that is not on your system path.
+
+### External tools
+
+The extension uses three external tools: Bazel (or
+[Bazelisk](https://github.com/bazelbuild/bazelisk)),
+[Buildifier](https://github.com/bazelbuild/buildtools) and the
+[starpls](https://github.com/withered-magic/starpls) language server. Their
+settings (`bazel.executable`, `bazel.buildifier.executable` and
+`bazel.lsp.command`) default to `auto`: the extension uses the tool from your
+system path, or else a copy it downloaded itself.
+
+When a tool is missing in a Bazel workspace, the extension offers to download
+it. Downloads are pinned to the versions tested with this release, verified
+by checksum, kept in the extension's global storage and updated with the
+extension. Your settings are never changed. Which tools are used, and where
+they come from, is shown in the language status of Starlark files (the `{}`
+icon in the status bar) and in the **Bazel** output channel.
+
+- Set `bazel.externalTools.autoDownload` to `always` to download missing tools
+  without asking (e.g. in a checked-in workspace setting), or to `never` to
+  never download them.
+- Set a tool's setting to a concrete path or name to use exactly that tool;
+  nothing is downloaded in its place.
+
+Features that need a missing tool wait for it and start as soon as it is
+available, without reloading the window.
 
 When Buildifier is installed, the **Format Document** command in Visual Studio
 code will reformat `BUILD`, `WORKSPACE`, `.bzl`, and `.sky` files using the
@@ -83,16 +110,14 @@ Once debugging is active and Bazel pauses, you can step through your Starlark co
 To stop the debugging session, click the "Stop" button in the debugger.
 This terminates the current Bazel process while keeping the Bazel server running for future builds.
 
-## Using a language server (experimental)
+## Using a language server
 
-This extension can use a language server for various features, such as go to definition and completions. There are currently two compatible language servers:
+This extension uses a language server for various features, such as go to definition and completions. There are currently two compatible language servers:
 
-- [bazel-lsp](https://github.com/cameron-martin/bazel-lsp) is based on Facebook's Starlark language server and extends it with additional, Bazel-specific functionality.
-- [starpls](https://github.com/withered-magic/starpls) is an implementation based on rust-analyzer which also provides Bazel-specific functionality.
+- [starpls](https://github.com/withered-magic/starpls) is an implementation based on rust-analyzer which also provides Bazel-specific functionality. It is the default: with `bazel.lsp.command` set to `auto`, the extension starts `starpls server` from your system path or a downloaded copy (see [External tools](#external-tools)), followed by the arguments in `bazel.lsp.args`.
+- [bazel-lsp](https://github.com/cameron-martin/bazel-lsp) is based on Facebook's Starlark language server and extends it with additional, Bazel-specific functionality. To use it, install it and set `bazel.lsp.command` to it. See its README for more specific setup instructions.
 
-In general, you need to install the language server binary and then set the `bazel.lsp.command` setting. See the README of the corresponding repo for more specific setup instructions.
-
-We can't currently make any recommendation between these two. Both are under active development and are rapidly gaining more functionality.
+Without a language server, the extension falls back to its built-in completion, symbols and go to definition.
 
 ## Bazel tasks
 

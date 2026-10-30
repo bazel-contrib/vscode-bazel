@@ -11,7 +11,7 @@
     },
     "icon": "media/bazel-logo.png",
     "engines": {
-        "vscode": "^1.88.0"
+        "vscode": "^1.96.0"
     },
     "packageManager": "pnpm@10.34.1",
     "categories": [
@@ -122,6 +122,11 @@
                 "category": "Bazel",
                 "command": "bazel.showOutputChannel",
                 "title": "Show Output"
+            },
+            {
+                "category": "Bazel",
+                "command": "bazel.externalTools.download",
+                "title": "Download External Tool"
             }
         ],
         "configuration": [
@@ -132,8 +137,25 @@
                     "bazel.executable": {
                         "type": "string",
                         "order": 0,
-                        "default": "bazel",
-                        "description": "The name of the Bazel executable. This may be an absolute path, or a simple name that will be searched for on the system path. If empty, \"bazel\" on the system path will be used.",
+                        "default": "auto",
+                        "markdownDescription": "The Bazel executable. This may be an absolute path, a path relative to the Bazel workspace, or a simple name that will be searched for on the system path.\n\n`auto` (or empty, or `bazel`) uses `bazel` from the system path, or else a copy of [Bazelisk](https://github.com/bazelbuild/bazelisk) downloaded by the extension (see `#bazel.externalTools.autoDownload#`).",
+                        "scope": "machine-overridable"
+                    },
+                    "bazel.externalTools.autoDownload": {
+                        "type": "string",
+                        "order": 1,
+                        "enum": [
+                            "ask",
+                            "always",
+                            "never"
+                        ],
+                        "enumDescriptions": [
+                            "Ask before downloading a missing tool.",
+                            "Download missing tools without asking.",
+                            "Never download tools."
+                        ],
+                        "default": "ask",
+                        "markdownDescription": "Whether to download Bazelisk, Buildifier and the starpls language server when they are needed, set to `auto` and not found on the system path. Downloads are pinned to the versions tested with this extension, verified by checksum and kept in the extension's global storage. They are only offered in a Bazel workspace.",
                         "scope": "machine-overridable"
                     },
                     "bazel.workspace.path": {
@@ -226,8 +248,8 @@
                     "bazel.buildifier.executable": {
                         "type": "string",
                         "order": 2,
-                        "default": "buildifier",
-                        "markdownDescription": "The name of the Buildifier executable. This may be an absolute path, or a simple name that will be searched for on the system path. Paths starting with `@` are interpreted as Bazel targets and are run via `bazel run`. If empty, \"buildifier\" on the system path will be used.\n\nBuildifier can be downloaded from https://github.com/bazelbuild/buildtools/releases.",
+                        "default": "auto",
+                        "markdownDescription": "The Buildifier executable. This may be an absolute path, a path relative to the workspace, or a simple name that will be searched for on the system path. Paths starting with `@` are interpreted as Bazel targets and are run via `bazel run`.\n\n`auto` (or empty, or `buildifier`) uses `buildifier` from the system path, or else a copy downloaded by the extension (see `#bazel.externalTools.autoDownload#`).",
                         "scope": "machine-overridable"
                     },
                     "bazel.buildifier.configJsonPath": {
@@ -268,8 +290,9 @@
                     "bazel.lsp.command": {
                         "type": "string",
                         "order": 2,
-                        "default": "",
-                        "description": "The executable to launch for the LSP (experimental). Providing this disables certain features in the extension on the basis that they'll be provided by this language server."
+                        "default": "auto",
+                        "markdownDescription": "The language server executable. `auto` (or empty, or `starpls`) uses [starpls](https://github.com/withered-magic/starpls) from the system path, or else a copy downloaded by the extension (see `#bazel.externalTools.autoDownload#`); it is started as `starpls server` followed by `#bazel.lsp.args#`. Any other value is started with `#bazel.lsp.args#` only, e.g. [bazel-lsp](https://github.com/cameron-martin/bazel-lsp). Without a language server, the extension's built-in completion, symbols and go to definition are used.",
+                        "scope": "machine-overridable"
                     },
                     "bazel.lsp.args": {
                         "type": "array",
@@ -485,6 +508,10 @@
         "menus": {
             "commandPalette": [
                 {
+                    "command": "bazel.externalTools.download",
+                    "when": "false"
+                },
+                {
                     "command": "bazel.copyLabelToClipboard",
                     "when": "bazel.haveWorkspace"
                 },
@@ -649,7 +676,7 @@
                 {
                     "id": "bazelWorkspace",
                     "name": "Bazel Targets",
-                    "when": "bazel.haveWorkspace && bazel.feature.WorkspaceTree.enabled"
+                    "when": "bazel.haveWorkspace && (bazel.feature.WorkspaceTree.enabled || bazel.feature.WorkspaceTree.waiting)"
                 }
             ]
         },
@@ -658,6 +685,11 @@
                 "view": "bazelWorkspace",
                 "contents": "No Bazel targets found.\n[Refresh Target List](command:bazel.refreshBazelBuildTargets)",
                 "when": "bazel.haveWorkspace && bazel.feature.WorkspaceTree.enabled"
+            },
+            {
+                "view": "bazelWorkspace",
+                "contents": "Bazel was not found.\n[Download Bazelisk](command:bazel.externalTools.download?%5B%22Bazelisk%22%5D)\n[Configure Bazel Executable](command:workbench.action.openSettings?%5B%22bazel.executable%22%5D)",
+                "when": "bazel.haveWorkspace && bazel.feature.WorkspaceTree.waiting"
             }
         ]
     },
@@ -681,7 +713,7 @@
         "@types/mocha": "^10.0.6",
         "@types/node": "^24.5.2",
         "@types/sinon": "^21.0.0",
-        "@types/vscode": "^1.88.0",
+        "@types/vscode": "^1.96.0",
         "@types/which": "^3.0.3",
         "@typescript-eslint/eslint-plugin": "^8.44.1",
         "@typescript-eslint/parser": "^8.44.1",
