@@ -196,3 +196,13 @@ export function getLspServerEnv(): Record<string, string> {
     "env",
   );
 }
+
+/** How missing tools are downloaded (`bazel.externalTools.autoDownload`). */
+export type AutoDownloadMode = "ask" | "always" | "never";
+
+export function getAutoDownloadMode(): AutoDownloadMode {
+  const mode = vscode.workspace
+    .getConfiguration("bazel.externalTools")
+    .get<string>("autoDownload");
+  return mode === "always" || mode === "never" ? mode : "ask";
+}

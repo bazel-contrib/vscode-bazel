@@ -215,12 +215,7 @@ export async function findOutdatedManagedTool(
   toolsDir: string,
   toolKey: string,
   toolConfig: ToolConfig,
-  platform: Platform,
 ): Promise<{ path: string; version: string } | undefined> {
-  const asset = toolConfig.assets[platform];
-  if (!asset) {
-    return undefined;
-  }
   const toolDir = path.join(toolsDir, toolKey);
   const versions = await fs.readdir(toolDir).catch(() => [] as string[]);
   const candidates = versions

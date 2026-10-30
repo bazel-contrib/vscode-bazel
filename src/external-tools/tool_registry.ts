@@ -15,10 +15,13 @@
 import * as path from "path";
 import * as vscode from "vscode";
 
+import { getAutoDownloadMode } from "../extension/configuration";
 import { logDebug, logError, logInfo, logWarn } from "../extension/logger";
 import { ILogger } from "../extension/logger_interface";
 import { affectsRenamedSetting } from "../extension/settings_migration";
 import {
+  TOOL_INFO,
+  TOOL_KEYS,
   ToolConfig,
   ToolKey,
   ToolsConfig,
@@ -37,19 +40,12 @@ import {
   LocatedTool,
   getConfiguredToolValue,
   getToolSetting,
+  isBazelTarget,
   isExecutableFile,
   locateConfiguredTool,
   locateToolOnPath,
+  openToolSettingCommand,
 } from "./tool_locator";
-
-export const TOOL_KEYS: readonly ToolKey[] = [
-  "Bazelisk",
-  "Buildifier",
-  "Starlark Language Server",
-];
-
-/** How missing tools are downloaded (`bazel.externalTools.autoDownload`). */
-export type AutoDownloadMode = "ask" | "always" | "never";
 
 export type ToolState =
   | { kind: "resolved"; tool: LocatedTool }
@@ -68,22 +64,6 @@ export interface ToolStateChange {
   /** True for the first resolution of a tool, false for every later change. */
   initial: boolean;
 }
-
-/** Human readable names and purposes, used in prompts and the status. */
-export const TOOL_INFO: Record<ToolKey, { label: string; purpose: string }> = {
-  Bazelisk: {
-    label: "Bazelisk",
-    purpose: "build, test and query Bazel targets",
-  },
-  Buildifier: {
-    label: "Buildifier",
-    purpose: "format and lint Bazel files",
-  },
-  "Starlark Language Server": {
-    label: "starpls",
-    purpose: "provide Starlark language support",
-  },
-};
 
 const AUTO_DOWNLOAD_SETTING = "bazel.externalTools.autoDownload";
 const DONT_ASK_PREFIX = "bazel.externalTools.dontAsk.";
@@ -111,14 +91,9 @@ export interface ToolRegistryOptions {
    */
   isBazelWorkspaceAvailable: () => boolean;
   /** Checks that a located tool works, e.g. that buildifier is recent enough. */
-  validators?: Partial<Record<ToolKey, (command: string) => Promise<boolean>>>;
-  toolsConfig?: ToolsConfig;
-  platform?: Platform;
-  getConfiguredValue?: typeof getConfiguredToolValue;
-  getAutoDownloadMode?: typeof getAutoDownloadMode;
-  locateConfigured?: typeof locateConfiguredTool;
-  locateOnPath?: typeof locateToolOnPath;
-  download?: typeof downloadExternalTool;
+  validators?: Partial<
+    Record<ToolKey, (tool: LocatedTool) => Promise<boolean>>
+  >;
 }
 
 /**
@@ -149,6 +124,8 @@ export class ExternalToolRegistry implements vscode.Disposable {
   private readonly offered = new Set<ToolKey>();
   /** Tools to offer once a Bazel workspace is open. */
   private readonly pendingOffers = new Set<ToolKey>();
+  /** Tools whose resolution used another tool, by that other tool. */
+  private readonly dependents = new Map<ToolKey, Set<ToolKey>>();
   private readonly changeEmitter = new vscode.EventEmitter<ToolStateChange>();
   private readonly disposables: vscode.Disposable[] = [];
   private lastFocusRecheck = 0;
@@ -157,8 +134,8 @@ export class ExternalToolRegistry implements vscode.Disposable {
   readonly onDidChangeTool = this.changeEmitter.event;
 
   constructor(private readonly options: ToolRegistryOptions) {
-    this.toolsConfig = options.toolsConfig ?? loadToolsConfig();
-    this.platform = options.platform ?? detectPlatformOrUndefined();
+    this.toolsConfig = loadToolsConfig();
+    this.platform = detectPlatformOrUndefined();
     this.disposables.push(
       this.changeEmitter,
       vscode.workspace.onDidChangeConfiguration((e) =>
@@ -241,6 +218,30 @@ export class ExternalToolRegistry implements vscode.Disposable {
   }
 
   /**
+   * Whether a downloaded copy of the tool would be used: there is a release
+   * for this platform, and the tool's setting does not name an explicit
+   * executable (which is used as is).
+   */
+  canDownload(key: ToolKey): boolean {
+    return (
+      this.managedPath(key) !== undefined &&
+      getConfiguredToolValue(this.toolsConfig[key]) === undefined
+    );
+  }
+
+  /**
+   * Downloads a tool the user asked for, or opens its setting if a
+   * download would not be used (see `canDownload`).
+   */
+  async downloadOrConfigure(key: ToolKey): Promise<void> {
+    if (this.canDownload(key)) {
+      await this.download(key);
+    } else {
+      await openSetting(this.toolsConfig[key]);
+    }
+  }
+
+  /**
    * Downloads the pinned version of a tool. Interactive downloads show their
    * progress and errors; background updates only log.
    */
@@ -252,10 +253,10 @@ export class ExternalToolRegistry implements vscode.Disposable {
     const config = this.toolsConfig[key];
     const { label } = TOOL_INFO[key];
     const previous = this.states.get(key);
-    if (!this.platform || !config.assets[this.platform]) {
+    const platform = this.platform;
+    if (!platform || !this.managedPath(key)) {
       return Promise.resolve();
     }
-    const platform = this.platform;
 
     const run = async () => {
       if (interactive) {
@@ -263,7 +264,6 @@ export class ExternalToolRegistry implements vscode.Disposable {
       }
       try {
         const title = `Downloading ${label} ${config.version}`;
-        const download = this.options.download ?? downloadExternalTool;
         const toolPath = await vscode.window.withProgress(
           {
             location: interactive
@@ -272,7 +272,7 @@ export class ExternalToolRegistry implements vscode.Disposable {
             title,
           },
           () =>
-            download(
+            downloadExternalTool(
               key,
               config,
               this.options.toolsDir,
@@ -283,12 +283,7 @@ export class ExternalToolRegistry implements vscode.Disposable {
         this.downloads.delete(key);
         this.setState(key, {
           kind: "resolved",
-          tool: {
-            command: toolPath,
-            location: toolPath,
-            source: "managed",
-            version: config.version,
-          },
+          tool: managedTool(toolPath, config.version),
         });
       } catch (error) {
         this.downloads.delete(key);
@@ -319,20 +314,26 @@ export class ExternalToolRegistry implements vscode.Disposable {
     const { label } = TOOL_INFO[key];
     const validate = this.options.validators?.[key] ?? (async () => true);
 
-    const configured = (
-      this.options.getConfiguredValue ?? getConfiguredToolValue
-    )(config);
+    const configured = getConfiguredToolValue(config);
     if (configured !== undefined) {
       const settingKey = getToolSetting(config).key;
-      const locate = this.options.locateConfigured ?? locateConfiguredTool;
-      const found = await locate(key, configured);
+      const found = await locateConfiguredTool(key, configured);
       if (!found) {
         return missing(
           `${label} \`${configured}\` (${settingKey}) was not found`,
           true,
         );
       }
-      if (!(await validate(found.command))) {
+      if (
+        isBazelTarget(key, configured) &&
+        !(await this.resolveDependency(key, "Bazelisk"))
+      ) {
+        return missing(
+          `${label} \`${configured}\` (${settingKey}) needs Bazel to run`,
+          true,
+        );
+      }
+      if (!(await validate(found))) {
         return missing(
           `${label} \`${configured}\` (${settingKey}) is not compatible`,
           true,
@@ -341,15 +342,12 @@ export class ExternalToolRegistry implements vscode.Disposable {
       return { kind: "resolved", tool: found };
     }
 
-    const locateOnPath = this.options.locateOnPath ?? locateToolOnPath;
-    const onPath = await locateOnPath(config);
-    if (onPath && (await validate(onPath.command))) {
+    const onPath = await locateToolOnPath(config);
+    if (onPath && (await validate(onPath))) {
       return { kind: "resolved", tool: onPath };
     }
 
-    const managedPath =
-      this.platform &&
-      getManagedToolPath(this.options.toolsDir, key, config, this.platform);
+    const managedPath = this.managedPath(key);
     if (!managedPath) {
       return {
         kind: "unsupported",
@@ -359,12 +357,7 @@ export class ExternalToolRegistry implements vscode.Disposable {
     if (await isExecutableFile(managedPath)) {
       return {
         kind: "resolved",
-        tool: {
-          command: managedPath,
-          location: managedPath,
-          source: "managed",
-          version: config.version,
-        },
+        tool: managedTool(managedPath, config.version),
       };
     }
 
@@ -374,21 +367,15 @@ export class ExternalToolRegistry implements vscode.Disposable {
       this.options.toolsDir,
       key,
       config,
-      this.platform,
     );
     if (outdated) {
-      if (this.autoDownloadMode() !== "never") {
+      if (getAutoDownloadMode() !== "never") {
         // Starts once the resolution is stored, see `resolve`.
         setTimeout(() => void this.download(key, false), 0);
       }
       return {
         kind: "resolved",
-        tool: {
-          command: outdated.path,
-          location: outdated.path,
-          source: "managed",
-          version: outdated.version,
-        },
+        tool: managedTool(outdated.path, outdated.version),
       };
     }
 
@@ -397,6 +384,34 @@ export class ExternalToolRegistry implements vscode.Disposable {
         ? `${label} at ${onPath.location} is not compatible`
         : `${label} was not found`,
       false,
+    );
+  }
+
+  /**
+   * Resolves a tool another one needs to run, e.g. Bazel for a buildifier
+   * built from a Bazel target. The dependent is resolved again whenever the
+   * tool changes.
+   */
+  private async resolveDependency(
+    dependent: ToolKey,
+    key: ToolKey,
+  ): Promise<boolean> {
+    const dependents = this.dependents.get(key) ?? new Set<ToolKey>();
+    dependents.add(dependent);
+    this.dependents.set(key, dependents);
+    return (await this.resolve(key)).kind === "resolved";
+  }
+
+  /** Path of the managed copy of the pinned version, if it has a release. */
+  private managedPath(key: ToolKey): string | undefined {
+    return (
+      this.platform &&
+      getManagedToolPath(
+        this.options.toolsDir,
+        key,
+        this.toolsConfig[key],
+        this.platform,
+      )
     );
   }
 
@@ -418,7 +433,6 @@ export class ExternalToolRegistry implements vscode.Disposable {
 
     const config = this.toolsConfig[key];
     const { label, purpose } = TOOL_INFO[key];
-    const settingKey = getToolSetting(config).key;
 
     if (state.configured) {
       registryLogger.logWarn(state.reason);
@@ -427,12 +441,12 @@ export class ExternalToolRegistry implements vscode.Disposable {
         "Open Settings",
       );
       if (action === "Open Settings") {
-        await openSetting(settingKey);
+        await openSetting(config);
       }
       return;
     }
 
-    const mode = this.autoDownloadMode();
+    const mode = getAutoDownloadMode();
     if (mode === "never") {
       registryLogger.logInfo(
         `${state.reason}; not downloading it (${AUTO_DOWNLOAD_SETTING} is "never")`,
@@ -462,7 +476,7 @@ export class ExternalToolRegistry implements vscode.Disposable {
         await this.download(key);
         break;
       case "Configure Path":
-        await openSetting(settingKey);
+        await openSetting(config);
         break;
       case "Don't Ask Again":
         await this.options.globalState.update(DONT_ASK_PREFIX + key, true);
@@ -482,7 +496,7 @@ export class ExternalToolRegistry implements vscode.Disposable {
       ...actions,
     );
     if (choice === "Configure Path") {
-      await openSetting(getToolSetting(config).key);
+      await openSetting(config);
     } else if (choice === "Open Download Page" && url) {
       await vscode.env.openExternal(vscode.Uri.parse(url));
     }
@@ -491,10 +505,13 @@ export class ExternalToolRegistry implements vscode.Disposable {
   private onConfigurationChanged(e: vscode.ConfigurationChangeEvent) {
     const autoDownloadChanged = e.affectsConfiguration(AUTO_DOWNLOAD_SETTING);
     for (const key of TOOL_KEYS) {
-      const settingChanged =
-        affectsRenamedSetting(e, getToolSetting(this.toolsConfig[key]).key) ||
-        (key === "Bazelisk" &&
-          affectsRenamedSetting(e, "bazel.workspace.path"));
+      const settings = [
+        getToolSetting(this.toolsConfig[key]).key,
+        ...(TOOL_INFO[key].extraSettings ?? []),
+      ];
+      const settingChanged = settings.some((setting) =>
+        affectsRenamedSetting(e, setting),
+      );
       const isMissing = this.states.get(key)?.kind === "missing";
       if (!settingChanged && !(autoDownloadChanged && isMissing)) {
         continue;
@@ -526,10 +543,6 @@ export class ExternalToolRegistry implements vscode.Disposable {
     );
   }
 
-  private autoDownloadMode(): AutoDownloadMode {
-    return (this.options.getAutoDownloadMode ?? getAutoDownloadMode)();
-  }
-
   private setState(key: ToolKey, state: ToolState) {
     const previous = this.states.get(key);
     if (previous && JSON.stringify(previous) === JSON.stringify(state)) {
@@ -538,11 +551,18 @@ export class ExternalToolRegistry implements vscode.Disposable {
     this.states.set(key, state);
     registryLogger.logInfo(`${key}: ${describeToolState(state)}`);
     this.changeEmitter.fire({ key, state, initial: previous === undefined });
+    for (const dependent of this.dependents.get(key) ?? []) {
+      void this.resolve(dependent, true);
+    }
   }
 }
 
 function missing(reason: string, configured = false): ToolState {
   return { kind: "missing", reason, configured };
+}
+
+function managedTool(toolPath: string, version: string): LocatedTool {
+  return { command: toolPath, location: toolPath, source: "managed", version };
 }
 
 function detectPlatformOrUndefined(): Platform | undefined {
@@ -553,18 +573,9 @@ function detectPlatformOrUndefined(): Platform | undefined {
   }
 }
 
-export function getAutoDownloadMode(): AutoDownloadMode {
-  const mode = vscode.workspace
-    .getConfiguration("bazel.externalTools")
-    .get<string>("autoDownload");
-  return mode === "always" || mode === "never" ? mode : "ask";
-}
-
-async function openSetting(settingKey: string) {
-  await vscode.commands.executeCommand(
-    "workbench.action.openSettings",
-    settingKey,
-  );
+async function openSetting(config: ToolConfig) {
+  const { command, arguments: args = [] } = openToolSettingCommand(config);
+  await vscode.commands.executeCommand(command, ...args);
 }
 
 /** One line description of a tool state, for the log. */

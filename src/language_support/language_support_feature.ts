@@ -25,6 +25,7 @@ import {
   startLspClient,
 } from "./language-server-client";
 import { getLspServerExecutablePath } from "../extension/configuration";
+import { affectsRenamedSetting } from "../extension/settings_migration";
 import { AUTO_TOOL_SETTING, ToolKey } from "../external-tools/tool_config";
 import { LocatedTool } from "../external-tools/tool_locator";
 import { describeToolState } from "../external-tools/tool_registry";
@@ -48,20 +49,35 @@ export class LanguageSupportFeature extends BaseExtensionFeature {
 
   /**
    * Switches between the language server and the built-in support when the
-   * language server becomes (un)available.
+   * language server becomes (un)available. Both use Bazel: starpls is given
+   * its path, and the built-in completion of target labels queries it, so it
+   * is only refreshed while Bazel is available.
    */
   protected optionalTools(): ToolKey[] {
-    return ["Starlark Language Server"];
+    return ["Starlark Language Server", "Bazelisk"];
   }
 
   protected async enable(context: vscode.ExtensionContext): Promise<boolean> {
+    const bazelAvailable = await this.isBazelAvailable();
     // Determine which implementation to use
     const languageServer = await this.resolveLanguageServer();
     if (languageServer) {
       return this.enableExternalLSP(languageServer);
     } else {
-      return this.enableBuiltInSupport(context);
+      return this.enableBuiltInSupport(context, bazelAvailable);
     }
+  }
+
+  /**
+   * Whether Bazel can be run. Does not offer a download: the features that
+   * require Bazel do that.
+   */
+  private async isBazelAvailable(): Promise<boolean> {
+    const registry = getToolRegistry();
+    if (!registry) {
+      return true;
+    }
+    return (await registry.resolve("Bazelisk")).kind === "resolved";
   }
 
   /**
@@ -114,18 +130,27 @@ export class LanguageSupportFeature extends BaseExtensionFeature {
       `Enabling external language server support: ${languageServer.location}`,
     );
 
-    // Register restart command. It picks up changed `bazel.lsp.args`.
+    const restart = async () => {
+      this.logInfo("Restarting language server...");
+      await this.startClient(this.getServerCommand(languageServer));
+    };
     const restartCommand = vscode.commands.registerCommand(
       "bazel.lsp.restart",
-      async () => {
-        this.logInfo("Restarting language server...");
-        await this.startClient(getLanguageServerCommand(languageServer));
-      },
+      restart,
     );
-    this.disposables.push(restartCommand);
+    // The arguments and environment are read when the server starts.
+    const settingsListener = vscode.workspace.onDidChangeConfiguration((e) => {
+      if (
+        affectsRenamedSetting(e, "bazel.lsp.args") ||
+        affectsRenamedSetting(e, "bazel.lsp.env")
+      ) {
+        void restart();
+      }
+    });
+    this.disposables.push(restartCommand, settingsListener);
 
     // Start the LSP client
-    void this.startClient(getLanguageServerCommand(languageServer)).then(() => {
+    void this.startClient(this.getServerCommand(languageServer)).then(() => {
       this.logInfo("External language server started");
     });
 
@@ -133,6 +158,13 @@ export class LanguageSupportFeature extends BaseExtensionFeature {
     vscode.commands.executeCommand("setContext", "bazel.lsp.enabled", true);
 
     return true;
+  }
+
+  private getServerCommand(languageServer: LocatedTool): LanguageServerCommand {
+    return getLanguageServerCommand(
+      languageServer,
+      getToolRegistry()?.getResolvedTool("Bazelisk"),
+    );
   }
 
   private async startClient(server: LanguageServerCommand) {
@@ -150,13 +182,21 @@ export class LanguageSupportFeature extends BaseExtensionFeature {
 
   /**
    * Enables built-in language support implementation
+   *
+   * @param bazelAvailable Whether the completion targets can be queried.
+   * Otherwise they are not, and the feature restarts once Bazel is available.
    */
-  private enableBuiltInSupport(context: vscode.ExtensionContext): boolean {
+  private enableBuiltInSupport(
+    context: vscode.ExtensionContext,
+    bazelAvailable: boolean,
+  ): boolean {
     this.logInfo("Enabling built-in language support");
 
     // Create completion provider
     this.completionItemProvider = new BazelCompletionItemProvider();
-    this.completionItemProvider.scheduleRefresh();
+    if (bazelAvailable) {
+      this.completionItemProvider.scheduleRefresh();
+    }
 
     // Set up file watcher for BUILD files
     const buildWatcher = vscode.workspace.createFileSystemWatcher(
@@ -167,8 +207,11 @@ export class LanguageSupportFeature extends BaseExtensionFeature {
     );
 
     // Fire refresh when BUILD files change, are created, or deleted
-    const refreshOnEvent = (uri: vscode.Uri) =>
-      this.completionItemProvider?.scheduleRefresh(uri);
+    const refreshOnEvent = (uri: vscode.Uri) => {
+      if (bazelAvailable) {
+        this.completionItemProvider?.scheduleRefresh(uri);
+      }
+    };
     const onDidChangeDisposable = buildWatcher.onDidChange(refreshOnEvent);
     const onDidCreateDisposable = buildWatcher.onDidCreate(refreshOnEvent);
     const onDidDeleteDisposable = buildWatcher.onDidDelete(refreshOnEvent);
