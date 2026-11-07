@@ -1,19 +1,17 @@
 /**
  * Tool Checksum Validator
  *
- * This test validates SHA256 checksums for tool binaries against GitHub API.
- * It can detect outdated checksums and verify binary integrity validation.
+ * Downloads every tool binary from its GitHub release and verifies it against
+ * the pinned SHA256 checksum, which detects outdated or wrong checksums.
  */
 
 import * as assert from "assert";
 import * as path from "path";
 import * as os from "os";
-import { downloadAndVerify } from "../src/external-tools/tool_downloader";
 import {
-  findMatchingGithubAsset,
-  getGitHubRelease,
-  GitHubRelease,
-} from "../src/external-tools/github_api";
+  downloadAndVerify,
+  getToolDownloadUrl,
+} from "../src/external-tools/tool_downloader";
 import {
   loadToolsConfig,
   ToolConfig,
@@ -57,22 +55,6 @@ describe("Tool Checksum Validator", () => {
     const typedToolConfig = toolConfig as ToolConfig;
 
     describe(toolKey, () => {
-      let githubRelease: GitHubRelease;
-
-      before(async () => {
-        githubRelease = await getGitHubRelease(
-          typedToolConfig.repository,
-          typedToolConfig.version,
-          consoleLogger,
-        );
-      });
-
-      it("should load GitHub release information", () => {
-        assert.ok(typeof githubRelease === "object");
-        assert.ok(githubRelease.hasOwnProperty("tag_name"));
-        assert.ok(githubRelease.hasOwnProperty("assets"));
-      });
-
       it("should have required properties for each tool", () => {
         assert.ok(typedToolConfig.hasOwnProperty("repository"));
         assert.ok(typedToolConfig.hasOwnProperty("version"));
@@ -99,50 +81,18 @@ describe("Tool Checksum Validator", () => {
 
             it(`should download and verify ${platform} asset checksum`, async function () {
               this.timeout(60000);
-              // Find the matching asset
-              const platformAsset = findMatchingGithubAsset(
-                githubRelease.assets,
-                assetName,
+              // Same URL the extension downloads from at runtime.
+              const url = getToolDownloadUrl(
+                typedToolConfig,
+                platform as Platform,
               );
-              const filename = typedToolConfig.assets[platform as Platform];
-              assert.ok(
-                filename,
-                `No asset filename found for ${toolKey} ${platform}`,
-              );
-              assert.ok(
-                platformAsset,
-                `Asset not found for ${toolKey} ${platform}: ${filename}`,
-              );
-
-              // Validate GitHub checksum
-              const githubHash = platformAsset?.digest?.replace("sha256:", "");
-              const expectedChecksum =
-                typedToolConfig.checksums[platform as Platform];
-              assert.ok(
-                expectedChecksum,
-                `No checksum found for ${toolKey} ${platform}`,
-              );
-              assert.ok(
-                githubHash,
-                `GitHub API missing digest for ${toolKey} ${platform}: ${platformAsset?.name}`,
-              );
-              assert.strictEqual(
-                expectedChecksum,
-                githubHash,
-                `Checksum validation failed for ${toolKey} ${platform}: expected ${expectedChecksum}, GitHub has ${githubHash}`,
-              );
-
-              // Test download and verification (simplified version)
+              assert.ok(url, `No download URL for ${toolKey} ${platform}`);
               const tempFile = path.join(os.tmpdir(), `${toolKey}-${platform}`);
               await downloadAndVerify(
-                platformAsset,
-                expectedChecksum,
+                url,
+                typedToolConfig.checksums[platform as Platform],
                 tempFile,
                 consoleLogger,
-              );
-              assert.ok(
-                true,
-                `Downloaded asset integrity verified for ${toolKey} ${platform}`,
               );
             });
           },
