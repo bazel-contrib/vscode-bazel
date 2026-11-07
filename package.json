@@ -265,6 +265,12 @@
                         "default": true,
                         "description": "Enable language support (Go To Definition, Symbols, Completion) for Bazel files. Automatically uses external LSP if configured, otherwise uses built-in completion, symbols, and go to definition."
                     },
+                    "bazel.languageSupport.unpinnedRepositoryWarnings": {
+                        "type": "boolean",
+                        "order": 2,
+                        "default": true,
+                        "markdownDescription": "Warn about repository declarations that are not pinned: `git_repository`/`new_git_repository`/`git_override` without `commit`, and `http_archive`/`http_file`/`http_jar`/`archive_override` without `integrity` or `sha256`. Recognized through `load()` aliases, `use_repo_rule` proxies and `maybe()`."
+                    },
                     "bazel.lsp.command": {
                         "type": "string",
                         "order": 2,

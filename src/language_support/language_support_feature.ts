@@ -20,6 +20,7 @@ import { BazelCompletionItemProvider } from "../completion-provider";
 import { BazelGotoDefinitionProvider } from "../definition/bazel_goto_definition_provider";
 import { BazelTargetSymbolProvider } from "../symbols";
 import { startLspClientFromCurrentConfig } from "./language-server-client";
+import { RepositoryDiagnostics } from "./repository_diagnostics";
 import { getLspServerExecutablePath } from "../extension/configuration";
 
 /**
@@ -41,11 +42,15 @@ export class LanguageSupportFeature extends BaseExtensionFeature {
     const lspCommand = getLspServerExecutablePath();
     this.isUsingExternalLSP = !!lspCommand;
 
-    if (this.isUsingExternalLSP) {
-      return this.enableExternalLSP(context);
-    } else {
-      return this.enableBuiltInSupport(context);
+    const enabled = this.isUsingExternalLSP
+      ? this.enableExternalLSP(context)
+      : this.enableBuiltInSupport(context);
+    if (enabled) {
+      // Lint-style warnings are independent of which server answers
+      // language queries.
+      this.disposables.push(new RepositoryDiagnostics());
     }
+    return enabled;
   }
 
   protected disable(): boolean {
