@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 
 import { BaseExtensionFeature } from "../extension/extension_feature";
+import { onDidChangeActiveBazelRoot } from "../bazel/active_bazel_roots";
 import {
   BUILD_FILE_CHANGE_DELAY_MS,
   CoalescingRunner,
@@ -47,6 +48,12 @@ export class CodeLensFeature extends BaseExtensionFeature {
       () => refreshRunner.schedule(),
       this,
       this.disposables,
+    );
+
+    // The labels and the Bazel root behind every lens may change. Go through
+    // the same runner, so both kinds of change cost one refresh.
+    this.disposables.push(
+      onDidChangeActiveBazelRoot(() => refreshRunner.schedule()),
     );
 
     const codeLensRegistration = vscode.languages.registerCodeLensProvider(

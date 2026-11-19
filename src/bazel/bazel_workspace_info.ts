@@ -14,7 +14,7 @@
 
 import * as vscode from "vscode";
 
-import { getBazelWorkspaceFolder } from "./bazel_utils";
+import { getActiveBazelRoot, getBazelWorkspaceFolder } from "./bazel_utils";
 
 /**
  * Represents the Bazel workspace path containing a document as well as its
@@ -24,8 +24,8 @@ export class BazelWorkspaceInfo {
   /**
    * Returns the VS Code and Bazel workspace info for the given text document.
    *
-   * If the file is not in a Bazel workspace or in a VSCode workspace, this
-   * function returns {@code undefined}.
+   * If the file is not in a VS Code workspace folder, or outside that folder's
+   * active Bazel root, this function returns {@code undefined}.
    *
    * @param document The {@code vscode.TextDocument} whose workspace info should
    * be retrieved.
@@ -48,10 +48,10 @@ export class BazelWorkspaceInfo {
 
   /**
    * Returns the VS Code and Bazel workspace info for the given VS Code
-   * workspace folder.
+   * workspace folder, using the folder's active Bazel root.
    *
-   * If the workspace folder is not a subdirectory in (or is not itself) a Bazel
-   * workspace, this function returns {@code undefined}.
+   * If the workspace folder has no active Bazel root, this function returns
+   * {@code undefined}.
    *
    * @param workspaceFolder The {@code vscode.WorkspaceFolder} whose workspace
    * info should be retrieved.
@@ -59,7 +59,7 @@ export class BazelWorkspaceInfo {
   public static fromWorkspaceFolder(
     workspaceFolder: vscode.WorkspaceFolder,
   ): BazelWorkspaceInfo | undefined {
-    const bazelWorkspace = getBazelWorkspaceFolder(workspaceFolder.uri.fsPath);
+    const bazelWorkspace = getActiveBazelRoot(workspaceFolder);
     if (bazelWorkspace) {
       return new BazelWorkspaceInfo(bazelWorkspace, workspaceFolder);
     }
