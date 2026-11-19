@@ -127,15 +127,19 @@ _TS_SRCS = glob(
     exclude = ["src/protos/protos.d.ts"],
 )
 
+# JSON data imported by the sources (inlined by esbuild, copied by tsc).
+_JSON_SRCS = ["src/external-tools/external-tools-config.json"]
+
 # The whole non-test TypeScript compile. Adding protos.d.ts to srcs lets
 # tsc resolve `../protos` (which points at src/protos/index.ts + protos.d.ts).
 ts_project(
     name = "tsc",
-    srcs = _TS_SRCS + ["src/protos/protos.d.ts"],
+    srcs = _TS_SRCS + _JSON_SRCS + ["src/protos/protos.d.ts"],
     allow_js = True,
     composite = True,
     data = ["src/protos/protos.js"],
     declaration = True,
+    resolve_json_module = True,
     source_map = True,
     transpiler = "tsc",
     tsconfig = ":tsconfig",
@@ -149,6 +153,7 @@ build_test(
     name = "typecheck",
     targets = [
         ":tsc",
+        "//test:node_tests_tsc",
         "//test:tsc",
     ],
 )
@@ -182,7 +187,7 @@ tmgrammar_bin.vscode_tmgrammar_snap_test(
 # pnpm-lock.yaml, with the same flags the former npm scripts used. Outputs
 # land under dist/ so they sit where package.json's "main"
 # (./dist/extension.js) and the debug adapter contribution expect them.
-_BUNDLE_SRCS = _TS_SRCS + [
+_BUNDLE_SRCS = _TS_SRCS + _JSON_SRCS + [
     "src/protos/protos.d.ts",
     "src/protos/protos.js",
     "tsconfig.json",

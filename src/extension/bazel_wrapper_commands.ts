@@ -436,8 +436,8 @@ async function bazelGoToLabel(target_info?: blaze_query.ITarget | undefined) {
 /**
  * Copies a label to clipboard and shows confirmation message.
  */
-function copyLabelToClipboard(label: string): void {
-  vscode.env.clipboard.writeText(label);
+async function copyLabelToClipboard(label: string): Promise<void> {
+  await vscode.env.clipboard.writeText(label);
 
   showInfoMessage(`Copied to clipboard: ${label}`);
 }
@@ -517,7 +517,7 @@ async function bazelCopyLabelToClipboard(
   if (adapter === undefined) {
     const cursorLabel = extractLabelFromCursor();
     if (cursorLabel) {
-      copyLabelToClipboard(cursorLabel);
+      await copyLabelToClipboard(cursorLabel);
     }
     return;
   }
@@ -535,7 +535,7 @@ async function bazelCopyLabelToClipboard(
 
   const commandOptions = selectedAdapter.getBazelCommandOptions();
   const targetLabel = commandOptions.targets[0];
-  copyLabelToClipboard(targetLabel);
+  await copyLabelToClipboard(targetLabel);
 }
 
 /**

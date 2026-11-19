@@ -1,0 +1,66 @@
+{
+  "Bazelisk": {
+    "repository": "bazelbuild/bazelisk",
+    "version": "v1.28.1",
+    "configKey": "executable",
+    "assets": {
+      "win32-amd64": "bazelisk-windows-amd64.exe",
+      "win32-arm64": "bazelisk-windows-arm64.exe",
+      "linux-amd64": "bazelisk-linux-amd64",
+      "linux-arm64": "bazelisk-linux-arm64",
+      "darwin-amd64": "bazelisk-darwin-amd64",
+      "darwin-arm64": "bazelisk-darwin-arm64"
+    },
+    "executableName": "bazel",
+    "checksums": {
+      "win32-amd64": "b9d65a1f7c2d7af885a96a4fd5aa36b40fb41816d30944390569eef908bdc954",
+      "win32-arm64": "85ba3d92a8bdcbecc06657b8c0ae30f4307b552d601d9d6246f8a98aec36c346",
+      "linux-amd64": "22e7d3a188699982f661cf4687137ee52d1f24fec1ec893d91a6c4d791a75de8",
+      "linux-arm64": "8ded44b58a0d9425a4178af26cf17693feac3b87bdcfef0a2a0898fcd1afc9f2",
+      "darwin-amd64": "023225736cea5dc88f2b0807d5b1af4eb0f69a4ed45e3994b2c18c263bc80e48",
+      "darwin-arm64": "dea3f3f5de2dbc5e269e0132cdd369d5efe738f7b973d5d4eb2b4f7055a97b39"
+    }
+  },
+  "Buildifier": {
+    "repository": "bazelbuild/buildtools",
+    "version": "v8.5.1",
+    "configKey": "buildifierExecutable",
+    "assets": {
+      "win32-amd64": "buildifier-windows-amd64.exe",
+      "win32-arm64": "buildifier-windows-arm64.exe",
+      "linux-amd64": "buildifier-linux-amd64",
+      "linux-arm64": "buildifier-linux-arm64",
+      "darwin-amd64": "buildifier-darwin-amd64",
+      "darwin-arm64": "buildifier-darwin-arm64"
+    },
+    "executableName": "buildifier",
+    "checksums": {
+      "win32-amd64": "f4ecb9c73de2bc38b845d4ee27668f6248c4813a6647db4b4931a7556052e4e1",
+      "win32-arm64": "55a276ad8b1ff46be48bf64e432264034ea69a45aa3914e89c1d1936f5c2d85c",
+      "linux-amd64": "887377fc64d23a850f4d18a077b5db05b19913f4b99b270d193f3c7334b5a9a7",
+      "linux-arm64": "947bf6700d708026b2057b09bea09abbc3cafc15d9ecea35bb3885c4b09ccd04",
+      "darwin-amd64": "31de189e1a3fe53aa9e8c8f74a0309c325274ad19793393919e1ca65163ca1a4",
+      "darwin-arm64": "62836a9667fa0db309b0d91e840f0a3f2813a9c8ea3e44b9cd58187c90bc88ba"
+    }
+  },
+  "Starlark Language Server": {
+    "repository": "withered-magic/starpls",
+    "version": "v0.1.22",
+    "configKey": "lsp.command",
+    "assets": {
+      "win32-amd64": "starpls-windows-amd64.exe",
+      "linux-amd64": "starpls-linux-amd64",
+      "linux-arm64": "starpls-linux-aarch64",
+      "darwin-amd64": "starpls-darwin-amd64",
+      "darwin-arm64": "starpls-darwin-arm64"
+    },
+    "executableName": "lsp_server",
+    "checksums": {
+      "win32-amd64": "87626a4226ed2f3f0f9e573501731bbe225a53cf009df845ec547ee984a1857e",
+      "linux-amd64": "7c661cdde0d1c026665086d07523d825671e29056276681616bb32d0273c5eab",
+      "linux-arm64": "55877ec4c3ff03e1d90d59c76f69a3a144b6c29688747c8ac4d77993e2eef1ad",
+      "darwin-amd64": "97967f041d950c1055664a8f1afc36b01c6793b2fb3af488fd20139720d32131",
+      "darwin-arm64": "675b7be4554e6c219b6774a6b814ec21061096e08ecdd8b8aeeaf3913eb20a4e"
+    }
+  }
+}

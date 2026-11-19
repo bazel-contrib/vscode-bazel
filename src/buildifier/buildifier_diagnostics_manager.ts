@@ -14,7 +14,7 @@
 
 import * as vscode from "vscode";
 import { buildifierLint } from "./buildifier";
-import { ILogger } from "../extension/logger";
+import { ILogger } from "../extension/logger_interface";
 
 /**
  * The delay to wait for the user to finish typing before invoking buildifier to

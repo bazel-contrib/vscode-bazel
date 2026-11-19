@@ -12,4 +12,8 @@ module.exports = defineConfig({
   // file. `bazel test //test:integration` runs from a scratch copy and points this
   // at a cache that survives between runs.
   cachePath: process.env.VSCODE_TEST_CACHE_PATH,
+  // The built-in JSON language client throws uncaught timer errors when
+  // settings change in quick succession. Mocha attributes those to whichever
+  // test is running, so disable it; no test depends on JSON language features.
+  launchArgs: ["--disable-extension", "vscode.json-language-features"],
 });
