@@ -2,7 +2,7 @@
   "Bazelisk": {
     "repository": "bazelbuild/bazelisk",
     "version": "v1.28.1",
-    "configKey": "executable",
+    "configKey": "bazel.executable",
     "assets": {
       "win32-amd64": "bazelisk-windows-amd64.exe",
       "win32-arm64": "bazelisk-windows-arm64.exe",
@@ -23,8 +23,8 @@
   },
   "Buildifier": {
     "repository": "bazelbuild/buildtools",
-    "version": "v8.5.1",
-    "configKey": "buildifierExecutable",
+    "version": "v10.2.0",
+    "configKey": "buildifier.executable",
     "assets": {
       "win32-amd64": "buildifier-windows-amd64.exe",
       "win32-arm64": "buildifier-windows-arm64.exe",
@@ -35,12 +35,12 @@
     },
     "executableName": "buildifier",
     "checksums": {
-      "win32-amd64": "f4ecb9c73de2bc38b845d4ee27668f6248c4813a6647db4b4931a7556052e4e1",
-      "win32-arm64": "55a276ad8b1ff46be48bf64e432264034ea69a45aa3914e89c1d1936f5c2d85c",
-      "linux-amd64": "887377fc64d23a850f4d18a077b5db05b19913f4b99b270d193f3c7334b5a9a7",
-      "linux-arm64": "947bf6700d708026b2057b09bea09abbc3cafc15d9ecea35bb3885c4b09ccd04",
-      "darwin-amd64": "31de189e1a3fe53aa9e8c8f74a0309c325274ad19793393919e1ca65163ca1a4",
-      "darwin-arm64": "62836a9667fa0db309b0d91e840f0a3f2813a9c8ea3e44b9cd58187c90bc88ba"
+      "win32-amd64": "ae9b0632ff4bc56607b9c8512716b7fd63371387136005d25e94ec668f89361d",
+      "win32-arm64": "bf213d214296346f859a6f1135168161cf86d7c1ca49df41426790a139b574e8",
+      "linux-amd64": "470844069d710d0b7740e55007071c63e4d00be89a833dce5d1a91790e84dc28",
+      "linux-arm64": "e33b41bdb36eca5dfa69647333f4f148272654b98cddcea12f38fac5ec0a00ff",
+      "darwin-amd64": "9e78881e91266e3567ed6d590f6c19bb5cd8cfa7aa80c7e1b6e479264d1051b8",
+      "darwin-arm64": "d9c9c3a2826d1d8f592a9d463e62aed7f4dcacc5ab48e8de6be53c420b34b971"
     }
   },
   "Starlark Language Server": {
