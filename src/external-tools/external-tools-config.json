@@ -23,7 +23,7 @@
   },
   "Buildifier": {
     "repository": "bazelbuild/buildtools",
-    "version": "v8.5.1",
+    "version": "v10.2.0",
     "configKey": "buildifierExecutable",
     "assets": {
       "win32-amd64": "buildifier-windows-amd64.exe",
