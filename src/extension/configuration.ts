@@ -123,6 +123,16 @@ export function getQueryOutputBase(): string | undefined {
   return getRenamedSetting<string>("bazel.commandLine", "queryOutputBase");
 }
 
+/** Whether to warn about repository rules without a commit or checksum. */
+export function getUnpinnedRepositoryWarnings(): boolean {
+  return (
+    getRenamedSetting<boolean>(
+      "bazel.languageSupport",
+      "unpinnedRepositoryWarnings",
+    ) ?? true
+  );
+}
+
 /**
  * Gets the path to the buildifier executable specified by the workspace
  * configuration.

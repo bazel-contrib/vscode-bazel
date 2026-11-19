@@ -17,6 +17,9 @@ This extension provides support for Bazel in Visual Studio.
 - **Coverage Support** showing coverage results from `bazel coverage` directly
   in VS Code.
 - **Code Navigation** to go to BUILD files or labels
+- **Warnings for unpinned repositories**: `git_repository` without a
+  `commit`, `http_archive`/`http_file`/`http_jar` without `integrity` or
+  `sha256`, and the matching `MODULE.bazel` overrides
 - **Starlark Debugger** to debug Starlark code in your `.bzl` files during analysis phase (set breakpoints, step
   through code, inspect variables, etc.)
 - **URI handler** to go to targets from outside of VSCode. (Example: vscode://bazelbuild.vscode-bazel//path/to/tests:target)
