@@ -12,77 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import * as fs from "fs/promises";
-import * as path from "path";
-import * as vscode from "vscode";
-import which from "which";
-
 import { executeBuildifier } from "./buildifier";
-import { getBuildifierExecutablePath } from "../extension/configuration";
-import { logInfo, logWarn } from "../extension/logger";
-
-async function fileExists(filename: string) {
-  try {
-    // First check if file exists and is a regular file
-    const stats = await fs.stat(filename);
-    if (!stats.isFile()) {
-      return false;
-    }
-
-    // Then check if it's executable by trying to access it
-    await fs.access(filename, fs.constants.X_OK);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/** The URL to load for buildifier's releases. */
-const BUILDTOOLS_RELEASES_URL =
-  "https://github.com/bazelbuild/buildtools/releases";
+import { logWarn } from "../extension/logger";
 
 /**
- * Checks whether buildifier is available (either at the system PATH or a
- * user-specified path, depending on the value in Settings).
+ * Checks that the given buildifier is compatible (0.25.1 or higher) by
+ * running it on an empty input and checking that it exits successfully and
+ * its JSON output parses.
  *
- * If not available, a warning message will be presented to the user with a
- * Download button that they can use to go to the GitHub releases page.
- *
- * @returns absolute path to the found buildifier executable, or null if not found
+ * @param executable The buildifier to check: a path, a name on the system
+ * PATH, or a Bazel target starting with `@`.
  */
-export async function checkBuildifierIsAvailable(): Promise<string | null> {
-  const buildifierExecutable = getBuildifierExecutablePath();
-  logInfo(`Checking buildifier availability: ${buildifierExecutable}`);
-
-  // Check if the program exists (in case it's an actual executable and not
-  // an target name starting with `@`).
-  const isTarget = buildifierExecutable.startsWith("@");
-
-  // Check if the program exists as a relative path of the workspace
-  const workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath;
-  const relativePath = path.join(workspacePath || "", buildifierExecutable);
-  const relativePathExists = await fileExists(relativePath);
-
-  let executablePath: string;
-  if (relativePathExists) {
-    executablePath = relativePath;
-  } else if (isTarget) {
-    // For Bazel targets, use the target name as-is
-    executablePath = buildifierExecutable;
-  } else {
-    // Try to find the executable in the system PATH
-    try {
-      executablePath = await which(buildifierExecutable);
-    } catch (e) {
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      showBuildifierDownloadPrompt("Buildifier was not found");
-      return null;
-    }
-  }
-
-  // Make sure it's a compatible version by running
-  // buildifier on an empty input and see if it exits successfully and the
-  // output parses.
+export async function validateBuildifierExecutable(
+  executable: string,
+): Promise<boolean> {
   let stdout: string;
   try {
     ({ stdout } = await executeBuildifier(
@@ -91,53 +34,18 @@ export async function checkBuildifierIsAvailable(): Promise<string | null> {
       // a .buildifer.json with a different value is present
       ["--format=json", "--mode=check", "--lint=off"],
       false,
-      executablePath,
+      executable,
     ));
   } catch (e) {
-    logWarn(`Buildifier version check failed: ${e}`);
-    return null;
+    logWarn(`Buildifier version check failed for ${executable}: ${e}`);
+    return false;
   }
   try {
     JSON.parse(stdout);
-    logInfo(`Buildifier is available and compatible: ${executablePath}`);
-    return executablePath;
+    return true;
   } catch {
     // If we got no valid JSON back, we don't have a compatible version.
-    logWarn("Buildifier version check failed - incompatible version");
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    showBuildifierDownloadPrompt(
-      "Buildifier is too old (0.25.1 or higher is needed)",
-    );
-    return null;
-  }
-}
-
-/**
- * Show a warning to the user that Buildifier was not found or is not
- * compatible, and give them the option to download it.
- *
- * @param reason The reason that Buildifier was not valid, which is displayed
- * to the user.
- */
-export async function showBuildifierDownloadPrompt(reason: string) {
-  const message =
-    `${reason}; linting and formatting of Bazel files ` +
-    "will not be available. Please download it from " +
-    `${BUILDTOOLS_RELEASES_URL} and install it ` +
-    "on your system PATH or set its location in Settings.";
-
-  // Log to output channel
-  logWarn(message, false);
-
-  // Show interactive message with Download button
-  const item = await vscode.window.showWarningMessage(message, {
-    title: "Download",
-  });
-
-  if (item && item.title === "Download") {
-    await vscode.commands.executeCommand(
-      "vscode.open",
-      vscode.Uri.parse(BUILDTOOLS_RELEASES_URL),
-    );
+    logWarn(`Buildifier ${executable} is too old (0.25.1 or higher is needed)`);
+    return false;
   }
 }

@@ -17,7 +17,11 @@ import * as assert from "assert";
 import * as sinon from "sinon";
 import * as vscode from "vscode";
 import * as configuration from "../src/extension/configuration";
-import { getEffectiveLspWorkspacePath } from "../src/language_support/language-server-client";
+import { LocatedTool } from "../src/external-tools/tool_locator";
+import {
+  getEffectiveLspWorkspacePath,
+  getLanguageServerCommand,
+} from "../src/language_support/language-server-client";
 
 describe("getEffectiveLspWorkspacePath", () => {
   let sandbox: sinon.SinonSandbox;
@@ -72,5 +76,73 @@ describe("getEffectiveLspWorkspacePath", () => {
     const result = getEffectiveLspWorkspacePath();
 
     assert.strictEqual(result, undefined);
+  });
+});
+
+describe("getLanguageServerCommand", () => {
+  const starpls: LocatedTool = {
+    command: "/storage/starpls",
+    location: "/storage/starpls",
+    source: "managed",
+    version: "v0.1.22",
+  };
+  const managedBazel: LocatedTool = {
+    command: "/storage/bazelisk",
+    location: "/storage/bazelisk",
+    source: "managed",
+    version: "v1.28.1",
+  };
+  let sandbox: sinon.SinonSandbox;
+  let lspArgs: string[];
+
+  beforeEach(() => {
+    sandbox = sinon.createSandbox();
+    lspArgs = [];
+    sandbox.stub(configuration, "getLspServerArgs").callsFake(() => lspArgs);
+  });
+
+  afterEach(() => {
+    sandbox.restore();
+  });
+
+  it("passes a downloaded Bazel to starpls", () => {
+    lspArgs = ["--experimental_infer_ctx_attributes"];
+
+    const server = getLanguageServerCommand(starpls, managedBazel);
+
+    assert.deepStrictEqual(server.args, [
+      "server",
+      "--bazel_path=/storage/bazelisk",
+      "--experimental_infer_ctx_attributes",
+    ]);
+  });
+
+  it("leaves starpls to find Bazel on the PATH", () => {
+    const server = getLanguageServerCommand(starpls, {
+      command: "bazel",
+      location: "/usr/bin/bazel",
+      source: "path",
+    });
+
+    assert.deepStrictEqual(server.args, ["server"]);
+  });
+
+  it("keeps a Bazel path given in bazel.lsp.args", () => {
+    lspArgs = ["server", "--bazel_path=/opt/bazel"];
+
+    const server = getLanguageServerCommand(starpls, managedBazel);
+
+    assert.deepStrictEqual(server.args, ["server", "--bazel_path=/opt/bazel"]);
+  });
+
+  it("starts a configured language server with bazel.lsp.args only", () => {
+    lspArgs = ["--stdio"];
+
+    const server = getLanguageServerCommand(
+      { command: "my-lsp", location: "/usr/bin/my-lsp", source: "setting" },
+      managedBazel,
+    );
+
+    assert.deepStrictEqual(server, { command: "my-lsp", args: ["--stdio"] });
   });
 });

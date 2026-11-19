@@ -21,7 +21,7 @@ describe("Configuration", () => {
 
     it("should return the default value when configuration is not set", () => {
       const result = getConfigurationWithDefault<string>("bazel", "executable");
-      assert.strictEqual(result, "bazel");
+      assert.strictEqual(result, "auto");
     });
 
     it("should return the set value when configuration is set", async () => {

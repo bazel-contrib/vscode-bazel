@@ -5,7 +5,7 @@ import {
   BUILD_FILE_CHANGE_DELAY_MS,
   CoalescingRunner,
 } from "../extension/coalescing_runner";
-import { checkBazelIsAvailable } from "../bazel/bazel_availability";
+import { ToolKey } from "../external-tools/tool_config";
 import { CodeLensProvider } from "./code_lens_provider";
 
 /**
@@ -20,13 +20,12 @@ export class CodeLensFeature extends BaseExtensionFeature {
     super("CodeLens", context);
   }
 
-  enable(context: vscode.ExtensionContext): Promise<boolean> {
-    // Precondition: bazel executable available
-    if (!checkBazelIsAvailable()) {
-      this.logWarn("Can not activate, no bazel executable found.");
-      return Promise.resolve(false);
-    }
+  /** Bazel must be available, see `BaseExtensionFeature.requiredTools`. */
+  protected requiredTools(): ToolKey[] {
+    return ["Bazelisk"];
+  }
 
+  enable(context: vscode.ExtensionContext): Promise<boolean> {
     // Create and register the CodeLens provider
     const codelensProvider = new CodeLensProvider(this.getLogger());
 

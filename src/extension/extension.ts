@@ -15,7 +15,7 @@
 import * as vscode from "vscode";
 
 import { activateTaskProvider } from "../bazel";
-import { BuildifierFeature } from "../buildifier";
+import { BuildifierFeature, validateBuildifierExecutable } from "../buildifier";
 import { CodeLensFeature } from "../codelens/code_lens_feature";
 import {
   BazelWorkspaceTreeProvider,
@@ -26,7 +26,18 @@ import { activateCommandVariables } from "./command_variables";
 import { TestExplorerFeature } from "../test-explorer";
 import { activateWrapperCommands } from "./bazel_wrapper_commands";
 import { registerLogger, logInfo, logError, showOutputChannel } from "./logger";
-import { registerBazelWorkspaceAvailabilityWatcher } from "../bazel/bazel_availability";
+import {
+  checkBazelWorkspaceAvailable,
+  onDidCheckBazelWorkspaceAvailability,
+  registerBazelWorkspaceAvailabilityWatcher,
+} from "../bazel/bazel_availability";
+import { ToolKey } from "../external-tools/tool_config";
+import { registerToolRegistry } from "../external-tools/tool_registry";
+import {
+  DOWNLOAD_TOOL_COMMAND,
+  registerToolStatusItems,
+} from "../external-tools/tool_status";
+import { validateLanguageServer } from "../language_support/language-server-client";
 import { LanguageSupportFeature } from "../language_support/language_support_feature";
 import { logDeprecatedSettingsInUse } from "./settings_migration";
 
@@ -67,6 +78,27 @@ export async function activate(context: vscode.ExtensionContext) {
   // Settings renamed by #490 are read through aliases; never rewrite
   // settings.json (#706).
   logDeprecatedSettingsInUse();
+
+  // Locate the external tools. Must exist before the features that use them.
+  // Missing tools are only offered for download in a Bazel workspace.
+  const toolRegistry = registerToolRegistry(context, {
+    isBazelWorkspaceAvailable: checkBazelWorkspaceAvailable,
+    validators: {
+      Buildifier: (tool) => validateBuildifierExecutable(tool.command),
+      "Starlark Language Server": validateLanguageServer,
+    },
+  });
+  context.subscriptions.push(
+    onDidCheckBazelWorkspaceAvailability((available) => {
+      if (available) {
+        toolRegistry.offerPendingTools();
+      }
+    }),
+    registerToolStatusItems(toolRegistry),
+    vscode.commands.registerCommand(DOWNLOAD_TOOL_COMMAND, (key: ToolKey) =>
+      toolRegistry.downloadOrConfigure(key),
+    ),
+  );
 
   // Watch for availability of bazel workspace
   registerBazelWorkspaceAvailabilityWatcher(context);
