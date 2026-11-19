@@ -187,7 +187,7 @@ export abstract class BaseExtensionFeature
           this.logInfo(`Waiting for ${missingTools.join(", ")}`);
         }
         this.setWaiting(true);
-        vscode.commands.executeCommand("setContext", this.contextKey, false);
+        await this.setContext(this.contextKey, false);
         return;
       }
       this.setWaiting(false);
@@ -219,11 +219,7 @@ export abstract class BaseExtensionFeature
       }
       this.isEnabled = false;
     }
-    vscode.commands.executeCommand(
-      "setContext",
-      this.contextKey,
-      this.isEnabled,
-    );
+    await this.setContext(this.contextKey, this.isEnabled);
   }
 
   /**
@@ -244,11 +240,15 @@ export abstract class BaseExtensionFeature
       return;
     }
     this.isWaiting = waiting;
-    vscode.commands.executeCommand(
-      "setContext",
-      this.waitingContextKey,
-      waiting,
-    );
+    void this.setContext(this.waitingContextKey, waiting);
+  }
+
+  private async setContext(key: string, value: boolean): Promise<void> {
+    try {
+      await vscode.commands.executeCommand("setContext", key, value);
+    } catch (e) {
+      this.logError(`Failed to set context ${key}: ${e}`);
+    }
   }
 
   /**

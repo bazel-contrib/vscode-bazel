@@ -128,7 +128,10 @@ export class ExternalToolRegistry implements vscode.Disposable {
   private readonly dependents = new Map<ToolKey, Set<ToolKey>>();
   private readonly changeEmitter = new vscode.EventEmitter<ToolStateChange>();
   private readonly disposables: vscode.Disposable[] = [];
+  /** Tools whose outdated managed copy is to be updated once resolved. */
+  private readonly pendingUpdates = new Set<ToolKey>();
   private lastFocusRecheck = 0;
+  private disposed = false;
 
   /** Fires whenever a tool's state changes. */
   readonly onDidChangeTool = this.changeEmitter.event;
@@ -197,9 +200,17 @@ export class ExternalToolRegistry implements vscode.Disposable {
       })
       .then((state) => {
         this.resolving.delete(key);
-        // A download that started meanwhile owns the state.
-        if (!this.downloads.has(key)) {
-          this.setState(key, state);
+        try {
+          // A download that started meanwhile owns the state.
+          if (!this.downloads.has(key)) {
+            this.setState(key, state);
+          }
+        } catch (error) {
+          registryLogger.logError(`Failed to update ${key}`, false, error);
+        }
+        if (this.pendingUpdates.delete(key) && !this.disposed) {
+          // The outdated copy is stored as the state, so the update can start.
+          void this.download(key, false);
         }
         return this.states.get(key) ?? state;
       });
@@ -305,6 +316,8 @@ export class ExternalToolRegistry implements vscode.Disposable {
   }
 
   dispose(): void {
+    this.disposed = true;
+    this.pendingUpdates.clear();
     this.disposables.forEach((d) => d.dispose());
     this.disposables.length = 0;
   }
@@ -371,7 +384,7 @@ export class ExternalToolRegistry implements vscode.Disposable {
     if (outdated) {
       if (getAutoDownloadMode() !== "never") {
         // Starts once the resolution is stored, see `resolve`.
-        setTimeout(() => void this.download(key, false), 0);
+        this.pendingUpdates.add(key);
       }
       return {
         kind: "resolved",
@@ -545,15 +558,47 @@ export class ExternalToolRegistry implements vscode.Disposable {
 
   private setState(key: ToolKey, state: ToolState) {
     const previous = this.states.get(key);
-    if (previous && JSON.stringify(previous) === JSON.stringify(state)) {
+    if (previous && sameToolState(previous, state)) {
       return;
     }
     this.states.set(key, state);
     registryLogger.logInfo(`${key}: ${describeToolState(state)}`);
     this.changeEmitter.fire({ key, state, initial: previous === undefined });
     for (const dependent of this.dependents.get(key) ?? []) {
-      void this.resolve(dependent, true);
+      void this.reresolve(dependent);
     }
+  }
+
+  /**
+   * Resolves a tool again. One that is being resolved right now may have
+   * looked at stale state, so it is resolved once more when it finishes.
+   */
+  private async reresolve(key: ToolKey): Promise<void> {
+    await this.resolving.get(key);
+    await this.resolve(key, true);
+  }
+}
+
+function sameToolState(a: ToolState, b: ToolState): boolean {
+  switch (a.kind) {
+    case "resolved":
+      return (
+        b.kind === "resolved" &&
+        a.tool.command === b.tool.command &&
+        a.tool.location === b.tool.location &&
+        a.tool.source === b.tool.source &&
+        a.tool.version === b.tool.version
+      );
+    case "missing":
+      return (
+        b.kind === "missing" &&
+        a.reason === b.reason &&
+        a.configured === b.configured
+      );
+    case "unsupported":
+      return b.kind === "unsupported" && a.reason === b.reason;
+    case "downloading":
+      return b.kind === "downloading";
   }
 }
 
