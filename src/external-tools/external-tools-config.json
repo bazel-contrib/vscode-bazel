@@ -2,7 +2,7 @@
   "Bazelisk": {
     "repository": "bazelbuild/bazelisk",
     "version": "v1.30.0",
-    "configKey": "bazel.executable",
+    "configKey": "executable",
     "assets": {
       "win32-amd64": "bazelisk-windows-amd64.exe",
       "win32-arm64": "bazelisk-windows-arm64.exe",
