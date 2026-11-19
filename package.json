@@ -269,7 +269,13 @@
                         "type": "string",
                         "order": 2,
                         "default": "",
-                        "description": "The executable to launch for the LSP (experimental). Providing this disables certain features in the extension on the basis that they'll be provided by this language server."
+                        "description": "The executable to launch as the Starlark language server. Language support comes from the first of: this executable, the WebAssembly server in bazel.lsp.wasm, the starpls bundled with the extension, the built-in providers. Setting this disables the features the server is expected to provide."
+                    },
+                    "bazel.lsp.wasm": {
+                        "type": "string",
+                        "order": 3,
+                        "default": "",
+                        "description": "Path to a starpls language server compiled to WebAssembly, run under Node's WASI by the extension host. Empty uses the one bundled with the extension. Ignored when bazel.lsp.command is set."
                     },
                     "bazel.lsp.args": {
                         "type": "array",
@@ -296,6 +302,20 @@
                         ],
                         "default": "off",
                         "description": "Trace the communication between VS Code and Bazel LSP server (language server)."
+                    },
+                    "bazel.lsp.fetch": {
+                        "type": "string",
+                        "order": 4,
+                        "enum": [
+                            "ask",
+                            "never"
+                        ],
+                        "enumDescriptions": [
+                            "Ask before running `bazel fetch` for repositories the bundled language server needs and cannot find in the output base.",
+                            "Never fetch; such repositories stay unresolved until they are fetched by hand."
+                        ],
+                        "default": "ask",
+                        "description": "Whether the bundled language server may ask to fetch external repositories that are missing from the output base. It never runs Bazel for this on its own."
                     }
                 }
             },

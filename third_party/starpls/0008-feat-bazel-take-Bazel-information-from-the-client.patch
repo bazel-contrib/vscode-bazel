@@ -1,0 +1,294 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: UebelAndre <github@uebelandre.com>
+Date: Thu, 19 Nov 2026 13:45:00 -0800
+Subject: [PATCH] feat(bazel): take Bazel information from the client
+
+A host that cannot spawn processes (a WebAssembly build, or a sandboxed
+one) can run the few Bazel commands the server needs on its behalf and pass
+the results in `initializationOptions.bazel`: `bazel info`, the
+build-language proto (as a file path) and repository mappings as
+`bazel mod dump_repo_mapping` prints them, keyed by canonical repository.
+
+`StaticBazelClient` answers every `BazelClient` call from that data and
+reports an error for the operations that would need a live Bazel (fetching
+a repository, querying targets). The server picks it whenever the options
+carry a `bazel` object and falls back to `BazelCLI` otherwise, so the
+native binary accepts the same options, which is how this is tested.
+---
+ crates/starpls/src/config.rs       |  2 +
+ crates/starpls/src/event_loop.rs   |  1 +
+ crates/starpls/src/host.rs         | 92 ++++++++++++++++++++++++++++++
+ crates/starpls/src/main.rs         |  1 +
+ crates/starpls/src/server.rs       | 17 +++++-
+ crates/starpls_bazel/src/client.rs | 90 ++++++++++++++++++++++++++++-
+ 6 files changed, 201 insertions(+), 2 deletions(-)
+ create mode 100644 crates/starpls/src/host.rs
+
+diff --git a/crates/starpls/src/config.rs b/crates/starpls/src/config.rs
+index c332916..aa5fade 100644
+--- a/crates/starpls/src/config.rs
++++ b/crates/starpls/src/config.rs
+@@ -6,6 +6,8 @@ use crate::commands::server::ServerCommand;
+ pub(crate) struct ServerConfig {
+     pub(crate) args: ServerCommand,
+     pub(crate) caps: ClientCapabilities,
++    /// `initializationOptions` as sent by the client, see `crate::host`.
++    pub(crate) initialization_options: Option<serde_json::Value>,
+ }
+ 
+ macro_rules! try_or_default {
+diff --git a/crates/starpls/src/event_loop.rs b/crates/starpls/src/event_loop.rs
+index 329d708..2939ddf 100644
+--- a/crates/starpls/src/event_loop.rs
++++ b/crates/starpls/src/event_loop.rs
+@@ -80,6 +80,7 @@ pub fn process_connection(
+     let config = ServerConfig {
+         args,
+         caps: initialize_params.capabilities,
++        initialization_options: initialize_params.initialization_options,
+     };
+     let server = Server::new(connection, config)?;
+     server.run()
+diff --git a/crates/starpls/src/host.rs b/crates/starpls/src/host.rs
+new file mode 100644
+index 0000000..e7fdbe7
+--- /dev/null
++++ b/crates/starpls/src/host.rs
+@@ -0,0 +1,92 @@
++//! Bazel information supplied by the editor through `initializationOptions`.
++//!
++//! When the server runs where it cannot spawn Bazel (WebAssembly), the editor
++//! runs the commands itself and passes the results here:
++//!
++//! ```json
++//! {
++//!   "bazel": {
++//!     "info": {
++//!       "workspace": "/workspace",
++//!       "outputBase": "/output_base",
++//!       "release": "release 8.0.0",
++//!       "starlarkSemantics": "...",
++//!       "workspaceName": null
++//!     },
++//!     "buildLanguagePath": "/data/build-language.pb",
++//!     "repoMappings": { "": { "bazel_skylib": "bazel_skylib+" } },
++//!     "workspaceTargets": ["//foo:bar"]
++//!   }
++//! }
++//! ```
++//!
++//! Paths are as the server sees them, so with a WebAssembly file system they
++//! are the mount points, not the host paths. `repoMappings` is keyed by the
++//! canonical repository the mapping belongs to; the main repository is `""`.
++//! The same options work for the native binary, which is useful for tests.
++
++use std::collections::HashMap;
++use std::fs;
++use std::path::PathBuf;
++
++use anyhow::Context;
++use serde::Deserialize;
++use starpls_bazel::client::BazelInfo;
++use starpls_bazel::client::StaticBazelClient;
++
++#[derive(Deserialize)]
++#[serde(rename_all = "camelCase")]
++struct HostBazelData {
++    info: HostBazelInfo,
++    build_language_path: Option<PathBuf>,
++    #[serde(default)]
++    repo_mappings: HashMap<String, HashMap<String, String>>,
++    #[serde(default)]
++    workspace_targets: Vec<String>,
++}
++
++#[derive(Deserialize)]
++#[serde(rename_all = "camelCase")]
++struct HostBazelInfo {
++    workspace: PathBuf,
++    output_base: PathBuf,
++    #[serde(default)]
++    release: String,
++    #[serde(default)]
++    starlark_semantics: String,
++    workspace_name: Option<String>,
++}
++
++/// Builds a client from the `bazel` member of the initialization options.
++/// Returns `None` when the options carry no Bazel data, in which case the
++/// server runs Bazel itself as before.
++pub(crate) fn bazel_client_from_options(
++    options: &serde_json::Value,
++) -> Option<anyhow::Result<StaticBazelClient>> {
++    let data = options.get("bazel")?;
++    Some(build(data.clone()))
++}
++
++fn build(data: serde_json::Value) -> anyhow::Result<StaticBazelClient> {
++    let data: HostBazelData =
++        serde_json::from_value(data).context("invalid `bazel` initialization options")?;
++    let build_language = match &data.build_language_path {
++        Some(path) => Some(
++            fs::read(path)
++                .with_context(|| format!("reading build language from {}", path.display()))?,
++        ),
++        None => None,
++    };
++    Ok(StaticBazelClient::new(
++        BazelInfo {
++            output_base: data.info.output_base,
++            release: data.info.release,
++            starlark_semantics: data.info.starlark_semantics,
++            workspace: data.info.workspace,
++            workspace_name: data.info.workspace_name,
++        },
++        build_language,
++        data.repo_mappings,
++        data.workspace_targets,
++    ))
++}
+diff --git a/crates/starpls/src/main.rs b/crates/starpls/src/main.rs
+index 3d70660..c5fff76 100644
+--- a/crates/starpls/src/main.rs
++++ b/crates/starpls/src/main.rs
+@@ -14,6 +14,7 @@ mod document;
+ mod event_loop;
+ mod extensions;
+ mod handlers;
++mod host;
+ mod server;
+ mod task_pool;
+ mod utils;
+diff --git a/crates/starpls/src/server.rs b/crates/starpls/src/server.rs
+index 64eefac..f0c0e91 100644
+--- a/crates/starpls/src/server.rs
++++ b/crates/starpls/src/server.rs
+@@ -90,7 +90,22 @@ impl Server {
+ 
+         // Determine Bazel configuration.
+         let mut has_bazel_init_err = false;
+-        let bazel_client = Arc::new(BazelCLI::new(&bazel_path));
++        let bazel_client: Arc<dyn BazelClient> = match config
++            .initialization_options
++            .as_ref()
++            .and_then(crate::host::bazel_client_from_options)
++        {
++            Some(Ok(client)) => {
++                info!("using the Bazel information provided by the client");
++                Arc::new(client)
++            }
++            Some(Err(err)) => {
++                error!("ignoring the client's Bazel information: {:#}", err);
++                has_bazel_init_err = true;
++                Arc::new(BazelCLI::new(&bazel_path))
++            }
++            None => Arc::new(BazelCLI::new(&bazel_path)),
++        };
+         let bazel_cx = match BazelContext::new(&*bazel_client) {
+             Ok(cx) => cx,
+             Err(err) => {
+diff --git a/crates/starpls_bazel/src/client.rs b/crates/starpls_bazel/src/client.rs
+index 9122b85..1159146 100644
+--- a/crates/starpls_bazel/src/client.rs
++++ b/crates/starpls_bazel/src/client.rs
+@@ -11,7 +11,7 @@ use serde_json::Deserializer;
+ 
+ const DEFAULT_WORKSPACE_NAMES: &[&str] = &["__main__", "_main"];
+ 
+-#[derive(Default)]
++#[derive(Clone, Default)]
+ pub struct BazelInfo {
+     pub output_base: PathBuf,
+     pub release: String,
+@@ -205,3 +205,91 @@ impl Default for BazelCLI {
+         }
+     }
+ }
++
++/// A client that answers from information the editor supplied up front instead
++/// of running Bazel. This is how the server works when it cannot spawn
++/// processes, for example when compiled to WebAssembly: the host runs
++/// `bazel info`, `bazel info build-language` and `bazel mod dump_repo_mapping`
++/// and passes the results through `initializationOptions`.
++///
++/// Anything that would need a new Bazel invocation (fetching a repository,
++/// querying targets) reports an error instead.
++#[derive(Default)]
++pub struct StaticBazelClient {
++    info: BazelInfo,
++    build_language: Option<Vec<u8>>,
++    repo_mappings: HashMap<String, HashMap<String, String>>,
++    workspace_targets: Vec<String>,
++}
++
++impl StaticBazelClient {
++    pub fn new(
++        info: BazelInfo,
++        build_language: Option<Vec<u8>>,
++        repo_mappings: HashMap<String, HashMap<String, String>>,
++        workspace_targets: Vec<String>,
++    ) -> Self {
++        Self {
++            info,
++            build_language,
++            repo_mappings,
++            workspace_targets,
++        }
++    }
++}
++
++impl BazelClient for StaticBazelClient {
++    fn build_language(&self) -> anyhow::Result<Vec<u8>> {
++        self.build_language
++            .clone()
++            .ok_or_else(|| anyhow!("the host did not provide `bazel info build-language` output"))
++    }
++
++    fn info(&self) -> anyhow::Result<BazelInfo> {
++        Ok(self.info.clone())
++    }
++
++    fn resolve_repo_from_mapping(
++        &self,
++        apparent_repo: &str,
++        from_repo: &str,
++    ) -> anyhow::Result<Option<String>> {
++        Ok(self
++            .repo_mappings
++            .get(from_repo)
++            .and_then(|mapping| mapping.get(apparent_repo))
++            .cloned())
++    }
++
++    fn clear_repo_mappings(&self) {}
++
++    fn null_query_external_repo_targets(&self, repo: &str) -> anyhow::Result<()> {
++        bail!(
++            "cannot fetch `@@{}`: the host did not provide Bazel access",
++            repo
++        )
++    }
++
++    fn repo_mapping_keys(&self, from_repo: &str) -> anyhow::Result<Vec<String>> {
++        Ok(self
++            .repo_mappings
++            .get(from_repo)
++            .map(|mapping| mapping.keys().cloned().collect())
++            .unwrap_or_default())
++    }
++
++    fn query_all_workspace_targets(&self) -> anyhow::Result<Vec<String>> {
++        Ok(self.workspace_targets.clone())
++    }
++
++    fn fetch_repo(&self, repo: &str) -> anyhow::Result<()> {
++        bail!(
++            "cannot fetch `@@{}`: the host did not provide Bazel access",
++            repo
++        )
++    }
++
++    fn dump_repo_mapping(&self, repo: &str) -> anyhow::Result<HashMap<String, String>> {
++        Ok(self.repo_mappings.get(repo).cloned().unwrap_or_default())
++    }
++}

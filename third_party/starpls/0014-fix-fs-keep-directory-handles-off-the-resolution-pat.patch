@@ -1,0 +1,457 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: UebelAndre <github@uebelandre.com>
+Date: Tue, 24 Nov 2026 06:24:10 -0800
+Subject: [PATCH] fix(fs): keep directory handles off the resolution path and
+ off std::fs::read_dir on wasm
+
+Under the VS Code WebAssembly runtime, closing some directory handles
+fails with EBADF (its virtual root among them), and the standard
+library turns a failing `closedir` into an abort. The workspace walk
+reached that root for an external file without a repository marker, and
+the whole server went down a second after the first Bazel data arrived.
+
+The resolution path no longer lists directories at all: the workspace
+walk and the BUILD file lookup probe the marker files by name, which is
+also cheaper. The listings that remain (load path completion) go through
+`dir::read_dir`, which on wasm opens the directory with `open`, reads it
+with `fd_readdir` and ignores a failing `close`; natively it is the
+standard library's listing. `libc` is now a dependency on every target.
+
+The walk also no longer stats the directories it passes. Under Node's
+WASI a symbolic link that leaves a preopened directory, which is what
+every external repository in Bazel's repo contents cache is, fails to
+stat as the last path component while paths through it resolve; the
+marker probes only ever go through it, so a file inside such a
+repository finds its root again.
+---
+ Cargo.Bazel.lock                |  24 ++-----
+ crates/starpls/Cargo.toml       |   5 +-
+ crates/starpls/src/dir.rs       | 102 ++++++++++++++++++++++++++++
+ crates/starpls/src/document.rs  | 113 ++++++++++++--------------------
+ crates/starpls/src/main.rs      |   1 +
+ crates/starpls_bazel/src/lib.rs |  50 +++++++-------
+ 6 files changed, 181 insertions(+), 114 deletions(-)
+ create mode 100644 crates/starpls/src/dir.rs
+
+diff --git a/Cargo.Bazel.lock b/Cargo.Bazel.lock
+index 1ab90b4..3dc652f 100644
+--- a/Cargo.Bazel.lock
++++ b/Cargo.Bazel.lock
+@@ -3,7 +3,7 @@
+     "protoc-gen-prost 0.2.3",
+     "protoc-gen-tonic 0.3.0"
+   ],
+-  "checksum": "8d758fd41a61322ad2aad4591a8370c8099d534d567601d3ec77388e25e509e4",
++  "checksum": "863c1ac22ffc628a57c1b355b83e9e0afc1f5edfb1505e33bc3fab953e4428f8",
+   "conditions": {
+     "aarch64-apple-darwin": [
+       "aarch64-apple-darwin"
+@@ -3756,28 +3756,18 @@
+       "common_attrs": {
+         "crate_features": {
+           "common": [
++            "default",
+             "std"
+           ],
+           "selects": {
+             "aarch64-apple-darwin": [
+-              "default",
+               "extra_traits"
+             ],
+-            "aarch64-unknown-linux-gnu": [
+-              "default"
+-            ],
+             "wasm32-unknown-unknown": [
+               "extra_traits"
+             ],
+             "wasm32-wasip1": [
+-              "default",
+               "extra_traits"
+-            ],
+-            "x86_64-unknown-linux-gnu": [
+-              "default"
+-            ],
+-            "x86_64-unknown-nixos-gnu": [
+-              "default"
+             ]
+           }
+         },
+@@ -6962,6 +6952,10 @@
+               "id": "indexmap 2.1.0",
+               "target": "indexmap"
+             },
++            {
++              "id": "libc 0.2.152",
++              "target": "libc"
++            },
+             {
+               "id": "line-index 0.1.1",
+               "target": "line_index"
+@@ -7011,12 +7005,6 @@
+                 "id": "wasi 0.11.0+wasi-snapshot-preview1",
+                 "target": "wasi"
+               }
+-            ],
+-            "cfg(unix)": [
+-              {
+-                "id": "libc 0.2.152",
+-                "target": "libc"
+-              }
+             ]
+           }
+         },
+diff --git a/crates/starpls/Cargo.toml b/crates/starpls/Cargo.toml
+index bf518f8..6aa94b0 100644
+--- a/crates/starpls/Cargo.toml
++++ b/crates/starpls/Cargo.toml
+@@ -27,12 +27,11 @@ log = "0.4.22"
+ annotate-snippets = "0.11.5"
+ anstream = "0.6.18"
+ walkdir = "2.5.0"
++# Direct descriptor polling and directory listing, see single_thread.rs and dir.rs.
++libc = "0.2.152"
+ 
+ [target.'cfg(not(target_family = "wasm"))'.dependencies]
+ rayon = "1.8.0"
+ 
+-[target.'cfg(unix)'.dependencies]
+-libc = "0.2.152"
+-
+ [target.'cfg(target_family = "wasm")'.dependencies]
+ wasi = "0.11.0"
+diff --git a/crates/starpls/src/dir.rs b/crates/starpls/src/dir.rs
+new file mode 100644
+index 0000000..4ac26e2
+--- /dev/null
++++ b/crates/starpls/src/dir.rs
+@@ -0,0 +1,102 @@
++//! Directory listing that cannot take the process down.
++//!
++//! `std::fs::read_dir` aborts the process when closing the directory fails,
++//! and the WebAssembly host in VS Code reports exactly that for some
++//! directories (its virtual root among them). On wasm the listing therefore
++//! goes through `fd_readdir` directly and a failing close is ignored; natively
++//! it is the standard library's.
++
++use std::io;
++use std::path::Path;
++
++/// One entry of a directory, as the file system reports it (symbolic links
++/// are not followed, as with `std::fs::DirEntry::file_type`).
++pub(crate) struct DirEntry {
++    pub(crate) name: String,
++    pub(crate) is_dir: bool,
++    pub(crate) is_file: bool,
++}
++
++#[cfg(not(target_family = "wasm"))]
++pub(crate) fn read_dir(path: &Path) -> io::Result<Vec<DirEntry>> {
++    Ok(std::fs::read_dir(path)?
++        .filter_map(|entry| {
++            let entry = entry.ok()?;
++            let file_type = entry.file_type().ok()?;
++            Some(DirEntry {
++                name: entry.file_name().to_str()?.to_string(),
++                is_dir: file_type.is_dir(),
++                is_file: file_type.is_file(),
++            })
++        })
++        .collect())
++}
++
++#[cfg(target_family = "wasm")]
++pub(crate) fn read_dir(path: &Path) -> io::Result<Vec<DirEntry>> {
++    use std::ffi::CString;
++    use std::os::wasi::ffi::OsStrExt;
++
++    let c_path = CString::new(path.as_os_str().as_bytes())
++        .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "path contains a NUL byte"))?;
++    // SAFETY: `c_path` is a valid NUL-terminated string.
++    let fd = unsafe { libc::open(c_path.as_ptr(), libc::O_RDONLY | libc::O_DIRECTORY) };
++    if fd < 0 {
++        return Err(io::Error::last_os_error());
++    }
++    let entries = list(fd as wasi::Fd);
++    // The host may refuse to close a directory it opened; nothing depends on
++    // that succeeding, so the error is dropped instead of ending the process.
++    // SAFETY: `fd` came from `open` above and is closed exactly once.
++    let _ = unsafe { libc::close(fd) };
++    entries
++}
++
++#[cfg(target_family = "wasm")]
++fn list(fd: wasi::Fd) -> io::Result<Vec<DirEntry>> {
++    const DIRENT_SIZE: usize = std::mem::size_of::<wasi::Dirent>();
++    let mut entries = Vec::new();
++    let mut buf = vec![0u8; 64 * 1024];
++    let mut cookie: wasi::Dircookie = 0;
++    loop {
++        // SAFETY: `buf` is a valid writable buffer of `buf.len()` bytes.
++        let used = unsafe { wasi::fd_readdir(fd, buf.as_mut_ptr(), buf.len(), cookie) }
++            .map_err(|err| io::Error::from_raw_os_error(err.raw() as i32))?;
++        let mut offset = 0;
++        let mut progressed = false;
++        while offset + DIRENT_SIZE <= used {
++            // SAFETY: a complete `Dirent` header lies at `offset`; it is read
++            // unaligned because entries are packed back to back.
++            let dirent: wasi::Dirent =
++                unsafe { (buf.as_ptr().add(offset) as *const wasi::Dirent).read_unaligned() };
++            let name_start = offset + DIRENT_SIZE;
++            let name_end = name_start + dirent.d_namlen as usize;
++            if name_end > used {
++                // The name was cut off at the end of the buffer; the next
++                // read starts at this entry again.
++                break;
++            }
++            if let Ok(name) = std::str::from_utf8(&buf[name_start..name_end]) {
++                if name != "." && name != ".." {
++                    entries.push(DirEntry {
++                        name: name.to_string(),
++                        is_dir: dirent.d_type == wasi::FILETYPE_DIRECTORY,
++                        is_file: dirent.d_type == wasi::FILETYPE_REGULAR_FILE,
++                    });
++                }
++            }
++            cookie = dirent.d_next;
++            offset = name_end;
++            progressed = true;
++        }
++        if used < buf.len() {
++            // The host had nothing more to report.
++            return Ok(entries);
++        }
++        if !progressed {
++            // One name larger than the whole buffer: make room and retry.
++            let larger = buf.len() * 2;
++            buf.resize(larger, 0);
++        }
++    }
++}
+diff --git a/crates/starpls/src/document.rs b/crates/starpls/src/document.rs
+index ee5d320..60565b9 100644
+--- a/crates/starpls/src/document.rs
++++ b/crates/starpls/src/document.rs
+@@ -421,13 +421,10 @@ impl FileLoader for DefaultFileLoader {
+                 return Ok(None);
+             }
+ 
+-            let build_file = try_opt!(fs::read_dir(&resolved_label.resolved_path)
++            // Probe the two names rather than list the directory; see `crate::dir`.
++            let build_file = try_opt!(["BUILD.bazel", "BUILD"]
+                 .into_iter()
+-                .flat_map(|entries| entries.into_iter())
+-                .find_map(|entry| match entry.ok()?.file_name().to_str()? {
+-                    file_name @ ("BUILD" | "BUILD.bazel") => Some(file_name.to_string()),
+-                    _ => None,
+-                }));
++                .find(|name| resolved_label.resolved_path.join(name).is_file()));
+             let path = resolved_label.resolved_path.join(build_file);
+ 
+             // If we've already interned this file, then simply return the file id.
+@@ -526,13 +523,10 @@ impl FileLoader for DefaultFileLoader {
+ 
+                 let path = crate::single_thread::canonicalize(&path)?;
+                 let mut candidates = vec![];
+-                let readdir = fs::read_dir(path)?;
+-
+-                for entry in readdir {
+-                    let entry = entry?;
+-                    let file_type = entry.file_type()?;
+-                    if file_type.is_file() {
+-                        if let Some(name) = entry.file_name().to_str() {
++                for entry in crate::dir::read_dir(&path)? {
++                    if entry.is_file {
++                        {
++                            let name = entry.name.as_str();
+                             if name.ends_with(".star") || name.ends_with(".sky") {
+                                 candidates.push(LoadItemCandidate {
+                                     kind: LoadItemCandidateKind::File,
+@@ -573,14 +567,13 @@ impl FileLoader for DefaultFileLoader {
+                                 .collect(),
+                         ),
+                         RepoKind::Canonical | RepoKind::Apparent => Some(
+-                            fs::read_dir(&self.external_output_base)?
+-                                .filter_map(|entry| {
+-                                    let entry = entry.ok()?;
+-                                    entry.file_type().ok()?.is_dir().then(|| LoadItemCandidate {
+-                                        kind: LoadItemCandidateKind::Directory,
+-                                        path: entry.file_name().to_string_lossy().to_string(),
+-                                        replace_trailing_slash: false,
+-                                    })
++                            crate::dir::read_dir(&self.external_output_base)?
++                                .into_iter()
++                                .filter(|entry| entry.is_dir)
++                                .map(|entry| LoadItemCandidate {
++                                    kind: LoadItemCandidateKind::Directory,
++                                    path: entry.name,
++                                    replace_trailing_slash: false,
+                                 })
+                                 .chain(self.workspace_name.as_ref().map(|name| LoadItemCandidate {
+                                     kind: LoadItemCandidateKind::Directory,
+@@ -683,63 +676,43 @@ fn read_dir_packages_and_targets(
+     path: impl AsRef<Path>,
+     has_trailing_slash: bool,
+ ) -> anyhow::Result<Vec<LoadItemCandidate>> {
+-    Ok(fs::read_dir(path)?
+-        .flatten()
++    Ok(crate::dir::read_dir(path.as_ref())?
++        .into_iter()
+         .filter_map(|entry| {
+-            entry
+-                .file_type()
+-                .map(|file_type| (file_type, entry.file_name()))
+-                .ok()
+-        })
+-        .filter_map(|(file_type, file_name)| {
+-            file_name.to_str().and_then(|file_name| {
+-                let (kind, path, replace_trailing_slash) = if file_type.is_dir() {
+-                    (
+-                        LoadItemCandidateKind::Directory,
+-                        file_name.to_string(),
+-                        false,
+-                    )
+-                } else if file_name.ends_with(".bzl") {
+-                    (
+-                        LoadItemCandidateKind::File,
+-                        format!(":{}", file_name),
+-                        has_trailing_slash,
+-                    )
+-                } else {
+-                    return None;
+-                };
+-                Some(LoadItemCandidate {
+-                    kind,
+-                    path,
+-                    replace_trailing_slash,
+-                })
++            let (kind, path, replace_trailing_slash) = if entry.is_dir {
++                (LoadItemCandidateKind::Directory, entry.name, false)
++            } else if entry.name.ends_with(".bzl") {
++                (
++                    LoadItemCandidateKind::File,
++                    format!(":{}", entry.name),
++                    has_trailing_slash,
++                )
++            } else {
++                return None;
++            };
++            Some(LoadItemCandidate {
++                kind,
++                path,
++                replace_trailing_slash,
+             })
+         })
+         .collect())
+ }
+ 
+ fn read_dir_targets(path: impl AsRef<Path>) -> anyhow::Result<Vec<LoadItemCandidate>> {
+-    Ok(fs::read_dir(path)?
+-        .flatten()
++    Ok(crate::dir::read_dir(path.as_ref())?
++        .into_iter()
+         .filter_map(|entry| {
+-            entry
+-                .file_type()
+-                .map(|file_type| (file_type, entry.file_name()))
+-                .ok()
+-        })
+-        .filter_map(|(file_type, file_name)| {
+-            file_name.to_str().and_then(|file_name| {
+-                Some(LoadItemCandidate {
+-                    kind: if file_type.is_dir() {
+-                        LoadItemCandidateKind::Directory
+-                    } else if file_name.ends_with(".bzl") {
+-                        LoadItemCandidateKind::File
+-                    } else {
+-                        return None;
+-                    },
+-                    path: file_name.to_string(),
+-                    replace_trailing_slash: false,
+-                })
++            Some(LoadItemCandidate {
++                kind: if entry.is_dir {
++                    LoadItemCandidateKind::Directory
++                } else if entry.name.ends_with(".bzl") {
++                    LoadItemCandidateKind::File
++                } else {
++                    return None;
++                },
++                path: entry.name,
++                replace_trailing_slash: false,
+             })
+         })
+         .collect())
+diff --git a/crates/starpls/src/main.rs b/crates/starpls/src/main.rs
+index 3c40467..690f435 100644
+--- a/crates/starpls/src/main.rs
++++ b/crates/starpls/src/main.rs
+@@ -9,6 +9,7 @@ mod config;
+ mod convert;
+ mod debouncer;
+ mod diagnostics;
++mod dir;
+ mod dispatcher;
+ mod document;
+ mod event_loop;
+diff --git a/crates/starpls_bazel/src/lib.rs b/crates/starpls_bazel/src/lib.rs
+index 181cca0..1692d9f 100644
+--- a/crates/starpls_bazel/src/lib.rs
++++ b/crates/starpls_bazel/src/lib.rs
+@@ -145,30 +145,34 @@ pub fn decode_builtins(data: &[u8]) -> anyhow::Result<Builtins> {
+ }
+ 
+ pub fn resolve_workspace(from: impl AsRef<Path>) -> io::Result<Option<(PathBuf, PathBuf)>> {
++    const WORKSPACE_MARKERS: [&str; 4] =
++        ["WORKSPACE", "WORKSPACE.bazel", "MODULE.bazel", "REPO.bazel"];
++    const PACKAGE_MARKERS: [&str; 2] = ["BUILD", "BUILD.bazel"];
++
++    // Probing the marker files keeps this off directory handles, which some
++    // WebAssembly hosts cannot close once the walk reaches their virtual root.
++    // The directories themselves are not stat'ed either: under Node's WASI a
++    // symbolic link that leaves a preopened directory (an external repository
++    // in Bazel's repo contents cache) fails to stat as the last path component
++    // while paths through it resolve, and a marker probe only ever goes
++    // through it.
+     let mut package: Option<PathBuf> = None;
+-    for ancestor in from
+-        .as_ref()
+-        .ancestors()
+-        .filter(|ancestor| ancestor.is_dir())
+-    {
+-        for entry in fs::read_dir(ancestor)? {
+-            match entry
+-                .ok()
+-                .map(|entry| entry.file_name())
+-                .as_ref()
+-                .and_then(|file_name| file_name.to_str())
+-            {
+-                Some("WORKSPACE" | "WORKSPACE.bazel" | "MODULE.bazel" | "REPO.bazel") => {
+-                    return Ok(Some((
+-                        ancestor.to_path_buf(),
+-                        package.unwrap_or_else(|| ancestor.to_path_buf()),
+-                    )));
+-                }
+-                Some("BUILD" | "BUILD.bazel") => {
+-                    package.get_or_insert(ancestor.to_path_buf());
+-                }
+-                _ => {}
+-            }
++    for ancestor in from.as_ref().ancestors() {
++        if WORKSPACE_MARKERS
++            .iter()
++            .any(|marker| ancestor.join(marker).is_file())
++        {
++            return Ok(Some((
++                ancestor.to_path_buf(),
++                package.unwrap_or_else(|| ancestor.to_path_buf()),
++            )));
++        }
++        if package.is_none()
++            && PACKAGE_MARKERS
++                .iter()
++                .any(|marker| ancestor.join(marker).is_file())
++        {
++            package = Some(ancestor.to_path_buf());
+         }
+     }
+ 

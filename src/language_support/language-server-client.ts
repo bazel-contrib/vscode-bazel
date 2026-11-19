@@ -16,6 +16,8 @@ import * as path from "path";
 import * as lc from "vscode-languageclient/node";
 import * as vscode from "vscode";
 import { logError } from "../extension/logger";
+import { BazelWorkspaceInfo } from "../bazel/bazel_workspace_info";
+import { createWasmLspClient } from "./wasm_language_server";
 import {
   getLspServerArgs,
   getLspServerEnv,
@@ -33,6 +35,49 @@ function getLspOutputChannel(): vscode.LogOutputChannel {
     });
   }
   return lspOutputChannel;
+}
+
+/**
+ * Starts (or restarts) the bundled WebAssembly server: one client per
+ * workspace folder that is a Bazel workspace, each scoped to its folder.
+ * Returns the clients that started; an empty list means none could.
+ */
+export async function startWasmLspClients(
+  running: lc.LanguageClient[],
+  context: vscode.ExtensionContext,
+  wasmUri: vscode.Uri,
+): Promise<lc.LanguageClient[]> {
+  for (const client of running) {
+    try {
+      await client.stop();
+    } catch {
+      // Ignore errors while stopping a previous client instance.
+    }
+  }
+  const started: lc.LanguageClient[] = [];
+  for (const folder of vscode.workspace.workspaceFolders ?? []) {
+    if (!BazelWorkspaceInfo.fromWorkspaceFolder(folder)) {
+      continue;
+    }
+    try {
+      const client = await createWasmLspClient(
+        context,
+        wasmUri,
+        getLspOutputChannel(),
+        folder,
+      );
+      context.subscriptions.push(client);
+      await client.start();
+      started.push(client);
+    } catch (error: any) {
+      logError(
+        `Failed to start the bundled Starlark language server for ${folder.name}`,
+        true,
+        error,
+      );
+    }
+  }
+  return started;
 }
 
 export async function startLspClientFromCurrentConfig(

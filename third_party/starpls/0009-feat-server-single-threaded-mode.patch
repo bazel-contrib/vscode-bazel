@@ -1,0 +1,594 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: UebelAndre <github@uebelandre.com>
+Date: Thu, 19 Nov 2026 13:45:02 -0800
+Subject: [PATCH] feat(server): single-threaded mode
+
+`--single_threaded` runs the transport, the event loop and every request
+handler on one thread: read a message, handle it, run the tasks that
+produced inline, flush the replies, block on the next read. The task pool
+with zero threads runs closures on the caller and queues their results on
+the usual channel, and the debouncer forwards file ids when the loop pumps
+it instead of waiting on a thread, so edits are analysed immediately.
+
+This is the mode a WebAssembly (WASI preview 1) build has to use, since it
+has no threads; it is a flag on the native binary so the mode can be
+tested without one. `canonicalize` goes through a helper that will fall
+back to lexical normalization where there is no `realpath`.
+---
+ crates/starpls/src/commands/check.rs  |   2 +-
+ crates/starpls/src/commands/server.rs |  93 +++++++++++++--------
+ crates/starpls/src/debouncer.rs       |  52 ++++++++++--
+ crates/starpls/src/document.rs        |   8 +-
+ crates/starpls/src/event_loop.rs      |  43 +++++++++-
+ crates/starpls/src/main.rs            |   1 +
+ crates/starpls/src/server.rs          |   5 +-
+ crates/starpls/src/single_thread.rs   | 113 ++++++++++++++++++++++++++
+ crates/starpls/src/task_pool.rs       |  41 ++++++++--
+ 9 files changed, 305 insertions(+), 53 deletions(-)
+ create mode 100644 crates/starpls/src/single_thread.rs
+
+diff --git a/crates/starpls/src/commands/check.rs b/crates/starpls/src/commands/check.rs
+index 0c2935a..ac9794c 100644
+--- a/crates/starpls/src/commands/check.rs
++++ b/crates/starpls/src/commands/check.rs
+@@ -193,7 +193,7 @@ impl Checker {
+         is_explicit: bool,
+         extensions: &[&str],
+     ) -> anyhow::Result<()> {
+-        let canonical_path = PathBuf::from(&path).canonicalize()?;
++        let canonical_path = crate::single_thread::canonicalize(path)?;
+         if self.interner.lookup_by_path_buf(&canonical_path).is_some() {
+             return Ok(());
+         }
+diff --git a/crates/starpls/src/commands/server.rs b/crates/starpls/src/commands/server.rs
+index 7dc07e9..f40a57f 100644
+--- a/crates/starpls/src/commands/server.rs
++++ b/crates/starpls/src/commands/server.rs
+@@ -1,5 +1,6 @@
+ use clap::Args;
+ use log::info;
++#[cfg(not(target_family = "wasm"))]
+ use lsp_server::Connection;
+ use lsp_types::CompletionOptions;
+ use lsp_types::DeclarationCapability;
+@@ -14,6 +15,7 @@ use crate::commands::InferenceOptions;
+ use crate::event_loop;
+ use crate::get_version;
+ use crate::make_trigger_characters;
++use crate::single_thread::SingleThreadTransport;
+ 
+ const COMPLETION_TRIGGER_CHARACTERS: &[char] = &['.', '"', '\'', '/', ':', '@'];
+ const SIGNATURE_HELP_TRIGGER_CHARACTERS: &[char] = &['(', ',', ')'];
+@@ -42,48 +44,73 @@ pub(crate) struct ServerCommand {
+     #[clap(long = "analysis_debounce_interval", default_value_t = 250)]
+     pub(crate) analysis_debounce_interval: u64,
+ 
++    /// Run the transport, the event loop and all request handling on one
++    /// thread, as the WebAssembly build always does. Useful for testing that
++    /// mode with the native binary.
++    #[clap(long = "single_threaded", default_value_t = false)]
++    pub(crate) single_threaded: bool,
++
+     #[command(flatten)]
+     pub(crate) inference_options: InferenceOptions,
+ }
+ 
+ impl ServerCommand {
+-    pub(crate) fn run(self) -> anyhow::Result<()> {
+-        info!("starpls, v{}", get_version());
+-
+-        // Create the transport over stdio.
+-        let (connection, io_threads) = Connection::stdio();
+-
+-        // Initialize the connection with server capabilities. For now, this consists
+-        // only of `TextDocumentSyncKind.Full`.
+-        let server_capabilities = serde_json::to_value(ServerCapabilities {
+-            completion_provider: Some(CompletionOptions {
+-                trigger_characters: Some(make_trigger_characters(COMPLETION_TRIGGER_CHARACTERS)),
+-                ..Default::default()
+-            }),
+-            declaration_provider: Some(DeclarationCapability::Simple(true)),
+-            definition_provider: Some(OneOf::Left(true)),
+-            document_symbol_provider: Some(OneOf::Left(true)),
+-            hover_provider: Some(HoverProviderCapability::Simple(true)),
+-            references_provider: Some(OneOf::Left(true)),
+-            signature_help_provider: Some(SignatureHelpOptions {
+-                trigger_characters: Some(make_trigger_characters(
+-                    SIGNATURE_HELP_TRIGGER_CHARACTERS,
++    fn capabilities() -> anyhow::Result<serde_json::Value> {
++        Ok(serde_json::to_value::<ServerCapabilities>(
++            ServerCapabilities {
++                completion_provider: Some(CompletionOptions {
++                    trigger_characters: Some(make_trigger_characters(
++                        COMPLETION_TRIGGER_CHARACTERS,
++                    )),
++                    ..Default::default()
++                }),
++                declaration_provider: Some(DeclarationCapability::Simple(true)),
++                definition_provider: Some(OneOf::Left(true)),
++                document_symbol_provider: Some(OneOf::Left(true)),
++                hover_provider: Some(HoverProviderCapability::Simple(true)),
++                references_provider: Some(OneOf::Left(true)),
++                signature_help_provider: Some(SignatureHelpOptions {
++                    trigger_characters: Some(make_trigger_characters(
++                        SIGNATURE_HELP_TRIGGER_CHARACTERS,
++                    )),
++                    ..Default::default()
++                }),
++                text_document_sync: Some(TextDocumentSyncCapability::Kind(
++                    TextDocumentSyncKind::INCREMENTAL,
+                 )),
+                 ..Default::default()
+-            }),
+-            text_document_sync: Some(TextDocumentSyncCapability::Kind(
+-                TextDocumentSyncKind::INCREMENTAL,
+-            )),
+-            ..Default::default()
+-        })?;
+-        let initialize_params =
+-            serde_json::from_value(connection.initialize(server_capabilities)?)?;
+-        event_loop::process_connection(connection, self, initialize_params)?;
++            },
++        )?)
++    }
++
++    pub(crate) fn run(self) -> anyhow::Result<()> {
++        info!("starpls, v{}", get_version());
++        let server_capabilities = Self::capabilities()?;
+ 
+-        // Graceful shutdown.
+-        info!("connection closed, exiting");
+-        io_threads.join()?;
++        if self.single_threaded || cfg!(target_family = "wasm") {
++            // One thread for everything; see `crate::single_thread`.
++            let (connection, transport) = SingleThreadTransport::new();
++            let params = transport.initialize(&connection, server_capabilities)?;
++            let initialize_params = serde_json::from_value(params)?;
++            event_loop::process_connection(connection, self, initialize_params, Some(transport))?;
++            info!("connection closed, exiting");
++            return Ok(());
++        }
+ 
++        #[cfg(not(target_family = "wasm"))]
++        {
++            // Create the transport over stdio.
++            let (connection, io_threads) = Connection::stdio();
++            let initialize_params =
++                serde_json::from_value(connection.initialize(server_capabilities)?)?;
++            event_loop::process_connection(connection, self, initialize_params, None)?;
++            // Graceful shutdown.
++            info!("connection closed, exiting");
++            io_threads.join()?;
++        }
++        #[cfg(target_family = "wasm")]
++        unreachable!("the wasm build always runs single-threaded");
++        #[allow(unreachable_code)]
+         Ok(())
+     }
+ }
+diff --git a/crates/starpls/src/debouncer.rs b/crates/starpls/src/debouncer.rs
+index b9a451b..740b39f 100644
+--- a/crates/starpls/src/debouncer.rs
++++ b/crates/starpls/src/debouncer.rs
+@@ -1,27 +1,45 @@
+ use std::time::Duration;
+ 
++use crossbeam_channel::Receiver;
++#[cfg(not(target_family = "wasm"))]
+ use crossbeam_channel::RecvError;
++#[cfg(not(target_family = "wasm"))]
+ use crossbeam_channel::RecvTimeoutError;
+ use crossbeam_channel::Sender;
++#[cfg(not(target_family = "wasm"))]
+ use rustc_hash::FxHashSet;
+ use starpls_common::FileId;
+ 
+ use crate::event_loop::Task;
+ 
++/// Coalesces bursts of edits into one analysis request.
++///
++/// Normally a thread waits out the debounce interval. In inline mode (always
++/// on WebAssembly, where there are no threads and no idle time to wait in)
++/// file ids are forwarded as soon as the event loop calls `pump`, so edits
++/// are analysed without debouncing.
+ pub(crate) struct AnalysisDebouncer {
+     pub(crate) sender: Sender<Vec<FileId>>,
++    /// Present in inline mode only.
++    inline: Option<(Receiver<Vec<FileId>>, Sender<Task>)>,
+ }
+ 
+ impl AnalysisDebouncer {
+-    pub(crate) fn new(duration: Duration, sink: Sender<Task>) -> Self {
+-        let (source_tx, source_rx) = crossbeam_channel::unbounded::<Vec<FileId>>();
+-
++    pub(crate) fn new(duration: Duration, sink: Sender<Task>, inline: bool) -> Self {
++        let (sender, receiver) = crossbeam_channel::unbounded::<Vec<FileId>>();
++        if inline || cfg!(target_family = "wasm") {
++            return Self {
++                sender,
++                inline: Some((receiver, sink)),
++            };
++        }
++        #[cfg(not(target_family = "wasm"))]
+         std::thread::spawn(move || {
+             let mut active = false;
+             let mut pending_file_ids: FxHashSet<FileId> = FxHashSet::default();
+             loop {
+                 if active {
+-                    match source_rx.recv_timeout(duration) {
++                    match receiver.recv_timeout(duration) {
+                         Ok(file_ids) => pending_file_ids.extend(file_ids),
+                         Err(RecvTimeoutError::Disconnected) => break,
+                         Err(RecvTimeoutError::Timeout) => {
+@@ -31,7 +49,7 @@ impl AnalysisDebouncer {
+                         }
+                     }
+                 } else {
+-                    match source_rx.recv() {
++                    match receiver.recv() {
+                         Ok(file_ids) => {
+                             active = true;
+                             pending_file_ids.extend(file_ids);
+@@ -41,7 +59,29 @@ impl AnalysisDebouncer {
+                 }
+             }
+         });
++        #[cfg(target_family = "wasm")]
++        let _ = (duration, receiver, sink);
++        Self {
++            sender,
++            inline: None,
++        }
++    }
+ 
+-        Self { sender: source_tx }
++    /// In inline mode, forwards pending file ids as one analysis request.
++    /// A no-op otherwise; the thread does it on its own schedule.
++    pub(crate) fn pump(&self) {
++        let (receiver, sink) = match &self.inline {
++            Some(inline) => inline,
++            None => return,
++        };
++        let mut pending: Vec<FileId> = Vec::new();
++        while let Ok(file_ids) = receiver.try_recv() {
++            pending.extend(file_ids);
++        }
++        if !pending.is_empty() {
++            pending.sort();
++            pending.dedup();
++            sink.send(Task::AnalysisRequested(pending)).unwrap();
++        }
+     }
+ }
+diff --git a/crates/starpls/src/document.rs b/crates/starpls/src/document.rs
+index a5151f7..96c4f0d 100644
+--- a/crates/starpls/src/document.rs
++++ b/crates/starpls/src/document.rs
+@@ -448,7 +448,11 @@ impl FileLoader for DefaultFileLoader {
+                 assert!(from_path.pop());
+ 
+                 // Resolve the given path relative to the importing file's directory.
+-                (from_path.join(path).canonicalize()?, None, None)
++                (
++                    crate::single_thread::canonicalize(&from_path.join(path))?,
++                    None,
++                    None,
++                )
+             }
+             Dialect::Bazel => {
+                 // Parse the load path as a Bazel label.
+@@ -511,7 +515,7 @@ impl FileLoader for DefaultFileLoader {
+                     return Ok(None);
+                 }
+ 
+-                let path = path.canonicalize()?;
++                let path = crate::single_thread::canonicalize(&path)?;
+                 let mut candidates = vec![];
+                 let readdir = fs::read_dir(path)?;
+ 
+diff --git a/crates/starpls/src/event_loop.rs b/crates/starpls/src/event_loop.rs
+index 2939ddf..8aa372a 100644
+--- a/crates/starpls/src/event_loop.rs
++++ b/crates/starpls/src/event_loop.rs
+@@ -16,6 +16,7 @@ use crate::handlers::notifications;
+ use crate::handlers::requests;
+ use crate::server::Server;
+ use crate::server::ServerSnapshot;
++use crate::single_thread::SingleThreadTransport;
+ 
+ #[macro_export]
+ macro_rules! match_notification {
+@@ -75,6 +76,7 @@ pub fn process_connection(
+     connection: Connection,
+     args: ServerCommand,
+     initialize_params: InitializeParams,
++    transport: Option<SingleThreadTransport>,
+ ) -> anyhow::Result<()> {
+     debug!("initializing state and starting event loop");
+     let config = ServerConfig {
+@@ -83,10 +85,49 @@ pub fn process_connection(
+         initialization_options: initialize_params.initialization_options,
+     };
+     let server = Server::new(connection, config)?;
+-    server.run()
++    match transport {
++        Some(transport) => server.run_single_threaded(transport),
++        None => server.run(),
++    }
+ }
+ 
+ impl Server {
++    /// One message at a time: read, handle, run what it spawned, write.
++    fn run_single_threaded(mut self, transport: SingleThreadTransport) -> anyhow::Result<()> {
++        loop {
++            self.drain_tasks()?;
++            transport.flush()?;
++            let message = match transport.read()? {
++                Some(message) => message,
++                None => return Ok(()),
++            };
++            if let lsp_server::Message::Request(ref req) = message {
++                if req.method == "shutdown" {
++                    self.connection.sender.send(lsp_server::Message::Response(
++                        lsp_server::Response::new_ok(req.id.clone(), serde_json::Value::Null),
++                    ))?;
++                    transport.flush()?;
++                    // The client follows up with `exit`; either way we are done.
++                    let _ = transport.read();
++                    return Ok(());
++                }
++            }
++            self.handle_event(Event::Message(message))?;
++        }
++    }
++
++    /// Handles every task that is ready, including the ones handling produces,
++    /// until nothing is pending. Only meaningful when tasks run inline.
++    fn drain_tasks(&mut self) -> anyhow::Result<()> {
++        loop {
++            self.analysis_debouncer.pump();
++            match self.task_pool_handle.receiver.try_recv() {
++                Ok(task) => self.handle_event(Event::Task(task))?,
++                Err(_) => return Ok(()),
++            }
++        }
++    }
++
+     fn run(mut self) -> anyhow::Result<()> {
+         while let Some(event) = self.next_event() {
+             if let Event::Message(lsp_server::Message::Request(ref req)) = event {
+diff --git a/crates/starpls/src/main.rs b/crates/starpls/src/main.rs
+index c5fff76..3c40467 100644
+--- a/crates/starpls/src/main.rs
++++ b/crates/starpls/src/main.rs
+@@ -16,6 +16,7 @@ mod extensions;
+ mod handlers;
+ mod host;
+ mod server;
++mod single_thread;
+ mod task_pool;
+ mod utils;
+ 
+diff --git a/crates/starpls/src/server.rs b/crates/starpls/src/server.rs
+index f0c0e91..d3ea5b2 100644
+--- a/crates/starpls/src/server.rs
++++ b/crates/starpls/src/server.rs
+@@ -73,7 +73,9 @@ impl Server {
+     pub(crate) fn new(connection: Connection, config: ServerConfig) -> anyhow::Result<Self> {
+         // Create the task pool for processing incoming requests.
+         let (task_pool_sender, task_pool_receiver) = crossbeam_channel::unbounded();
+-        let task_pool = TaskPool::with_num_threads(task_pool_sender.clone(), 4)?;
++        let inline = config.args.single_threaded || cfg!(target_family = "wasm");
++        let task_pool =
++            TaskPool::with_num_threads(task_pool_sender.clone(), if inline { 0 } else { 4 })?;
+         let task_pool_handle = TaskPoolHandle::new(task_pool_receiver, task_pool);
+ 
+         // Check if the user specified a path to the Bazel executable.
+@@ -189,6 +191,7 @@ impl Server {
+             analysis_debouncer: AnalysisDebouncer::new(
+                 Duration::from_millis(analysis_debounce_interval),
+                 task_pool_sender,
++                inline,
+             ),
+             analysis_requested_for_files: None,
+             bazel_client,
+diff --git a/crates/starpls/src/single_thread.rs b/crates/starpls/src/single_thread.rs
+new file mode 100644
+index 0000000..64bb2f7
+--- /dev/null
++++ b/crates/starpls/src/single_thread.rs
+@@ -0,0 +1,113 @@
++//! Running the server on one thread.
++//!
++//! The normal transport reads stdin and writes stdout on threads of their own
++//! and request handlers run on a thread pool. WebAssembly (WASI preview 1 as
++//! VS Code and Node provide it) has no threads, so in this mode the main loop
++//! reads one message at a time, handles it, runs every task that produced
++//! inline, and flushes the output before blocking on the next read. The mode
++//! also works natively (`--single_threaded`), which is how it is tested.
++
++use std::io;
++use std::io::Write;
++
++use crossbeam_channel::Receiver;
++use crossbeam_channel::Sender;
++use lsp_server::Connection;
++use lsp_server::Message;
++use lsp_server::Response;
++
++pub(crate) struct SingleThreadTransport {
++    /// Messages read from stdin are pushed here for the `Connection`.
++    pub(crate) inbound: Sender<Message>,
++    /// Messages the server sent through the `Connection`, to be written out.
++    pub(crate) outbound: Receiver<Message>,
++}
++
++impl SingleThreadTransport {
++    /// A `Connection` whose two ends are channels this transport pumps.
++    pub(crate) fn new() -> (Connection, Self) {
++        let (inbound, receiver) = crossbeam_channel::unbounded();
++        let (sender, outbound) = crossbeam_channel::unbounded();
++        (
++            Connection { sender, receiver },
++            SingleThreadTransport { inbound, outbound },
++        )
++    }
++
++    /// Reads one message from stdin, `None` at end of input.
++    pub(crate) fn read(&self) -> io::Result<Option<Message>> {
++        let stdin = io::stdin();
++        let mut reader = stdin.lock();
++        Message::read(&mut reader)
++    }
++
++    /// Writes every message the server has queued.
++    pub(crate) fn flush(&self) -> io::Result<()> {
++        let stdout = io::stdout();
++        let mut writer = stdout.lock();
++        while let Ok(message) = self.outbound.try_recv() {
++            message.write(&mut writer)?;
++        }
++        writer.flush()
++    }
++
++    /// The `initialize` handshake, done by hand because the library version
++    /// blocks on the connection while the response is still unwritten.
++    pub(crate) fn initialize(
++        &self,
++        connection: &Connection,
++        server_capabilities: serde_json::Value,
++    ) -> anyhow::Result<serde_json::Value> {
++        let message = self
++            .read()?
++            .ok_or_else(|| anyhow::anyhow!("connection closed before `initialize`"))?;
++        self.inbound.send(message)?;
++        let (id, params) = connection.initialize_start()?;
++        connection.sender.send(Message::Response(Response::new_ok(
++            id,
++            serde_json::json!({ "capabilities": server_capabilities }),
++        )))?;
++        self.flush()?;
++        // The client answers with `initialized`; the event loop ignores it.
++        if let Some(message) = self.read()? {
++            self.inbound.send(message)?;
++        }
++        Ok(params)
++    }
++}
++
++/// Path canonicalization that works without a real file system.
++///
++/// WASI has no `realpath`, so `std::fs::canonicalize` fails there; paths are
++/// normalized lexically instead. Mount points are already absolute and the
++/// sandbox cannot follow symlinks out of them, so nothing is lost.
++#[cfg(target_family = "wasm")]
++pub(crate) fn canonicalize(path: &std::path::Path) -> io::Result<std::path::PathBuf> {
++    use std::path::Component;
++    use std::path::PathBuf;
++
++    if !path.is_absolute() {
++        return Err(io::Error::new(
++            io::ErrorKind::InvalidInput,
++            format!("cannot canonicalize relative path {}", path.display()),
++        ));
++    }
++    let mut out = PathBuf::new();
++    for component in path.components() {
++        match component {
++            Component::CurDir => {}
++            Component::ParentDir => {
++                out.pop();
++            }
++            other => out.push(other.as_os_str()),
++        }
++    }
++    // Keep the semantics of `canonicalize`: the path must exist.
++    std::fs::metadata(&out)?;
++    Ok(out)
++}
++
++#[cfg(not(target_family = "wasm"))]
++pub(crate) fn canonicalize(path: &std::path::Path) -> io::Result<std::path::PathBuf> {
++    std::fs::canonicalize(path)
++}
+diff --git a/crates/starpls/src/task_pool.rs b/crates/starpls/src/task_pool.rs
+index 0c97f4e..96cc829 100644
+--- a/crates/starpls/src/task_pool.rs
++++ b/crates/starpls/src/task_pool.rs
+@@ -1,11 +1,20 @@
+ use crossbeam_channel::Receiver;
+ use crossbeam_channel::Sender;
++#[cfg(not(target_family = "wasm"))]
+ use rayon::ThreadPool;
++#[cfg(not(target_family = "wasm"))]
+ use rayon::ThreadPoolBuilder;
+ 
++/// Runs tasks and delivers their results through a channel.
++///
++/// With one or more threads this is a rayon thread pool. With zero threads
++/// (always the case on WebAssembly, where there are none) tasks run inline on
++/// the calling thread and their results are queued on the same channel, so
++/// the event loop drains them exactly as it would results from workers.
+ pub(crate) struct TaskPool<T> {
+     sender: Sender<T>,
+-    inner: ThreadPool,
++    #[cfg(not(target_family = "wasm"))]
++    inner: Option<ThreadPool>,
+ }
+ 
+ impl<T> TaskPool<T> {
+@@ -13,10 +22,18 @@ impl<T> TaskPool<T> {
+         sender: Sender<T>,
+         num_threads: usize,
+     ) -> anyhow::Result<TaskPool<T>> {
+-        let thread_pool = ThreadPoolBuilder::new().num_threads(num_threads).build()?;
++        #[cfg(not(target_family = "wasm"))]
++        let inner = if num_threads == 0 {
++            None
++        } else {
++            Some(ThreadPoolBuilder::new().num_threads(num_threads).build()?)
++        };
++        #[cfg(target_family = "wasm")]
++        let _ = num_threads;
+         Ok(TaskPool {
+             sender,
+-            inner: thread_pool,
++            #[cfg(not(target_family = "wasm"))]
++            inner,
+         })
+     }
+ 
+@@ -25,10 +42,13 @@ impl<T> TaskPool<T> {
+         T: Send + 'static,
+         F: FnOnce() -> T + Send + 'static,
+     {
+-        self.inner.spawn({
++        #[cfg(not(target_family = "wasm"))]
++        if let Some(pool) = &self.inner {
+             let sender = self.sender.clone();
+-            move || sender.send(f()).unwrap()
+-        })
++            pool.spawn(move || sender.send(f()).unwrap());
++            return;
++        }
++        self.sender.send(f()).unwrap();
+     }
+ 
+     #[allow(unused)]
+@@ -37,10 +57,13 @@ impl<T> TaskPool<T> {
+         T: Send + 'static,
+         F: FnOnce(Sender<T>) + Send + 'static,
+     {
+-        self.inner.spawn({
++        #[cfg(not(target_family = "wasm"))]
++        if let Some(pool) = &self.inner {
+             let sender = self.sender.clone();
+-            move || f(sender)
+-        })
++            pool.spawn(move || f(sender));
++            return;
++        }
++        f(self.sender.clone());
+     }
+ }
+ 

@@ -1,0 +1,509 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alex Trotta <44127594+Ahajha@users.noreply.github.com>
+Date: Thu, 2 Jul 2026 19:29:14 -0400
+Subject: [PATCH] fix: Upgrade everything (#2)
+
+Wanting to pull Bazel 9 for the prebuilt protobuf toolchains, this ended up needing to update every bazel dependency, plus Rust, which in turn requires a bunch of clippy fixes. Best to get this out of the way, though, so it'll make iteration faster.
+---
+ .bazeliskrc                                   |  2 +-
+ .bazelrc                                      |  9 +++--
+ .bazelversion                                 |  2 +-
+ BUILD.bazel                                   |  4 +-
+ MODULE.bazel                                  | 39 ++++++++-----------
+ crates/starpls/src/document.rs                |  2 +-
+ crates/starpls_bazel/BUILD.bazel              |  2 +-
+ crates/starpls_bazel/src/label.rs             |  2 +-
+ crates/starpls_hir/src/def/resolver.rs        |  2 +-
+ crates/starpls_hir/src/lib.rs                 |  6 +--
+ crates/starpls_hir/src/typeck.rs              | 14 ++++---
+ crates/starpls_hir/src/typeck/infer.rs        | 21 ++++------
+ crates/starpls_ide/src/completions.rs         |  4 +-
+ crates/starpls_ide/src/document_symbols.rs    |  2 +-
+ crates/starpls_ide/src/find_references.rs     |  2 +-
+ crates/starpls_ide/src/goto_definition.rs     |  2 +-
+ crates/starpls_ide/src/lib.rs                 |  4 +-
+ crates/starpls_intern/src/lib.rs              |  6 +++
+ .../starpls_parser/src/grammar/expressions.rs | 15 ++-----
+ editors/code/BUILD.bazel                      |  1 +
+ rust-toolchain.toml                           |  2 +-
+ vendor/runfiles/src/lib.rs                    |  2 +-
+ 22 files changed, 68 insertions(+), 77 deletions(-)
+
+diff --git a/.bazeliskrc b/.bazeliskrc
+index 330b936..1060c4f 100644
+--- a/.bazeliskrc
++++ b/.bazeliskrc
+@@ -1 +1 @@
+-USE_BAZEL_VERSION=8.2.1
++USE_BAZEL_VERSION=9.1.1
+diff --git a/.bazelrc b/.bazelrc
+index 55d5742..9d5b31b 100644
+--- a/.bazelrc
++++ b/.bazelrc
+@@ -9,8 +9,6 @@ query --@aspect_rules_ts//ts:skipLibCheck=honor_tsconfig
+ 
+ build --experimental_convenience_symlinks=ignore
+ 
+-build --@rules_rust//rust/toolchain/channel=nightly
+-
+ build --@rules_rust//:rustfmt.toml=//:rustfmt.toml
+ build --aspects=@rules_rust//rust:defs.bzl%rustfmt_aspect
+ build --output_groups=+rustfmt_checks
+@@ -23,7 +21,10 @@ test --test_output=errors
+ 
+ build:linux --sandbox_add_mount_pair=/tmp
+ build:linux --incompatible_enable_cc_toolchain_resolution
+-build:linux --action_env BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
+-build:linux --extra_toolchains @zig_sdk//toolchain:linux_arm64_gnu.2.17,@zig_sdk//toolchain:linux_amd64_gnu.2.17
++build:linux --action_env=BAZEL_DO_NOT_DETECT_CPP_TOOLCHAIN=1
++build:linux --extra_toolchains=@zig_sdk//toolchain:linux_arm64_gnu.2.17,@zig_sdk//toolchain:linux_amd64_gnu.2.17
+ 
+ build:windows --nolegacy_external_runfiles
++
++build --incompatible_enable_proto_toolchain_resolution=true
++build --@protobuf//bazel/toolchains:prefer_prebuilt_protoc=True
+diff --git a/.bazelversion b/.bazelversion
+index 2b0aa21..44931da 100644
+--- a/.bazelversion
++++ b/.bazelversion
+@@ -1 +1 @@
+-8.2.1
++9.1.1
+diff --git a/BUILD.bazel b/BUILD.bazel
+index 3f0ae2a..2e3a095 100644
+--- a/BUILD.bazel
++++ b/BUILD.bazel
+@@ -1,5 +1,5 @@
+-load("@rules_rust//proto/prost:defs.bzl", "rust_prost_toolchain")
+ load("@rules_rust//rust:defs.bzl", "rust_library_group")
++load("@rules_rust_prost//:defs.bzl", "rust_prost_toolchain")
+ 
+ exports_files(["rustfmt.toml"])
+ 
+@@ -30,5 +30,5 @@ rust_prost_toolchain(
+ toolchain(
+     name = "prost_toolchain",
+     toolchain = "prost_toolchain_impl",
+-    toolchain_type = "@rules_rust//proto/prost:toolchain_type",
++    toolchain_type = "@rules_rust_prost//:toolchain_type",
+ )
+diff --git a/MODULE.bazel b/MODULE.bazel
+index f0b201a..dc3e1fc 100644
+--- a/MODULE.bazel
++++ b/MODULE.bazel
+@@ -1,14 +1,18 @@
+ module(name = "starpls")
+ 
+-bazel_dep(name = "aspect_bazel_lib", version = "2.9.4")
+-bazel_dep(name = "aspect_rules_js", version = "2.1.1")
+-bazel_dep(name = "aspect_rules_swc", version = "2.0.1")
+-bazel_dep(name = "aspect_rules_ts", version = "3.3.1")
+-bazel_dep(name = "bazel_skylib", version = "1.7.1")
+-bazel_dep(name = "hermetic_cc_toolchain", version = "3.1.1")
+-bazel_dep(name = "protobuf", version = "29.0")
+-bazel_dep(name = "rules_proto", version = "7.0.2")
+-bazel_dep(name = "rules_rust", version = "0.53.0")
++bazel_dep(name = "aspect_bazel_lib", version = "2.19.3")
++bazel_dep(name = "aspect_rules_js", version = "2.9.2")  # Needs lockfile update for 3.0
++bazel_dep(name = "aspect_rules_swc", version = "2.7.2")
++bazel_dep(name = "aspect_rules_ts", version = "3.8.11")
++bazel_dep(name = "bazel_skylib", version = "1.8.2")
++bazel_dep(name = "hermetic_cc_toolchain", version = "4.1.0")
++bazel_dep(name = "protobuf", version = "33.4")
++bazel_dep(name = "rules_proto", version = "7.1.0")
++bazel_dep(name = "rules_rust", version = "0.71.3")
++bazel_dep(name = "rules_rust_prost", version = "0.71.3")
++
++# Used transitively, need for bazel 9 support
++bazel_dep(name = "rules_nodejs", version = "6.7.5")
+ 
+ zig_toolchains = use_extension("@hermetic_cc_toolchain//toolchain:ext.bzl", "toolchains")
+ use_repo(zig_toolchains, "zig_sdk")
+@@ -17,14 +21,14 @@ rust = use_extension("@rules_rust//rust:extensions.bzl", "rust")
+ rust.toolchain(
+     edition = "2021",
+     extra_target_triples = ["aarch64-unknown-linux-gnu"],
+-    versions = ["nightly/2023-12-06"],
++    versions = ["1.96.1"],
+ )
+ use_repo(rust, "rust_toolchains")
+ 
+ register_toolchains("@rust_toolchains//:all")
+ 
+ crate = use_extension(
+-    "@rules_rust//crate_universe:extension.bzl",
++    "@rules_rust//crate_universe:extensions.bzl",
+     "crate",
+ )
+ crate.from_cargo(
+@@ -32,21 +36,10 @@ crate.from_cargo(
+     cargo_lockfile = "Cargo.lock",
+     manifests = [
+         "//:Cargo.toml",
+-        "//crates/starpls:Cargo.toml",
+-        "//crates/starpls_bazel:Cargo.toml",
+-        "//crates/starpls_common:Cargo.toml",
+-        "//crates/starpls_hir:Cargo.toml",
+-        "//crates/starpls_ide:Cargo.toml",
+-        "//crates/starpls_intern:Cargo.toml",
+-        "//crates/starpls_lexer:Cargo.toml",
+-        "//crates/starpls_parser:Cargo.toml",
+-        "//crates/starpls_syntax:Cargo.toml",
+-        "//crates/starpls_test_util:Cargo.toml",
+-        "//vendor/runfiles:Cargo.toml",
+-        "//xtask:Cargo.toml",
+     ],
+ )
+ use_repo(crate, "crates")
++
+ crate.annotation(
+     crate = "protoc-gen-prost",
+     gen_binaries = ["protoc-gen-prost"],
+diff --git a/crates/starpls/src/document.rs b/crates/starpls/src/document.rs
+index a8a7334..5f54f94 100644
+--- a/crates/starpls/src/document.rs
++++ b/crates/starpls/src/document.rs
+@@ -363,7 +363,7 @@ impl DefaultFileLoader {
+         Ok((file_id, contents))
+     }
+ 
+-    fn repo_for_path<'a>(&'a self, path: &'a Path) -> Option<&str> {
++    fn repo_for_path<'a>(&'a self, path: &'a Path) -> Option<&'a str> {
+         match path.strip_prefix(&self.external_output_base) {
+             Ok(stripped) => stripped
+                 .components()
+diff --git a/crates/starpls_bazel/BUILD.bazel b/crates/starpls_bazel/BUILD.bazel
+index 4af32e8..dd674c5 100644
+--- a/crates/starpls_bazel/BUILD.bazel
++++ b/crates/starpls_bazel/BUILD.bazel
+@@ -1,6 +1,6 @@
+ load("@rules_proto//proto:defs.bzl", "proto_library")
+-load("@rules_rust//proto/prost:defs.bzl", "rust_prost_library")
+ load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test")
++load("@rules_rust_prost//:defs.bzl", "rust_prost_library")
+ 
+ package(default_visibility = ["//visibility:public"])
+ 
+diff --git a/crates/starpls_bazel/src/label.rs b/crates/starpls_bazel/src/label.rs
+index 3809f5d..52b434b 100644
+--- a/crates/starpls_bazel/src/label.rs
++++ b/crates/starpls_bazel/src/label.rs
+@@ -24,7 +24,7 @@ pub struct Label<'a> {
+ }
+ 
+ impl<'a> Label<'a> {
+-    pub fn parse(input: &'a str) -> ParseResult {
++    pub fn parse(input: &'a str) -> ParseResult<'a> {
+         Parser {
+             chars: input.chars(),
+             pos: 0,
+diff --git a/crates/starpls_hir/src/def/resolver.rs b/crates/starpls_hir/src/def/resolver.rs
+index ba46cd3..f6f4fda 100644
+--- a/crates/starpls_hir/src/def/resolver.rs
++++ b/crates/starpls_hir/src/def/resolver.rs
+@@ -97,7 +97,7 @@ impl<'a> Resolver<'a> {
+     pub(crate) fn resolve_name(
+         &'a self,
+         name: &'a Name,
+-    ) -> Option<(ExecutionScopeId, impl Iterator<Item = SymbolDef<'a>> + '_)> {
++    ) -> Option<(ExecutionScopeId, impl Iterator<Item = SymbolDef<'a>> + 'a)> {
+         let mut defs = self
+             .scopes_with_id()
+             .filter_map(move |(scope_id, scope)| {
+diff --git a/crates/starpls_hir/src/lib.rs b/crates/starpls_hir/src/lib.rs
+index db955f2..aa4d316 100644
+--- a/crates/starpls_hir/src/lib.rs
++++ b/crates/starpls_hir/src/lib.rs
+@@ -276,19 +276,19 @@ impl<'a> Semantics<'a> {
+         })
+     }
+ 
+-    pub fn scope_for_module(&self, file: File) -> SemanticsScope {
++    pub fn scope_for_module(&self, file: File) -> SemanticsScope<'_> {
+         let resolver = Resolver::new_for_module(self.db, file);
+         SemanticsScope { resolver }
+     }
+ 
+-    pub fn scope_for_expr(&self, file: File, expr: &ast::Expression) -> Option<SemanticsScope> {
++    pub fn scope_for_expr(&self, file: File, expr: &ast::Expression) -> Option<SemanticsScope<'_>> {
+         let ptr = AstPtr::new(expr);
+         let expr = source_map(self.db, file).expr_map.get(&ptr)?;
+         let resolver = Resolver::new_for_expr(self.db, file, *expr);
+         Some(SemanticsScope { resolver })
+     }
+ 
+-    pub fn scope_for_offset(&self, file: File, offset: TextSize) -> SemanticsScope {
++    pub fn scope_for_offset(&self, file: File, offset: TextSize) -> SemanticsScope<'_> {
+         let resolver = Resolver::new_for_offset(self.db, file, offset);
+         SemanticsScope { resolver }
+     }
+diff --git a/crates/starpls_hir/src/typeck.rs b/crates/starpls_hir/src/typeck.rs
+index 87a5ad6..3b79bb8 100644
+--- a/crates/starpls_hir/src/typeck.rs
++++ b/crates/starpls_hir/src/typeck.rs
+@@ -926,10 +926,9 @@ impl Param {
+                     HirDefParam::KwargsDict { .. }
+                 )
+             }
+-            ParamInner::IntrinsicParam { parent, index } => matches!(
+-                parent.params(db)[index],
+-                IntrinsicFunctionParam::KwargsDict { .. }
+-            ),
++            ParamInner::IntrinsicParam { parent, index } => {
++                matches!(parent.params(db)[index], IntrinsicFunctionParam::KwargsDict)
++            }
+             ParamInner::BuiltinParam { parent, index } => matches!(
+                 parent.params(db)[index],
+                 BuiltinFunctionParam::KwargsDict { .. }
+@@ -1460,7 +1459,10 @@ pub(crate) struct Rule {
+ }
+ 
+ impl Rule {
+-    pub(crate) fn attrs<'a>(&'a self, db: &'a dyn Db) -> impl Iterator<Item = (&Name, &Attribute)> {
++    pub(crate) fn attrs<'a>(
++        &'a self,
++        db: &'a dyn Db,
++    ) -> impl Iterator<Item = (&'a Name, &'a Attribute)> {
+         // This chaining is done to put the `name` attribute first.
+         let common = common_attributes_query(db);
+         let mut common_attrs = match self.kind {
+@@ -1696,7 +1698,7 @@ impl GlobalContext {
+         }
+     }
+ 
+-    pub fn cancel(&self) -> CancelGuard {
++    pub fn cancel(&self) -> CancelGuard<'_> {
+         CancelGuard::new(self)
+     }
+ 
+diff --git a/crates/starpls_hir/src/typeck/infer.rs b/crates/starpls_hir/src/typeck/infer.rs
+index 286c67a..d43a2ca 100644
+--- a/crates/starpls_hir/src/typeck/infer.rs
++++ b/crates/starpls_hir/src/typeck/infer.rs
+@@ -932,11 +932,10 @@ impl TyContext<'_> {
+                                             self.add_expr_diagnostic_error(file, expr, format!("Argument of type \"{}\" cannot be assigned to parameter of type \"{}\"", ty.display(self.db).alt(), expected_ty.display(self.db).alt()));
+                                         }
+                                     }
+-                                    SlotProvider::Missing => {
+-                                        if attr.mandatory {
+-                                            missing_attrs.push(name);
+-                                        }
++                                    SlotProvider::Missing if attr.mandatory => {
++                                        missing_attrs.push(name);
+                                     }
++
+                                     _ => {}
+                                 }
+                             }
+@@ -985,10 +984,8 @@ impl TyContext<'_> {
+                                             self.add_expr_diagnostic_error(file, expr, format!("Argument of type \"{}\" cannot be assigned to parameter of type \"{}\"", ty.display(self.db).alt(), expected_ty.display(self.db).alt()));
+                                         }
+                                     }
+-                                    SlotProvider::Missing => {
+-                                        if data.attr.mandatory {
+-                                            missing_attrs.push(&data.name);
+-                                        }
++                                    SlotProvider::Missing if data.attr.mandatory => {
++                                        missing_attrs.push(&data.name);
+                                     }
+                                     _ => {}
+                                 }
+@@ -1045,10 +1042,8 @@ impl TyContext<'_> {
+                                             self.add_expr_diagnostic_error(file, expr, format!("Argument of type \"{}\" cannot be assigned to parameter of type \"{}\"", ty.display(self.db).alt(), expected_ty.display(self.db).alt()));
+                                         }
+                                     }
+-                                    SlotProvider::Missing => {
+-                                        if attr.mandatory {
+-                                            missing_attrs.push(name);
+-                                        }
++                                    SlotProvider::Missing if attr.mandatory => {
++                                        missing_attrs.push(name);
+                                     }
+                                     _ => {}
+                                 }
+@@ -1695,7 +1690,7 @@ impl TyContext<'_> {
+                         continue;
+                     }
+                 }
+-                FlowNode::Unreachable { .. } => Ty::never(),
++                FlowNode::Unreachable => Ty::never(),
+             };
+ 
+             break Some(curr_node_ty);
+diff --git a/crates/starpls_ide/src/completions.rs b/crates/starpls_ide/src/completions.rs
+index 9cddae6..96177ed 100644
+--- a/crates/starpls_ide/src/completions.rs
++++ b/crates/starpls_ide/src/completions.rs
+@@ -233,7 +233,7 @@ pub(crate) fn completions(
+             for candidate in db.list_load_candidates(&value, file_id).ok()?? {
+                 let start = TextSize::from(
+                     value
+-                        .rfind(&['/', ':', '@'])
++                        .rfind(['/', ':', '@'])
+                         .map(|start| {
+                             if candidate.replace_trailing_slash {
+                                 start
+@@ -569,7 +569,7 @@ impl CompletionContext {
+ }
+ 
+ fn strip_last_package_or_target(label: &str) -> &str {
+-    if let Some(index) = label.rfind(&[':', '/']) {
++    if let Some(index) = label.rfind([':', '/']) {
+         &label[..index + 1]
+     } else {
+         label
+diff --git a/crates/starpls_ide/src/document_symbols.rs b/crates/starpls_ide/src/document_symbols.rs
+index e659d90..ba594fa 100644
+--- a/crates/starpls_ide/src/document_symbols.rs
++++ b/crates/starpls_ide/src/document_symbols.rs
+@@ -93,7 +93,7 @@ pub(crate) fn document_symbols(db: &Database, file_id: FileId) -> Option<Vec<Doc
+         add_target_symbols(db, file, &mut symbols);
+     }
+ 
+-    symbols.sort_by(|s1, s2| s1.range.start().cmp(&s2.range.start()));
++    symbols.sort_by_key(|s1| s1.range.start());
+     Some(symbols)
+ }
+ 
+diff --git a/crates/starpls_ide/src/find_references.rs b/crates/starpls_ide/src/find_references.rs
+index 3a3d9a7..49070ae 100644
+--- a/crates/starpls_ide/src/find_references.rs
++++ b/crates/starpls_ide/src/find_references.rs
+@@ -173,7 +173,7 @@ mod tests {
+             .into_iter()
+             .map(|location| (location.file_id, location.range))
+             .collect::<Vec<_>>();
+-        actual_locations.sort_by_key(|(_, range)| (range.start()));
++        actual_locations.sort_by_key(|(_, range)| range.start());
+         actual_locations.sort_by_key(|(file_id, _)| *file_id);
+ 
+         assert_eq!(fixture.selected_ranges, actual_locations);
+diff --git a/crates/starpls_ide/src/goto_definition.rs b/crates/starpls_ide/src/goto_definition.rs
+index fa4c248..471cecc 100644
+--- a/crates/starpls_ide/src/goto_definition.rs
++++ b/crates/starpls_ide/src/goto_definition.rs
+@@ -167,7 +167,7 @@ impl<'a> GotoDefinitionHandler<'a> {
+         } else if let Some(provider_fields) = ty.provider_fields_source(self.sema.db) {
+             // Check for provider field definition. This only handles the case where the provider
+             // fields are specified in a dictionary literal.
+-            return self.find_name_in_dict_expr(provider_fields);
++            self.find_name_in_dict_expr(provider_fields)
+         } else {
+             None
+         }
+diff --git a/crates/starpls_ide/src/lib.rs b/crates/starpls_ide/src/lib.rs
+index b5f8d10..20fcd33 100644
+--- a/crates/starpls_ide/src/lib.rs
++++ b/crates/starpls_ide/src/lib.rs
+@@ -474,11 +474,12 @@ pub trait FileLoader: Send + Sync + 'static {
+ 
+ /// Simple implementation of [`FileLoader`] backed by a HashMap.
+ /// Mainly used for tests.
++#[cfg(test)]
+ #[derive(Default)]
+ pub(crate) struct SimpleFileLoader(DashMap<String, LoadFileResult>);
+ 
++#[cfg(test)]
+ impl SimpleFileLoader {
+-    #[cfg(test)]
+     pub(crate) fn add_files_from_fixture(&self, db: &dyn Db, fixture: &Fixture) {
+         for (path, file_id) in &fixture.path_to_file_id {
+             let file = db.get_file(*file_id).unwrap();
+@@ -495,6 +496,7 @@ impl SimpleFileLoader {
+     }
+ }
+ 
++#[cfg(test)]
+ impl FileLoader for SimpleFileLoader {
+     fn resolve_path(
+         &self,
+diff --git a/crates/starpls_intern/src/lib.rs b/crates/starpls_intern/src/lib.rs
+index 31382ed..45bc72d 100644
+--- a/crates/starpls_intern/src/lib.rs
++++ b/crates/starpls_intern/src/lib.rs
+@@ -202,6 +202,12 @@ impl<T: ?Sized> InternStorage<T> {
+     }
+ }
+ 
++impl<T: ?Sized> Default for InternStorage<T> {
++    fn default() -> Self {
++        Self::new()
++    }
++}
++
+ impl<T: Internable + ?Sized> InternStorage<T> {
+     fn get(&self) -> &InternMap<T> {
+         self.map.get_or_init(DashMap::default)
+diff --git a/crates/starpls_parser/src/grammar/expressions.rs b/crates/starpls_parser/src/grammar/expressions.rs
+index fe4b8a4..4d12f98 100644
+--- a/crates/starpls_parser/src/grammar/expressions.rs
++++ b/crates/starpls_parser/src/grammar/expressions.rs
+@@ -41,10 +41,7 @@ pub(crate) fn binary_expr(
+     tokens: &[SyntaxKind],
+     next: fn(&mut Parser) -> Option<CompletedMarker>,
+ ) -> Option<CompletedMarker> {
+-    let mut m = match next(p) {
+-        Some(m) => m,
+-        None => return None,
+-    };
++    let mut m = next(p)?;
+ 
+     while tokens.contains(&p.current()) {
+         let binary_marker = m.precede(p);
+@@ -88,10 +85,7 @@ fn and_expr(p: &mut Parser) -> Option<CompletedMarker> {
+ 
+ fn comparison_expr(p: &mut Parser) -> Option<CompletedMarker> {
+     const COMP_TOKENS: &[SyntaxKind] = &[T![==], T![!=], T![<], T![>], T![<=], T![>=], T![in]];
+-    let mut m = match bitwise_or_expr(p) {
+-        Some(m) => m,
+-        None => return None,
+-    };
++    let mut m = bitwise_or_expr(p)?;
+ 
+     loop {
+         let is_not_in = if COMP_TOKENS.contains(&p.current()) {
+@@ -150,10 +144,7 @@ fn unary_expr(p: &mut Parser) -> Option<CompletedMarker> {
+ 
+ /// Parses a function call, subscript expression, or member access.
+ pub(crate) fn primary_expr(p: &mut Parser) -> Option<CompletedMarker> {
+-    let mut m = match operand_expr(p) {
+-        Some(m) => m,
+-        None => return None,
+-    };
++    let mut m = operand_expr(p)?;
+ 
+     loop {
+         let next = match p.current() {
+diff --git a/editors/code/BUILD.bazel b/editors/code/BUILD.bazel
+index 82558cc..69edf25 100644
+--- a/editors/code/BUILD.bazel
++++ b/editors/code/BUILD.bazel
+@@ -11,6 +11,7 @@ ts_project(
+     name = "swc",
+     srcs = glob(["src/**/*.ts"]),
+     declaration = True,
++    out_dir = "dist",
+     root_dir = "src",
+     source_map = True,
+     transpiler = partial.make(
+diff --git a/rust-toolchain.toml b/rust-toolchain.toml
+index b1d22ba..2d45363 100644
+--- a/rust-toolchain.toml
++++ b/rust-toolchain.toml
+@@ -1,2 +1,2 @@
+ [toolchain]
+-channel = "nightly-2023-12-06"
++channel = "1.96.1"
+diff --git a/vendor/runfiles/src/lib.rs b/vendor/runfiles/src/lib.rs
+index 6391f92..5edddf8 100644
+--- a/vendor/runfiles/src/lib.rs
++++ b/vendor/runfiles/src/lib.rs
+@@ -303,7 +303,7 @@ pub fn find_runfiles_dir() -> Result<PathBuf> {
+             while let Some(ancestor) = next {
+                 if ancestor
+                     .file_name()
+-                    .map_or(false, |f| f.to_string_lossy().ends_with(".runfiles"))
++                    .is_some_and(|f| f.to_string_lossy().ends_with(".runfiles"))
+                 {
+                     return Ok(ancestor.to_path_buf());
+                 }

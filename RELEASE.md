@@ -7,10 +7,10 @@ Most of the releasing is done by [release please](https://github.com/googleapis/
 Check out the branch of the auto-generated release PR and, run the following command from the directory of the extension source code:
 
 ```
-$ bazel build //:vsix
+$ bazel build --config=release //:vsix
 ```
 
-This will compile and bundle the extension into a file named `vscode-bazel-x.y.z.vsix`, where `x.y.z` is the version number of the extension as defined in `package.json`. To get a copy of the file in the source tree, run `bazel run //:export_vsix`. `npm run package` still produces the same file.
+This will compile and bundle the extension into a file named `vscode-bazel-x.y.z.vsix`, where `x.y.z` is the version number of the extension as defined in `package.json`. `--config=release` is the optimized build CI packages (the bundled starpls wasm is optimized either way). To get a copy of the file in the source tree, run `bazel run --config=release //:export_vsix`. `npm run package` still produces the same file.
 
 Having this standalone package available before uploading the release to the Marketplace or to GitHub is useful for testing:
 

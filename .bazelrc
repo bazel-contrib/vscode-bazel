@@ -21,6 +21,11 @@ build --incompatible_strict_action_env
 # Surface failures without pagination.
 test --test_output=errors
 
+# The release artifact is an optimized build. The bundled starpls wasm forces
+# `opt` on its own; this keeps the rest of the .vsix on the same footing and
+# is what CI packages with.
+build:release --compilation_mode=opt
+
 # The Aspect rulesets (rules_js, rules_ts, rules_esbuild) report usage
 # telemetry to Aspect while fetching repositories. Opt out for every
 # checkout and CI run; the data they would send is written to

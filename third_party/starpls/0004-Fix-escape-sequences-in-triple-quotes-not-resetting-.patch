@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Alex Trotta <44127594+Ahajha@users.noreply.github.com>
+Date: Thu, 23 Jul 2026 03:06:58 -0400
+Subject: [PATCH] Fix escape sequences in triple quotes not resetting the
+ closing streak (#8)
+
+While lexing a triple-quoted string, hitting an escape sequence would not reset the three-quote count. So something like "\\"\\" would still count as 3 quotes, even though it should get reset in the middle.
+
+Fixes #422
+---
+ crates/starpls_lexer/src/lib.rs   | 2 ++
+ crates/starpls_lexer/src/tests.rs | 9 +++++++++
+ 2 files changed, 11 insertions(+)
+
+diff --git a/crates/starpls_lexer/src/lib.rs b/crates/starpls_lexer/src/lib.rs
+index b2dfe1d..90d3a48 100644
+--- a/crates/starpls_lexer/src/lib.rs
++++ b/crates/starpls_lexer/src/lib.rs
+@@ -812,10 +812,12 @@ impl Cursor<'_> {
+                 {
+                     // Bump again to skip the escaped character.
+                     self.bump();
++                    closing_streak = 0;
+                 }
+                 '\\' if self.first() == '\r' && self.second() == '\n' => {
+                     self.bump();
+                     self.bump();
++                    closing_streak = 0;
+                 }
+                 _ => {
+                     closing_streak = 0;
+diff --git a/crates/starpls_lexer/src/tests.rs b/crates/starpls_lexer/src/tests.rs
+index a7d687f..421ed4b 100644
+--- a/crates/starpls_lexer/src/tests.rs
++++ b/crates/starpls_lexer/src/tests.rs
+@@ -485,6 +485,9 @@ x = '''a\r\nb'''
+ x = """a\r\nb"""
+ x = '''a\n\rb'''
+ x = """a\n\rb"""
++x = """
++"\\""
++"""
+ x = r'a\\\nb'
+ x = r"a\\\nb"
+ x = r'a\\\rb'
+@@ -642,6 +645,12 @@ x = r"a\\\r\nb"
+             Token { kind: Whitespace, len: 1 }
+             Token { kind: Eq, len: 1 }
+             Token { kind: Whitespace, len: 1 }
++            Token { kind: Literal { kind: Str { terminated: true, triple_quoted: true } }, len: 13 }
++            Token { kind: Newline, len: 1 }
++            Token { kind: Ident, len: 1 }
++            Token { kind: Whitespace, len: 1 }
++            Token { kind: Eq, len: 1 }
++            Token { kind: Whitespace, len: 1 }
+             Token { kind: Literal { kind: RawStr { terminated: true, triple_quoted: false } }, len: 9 }
+             Token { kind: Newline, len: 1 }
+             Token { kind: Ident, len: 1 }

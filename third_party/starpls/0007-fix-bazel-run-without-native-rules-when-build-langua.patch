@@ -1,0 +1,47 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: UebelAndre <github@uebelandre.com>
+Date: Thu, 19 Nov 2026 13:44:54 -0800
+Subject: [PATCH] fix(bazel): run without native rules when build-language
+ fails
+
+A failing `bazel info build-language` used to fail the whole Bazel context,
+which left the server without a workspace root and reported everything as
+an init error. Native rules are the only thing that call provides, so log
+the failure and continue with an empty set; everything defined in Starlark
+keeps working.
+---
+ crates/starpls/src/bazel.rs | 15 +++++++++++++--
+ 1 file changed, 13 insertions(+), 2 deletions(-)
+
+diff --git a/crates/starpls/src/bazel.rs b/crates/starpls/src/bazel.rs
+index fa0e9a3..da02540 100644
+--- a/crates/starpls/src/bazel.rs
++++ b/crates/starpls/src/bazel.rs
+@@ -1,5 +1,6 @@
+ use anyhow::anyhow;
+ use log::debug;
++use log::error;
+ use log::info;
+ use starpls_bazel::client::BazelClient;
+ use starpls_bazel::client::BazelInfo;
+@@ -54,8 +55,18 @@ impl BazelContext {
+         }
+ 
+         debug!("fetching builtin rules via `bazel info build-language`");
+-        let rules = load_bazel_build_language(client)
+-            .map_err(|err| anyhow!("failed to run `bazel info build-language`: {}", err))?;
++        // Native rules come from `bazel info build-language`. Without them the
++        // server still works for everything defined in Starlark.
++        let rules = match load_bazel_build_language(client) {
++            Ok(rules) => rules,
++            Err(err) => {
++                error!(
++                    "failed to run `bazel info build-language`: {}; native rules will be unknown",
++                    err
++                );
++                Default::default()
++            }
++        };
+ 
+         Ok(BazelContext {
+             info,
