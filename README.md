@@ -52,6 +52,10 @@ icon in the status bar) and in the **Bazel** output channel.
 - Set `bazel.externalTools.autoDownload` to `always` to download missing tools
   without asking (e.g. in a checked-in workspace setting), or to `never` to
   never download them.
+- Choosing "Don't Ask Again" in the download prompt adds the tool to the
+  user setting `bazel.externalTools.dontAsk`. Remove it there (or choose
+  "Undo" in the confirmation) to be asked again. A missing tool can still be
+  downloaded from the language status item.
 - Set a tool's setting to a concrete path or name to use exactly that tool;
   nothing is downloaded in its place.
 

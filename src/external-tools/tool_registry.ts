@@ -15,7 +15,11 @@
 import * as path from "path";
 import * as vscode from "vscode";
 
-import { getAutoDownloadMode } from "../extension/configuration";
+import {
+  getAutoDownloadMode,
+  getDontAskTools,
+  setDontAskTool,
+} from "../extension/configuration";
 import { logDebug, logError, logInfo, logWarn } from "../extension/logger";
 import { ILogger } from "../extension/logger_interface";
 import { affectsRenamedSetting } from "../extension/settings_migration";
@@ -66,7 +70,7 @@ export interface ToolStateChange {
 }
 
 const AUTO_DOWNLOAD_SETTING = "bazel.externalTools.autoDownload";
-const DONT_ASK_PREFIX = "bazel.externalTools.dontAsk.";
+const DONT_ASK_SETTING = "bazel.externalTools.dontAsk";
 const FOCUS_RECHECK_INTERVAL_MS = 5000;
 
 const registryLogger: ILogger = {
@@ -83,8 +87,6 @@ const registryLogger: ILogger = {
 export interface ToolRegistryOptions {
   /** Root directory of the managed tool copies. */
   toolsDir: string;
-  /** Persists the "Don't ask again" choices. */
-  globalState: vscode.Memento;
   /**
    * Whether a Bazel workspace is open. The user is only asked to download a
    * tool in a Bazel workspace; until then the offer is kept pending.
@@ -109,8 +111,8 @@ export interface ToolRegistryOptions {
  * downloaded in the background),
  * 5. else the user is offered a download (`bazel.externalTools.autoDownload`).
  *
- * Settings are never written. The resolved state is kept in memory; only the
- * "Don't ask again" choices are persisted.
+ * The resolved state is kept in memory. The only setting ever written is
+ * `bazel.externalTools.dontAsk`, after the user chose "Don't Ask Again".
  */
 export class ExternalToolRegistry implements vscode.Disposable {
   private readonly toolsConfig: ToolsConfig;
@@ -471,9 +473,9 @@ export class ExternalToolRegistry implements vscode.Disposable {
       await this.download(key);
       return;
     }
-    if (this.options.globalState.get<boolean>(DONT_ASK_PREFIX + key)) {
+    if (getDontAskTools().includes(key)) {
       registryLogger.logInfo(
-        `${state.reason}; not asking to download it (Don't Ask Again)`,
+        `${state.reason}; not asking to download it (listed in ${DONT_ASK_SETTING})`,
       );
       return;
     }
@@ -492,8 +494,25 @@ export class ExternalToolRegistry implements vscode.Disposable {
         await openSetting(config);
         break;
       case "Don't Ask Again":
-        await this.options.globalState.update(DONT_ASK_PREFIX + key, true);
+        await this.dontAskAgain(key);
         break;
+    }
+  }
+
+  /**
+   * Stops offering the tool, in the user settings where the user can see and
+   * revert it: with "Undo" here, or by editing `bazel.externalTools.dontAsk`.
+   */
+  private async dontAskAgain(key: ToolKey): Promise<void> {
+    const { label } = TOOL_INFO[key];
+    await setDontAskTool(key, true);
+    registryLogger.logInfo(`Won't offer to download ${key} again`);
+    const undo = await vscode.window.showInformationMessage(
+      `Won't offer to download ${label} again. To change this, edit \`${DONT_ASK_SETTING}\`.`,
+      "Undo",
+    );
+    if (undo === "Undo") {
+      await setDontAskTool(key, false);
     }
   }
 
@@ -516,7 +535,9 @@ export class ExternalToolRegistry implements vscode.Disposable {
   }
 
   private onConfigurationChanged(e: vscode.ConfigurationChangeEvent) {
-    const autoDownloadChanged = e.affectsConfiguration(AUTO_DOWNLOAD_SETTING);
+    const autoDownloadChanged =
+      e.affectsConfiguration(AUTO_DOWNLOAD_SETTING) ||
+      e.affectsConfiguration(DONT_ASK_SETTING);
     for (const key of TOOL_KEYS) {
       const settings = [
         getToolSetting(this.toolsConfig[key]).key,
@@ -650,11 +671,10 @@ export function describeToolState(state: ToolState): string {
  */
 export function registerToolRegistry(
   context: vscode.ExtensionContext,
-  options: Omit<ToolRegistryOptions, "toolsDir" | "globalState">,
+  options: Omit<ToolRegistryOptions, "toolsDir">,
 ): ExternalToolRegistry {
   const registry = new ExternalToolRegistry({
     toolsDir: path.join(context.globalStorageUri.fsPath, "external-tools"),
-    globalState: context.globalState,
     ...options,
   });
   setToolRegistry(registry);

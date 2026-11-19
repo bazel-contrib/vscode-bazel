@@ -22,23 +22,6 @@ import {
   ToolStateChange,
 } from "../src/external-tools/tool_registry";
 
-class FakeMemento implements vscode.Memento {
-  private readonly values = new Map<string, unknown>();
-
-  keys(): readonly string[] {
-    return [...this.values.keys()];
-  }
-
-  get<T>(key: string, defaultValue?: T): T {
-    return (this.values.has(key) ? this.values.get(key) : defaultValue) as T;
-  }
-
-  update(key: string, value: unknown): Thenable<void> {
-    this.values.set(key, value);
-    return Promise.resolve();
-  }
-}
-
 /** Polls until `condition` holds; offers run in the background. */
 async function waitFor(condition: () => boolean): Promise<void> {
   for (let i = 0; i < 100 && !condition(); i++) {
@@ -52,10 +35,11 @@ describe("ExternalToolRegistry", () => {
   const pinnedVersion = toolsConfig.Buildifier.version;
   let sandbox: sinon.SinonSandbox;
   let toolsDir: string;
-  let globalState: FakeMemento;
+  let dontAsk: string[];
   let registries: ExternalToolRegistry[];
   let showWarningStub: sinon.SinonStub;
   let showErrorStub: sinon.SinonStub;
+  let infoStub: sinon.SinonStub;
   let downloadStub: sinon.SinonStub;
   let locateOnPathStub: sinon.SinonStub;
   let detectPlatformStub: sinon.SinonStub;
@@ -73,7 +57,6 @@ describe("ExternalToolRegistry", () => {
   ): ExternalToolRegistry {
     const registry = new ExternalToolRegistry({
       toolsDir,
-      globalState,
       isBazelWorkspaceAvailable: () => workspaceAvailable,
       ...overrides,
     });
@@ -99,7 +82,7 @@ describe("ExternalToolRegistry", () => {
   beforeEach(async () => {
     sandbox = sinon.createSandbox();
     toolsDir = await fs.mkdtemp(path.join(os.tmpdir(), "vscode-bazel-tools-"));
-    globalState = new FakeMemento();
+    dontAsk = [];
     registries = [];
     workspaceAvailable = true;
     configuredValue = undefined;
@@ -108,6 +91,9 @@ describe("ExternalToolRegistry", () => {
     configuredTool = undefined;
     showWarningStub = sandbox
       .stub(vscode.window, "showWarningMessage")
+      .resolves(undefined);
+    infoStub = sandbox
+      .stub(vscode.window, "showInformationMessage")
       .resolves(undefined);
     showErrorStub = sandbox
       .stub(vscode.window, "showErrorMessage")
@@ -135,6 +121,15 @@ describe("ExternalToolRegistry", () => {
       .callsFake((config: ToolConfig) =>
         config === toolsConfig.Buildifier ? configuredValue : undefined,
       );
+    sandbox.stub(configuration, "getDontAskTools").callsFake(() => dontAsk);
+    sandbox
+      .stub(configuration, "setDontAskTool")
+      .callsFake(async (key: string, value: boolean) => {
+        dontAsk = dontAsk.filter((tool) => tool !== key);
+        if (value) {
+          dontAsk.push(key);
+        }
+      });
     sandbox
       .stub(configuration, "getAutoDownloadMode")
       .callsFake(() => autoDownloadMode);
@@ -358,7 +353,8 @@ describe("ExternalToolRegistry", () => {
     it("remembers Don't Ask Again", async () => {
       showWarningStub.resolves("Don't Ask Again");
       await createRegistry().ensure("Buildifier");
-      await waitFor(() => globalState.keys().length > 0);
+      await waitFor(() => dontAsk.length > 0);
+      assert.deepStrictEqual(dontAsk, ["Buildifier"]);
       showWarningStub.resetHistory();
 
       await createRegistry().ensure("Buildifier");
@@ -366,6 +362,25 @@ describe("ExternalToolRegistry", () => {
 
       sinon.assert.notCalled(showWarningStub);
       sinon.assert.notCalled(downloadStub);
+    });
+
+    it("lets the user undo Don't Ask Again", async () => {
+      showWarningStub.resolves("Don't Ask Again");
+      infoStub.resolves("Undo" as never);
+
+      await createRegistry().ensure("Buildifier");
+
+      await waitFor(() => infoStub.called);
+      await waitFor(() => dontAsk.length === 0);
+    });
+
+    it("does not ask for a tool listed in the setting", async () => {
+      dontAsk = ["Buildifier"];
+
+      await createRegistry().ensure("Buildifier");
+      await new Promise((resolve) => setTimeout(resolve, 20));
+
+      sinon.assert.notCalled(showWarningStub);
     });
 
     it("downloads without asking when set to always", async () => {

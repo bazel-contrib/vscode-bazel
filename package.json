@@ -158,6 +158,22 @@
                         "markdownDescription": "Whether to download Bazelisk, Buildifier and the starpls language server when they are needed, set to `auto` and not found on the system path. Downloads are pinned to the versions tested with this extension, verified by checksum and kept in the extension's global storage. They are only offered in a Bazel workspace.",
                         "scope": "machine-overridable"
                     },
+                    "bazel.externalTools.dontAsk": {
+                        "type": "array",
+                        "order": 2,
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "Bazelisk",
+                                "Buildifier",
+                                "Starlark Language Server"
+                            ]
+                        },
+                        "uniqueItems": true,
+                        "default": [],
+                        "markdownDescription": "Tools the extension does not offer to download when they are missing. \"Don't Ask Again\" in the download prompt adds a tool here; remove it to be asked again. A missing tool is still shown in the language status of Starlark files, where it can be downloaded.",
+                        "scope": "application"
+                    },
                     "bazel.workspace.path": {
                         "type": "string",
                         "default": "",

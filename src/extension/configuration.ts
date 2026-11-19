@@ -200,6 +200,37 @@ export function getLspServerEnv(): Record<string, string> {
 /** How missing tools are downloaded (`bazel.externalTools.autoDownload`). */
 export type AutoDownloadMode = "ask" | "always" | "never";
 
+/**
+ * The tools the user asked not to be asked about again
+ * (`bazel.externalTools.dontAsk`), by tool key.
+ */
+export function getDontAskTools(): string[] {
+  return (
+    vscode.workspace
+      .getConfiguration("bazel.externalTools")
+      .get<string[]>("dontAsk") ?? []
+  );
+}
+
+/**
+ * Adds a tool to, or removes it from, the user setting
+ * `bazel.externalTools.dontAsk`. This is the only setting the extension
+ * writes, and only after the user chose "Don't Ask Again" (or "Undo").
+ */
+export async function setDontAskTool(
+  key: string,
+  dontAsk: boolean,
+): Promise<void> {
+  const current = getDontAskTools().filter((tool) => tool !== key);
+  await vscode.workspace
+    .getConfiguration("bazel.externalTools")
+    .update(
+      "dontAsk",
+      dontAsk ? [...current, key] : current,
+      vscode.ConfigurationTarget.Global,
+    );
+}
+
 export function getAutoDownloadMode(): AutoDownloadMode {
   const mode = vscode.workspace
     .getConfiguration("bazel.externalTools")
