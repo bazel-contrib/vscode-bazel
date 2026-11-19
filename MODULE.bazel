@@ -7,7 +7,7 @@ bazel_dep(name = "aspect_rules_ts", version = "3.9.1")
 bazel_dep(name = "bazel_lib", version = "3.5.0")
 bazel_dep(name = "rules_nodejs", version = "6.7.7")
 bazel_dep(name = "bazel_skylib", version = "1.8.2")
-bazel_dep(name = "buildifier_prebuilt", version = "8.5.1.4")
+bazel_dep(name = "buildifier_prebuilt", version = "10.2.0")
 
 # Tool versions come from the same files the JavaScript ecosystem uses, so
 # Renovate and Dependabot keep them current without Bazel-specific config:
