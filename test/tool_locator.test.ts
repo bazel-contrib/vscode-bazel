@@ -48,6 +48,19 @@ describe("tool_locator", () => {
     await vscode.workspace
       .getConfiguration("bazel.workspace")
       .update("path", workspacePath, vscode.ConfigurationTarget.Workspace);
+
+    // `update` can resolve before the new value is visible to readers (seen
+    // on CI), so wait until the workspace values reflect what was written.
+    const deadline = Date.now() + 5000;
+    while (
+      (vscode.workspace.getConfiguration("bazel").inspect("executable")
+        ?.workspaceValue !== executable ||
+        vscode.workspace.getConfiguration("bazel.workspace").inspect("path")
+          ?.workspaceValue !== workspacePath) &&
+      Date.now() < deadline
+    ) {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
   }
 
   async function createExecutable(
