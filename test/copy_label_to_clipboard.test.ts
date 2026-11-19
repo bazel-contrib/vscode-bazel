@@ -172,7 +172,10 @@ describe("Copy Label To Clipboard", () => {
 
       await vscode.commands.executeCommand("bazel.copyLabelToClipboard");
 
-      assert.strictEqual(await vscode.env.clipboard.readText(), "");
+      assert.strictEqual(
+        await vscode.env.clipboard.readText(),
+        CLIPBOARD_MARKER,
+      );
       // Opening the file may also show the workspace root hint.
       const messages = showInfoMessage
         .getCalls()
@@ -215,7 +218,10 @@ describe("Copy Label To Clipboard", () => {
 
       await vscode.commands.executeCommand("bazel.copyLabelToClipboard");
 
-      assert.strictEqual(await vscode.env.clipboard.readText(), "");
+      assert.strictEqual(
+        await vscode.env.clipboard.readText(),
+        CLIPBOARD_MARKER,
+      );
       const messages = showInfoMessage
         .getCalls()
         .map((call) => call.args[0] as string);

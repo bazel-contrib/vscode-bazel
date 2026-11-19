@@ -92,7 +92,7 @@ describe("CodeLensFeature", () => {
       sinon.assert.calledOnce(refreshStub);
     });
 
-    it("refreshes once for a BUILD file change and an active root change", async () => {
+    it("refreshes once for a BUILD and active root change", async () => {
       const clock = useFakeTimers(sandbox);
       sandbox.stub(bazel_availability, "checkBazelIsAvailable").returns(true);
       sandbox
