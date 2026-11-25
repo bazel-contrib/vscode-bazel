@@ -1,0 +1,6 @@
+# Patches applied to the pinned upstream starpls archive, see MODULE.bazel.
+# Each one is a commit with its message, as `git format-patch` writes it, from
+# https://github.com/UebelAndre/starpls branch wasm (excluding MODULE.bazel.lock
+# and CI); `git am` applies them to a starpls checkout for upstreaming.
+
+exports_files(glob(["*.patch"]))

@@ -1,0 +1,70 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: UebelAndre <github@uebelandre.com>
+Date: Tue, 24 Nov 2026 07:24:06 -0800
+Subject: [PATCH] fix(document): treat BUILD.<name>.bazel as a BUILD file
+
+`build_file` templates are commonly named `BUILD.zlib.bazel`; the
+classifier knew `zlib.BUILD` and `zlib.BUILD.bazel` but let the prefix
+form fall through to plain Starlark, where every native rule is an
+undefined name. The three forms now share the BUILD context, which is
+also how buildifier classifies them. Plain `BUILD.<name>` is left alone:
+`BUILD.md` is not a BUILD file.
+---
+ crates/starpls/src/document.rs | 40 +++++++++++++++++++++++++++++++++-
+ 1 file changed, 39 insertions(+), 1 deletion(-)
+
+diff --git a/crates/starpls/src/document.rs b/crates/starpls/src/document.rs
+index 60565b9..aedf733 100644
+--- a/crates/starpls/src/document.rs
++++ b/crates/starpls/src/document.rs
+@@ -745,7 +745,12 @@ pub(crate) fn dialect_and_api_context_for_workspace_path(
+         "WORKSPACE" | "WORKSPACE.bazel" | "WORKSPACE.bzlmod" => {
+             (Dialect::Bazel, Some(APIContext::Workspace))
+         }
+-        path if path.ends_with(".BUILD.bazel") || path.ends_with(".BUILD") => {
++        // BUILD file templates, as in `build_file = "//third_party:BUILD.zlib.bazel"`
++        // or `zlib.BUILD`; buildifier treats the same names as BUILD files.
++        path if path.ends_with(".BUILD.bazel")
++            || path.ends_with(".BUILD")
++            || (path.starts_with("BUILD.") && path.ends_with(".bazel")) =>
++        {
+             (Dialect::Bazel, Some(APIContext::Build))
+         }
+         path if path.ends_with(".cquery") || path.ends_with(".query.bzl") => {
+@@ -763,3 +768,36 @@ pub(crate) fn dialect_and_api_context_for_workspace_path(
+         },
+     })
+ }
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    fn context_for(name: &str) -> Option<APIContext> {
++        dialect_and_api_context_for_workspace_path("/workspace", Path::new("/workspace").join(name))
++            .and_then(|(_, api_context)| api_context)
++    }
++
++    #[test]
++    fn build_file_templates_get_the_build_context() {
++        for name in [
++            "BUILD",
++            "BUILD.bazel",
++            "BUILD.zlib.bazel",
++            "zlib.BUILD",
++            "zlib.BUILD.bazel",
++            "third_party/BUILD.openssl.bazel",
++        ] {
++            assert_eq!(context_for(name), Some(APIContext::Build), "{name}");
++        }
++    }
++
++    #[test]
++    fn other_names_keep_their_context() {
++        assert_eq!(context_for("MODULE.bazel"), Some(APIContext::Module));
++        assert_eq!(context_for("WORKSPACE.bazel"), Some(APIContext::Workspace));
++        assert_eq!(context_for("defs.bzl"), Some(APIContext::Bzl));
++        assert_eq!(context_for("BUILD.md"), None);
++        assert_eq!(context_for("notes.bazel"), None);
++    }
++}

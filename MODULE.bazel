@@ -3,10 +3,10 @@
 module(name = "vscode_bazel")
 
 bazel_dep(name = "aspect_rules_js", version = "3.2.2")
-bazel_dep(name = "aspect_rules_ts", version = "3.9.1")
+bazel_dep(name = "aspect_rules_ts", version = "3.10.1")
 bazel_dep(name = "bazel_lib", version = "3.5.0")
 bazel_dep(name = "rules_nodejs", version = "6.7.7")
-bazel_dep(name = "bazel_skylib", version = "1.8.2")
+bazel_dep(name = "bazel_skylib", version = "1.9.2")
 bazel_dep(name = "buildifier_prebuilt", version = "10.2.0")
 
 # Tool versions come from the same files the JavaScript ecosystem uses, so
@@ -58,4 +58,42 @@ package_version = use_repo_rule("//tools:package_version.bzl", "package_version"
 package_version(
     name = "package_version",
     package_json = "//:package.json",
+)
+
+# The starpls language server, built from source for WebAssembly and shipped
+# as dist/starpls.wasm (see src/language_support/wasm_language_server.ts).
+# Upstream starpls is pinned and the changes it needs are applied as patches
+# from third_party/starpls until they have an upstream home: a newer
+# toolchain, fixes for problems visible in the editor, Bazel information
+# supplied by the client on request, a single-threaded mode and the
+# wasm32-wasip1 build. Update the commit, `integrity` and the patches together.
+bazel_dep(name = "starpls")
+archive_override(
+    module_name = "starpls",
+    integrity = "sha256-6lb8JzDSXDwEhNoj2PmvpH88HvbgZZhbHxWQ+9PvA0s=",
+    patch_strip = 1,
+    patches = [
+        "//third_party/starpls:0001-fix-Upgrade-everything-2.patch",
+        "//third_party/starpls:0002-fix-Enable-bzlmod-by-default-3.patch",
+        "//third_party/starpls:0003-fix-Correctly-resolve-labels-with-a-slash-in-the-tar.patch",
+        "//third_party/starpls:0004-Fix-escape-sequences-in-triple-quotes-not-resetting-.patch",
+        "//third_party/starpls:0005-Misc-updates-13.patch",
+        "//third_party/starpls:0006-build-drop-the-tonic-runtime-from-the-prost-toolchai.patch",
+        "//third_party/starpls:0007-fix-bazel-run-without-native-rules-when-build-langua.patch",
+        "//third_party/starpls:0008-feat-bazel-take-Bazel-information-from-the-client.patch",
+        "//third_party/starpls:0009-feat-server-single-threaded-mode.patch",
+        "//third_party/starpls:0010-feat-build-for-wasm32-wasip1.patch",
+        "//third_party/starpls:0011-build-ship-a-crate_universe-lockfile.patch",
+        "//third_party/starpls:0012-fix-ide-apply-native-rules-when-builtin-definitions-.patch",
+        "//third_party/starpls:0013-feat-host-ask-the-client-for-Bazel-data-when-it-is-f.patch",
+        "//third_party/starpls:0014-fix-fs-keep-directory-handles-off-the-resolution-pat.patch",
+        "//third_party/starpls:0015-fix-document-treat-BUILD.-name-.bazel-as-a-BUILD-fil.patch",
+        "//third_party/starpls:0016-fix-wasm-only-collapse-.-over-a-directory-that-exist.patch",
+        "//third_party/starpls:0017-feat-ide-go-to-the-targets-a-macro-defines-in-the-sa.patch",
+        "//third_party/starpls:0018-fix-lexer-follow-the-spec-for-comment-lines-x-escape.patch",
+        "//third_party/starpls:0019-fix-typeck-do-not-type-check-element-assignments-int.patch",
+        "//third_party/starpls:0020-feat-builtins-know-the-set-global-of-Bazel-8.patch",
+    ],
+    strip_prefix = "starpls-ac25eca3dbbed6347fbca5fbf14d3a027d46bcab",
+    urls = ["https://github.com/withered-magic/starpls/archive/ac25eca3dbbed6347fbca5fbf14d3a027d46bcab.tar.gz"],
 )

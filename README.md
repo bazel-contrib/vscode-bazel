@@ -83,16 +83,29 @@ Once debugging is active and Bazel pauses, you can step through your Starlark co
 To stop the debugging session, click the "Stop" button in the debugger.
 This terminates the current Bazel process while keeping the Bazel server running for future builds.
 
-## Using a language server (experimental)
+## Language server
 
-This extension can use a language server for various features, such as go to definition and completions. There are currently two compatible language servers:
+The extension ships [starpls](https://github.com/withered-magic/starpls), a
+Starlark language server, compiled to WebAssembly, and runs it under Node's
+WebAssembly System Interface in a helper process of the extension host, with
+the workspace and Bazel's output base mapped straight onto the disk. Go to
+definition, hover, completion, signature help and diagnostics work after
+install with nothing else to set up, locally and in remote sessions alike.
+The server starts without running Bazel; when it first needs a repository
+mapping or the native rule definitions it asks the extension, which runs
+`bazel mod dump_repo_mapping` or `bazel info build-language` in the
+background, so a busy Bazel server delays at most that one request.
 
-- [bazel-lsp](https://github.com/cameron-martin/bazel-lsp) is based on Facebook's Starlark language server and extends it with additional, Bazel-specific functionality.
-- [starpls](https://github.com/withered-magic/starpls) is an implementation based on rust-analyzer which also provides Bazel-specific functionality.
+The server never runs Bazel to fetch anything on its own. When navigation
+reaches an external repository that is not in the output base, the extension
+asks once whether to run `bazel fetch` for it; "Not now" leaves it unresolved
+until `MODULE.bazel` changes. Set `bazel.lsp.fetch` to `never` to skip the
+question.
 
-In general, you need to install the language server binary and then set the `bazel.lsp.command` setting. See the README of the corresponding repo for more specific setup instructions.
-
-We can't currently make any recommendation between these two. Both are under active development and are rapidly gaining more functionality.
+To run a different server, set `bazel.lsp.command` to a native language
+server executable (and `bazel.lsp.args`, `bazel.lsp.env` as needed), or
+`bazel.lsp.wasm` to another starpls `.wasm`. Setting `bazel.lsp.command`
+turns the bundled server off.
 
 ## Bazel tasks
 

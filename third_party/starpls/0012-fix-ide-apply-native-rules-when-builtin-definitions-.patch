@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: UebelAndre <github@uebelandre.com>
+Date: Sat, 21 Nov 2026 05:52:29 -0800
+Subject: [PATCH] fix(ide): apply native rules when builtin definitions are set
+ again
+
+`set_builtin_defs` on an existing dialect updated the builtins but kept the
+old native rules, so rules loaded after startup (for example when the
+build-language proto arrives late) never took effect.
+---
+ crates/starpls_hir/src/test_database.rs | 1 +
+ crates/starpls_ide/src/lib.rs           | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/crates/starpls_hir/src/test_database.rs b/crates/starpls_hir/src/test_database.rs
+index b354d29..9b465cc 100644
+--- a/crates/starpls_hir/src/test_database.rs
++++ b/crates/starpls_hir/src/test_database.rs
+@@ -107,6 +107,7 @@ impl crate::Db for TestDatabase {
+             }
+         };
+         defs.set_builtins(self).to(builtins);
++        defs.set_rules(self).to(rules);
+     }
+ 
+     fn get_builtin_defs(&self, dialect: &Dialect) -> BuiltinDefs {
+diff --git a/crates/starpls_ide/src/lib.rs b/crates/starpls_ide/src/lib.rs
+index 20fcd33..f2bbbcf 100644
+--- a/crates/starpls_ide/src/lib.rs
++++ b/crates/starpls_ide/src/lib.rs
+@@ -210,6 +210,7 @@ impl starpls_hir::Db for Database {
+             }
+         };
+         defs.set_builtins(self).to(builtins);
++        defs.set_rules(self).to(rules);
+     }
+ 
+     fn get_builtin_defs(&self, dialect: &Dialect) -> BuiltinDefs {

@@ -51,9 +51,9 @@ jobs:
         run: xvfb-run -a bazel test //...
 
       # Writes vscode-bazel-<version>.vsix into the checkout for the artifact
-      # step below.
+      # step below, built optimized (see `build:release` in .bazelrc).
       - name: Package VS Code extension
-        run: bazel run //:export_vsix
+        run: bazel run --config=release //:export_vsix
 
       - name: Upload Workflow Artifact
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7

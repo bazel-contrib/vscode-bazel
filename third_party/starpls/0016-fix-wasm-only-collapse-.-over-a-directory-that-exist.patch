@@ -1,0 +1,33 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: UebelAndre <github@uebelandre.com>
+Date: Tue, 24 Nov 2026 08:47:26 -0800
+Subject: [PATCH] fix(wasm): only collapse `..` over a directory that exists
+
+The lexical canonicalization used on WASI dropped a parent step without
+looking, so `missing/../defs.star` resolved to `defs.star` where a real
+`canonicalize` reports that `missing` does not exist. The step now
+requires the preceding component to be an existing directory, as the
+native resolution does.
+---
+ crates/starpls/src/single_thread.rs | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/crates/starpls/src/single_thread.rs b/crates/starpls/src/single_thread.rs
+index 5303751..d89b07b 100644
+--- a/crates/starpls/src/single_thread.rs
++++ b/crates/starpls/src/single_thread.rs
+@@ -231,6 +231,14 @@ pub(crate) fn canonicalize(path: &std::path::Path) -> io::Result<std::path::Path
+         match component {
+             Component::CurDir => {}
+             Component::ParentDir => {
++                // `a/../b` only means `b` when `a` is a directory that
++                // exists, as it does for a real `canonicalize`.
++                if !out.is_dir() {
++                    return Err(io::Error::new(
++                        io::ErrorKind::NotFound,
++                        format!("{} is not a directory", out.display()),
++                    ));
++                }
+                 out.pop();
+             }
+             other => out.push(other.as_os_str()),

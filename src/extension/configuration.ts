@@ -168,6 +168,19 @@ export function getBuildifierJsonConfigPath(): string {
 export function getLspServerExecutablePath(): string {
   return getConfigurationWithDefault<string>("bazel.lsp", "command").trim();
 }
+/** A starpls `.wasm` to run instead of the one bundled with the extension. */
+/** Whether the bundled server may ask to fetch missing repositories. */
+export function getLspFetchMode(): "ask" | "never" {
+  return (
+    vscode.workspace
+      .getConfiguration("bazel")
+      .get<"ask" | "never">("lsp.fetch") ?? "ask"
+  );
+}
+
+export function getLspWasmPath(): string {
+  return getConfigurationWithDefault<string>("bazel.lsp", "wasm").trim();
+}
 export function getLspServerArgs(): string[] {
   return getConfigurationWithDefault<string[]>("bazel.lsp", "args");
 }

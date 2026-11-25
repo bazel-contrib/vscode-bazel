@@ -1,5 +1,6 @@
 load("@aspect_rules_js//js:defs.bzl", "js_binary", "js_library", "js_run_binary")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config", "ts_project")
+load("@bazel_lib//lib:copy_file.bzl", "copy_file")
 load("@bazel_lib//lib:copy_to_directory.bzl", "copy_to_directory")
 load("@bazel_lib//lib:write_source_files.bzl", "write_source_file")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
@@ -183,7 +184,7 @@ tmgrammar_bin.vscode_tmgrammar_snap_test(
     ],
 )
 
-# The two bundles that ship in the extension. Built with the esbuild from
+# The bundles that ship in the extension. Built with the esbuild from
 # pnpm-lock.yaml, with the same flags the former npm scripts used. Outputs
 # land under dist/ so they sit where package.json's "main"
 # (./dist/extension.js) and the debug adapter contribution expect them.
@@ -213,6 +214,13 @@ _BUNDLE_SRCS = _TS_SRCS + _JSON_SRCS + [
     for name, entry_point, output in [
         ("extension", "src/extension/extension.ts", "extension"),
         ("debug_adapter", "src/debug-adapter/client.ts", "debug-adapter-client"),
+        # The helper process that runs the language server wasm under Node's
+        # WASI; see src/language_support/starpls_wasi_runner.ts.
+        (
+            "starpls_runner",
+            "src/language_support/starpls_wasi_runner.ts",
+            "starpls-wasi-runner",
+        ),
     ]
 ]
 
@@ -221,8 +229,19 @@ js_library(
     srcs = [
         ":debug_adapter",
         ":extension",
+        ":starpls_runner",
+        ":starpls_wasm",
     ],
     visibility = ["//visibility:public"],
+)
+
+# The starpls language server compiled to WebAssembly, built from source
+# (see MODULE.bazel) and shipped as dist/starpls.wasm so that language
+# support needs no install or download.
+copy_file(
+    name = "starpls_wasm",
+    src = "@starpls//:starpls_wasm",
+    out = "dist/starpls.wasm",
 )
 
 # Everything `vsce package` needs, laid out exactly as it is in a source

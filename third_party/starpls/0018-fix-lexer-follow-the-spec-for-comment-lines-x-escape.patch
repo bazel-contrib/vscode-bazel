@@ -1,0 +1,272 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: UebelAndre <github@uebelandre.com>
+Date: Wed, 25 Nov 2026 12:05:26 -0800
+Subject: [PATCH] fix(lexer): follow the spec for comment lines, `\x` escapes
+ and raw byte strings
+
+Three places where the lexer diverged from the Starlark spec, each
+surfacing as an error on valid code:
+
+Comment-only lines took part in indentation, so a comment indented
+deeper than its block, or less, produced INDENT or DEDENT tokens and the
+parser reported "Unexpected indentation". Blank and comment-only lines
+are now skipped for indentation, as the spec says.
+
+`\xHH` consumed up to six hexadecimal digits, so `"\x41A"` was rejected
+as a value too large instead of being `"AA"`. The escape takes exactly
+two digits; fewer is an error.
+
+Raw byte strings (`rb"\d"`, `br'\d'`) were unescaped as if they were
+not raw and reported invalid escapes. They now get the raw treatment
+text strings already had: a backslash only escapes the quote.
+---
+ crates/starpls_lexer/src/lib.rs            | 11 ++--
+ crates/starpls_lexer/src/tests.rs          | 48 +++++++++++++++++
+ crates/starpls_lexer/src/unescape.rs       | 44 ++++++++++-----
+ crates/starpls_lexer/src/unescape/tests.rs | 62 +++++++++++++++++++++-
+ crates/starpls_parser/src/text.rs          |  2 +-
+ 5 files changed, 149 insertions(+), 18 deletions(-)
+
+diff --git a/crates/starpls_lexer/src/lib.rs b/crates/starpls_lexer/src/lib.rs
+index 90d3a48..fbe2a43 100644
+--- a/crates/starpls_lexer/src/lib.rs
++++ b/crates/starpls_lexer/src/lib.rs
+@@ -330,9 +330,14 @@ impl Cursor<'_> {
+ 
+                     let last_indent = self.indents.last().cloned().unwrap_or(0);
+ 
+-                    // If we are at an equal indentation level, or are currently at a newline or EOF, we can just
+-                    // emit the whitespace that we consumed.
+-                    if indent == last_indent || self.first() == '\n' || self.is_eof() {
++                    // If we are at an equal indentation level, or are currently at a newline, a
++                    // comment or EOF, we can just emit the whitespace that we consumed: blank and
++                    // comment-only lines do not take part in indentation.
++                    if indent == last_indent
++                        || self.first() == '\n'
++                        || self.first() == '#'
++                        || self.is_eof()
++                    {
+                         self.state = CursorState::AfterLeadingSpaces;
+                         let pos_within_token = self.reset_pos_within_token();
+                         if pos_within_token == 0 {
+diff --git a/crates/starpls_lexer/src/tests.rs b/crates/starpls_lexer/src/tests.rs
+index 421ed4b..639ac56 100644
+--- a/crates/starpls_lexer/src/tests.rs
++++ b/crates/starpls_lexer/src/tests.rs
+@@ -945,3 +945,51 @@ fn test_crlf_unterminated_string() {
+     "#]],
+     );
+ }
++
++#[test]
++fn test_comment_only_lines_do_not_indent() {
++    // Comment-only lines at any indentation are not INDENT or DEDENT.
++    check_lexing(
++        r#"
++def f():
++    a = 1
++# at column zero
++        # deeper than the block
++    b = 2
++    # trailing, inside the block
++"#,
++        expect![[r#"
++            Token { kind: Newline, len: 1 }
++            Token { kind: Def, len: 3 }
++            Token { kind: Whitespace, len: 1 }
++            Token { kind: Ident, len: 1 }
++            Token { kind: OpenParen, len: 1 }
++            Token { kind: CloseParen, len: 1 }
++            Token { kind: Colon, len: 1 }
++            Token { kind: Newline, len: 1 }
++            Token { kind: Indent, len: 4 }
++            Token { kind: Ident, len: 1 }
++            Token { kind: Whitespace, len: 1 }
++            Token { kind: Eq, len: 1 }
++            Token { kind: Whitespace, len: 1 }
++            Token { kind: Literal { kind: Int { base: Decimal, empty_int: false } }, len: 1 }
++            Token { kind: Newline, len: 1 }
++            Token { kind: Comment, len: 16 }
++            Token { kind: Newline, len: 1 }
++            Token { kind: Whitespace, len: 8 }
++            Token { kind: Comment, len: 23 }
++            Token { kind: Newline, len: 1 }
++            Token { kind: Whitespace, len: 4 }
++            Token { kind: Ident, len: 1 }
++            Token { kind: Whitespace, len: 1 }
++            Token { kind: Eq, len: 1 }
++            Token { kind: Whitespace, len: 1 }
++            Token { kind: Literal { kind: Int { base: Decimal, empty_int: false } }, len: 1 }
++            Token { kind: Newline, len: 1 }
++            Token { kind: Whitespace, len: 4 }
++            Token { kind: Comment, len: 28 }
++            Token { kind: Newline, len: 1 }
++            Token { kind: Dedent { consistent: true }, len: 0 }
++        "#]],
++    );
++}
+diff --git a/crates/starpls_lexer/src/unescape.rs b/crates/starpls_lexer/src/unescape.rs
+index eb69312..80c7008 100644
+--- a/crates/starpls_lexer/src/unescape.rs
++++ b/crates/starpls_lexer/src/unescape.rs
+@@ -69,7 +69,7 @@ where
+     }
+ }
+ 
+-pub fn unescape_byte_string<F>(input: &str, callback: &mut F)
++pub fn unescape_byte_string<F>(input: &str, raw: bool, callback: &mut F)
+ where
+     F: FnMut(Range<usize>, Result<&[u8], EscapeError>),
+ {
+@@ -79,6 +79,21 @@ where
+     while let Some(c) = chars.next() {
+         let start = input.len() - chars.as_str().len() - c.len_utf8();
+         match c {
++            // In a raw byte string (`rb"..."`) a backslash only escapes the quote.
++            '\\' if raw => {
++                let end = input.len() - chars.as_str().len();
++                match chars.clone().next() {
++                    Some('"' | '\'') => {
++                        chars.next();
++                        callback(
++                            start..input.len() - chars.as_str().len(),
++                            Ok(&input.as_bytes()[end..end + 1]),
++                        );
++                    }
++                    Some(_) => callback(start..end, Ok(b"\\")),
++                    None => callback(start..end, Err(EscapeError::LoneSlash)),
++                }
++            }
+             '\\' => scan_byte_string_escape(&mut chars, start, input.len(), callback),
+             _ => {
+                 let end = input.len() - chars.as_str().len();
+@@ -249,24 +264,27 @@ fn scan_byte_string_hexadecimal_escape(chars: &mut Chars<'_>) -> Result<u8, Esca
+ }
+ 
+ fn scan_hexadecimal_escape(chars: &mut Chars<'_>) -> Result<u32, EscapeError> {
+-    // Process up to 6 hexadecimal digits.
++    // `\xHH`: exactly two hexadecimal digits, as in the spec; `"\x41A"` is
++    // `"AA"`, not an escape of three digits.
+     let mut num_digits = 0;
+     let mut value = 0;
+ 
+-    while let Some(c @ ('0'..='9' | 'a'..='f' | 'A'..='F')) = chars.clone().next() {
+-        chars.next();
+-        let digit = c.to_digit(16).expect("invalid hexadecimal digit");
+-        num_digits += 1;
+-        value = value * 16 + digit;
+-        if num_digits > 6 {
+-            break;
++    while num_digits < 2 {
++        match chars.clone().next() {
++            Some(c @ ('0'..='9' | 'a'..='f' | 'A'..='F')) => {
++                chars.next();
++                let digit = c.to_digit(16).expect("invalid hexadecimal digit");
++                num_digits += 1;
++                value = value * 16 + digit;
++            }
++            _ => break,
+         }
+     }
+ 
+-    if num_digits == 0 {
+-        Err(EscapeError::EmptyHexadecimalEscape)
+-    } else {
+-        Ok(value)
++    match num_digits {
++        0 => Err(EscapeError::EmptyHexadecimalEscape),
++        1 => Err(EscapeError::TooShortHexadecimalEscape),
++        _ => Ok(value),
+     }
+ }
+ 
+diff --git a/crates/starpls_lexer/src/unescape/tests.rs b/crates/starpls_lexer/src/unescape/tests.rs
+index 53f68f9..6096f90 100644
+--- a/crates/starpls_lexer/src/unescape/tests.rs
++++ b/crates/starpls_lexer/src/unescape/tests.rs
+@@ -67,7 +67,7 @@ fn test_unescape_string() {
+ fn test_unescape_byte_string() {
+     fn check(input: &str, expect: Expect) {
+         let mut actual = String::new();
+-        unescape_byte_string(input, &mut |range, res| {
++        unescape_byte_string(input, false, &mut |range, res| {
+             write!(&mut actual, "{:?} ", range).unwrap();
+             match res {
+                 Ok(b) => {
+@@ -121,3 +121,63 @@ fn test_unescape_byte_string() {
+     "#]],
+     );
+ }
++
++#[test]
++fn test_hexadecimal_escape_takes_two_digits() {
++    fn check(input: &str, expect: Expect) {
++        let mut actual = String::new();
++        unescape_string(input, false, false, &mut |range, res| {
++            writeln!(&mut actual, "{:?} {:?}", range, res).unwrap();
++        });
++        expect.assert_eq(&actual);
++    }
++
++    // `\x41A` is `A` followed by a literal `A`, not a three-digit escape.
++    check(
++        r"\x41A",
++        expect![[r#"
++        0..4 Ok('A')
++        4..5 Ok('A')
++    "#]],
++    );
++    check(
++        r"\x4",
++        expect![[r#"
++        0..3 Err(TooShortHexadecimalEscape)
++    "#]],
++    );
++}
++
++#[test]
++fn test_raw_byte_string_has_no_escapes() {
++    fn check(input: &str, expect: Expect) {
++        let mut actual = String::new();
++        unescape_byte_string(input, true, &mut |range, res| {
++            writeln!(
++                &mut actual,
++                "{:?} {:?}",
++                range,
++                res.map(|b| str::from_utf8(b).unwrap().to_string())
++            )
++            .unwrap();
++        });
++        expect.assert_eq(&actual);
++    }
++
++    check(
++        r"\d+",
++        expect![[r#"
++        0..1 Ok("\\")
++        1..2 Ok("d")
++        2..3 Ok("+")
++    "#]],
++    );
++    check(
++        r#"a\"b"#,
++        expect![[r#"
++        0..1 Ok("a")
++        1..3 Ok("\"")
++        3..4 Ok("b")
++    "#]],
++    );
++}
+diff --git a/crates/starpls_parser/src/text.rs b/crates/starpls_parser/src/text.rs
+index fd8651a..1bb8563 100644
+--- a/crates/starpls_parser/src/text.rs
++++ b/crates/starpls_parser/src/text.rs
+@@ -219,7 +219,7 @@ fn collect_token_lexer_errors(
+                 }
+             });
+         } else {
+-            unescape_byte_string(contents, &mut |range, res| {
++            unescape_byte_string(contents, raw, &mut |range, res| {
+                 if let Err(err) = res {
+                     lexer_errors.push(LexerError {
+                         start: contents_start + range.start,

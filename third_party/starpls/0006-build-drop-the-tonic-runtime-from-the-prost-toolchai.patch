@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: UebelAndre <github@uebelandre.com>
+Date: Thu, 19 Nov 2026 13:44:48 -0800
+Subject: [PATCH] build: drop the tonic runtime from the prost toolchain
+
+starpls only decodes prost messages; nothing uses tonic. Registering a
+tonic runtime made every generated proto crate depend on tonic and, through
+it, on socket2, which does not build for wasm32 targets. The toolchain now
+has no tonic attributes (`tonic_plugin_flag` has a non-empty default, so it
+is cleared explicitly).
+---
+ BUILD.bazel | 14 ++++----------
+ 1 file changed, 4 insertions(+), 10 deletions(-)
+
+diff --git a/BUILD.bazel b/BUILD.bazel
+index 2e3a095..ae5258d 100644
+--- a/BUILD.bazel
++++ b/BUILD.bazel
+@@ -10,21 +10,15 @@ rust_library_group(
+     ],
+ )
+ 
+-rust_library_group(
+-    name = "tonic_runtime",
+-    deps = [
+-        ":prost_runtime",
+-        "@crates//:tonic",
+-    ],
+-)
+-
++# starpls uses prost messages only. No tonic: a tonic runtime pulls in
++# networking crates (socket2) that do not build for WebAssembly.
+ rust_prost_toolchain(
+     name = "prost_toolchain_impl",
+     prost_plugin = "@crates//:protoc-gen-prost__protoc-gen-prost",
+     prost_runtime = ":prost_runtime",
+     prost_types = "@crates//:prost-types",
+-    tonic_plugin = "@crates//:protoc-gen-tonic__protoc-gen-tonic",
+-    tonic_runtime = ":tonic_runtime",
++    # The flag has a non-empty default; clear it so the rule sees no tonic at all.
++    tonic_plugin_flag = "",
+ )
+ 
+ toolchain(

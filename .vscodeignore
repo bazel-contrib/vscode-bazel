@@ -5,6 +5,7 @@
 !LICENSE
 !package.json
 !dist/*.js
+!dist/*.wasm
 !icons/**/*.+(svg|license)
 !media/**/*
 !syntaxes/**/*.+(json|license)

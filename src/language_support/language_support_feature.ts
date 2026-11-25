@@ -19,8 +19,15 @@ import { BaseExtensionFeature } from "../extension/extension_feature";
 import { BazelCompletionItemProvider } from "../completion-provider";
 import { BazelGotoDefinitionProvider } from "../definition/bazel_goto_definition_provider";
 import { BazelTargetSymbolProvider } from "../symbols";
-import { startLspClientFromCurrentConfig } from "./language-server-client";
-import { getLspServerExecutablePath } from "../extension/configuration";
+import {
+  startLspClientFromCurrentConfig,
+  startWasmLspClients,
+} from "./language-server-client";
+import { bundledStarplsWasm } from "./wasm_language_server";
+import {
+  getLspServerExecutablePath,
+  getLspWasmPath,
+} from "../extension/configuration";
 
 /**
  * Language Support feature for Bazel.
@@ -29,6 +36,14 @@ import { getLspServerExecutablePath } from "../extension/configuration";
  */
 export class LanguageSupportFeature extends BaseExtensionFeature {
   private lspClient: lc.LanguageClient | undefined;
+  /** The bundled server's clients, one per Bazel workspace folder. */
+  private wasmClients: lc.LanguageClient[] = [];
+  /** The last start of the bundled server; a restart waits for it. */
+  private wasmStart: Promise<void> = Promise.resolve();
+  /** Bumped by `disable`, so a start that finishes afterwards is dropped. */
+  private enableGeneration = 0;
+  /** Built-in providers registered because no bundled server started. */
+  private fallbackProviders: vscode.Disposable[] = [];
   private completionItemProvider: BazelCompletionItemProvider | null = null;
   private isUsingExternalLSP: boolean = false;
 
@@ -37,18 +52,138 @@ export class LanguageSupportFeature extends BaseExtensionFeature {
   }
 
   protected async enable(context: vscode.ExtensionContext): Promise<boolean> {
-    // Determine which implementation to use
+    // Determine which implementation to use: an external server if one is
+    // configured, else the bundled WebAssembly one, else the built-in
+    // providers.
     const lspCommand = getLspServerExecutablePath();
-    this.isUsingExternalLSP = !!lspCommand;
+    const wasm = lspCommand ? undefined : await this.starplsWasm(context);
+    this.isUsingExternalLSP = !!lspCommand || !!wasm;
 
-    if (this.isUsingExternalLSP) {
+    if (lspCommand) {
       return this.enableExternalLSP(context);
-    } else {
-      return this.enableBuiltInSupport(context);
     }
+    if (wasm) {
+      return this.enableWasmLSP(context, wasm);
+    }
+    return this.enableBuiltInSupport(context);
+  }
+
+  /**
+   * The starpls wasm to run in-process: `bazel.lsp.wasm` if set, else the
+   * one bundled with the extension, else none.
+   */
+  private async starplsWasm(
+    context: vscode.ExtensionContext,
+  ): Promise<vscode.Uri | undefined> {
+    const configured = getLspWasmPath();
+    if (configured) {
+      return vscode.Uri.file(configured);
+    }
+    return bundledStarplsWasm(context);
+  }
+
+  /**
+   * Enables the bundled WebAssembly language server. Starts are chained so
+   * a restart never overlaps a start still in progress; if no client could
+   * start (no output base, no Bazel workspace), the built-in providers
+   * take over until a later start succeeds. A start that completes after
+   * the feature was disabled stops what it started.
+   */
+  private enableWasmLSP(
+    context: vscode.ExtensionContext,
+    wasmUri: vscode.Uri,
+  ): boolean {
+    this.logInfo(
+      `Enabling the bundled Starlark language server (${wasmUri.fsPath})`,
+    );
+    const start = (): Promise<void> => {
+      const generation = this.enableGeneration;
+      this.wasmStart = this.wasmStart.then(async () => {
+        if (generation !== this.enableGeneration) {
+          return;
+        }
+        const clients = await startWasmLspClients(
+          this.wasmClients,
+          context,
+          wasmUri,
+        );
+        if (generation !== this.enableGeneration) {
+          for (const client of clients) {
+            client.stop().catch((): undefined => undefined);
+          }
+          return;
+        }
+        this.wasmClients = clients;
+        if (clients.length > 0) {
+          this.leaveFallback();
+        } else {
+          this.enterFallback(context);
+        }
+      });
+      return this.wasmStart;
+    };
+    this.disposables.push(
+      vscode.commands.registerCommand("bazel.lsp.restart", async () => {
+        this.logInfo("Restarting language server...");
+        await start();
+      }),
+      vscode.workspace.onDidChangeWorkspaceFolders(() => {
+        this.logInfo("Workspace folders changed; restarting language server");
+        void start();
+      }),
+      vscode.workspace.onDidChangeConfiguration((event) => {
+        // The server and its clients were set up for one Bazel executable
+        // and output base; a change to either means a new server.
+        if (
+          event.affectsConfiguration("bazel.executable") ||
+          event.affectsConfiguration("bazel.commandLine.startupOptions")
+        ) {
+          this.logInfo("Bazel settings changed; restarting language server");
+          void start();
+        }
+      }),
+    );
+    start().catch((error: any) => {
+      this.logError("Failed to start the bundled language server", true, error);
+    });
+    vscode.commands.executeCommand("setContext", "bazel.lsp.enabled", true);
+    return true;
+  }
+
+  /** Registers the built-in providers in place of the bundled server. */
+  private enterFallback(context: vscode.ExtensionContext): void {
+    if (this.fallbackProviders.length > 0) {
+      return;
+    }
+    this.logError(
+      "The bundled language server did not start; " +
+        "using the built-in providers",
+      true,
+    );
+    vscode.commands.executeCommand("setContext", "bazel.lsp.enabled", false);
+    this.isUsingExternalLSP = false;
+    const before = this.disposables.length;
+    this.enableBuiltInSupport(context);
+    this.fallbackProviders = this.disposables.splice(before);
+  }
+
+  /** Removes the built-in providers again once the bundled server runs. */
+  private leaveFallback(): void {
+    for (const disposable of this.fallbackProviders) {
+      disposable.dispose();
+    }
+    this.fallbackProviders = [];
+    this.completionItemProvider = null;
+    this.isUsingExternalLSP = true;
+    vscode.commands.executeCommand("setContext", "bazel.lsp.enabled", true);
   }
 
   protected disable(): boolean {
+    this.enableGeneration++;
+    for (const disposable of this.fallbackProviders) {
+      disposable.dispose();
+    }
+    this.fallbackProviders = [];
     // Clean up both implementations to be safe
     if (this.lspClient) {
       this.lspClient.stop().catch((error) => {
@@ -56,6 +191,12 @@ export class LanguageSupportFeature extends BaseExtensionFeature {
       });
       this.lspClient = undefined;
     }
+    for (const client of this.wasmClients) {
+      client.stop().catch((error) => {
+        this.logError("Error stopping language server", true, error);
+      });
+    }
+    this.wasmClients = [];
 
     this.completionItemProvider = null;
 

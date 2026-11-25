@@ -1,0 +1,135 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: UebelAndre <github@uebelandre.com>
+Date: Wed, 25 Nov 2026 12:05:26 -0800
+Subject: [PATCH] fix(typeck): do not type-check element assignments into
+ inferred containers
+
+Lists and dicts are heterogeneous in Starlark. The element type inferred
+from the elements seen so far says nothing about what may be stored
+next, yet `kwargs = {"srcs": srcs}` followed by
+`kwargs["testonly"] = True` was reported as an error. The check on
+`x[k] = v` now applies only to a container whose type was declared with
+a type comment, which is where it is meaningful.
+---
+ crates/starpls_hir/src/typeck.rs       |  3 ++
+ crates/starpls_hir/src/typeck/infer.rs | 22 +++++++++++--
+ crates/starpls_hir/src/typeck/tests.rs | 43 ++++++++++++++++++++++++++
+ 3 files changed, 66 insertions(+), 2 deletions(-)
+
+diff --git a/crates/starpls_hir/src/typeck.rs b/crates/starpls_hir/src/typeck.rs
+index 3b79bb8..cfaa4b2 100644
+--- a/crates/starpls_hir/src/typeck.rs
++++ b/crates/starpls_hir/src/typeck.rs
+@@ -1744,6 +1744,9 @@ pub(crate) struct InferenceContext {
+     pub(crate) source_assign_done: FxHashSet<FileExprId>,
+     pub(crate) flow_node_type_cache: FxHashMap<CodeFlowCacheKey, Option<Ty>>,
+     pub(crate) definition_is_used: FxHashMap<InFile<Either<ExprId, StmtId>>, bool>,
++    /// Variables given a type by a type comment; only those have element
++    /// types worth checking on `x[k] = v`.
++    pub(crate) declared_names: FxHashSet<(File, Name)>,
+ }
+ 
+ pub struct CancelGuard<'a> {
+diff --git a/crates/starpls_hir/src/typeck/infer.rs b/crates/starpls_hir/src/typeck/infer.rs
+index d43a2ca..7a9c50a 100644
+--- a/crates/starpls_hir/src/typeck/infer.rs
++++ b/crates/starpls_hir/src/typeck/infer.rs
+@@ -170,10 +170,18 @@ impl TyContext<'_> {
+                 }
+             }
+             Stmt::Assign { lhs, rhs, .. } => match &module[*lhs] {
+-                Expr::Index { .. } => {
++                Expr::Index { lhs: container, .. } => {
+                     let lhs_ty = self.infer_expr(file, *lhs);
+                     let rhs_ty = self.infer_expr(file, *rhs);
+-                    if !assign_tys(self.db, &rhs_ty, &lhs_ty) {
++                    // Lists and dicts are heterogeneous in Starlark: a value type
++                    // inferred from the elements seen so far says nothing about
++                    // what may be stored next (`kwargs = {"srcs": srcs}` followed
++                    // by `kwargs["testonly"] = True` is everyday code). Only a
++                    // container with a declared type is checked.
++                    let container_declared = self.container_is_declared(file, *container);
++                    if !container_declared {
++                        self.infer_expr(file, *container);
++                    } else if !assign_tys(self.db, &rhs_ty, &lhs_ty) {
+                         self.add_expr_diagnostic_error(
+                             file,
+                             *lhs,
+@@ -1767,6 +1775,15 @@ impl TyContext<'_> {
+         res
+     }
+ 
++    /// Whether the container of an index assignment is a variable with a
++    /// declared (type-commented) type.
++    fn container_is_declared(&self, file: File, container: ExprId) -> bool {
++        match module(self.db, file).exprs.get(container) {
++            Some(Expr::Name { name }) => self.cx.declared_names.contains(&(file, name.clone())),
++            _ => false,
++        }
++    }
++
+     fn assign_expr_source_ty(
+         &mut self,
+         file: File,
+@@ -1790,6 +1807,7 @@ impl TyContext<'_> {
+                 // If we have an expected type from a type comment, use that.
+                 // We also emit any error if the source and expected types aren't compatible.
+                 if let Some(expected_ty) = expected_ty {
++                    self.cx.declared_names.insert((file, name.clone()));
+                     if !assign_tys(self.db, &source_ty, &expected_ty) {
+                         self.add_expr_diagnostic_error(
+                             file,
+diff --git a/crates/starpls_hir/src/typeck/tests.rs b/crates/starpls_hir/src/typeck/tests.rs
+index 98d04ad..99a5bd4 100644
+--- a/crates/starpls_hir/src/typeck/tests.rs
++++ b/crates/starpls_hir/src/typeck/tests.rs
+@@ -202,6 +202,49 @@ fn check_infer_with_options(input: &str, expect: Expect, options: InferenceOptio
+     expect.assert_eq(&res);
+ }
+ 
++#[test]
++fn test_index_assignment_into_inferred_containers() {
++    // Lists and dicts are heterogeneous: a value type inferred from the
++    // elements seen so far does not constrain later assignments. Only a
++    // declared (type-commented) container is checked.
++    check_infer(
++        r#"
++kwargs = {"srcs": ["a.cc"]}
++kwargs["testonly"] = True
++xs = [1]
++xs[0] = "one"
++d = {} # type: dict[string, string]
++d["k"] = 1
++"#,
++        expect![[r#"
++            1..7 "kwargs": dict[string, list[string]]
++            11..17 "\"srcs\"": Literal["srcs"]
++            20..26 "\"a.cc\"": Literal["a.cc"]
++            19..27 "[\"a.cc\"]": list[string]
++            10..28 "{\"srcs\": [\"a.cc\"]}": dict[string, list[string]]
++            29..35 "kwargs": dict[string, list[string]]
++            36..46 "\"testonly\"": Literal["testonly"]
++            29..47 "kwargs[\"testonly\"]": list[string]
++            50..54 "True": Literal[True]
++            55..57 "xs": list[int]
++            61..62 "1": Literal[1]
++            60..63 "[1]": list[int]
++            64..66 "xs": list[int]
++            67..68 "0": Literal[0]
++            64..69 "xs[0]": int
++            72..77 "\"one\"": Literal["one"]
++            78..79 "d": dict[string, string]
++            82..84 "{}": dict[Unknown, Unknown]
++            114..115 "d": dict[string, string]
++            116..119 "\"k\"": Literal["k"]
++            114..120 "d[\"k\"]": string
++            123..124 "1": Literal[1]
++
++            114..120 Cannot use value of type "Literal[1]" as type "string" in assignment
++        "#]],
++    );
++}
++
+ #[test]
+ fn test_infer_basic_exprs() {
+     check_infer(
